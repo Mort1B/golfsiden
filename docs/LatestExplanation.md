@@ -1,54 +1,62 @@
 # Latest explanation
 
-## Mobile live leaderboards
+## One-hole mobile scoring
 
-The result tab now displays backend-calculated gross and net standings for either
-a selected round or the whole tournament. Tournament, scope, round, and metric
-live in canonical URL parameters, so refreshes and browser history preserve the
-view without introducing a client store. A requested round is checked against
-the selected tournament before its query can run.
+The Score tab now opens the newest eligible round and resolves a stable player
+or team owner from round completion validation. Tournament, round, tagged owner,
+hole, and hole/summary view are canonical URL parameters, so explicit selections
+work with browser history while adjacent-hole movement replaces the current
+entry. Draft rounds are excluded and locked cards remain readable.
 
-Round rows show live score to par, the selected stroke total, holes played,
-confirmation state, and exact scramble membership. Tournament rows show the
-selected accumulated total, completed-round count, withdrawn state, and the
-current open-round team returned by the backend. Unstarted owners remain visible
-and unranked instead of displaying zero as a played result.
+Score input is deliberately separate from cached server state. One coordinator
+owns an exact round/owner/hole, writes the first change immediately, coalesces
+rapid taps without concurrent requests, and keeps the latest desired gross score
+visible. It reports synchronization only after a decoded scorecard refetch agrees
+with that value. Failures retain Retry and Discard actions, and route/unload
+guards keep unresolved intent from being silently abandoned.
 
-The new leaderboard endpoints cross a strict runtime decoder before responses
-enter TanStack Query. Malformed identifiers, tagged owners, finite states,
-nullability, numeric fields, or response identity fail into a query-owned retry
-state. The existing single EventSource remains invalidation-only: score and round
-events trigger an authoritative refetch rather than merging event data or
-recalculating handicap results in React.
+Net strokes, totals, and playing handicaps always come from the backend.
+Complete cards can be confirmed, confirmed cards require explicit correction
+mode, changed scores remove confirmation, and re-confirmation restores the
+correction gate. Completed rounds remain editable and locked rounds are strictly
+read-only. Until session authentication is implemented,
+`VITE_SCORER_USER_ID` supplies development attribution only and missing or
+malformed configuration disables mutations.
 
 ## Compact example
 
-The round query cannot start until URL selection has resolved to a round owned by
-the selected tournament:
+The coordinator verifies the authoritative scorecard before publishing the final
+sync state and starts one coalesced follow-up only when the desired value moved:
 
-```tsx
-const selectedRound = rounds.find((round) => round.id === requestedRoundId)
-  ?? preferredRound(rounds)
+```ts
+await dependencies.save(submitted)
+const verified = await dependencies.verify()
 
-useQuery({
-  queryKey: leaderboardKeys.round(selectedRound?.id ?? '', metric),
-  queryFn: () => api.roundLeaderboard(selectedRound?.id ?? '', metric),
-  enabled: scope === 'round' && selectedRound !== undefined,
-})
+if (snapshot.desiredValue !== verified) {
+  void persist()
+} else {
+  update({ serverValue: verified, phase: 'synced' })
+}
 ```
+
+## Invariants
+
+- Completion validation, not leaderboard order, defines eligible score owners.
+- Client code never calculates handicap or net results.
+- Writes are serialized per exact tagged owner and hole.
+- Confirmation and correction callbacks retain immutable owner scope.
+- SSE remains an invalidation signal; clients refetch authoritative state.
 
 ## Validation
 
-- `npm ci`, four Vitest tests, strict typecheck, ESLint, production build, and
-  diff checks pass.
-- Chrome checks pass at 320x720, 390x844, and 1280x900 with no console errors,
-  failed requests, horizontal overflow, undersized touch targets, or navigation
-  overlap.
-- Browser coverage includes canonical defaults, keyboard focus and activation,
-  Back navigation, round/tournament and gross/net switching, a real partial
-  score, unstarted owners, and SSE-driven refetch.
-- Intercepted browser cases cover loading, no tournaments, malformed-response
-  retry, cached tournament-refresh failure, and long names at 320px.
-- `npm audit` still reports two high-severity records for the documented React
-  Router server/RSC advisory; this client-only app does not use the affected
-  server action path.
+- Rust format, 28 unit tests, Clippy with warnings denied, and 35 PostgreSQL/API
+  integration tests pass.
+- `npm ci`, 19 Vitest tests, strict typecheck, ESLint, and production build pass.
+- Real Chrome checks cover 320px, 360px, and desktop layouts; individual and
+  scramble owners; rapid coalescing; injected failure/retry; blocked NavLink and
+  Back navigation; confirmation, correction, re-confirmation, locking, SSE
+  refetch, long content, keyboard focus, and bottom-navigation clearance.
+- Browser validation produced no console errors, failed requests, unexpected
+  HTTP responses, or horizontal overflow.
+- `npm audit` still reports the documented two high-severity React Router
+  server/RSC advisory records; the application uses client-side routes only.

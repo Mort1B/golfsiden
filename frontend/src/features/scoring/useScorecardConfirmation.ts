@@ -1,0 +1,81 @@
+import { useEffect } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { api } from '../../api/client'
+import { ApiHttpError } from '../../api/http'
+import { scoringKeys, type ScoreOwner, type ScorecardSummary } from '../../api/scorecards'
+import type { Round } from '../../api/types'
+import { invalidateScorecard, invalidateScoreDependents } from './queries'
+
+interface ConfirmationInput {
+  round: Round
+  tournamentId: string
+  owner: ScoreOwner
+  card: ScorecardSummary
+  scorerUserId: string | null
+  onConfirmed: () => void
+  onTerminal: () => void
+}
+
+type ConfirmationVariables = ConfirmationInput
+
+export function useScorecardConfirmation(input: ConfirmationInput) {
+  const queryClient = useQueryClient()
+  const mutation = useMutation({
+    mutationKey: ['scorecard-confirmation', input.round.id, input.owner.type, input.owner.id],
+    mutationFn: async (variables: ConfirmationVariables) => {
+      if (!variables.scorerUserId) throw new Error('Scorer-ID er ikke konfigurert')
+      if (!variables.card.complete || variables.card.confirmed) {
+        throw new Error('Scorekortet må være komplett og ubekreftet')
+      }
+      return api.confirmScorecard(variables.round.id, variables.owner, variables.scorerUserId)
+    },
+    onSuccess: async (card, variables) => {
+      queryClient.setQueryData(scoringKeys.scorecard(variables.round.id, variables.owner), card)
+      await invalidateScorecard(queryClient, variables.round.id, variables.owner)
+      queryClient.setQueryData(scoringKeys.scorecard(variables.round.id, variables.owner), card)
+      await invalidateScoreDependents(queryClient, variables.round.id, variables.tournamentId)
+      variables.onConfirmed()
+    },
+    onError: async (error, variables) => {
+      if (!(error instanceof ApiHttpError) || error.code !== 'round_not_editable') return
+      variables.onTerminal()
+      const [round, completion, card] = await Promise.all([
+        api.round(variables.round.id),
+        api.completionValidation(variables.round.id, variables.round.scoring_format),
+        api.scorecard(variables.round.id, variables.owner),
+      ])
+      queryClient.setQueryData(['round', variables.round.id], round)
+      queryClient.setQueryData(scoringKeys.completion(variables.round.id), completion)
+      queryClient.setQueryData(scoringKeys.scorecard(variables.round.id, variables.owner), card)
+      await queryClient.invalidateQueries({ queryKey: ['tournament', variables.tournamentId, 'rounds'], exact: true })
+    },
+  })
+  const reset = mutation.reset
+  const scopeKey = `${input.round.id}:${input.owner.type}:${input.owner.id}`
+
+  useEffect(() => reset(), [reset, scopeKey])
+
+  let errorMessage: string | null = null
+  let retryable = true
+  if (mutation.error instanceof ApiHttpError && mutation.error.status === 404) {
+    errorMessage = 'Scorer-ID finnes ikke. Kontroller VITE_SCORER_USER_ID.'
+    retryable = false
+  } else if (mutation.error instanceof ApiHttpError && mutation.error.code === 'round_not_editable') {
+    errorMessage = 'Runden kan ikke lenger redigeres.'
+    retryable = false
+  } else if (mutation.error) {
+    errorMessage = mutation.error.message
+  }
+
+  return {
+    confirm: () => mutation.mutate({
+      ...input,
+      owner: input.owner.type === 'player'
+        ? { type: 'player', id: input.owner.id }
+        : { type: 'team', id: input.owner.id },
+    }),
+    confirming: mutation.isPending,
+    errorMessage,
+    retryable,
+  }
+}

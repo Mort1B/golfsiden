@@ -46,6 +46,16 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   of a client store. It validates round ownership before enabling hierarchical
   queries, and leaderboard responses pass focused runtime decoding before
   entering the query cache.
+- The score route likewise owns tournament, round, tagged owner, hole, and view
+  selection in canonical URL parameters. Completion validation is its owner
+  authority, and exact runtime decoders protect scorecard state before caching.
+- Hole mutation intent stays outside TanStack Query in one round/owner/hole
+  coordinator. It serializes writes, coalesces rapid input, and requires an
+  authoritative refetch match before reporting synchronization. Route and unload
+  guards prevent unresolved intent from being silently abandoned.
+- Handicap and net-score calculations remain backend-owned. Pending gross input
+  is visible immediately, but net output is shown only after decoded server
+  verification.
 
 ## API milestone
 

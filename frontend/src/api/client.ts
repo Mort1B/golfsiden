@@ -1,28 +1,16 @@
 import { decodeRoundLeaderboard, decodeTournamentLeaderboard } from './leaderboards'
-import type { LeaderboardMetric, Player, Round, Team, Tournament, TournamentPlayer } from './types'
-
-const apiUrl = import.meta.env.VITE_API_URL ?? ''
-
-interface ApiErrorBody {
-  error?: { message?: string }
-}
+import { jsonRequest, liveUrl, requestDecoded, requestUnchecked } from './http'
+import {
+  decodeCompletionValidation,
+  decodeSavedScore,
+  decodeScorecard,
+  ownerTypeForFormat,
+  type ScoreOwner,
+} from './scorecards'
+import type { LeaderboardMetric, Player, Round, ScoringFormat, Team, Tournament, TournamentPlayer } from './types'
 
 async function get<T>(path: string): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`)
-  if (!response.ok) {
-    const body = (await response.json().catch(() => ({}))) as ApiErrorBody
-    throw new Error(body.error?.message ?? `Forespørselen feilet (${response.status})`)
-  }
-  return response.json() as Promise<T>
-}
-
-async function getDecoded<T>(path: string, decode: (value: unknown) => T): Promise<T> {
-  const response = await fetch(`${apiUrl}${path}`)
-  if (!response.ok) {
-    const body = (await response.json().catch(() => ({}))) as ApiErrorBody
-    throw new Error(body.error?.message ?? `Forespørselen feilet (${response.status})`)
-  }
-  return decode(await response.json() as unknown)
+  return requestUnchecked<T>(path)
 }
 
 export const api = {
@@ -34,10 +22,27 @@ export const api = {
   teams: (id: string) => get<Team[]>(`/api/rounds/${id}/teams`),
   players: () => get<Player[]>('/api/players'),
   roundLeaderboard: (id: string, metric: LeaderboardMetric) =>
-    getDecoded(`/api/rounds/${id}/leaderboards/${metric}`, (value) =>
+    requestDecoded(`/api/rounds/${id}/leaderboards/${metric}`, (value) =>
       decodeRoundLeaderboard(value, id, metric)),
   tournamentLeaderboard: (id: string, metric: LeaderboardMetric) =>
-    getDecoded(`/api/tournaments/${id}/leaderboards/${metric}`, (value) =>
+    requestDecoded(`/api/tournaments/${id}/leaderboards/${metric}`, (value) =>
       decodeTournamentLeaderboard(value, id, metric)),
-  liveUrl: `${apiUrl}/api/live`,
+  completionValidation: (roundId: string, format: ScoringFormat) =>
+    requestDecoded(`/api/rounds/${roundId}/completion-validation`, (value) =>
+      decodeCompletionValidation(value, roundId, ownerTypeForFormat(format))),
+  scorecard: (roundId: string, owner: ScoreOwner) =>
+    requestDecoded(`/api/rounds/${roundId}/scorecards/${owner.type}/${owner.id}`, (value) =>
+      decodeScorecard(value, roundId, owner)),
+  saveScore: (roundId: string, holeId: string, owner: ScoreOwner, grossStrokes: number, submittedBy: string) =>
+    requestDecoded(`/api/rounds/${roundId}/scores`, (value) =>
+      decodeSavedScore(value, roundId, holeId, owner, grossStrokes), jsonRequest('PUT', {
+        hole_id: holeId,
+        owner,
+        gross_strokes: grossStrokes,
+        submitted_by: submittedBy,
+      })),
+  confirmScorecard: (roundId: string, owner: ScoreOwner, confirmedBy: string) =>
+    requestDecoded(`/api/rounds/${roundId}/scorecards/${owner.type}/${owner.id}/confirm`, (value) =>
+      decodeScorecard(value, roundId, owner), jsonRequest('POST', { confirmed_by: confirmedBy })),
+  liveUrl,
 }

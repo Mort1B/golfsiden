@@ -11,6 +11,15 @@ import type {
   TournamentLeaderboard,
   TournamentLeaderboardEntry,
 } from './types'
+import {
+  decodeArray,
+  decodeBoolean,
+  decodeInteger,
+  decodeObject,
+  decodeString,
+  decodeUuid,
+  invalidData,
+} from './decoder'
 
 export const leaderboardKeys = {
   round: (roundId: string, metric: LeaderboardMetric) =>
@@ -19,41 +28,12 @@ export const leaderboardKeys = {
     ['leaderboards', 'tournament', tournamentId, metric] as const,
 }
 
-const uuidPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i
-
 function invalid(path: string): never {
-  throw new Error(`Ugyldig resultatdata fra serveren (${path})`)
-}
-
-function object(value: unknown, path: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) invalid(path)
-  return value as Record<string, unknown>
-}
-
-function string(value: unknown, path: string): string {
-  if (typeof value !== 'string') invalid(path)
-  return value
-}
-
-function uuid(value: unknown, path: string): string {
-  const decoded = string(value, path)
-  if (!uuidPattern.test(decoded)) invalid(path)
-  return decoded
-}
-
-function integer(value: unknown, path: string, minimum?: number): number {
-  if (typeof value !== 'number' || !Number.isSafeInteger(value)) invalid(path)
-  if (minimum !== undefined && value < minimum) invalid(path)
-  return value
-}
-
-function boolean(value: unknown, path: string): boolean {
-  if (typeof value !== 'boolean') invalid(path)
-  return value
+  return invalidData('resultatdata', path)
 }
 
 function nullableInteger(value: unknown, path: string): number | null {
-  return value === null ? null : integer(value, path, 1)
+  return value === null ? null : decodeInteger(value, path, 1, undefined, 'resultatdata')
 }
 
 function metric(value: unknown, path: string): LeaderboardMetric {
@@ -76,68 +56,63 @@ function participantStatus(value: unknown, path: string): ParticipantStatus {
   return invalid(path)
 }
 
-function array<T>(value: unknown, path: string, decode: (item: unknown, path: string) => T): T[] {
-  if (!Array.isArray(value)) invalid(path)
-  return value.map((item, index) => decode(item, `${path}[${index}]`))
-}
-
 function owner(value: unknown, path: string): LeaderboardOwner {
-  const data = object(value, path)
-  if (data.type === 'player') return { type: 'player', id: uuid(data.id, `${path}.id`) }
-  if (data.type === 'team') return { type: 'team', id: uuid(data.id, `${path}.id`) }
+  const data = decodeObject(value, path, 'resultatdata')
+  if (data.type === 'player') return { type: 'player', id: decodeUuid(data.id, `${path}.id`, 'resultatdata') }
+  if (data.type === 'team') return { type: 'team', id: decodeUuid(data.id, `${path}.id`, 'resultatdata') }
   return invalid(`${path}.type`)
 }
 
 function member(value: unknown, path: string): LeaderboardMember {
-  const data = object(value, path)
+  const data = decodeObject(value, path, 'resultatdata')
   return {
-    player_id: uuid(data.player_id, `${path}.player_id`),
-    display_name: string(data.display_name, `${path}.display_name`),
-    display_order: data.display_order === null ? null : integer(data.display_order, `${path}.display_order`),
+    player_id: decodeUuid(data.player_id, `${path}.player_id`, 'resultatdata'),
+    display_name: decodeString(data.display_name, `${path}.display_name`, 'resultatdata'),
+    display_order: data.display_order === null ? null : decodeInteger(data.display_order, `${path}.display_order`, undefined, undefined, 'resultatdata'),
   }
 }
 
 function roundEntry(value: unknown, path: string): RoundLeaderboardEntry {
-  const data = object(value, path)
+  const data = decodeObject(value, path, 'resultatdata')
   return {
     position: nullableInteger(data.position, `${path}.position`),
-    tied: boolean(data.tied, `${path}.tied`),
+    tied: decodeBoolean(data.tied, `${path}.tied`, 'resultatdata'),
     owner: owner(data.owner, `${path}.owner`),
-    owner_name: string(data.owner_name, `${path}.owner_name`),
-    members: array(data.members, `${path}.members`, member),
-    holes_scored: integer(data.holes_scored, `${path}.holes_scored`, 0),
-    number_of_holes: integer(data.number_of_holes, `${path}.number_of_holes`, 1),
-    complete: boolean(data.complete, `${path}.complete`),
-    confirmed: boolean(data.confirmed, `${path}.confirmed`),
-    playing_handicap: integer(data.playing_handicap, `${path}.playing_handicap`),
-    gross_total: integer(data.gross_total, `${path}.gross_total`),
-    net_total: integer(data.net_total, `${path}.net_total`),
-    par_played: integer(data.par_played, `${path}.par_played`, 0),
-    score_to_par: integer(data.score_to_par, `${path}.score_to_par`),
+    owner_name: decodeString(data.owner_name, `${path}.owner_name`, 'resultatdata'),
+    members: decodeArray(data.members, `${path}.members`, member, 'resultatdata'),
+    holes_scored: decodeInteger(data.holes_scored, `${path}.holes_scored`, 0, undefined, 'resultatdata'),
+    number_of_holes: decodeInteger(data.number_of_holes, `${path}.number_of_holes`, 1, undefined, 'resultatdata'),
+    complete: decodeBoolean(data.complete, `${path}.complete`, 'resultatdata'),
+    confirmed: decodeBoolean(data.confirmed, `${path}.confirmed`, 'resultatdata'),
+    playing_handicap: decodeInteger(data.playing_handicap, `${path}.playing_handicap`, undefined, undefined, 'resultatdata'),
+    gross_total: decodeInteger(data.gross_total, `${path}.gross_total`, undefined, undefined, 'resultatdata'),
+    net_total: decodeInteger(data.net_total, `${path}.net_total`, undefined, undefined, 'resultatdata'),
+    par_played: decodeInteger(data.par_played, `${path}.par_played`, 0, undefined, 'resultatdata'),
+    score_to_par: decodeInteger(data.score_to_par, `${path}.score_to_par`, undefined, undefined, 'resultatdata'),
   }
 }
 
 function currentTeam(value: unknown, path: string): CurrentTeam | null {
   if (value === null) return null
-  const data = object(value, path)
+  const data = decodeObject(value, path, 'resultatdata')
   return {
-    round_id: uuid(data.round_id, `${path}.round_id`),
-    team_id: uuid(data.team_id, `${path}.team_id`),
-    team_name: string(data.team_name, `${path}.team_name`),
+    round_id: decodeUuid(data.round_id, `${path}.round_id`, 'resultatdata'),
+    team_id: decodeUuid(data.team_id, `${path}.team_id`, 'resultatdata'),
+    team_name: decodeString(data.team_name, `${path}.team_name`, 'resultatdata'),
   }
 }
 
 function tournamentEntry(value: unknown, path: string): TournamentLeaderboardEntry {
-  const data = object(value, path)
+  const data = decodeObject(value, path, 'resultatdata')
   return {
     position: nullableInteger(data.position, `${path}.position`),
-    tied: boolean(data.tied, `${path}.tied`),
-    player_id: uuid(data.player_id, `${path}.player_id`),
-    display_name: string(data.display_name, `${path}.display_name`),
+    tied: decodeBoolean(data.tied, `${path}.tied`, 'resultatdata'),
+    player_id: decodeUuid(data.player_id, `${path}.player_id`, 'resultatdata'),
+    display_name: decodeString(data.display_name, `${path}.display_name`, 'resultatdata'),
     status: participantStatus(data.status, `${path}.status`),
-    completed_rounds: integer(data.completed_rounds, `${path}.completed_rounds`, 0),
-    gross_total: integer(data.gross_total, `${path}.gross_total`),
-    net_total: integer(data.net_total, `${path}.net_total`),
+    completed_rounds: decodeInteger(data.completed_rounds, `${path}.completed_rounds`, 0, undefined, 'resultatdata'),
+    gross_total: decodeInteger(data.gross_total, `${path}.gross_total`, undefined, undefined, 'resultatdata'),
+    net_total: decodeInteger(data.net_total, `${path}.net_total`, undefined, undefined, 'resultatdata'),
     current_team: currentTeam(data.current_team, `${path}.current_team`),
   }
 }
@@ -147,15 +122,15 @@ export function decodeRoundLeaderboard(
   expectedRoundId: string,
   expectedMetric: LeaderboardMetric,
 ): RoundLeaderboard {
-  const data = object(value, 'leaderboard')
+  const data = decodeObject(value, 'leaderboard', 'resultatdata')
   const decoded: RoundLeaderboard = {
-    round_id: uuid(data.round_id, 'leaderboard.round_id'),
-    tournament_id: uuid(data.tournament_id, 'leaderboard.tournament_id'),
+    round_id: decodeUuid(data.round_id, 'leaderboard.round_id', 'resultatdata'),
+    tournament_id: decodeUuid(data.tournament_id, 'leaderboard.tournament_id', 'resultatdata'),
     status: roundStatus(data.status, 'leaderboard.status'),
     scoring_format: scoringFormat(data.scoring_format, 'leaderboard.scoring_format'),
     metric: metric(data.metric, 'leaderboard.metric'),
-    number_of_holes: integer(data.number_of_holes, 'leaderboard.number_of_holes', 1),
-    entries: array(data.entries, 'leaderboard.entries', roundEntry),
+    number_of_holes: decodeInteger(data.number_of_holes, 'leaderboard.number_of_holes', 1, undefined, 'resultatdata'),
+    entries: decodeArray(data.entries, 'leaderboard.entries', roundEntry, 'resultatdata'),
   }
   if (decoded.round_id !== expectedRoundId || decoded.metric !== expectedMetric) invalid('leaderboard.identity')
   return decoded
@@ -166,13 +141,13 @@ export function decodeTournamentLeaderboard(
   expectedTournamentId: string,
   expectedMetric: LeaderboardMetric,
 ): TournamentLeaderboard {
-  const data = object(value, 'leaderboard')
+  const data = decodeObject(value, 'leaderboard', 'resultatdata')
   const decoded: TournamentLeaderboard = {
-    tournament_id: uuid(data.tournament_id, 'leaderboard.tournament_id'),
+    tournament_id: decodeUuid(data.tournament_id, 'leaderboard.tournament_id', 'resultatdata'),
     metric: metric(data.metric, 'leaderboard.metric'),
-    current_round_id: data.current_round_id === null ? null : uuid(data.current_round_id, 'leaderboard.current_round_id'),
-    included_round_ids: array(data.included_round_ids, 'leaderboard.included_round_ids', uuid),
-    entries: array(data.entries, 'leaderboard.entries', tournamentEntry),
+    current_round_id: data.current_round_id === null ? null : decodeUuid(data.current_round_id, 'leaderboard.current_round_id', 'resultatdata'),
+    included_round_ids: decodeArray(data.included_round_ids, 'leaderboard.included_round_ids', (item, path) => decodeUuid(item, path, 'resultatdata'), 'resultatdata'),
+    entries: decodeArray(data.entries, 'leaderboard.entries', tournamentEntry, 'resultatdata'),
   }
   if (decoded.tournament_id !== expectedTournamentId || decoded.metric !== expectedMetric) invalid('leaderboard.identity')
   return decoded

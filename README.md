@@ -1,6 +1,6 @@
 # Guttas Golf
 
-Mobile-first tournament software for a private annual golf trip. The current milestone provides the database foundation, Axum REST API, deterministic development data, atomic round lifecycle operations, audited individual/scramble scorecards, live gross/net leaderboard APIs, and responsive React leaderboard views.
+Mobile-first tournament software for a private annual golf trip. The current milestone provides the database foundation, Axum REST API, deterministic development data, atomic round lifecycle operations, audited individual/scramble scorecards, live gross/net leaderboards, and responsive React scoring and leaderboard views.
 
 ## Prerequisites
 
@@ -32,11 +32,15 @@ In a second terminal, start the frontend:
 
 ```bash
 cd frontend
+cp .env.example .env
 npm install
 npm run dev
 ```
 
-The app is available at `http://localhost:5173`. Vite proxies `/api` to the backend. For a separate deployed API, set `VITE_API_URL` before building the frontend.
+The app is available at `http://localhost:5173`. Vite proxies `/api` to the
+backend. `VITE_SCORER_USER_ID` is temporary score attribution only; it is not
+authentication or authorization. For a separate deployed API, set
+`VITE_API_URL` before building the frontend.
 
 ## Database commands
 
@@ -100,6 +104,9 @@ See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documenta
 
 ## Current limitations
 
-Authentication and authorization, mobile score entry, course administration, and admin forms are intentionally deferred to later milestone 2 or 3 slices. The user/role, score, audit, locking, and handicap snapshot schema is already present so those features can be added without remodelling the core data.
+Authentication and authorization, course administration, admin forms, offline
+scoring, and locked-round admin corrections remain deferred. The user/role,
+score, audit, locking, and handicap snapshot schema is already present so those
+features can be added without remodelling the core data.
 
 `npm audit` currently reports two high-severity dependency records for one React Router advisory in its server/RSC action mode. This project uses only client-side routing and no React Server Components or router actions, so the affected path is not exposed; upgrade when the registry publishes a patched compatible version.

@@ -10,8 +10,9 @@ locking and live gross/net leaderboard APIs for individual stroke play and
 two-player scramble. Users can browse tournaments, tournament players, rounds,
 players, and round-specific teams. The mobile result view supports round and
 tournament gross/net standings with shareable selections and live refetch.
-Mobile score entry, administrative forms, and authentication are planned but
-not implemented.
+The mobile score view supports immediate hole entry, correction, confirmation,
+and locked read-only cards for both scoring formats. Administrative forms and
+authentication are planned but not implemented.
 
 ## Repository structure
 
@@ -75,6 +76,28 @@ the round allowance once.
 `confirmed_by` and `confirmed_at`. Confirmation records represent current state;
 stroke changes remain historically audited, but superseded confirmation states
 are not retained as a separate event history.
+
+## Mobile score entry
+
+The React `/score` page keeps tournament, round, tagged owner, hole, and
+hole/summary view in canonical URL parameters. It excludes draft rounds and uses
+completion validation as the stable authority for eligible players or teams.
+Gross and net values always come from decoded backend scorecards; the browser
+does not duplicate handicap calculations.
+
+Each hole has large par, minus, and plus actions bounded to 1-20 strokes. An
+owner-and-hole-scoped coordinator serializes writes, coalesces rapid taps to the
+latest desired score, and refetches the exact scorecard before showing
+`Synkronisert`. Failed writes retain the desired score with Retry and Discard.
+Navigation is guarded while a write, verification, failure decision, or
+confirmation is unresolved. SSE remains a second invalidation path only.
+
+Complete cards can be confirmed from their summary. Confirmed editable cards
+require an explicit correction mode; a changed score removes confirmation and
+the corrected card must be confirmed again. Completed rounds remain correctable,
+while locked rounds are read-only. `VITE_SCORER_USER_ID` temporarily supplies the
+seeded submitting user for attribution and leaves the UI read-only when missing
+or malformed. This public build-time value is not an access-control boundary.
 
 ## Round completion and locking
 

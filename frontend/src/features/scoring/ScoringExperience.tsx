@@ -1,0 +1,153 @@
+import type { OwnerCompletionProgress, ScorecardHole, ScorecardSummary } from '../../api/scorecards'
+import { scorerConfig } from '../../api/scorerConfig'
+import type { Round, Tournament } from '../../api/types'
+import { HoleEntry } from './HoleEntry'
+import { ScorecardSummaryView } from './ScorecardSummaryView'
+import { ScoreSelectors } from './ScoreSelectors'
+import type { ScoreView } from './selection'
+import { useHoleScoreSync } from './useHoleScoreSync'
+import { useScorecardConfirmation } from './useScorecardConfirmation'
+import { useEffect, useState } from 'react'
+import { useBlocker } from 'react-router-dom'
+
+interface ScoringExperienceProps {
+  tournaments: Tournament[]
+  rounds: Round[]
+  round: Round
+  owners: OwnerCompletionProgress[]
+  selectedOwner: OwnerCompletionProgress
+  card: ScorecardSummary
+  hole: ScorecardHole
+  view: ScoreView
+  onTournament: (id: string) => void
+  onRound: (id: string) => void
+  onOwner: (id: string) => void
+  onHole: (number: number, adjacent?: boolean) => void
+  onView: (view: ScoreView) => void
+}
+
+export function ScoringExperience(props: ScoringExperienceProps) {
+  const ownerKey = `${props.round.id}:${props.selectedOwner.owner.type}:${props.selectedOwner.owner.id}`
+  const [correctionKey, setCorrectionKey] = useState<string | null>(null)
+  const correctionMode = correctionKey === ownerKey
+  const editableRound = props.round.status === 'open' || props.round.status === 'completed'
+  const scorerUserId = scorerConfig.ready ? scorerConfig.userId : null
+
+  const sync = useHoleScoreSync({
+    round: props.round,
+    tournamentId: props.round.tournament_id,
+    owner: props.selectedOwner.owner,
+    holeId: props.hole.hole_id,
+    serverValue: props.hole.score?.gross_strokes ?? null,
+    scorerUserId,
+    onVerified: (card) => {
+      if (card.confirmed) setCorrectionKey(null)
+    },
+    onTerminal: () => setCorrectionKey(null),
+  })
+  const confirmation = useScorecardConfirmation({
+    round: props.round,
+    tournamentId: props.round.tournament_id,
+    owner: props.selectedOwner.owner,
+    card: props.card,
+    scorerUserId,
+    onConfirmed: () => setCorrectionKey(null),
+    onTerminal: () => setCorrectionKey(null),
+  })
+  const navigationLocked = sync.navigationLocked || confirmation.confirming
+  const blocker = useBlocker(navigationLocked)
+  const [navigationWarning, setNavigationWarning] = useState(false)
+  const canEdit = editableRound
+    && scorerConfig.ready
+    && (!props.card.confirmed || correctionMode)
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return
+    setNavigationWarning(true)
+    blocker.reset()
+  }, [blocker])
+  useEffect(() => {
+    if (!navigationLocked) setNavigationWarning(false)
+  }, [navigationLocked])
+  useEffect(() => {
+    if (!navigationLocked) return
+    const preventUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('beforeunload', preventUnload)
+    return () => window.removeEventListener('beforeunload', preventUnload)
+  }, [navigationLocked])
+
+  return (
+    <>
+      <ScoreSelectors
+        tournaments={props.tournaments}
+        rounds={props.rounds}
+        owners={props.owners}
+        holes={props.card.holes}
+        tournamentId={props.round.tournament_id}
+        roundId={props.round.id}
+        owner={props.selectedOwner.owner}
+        holeNumber={props.hole.hole_number}
+        view={props.view}
+        disabled={navigationLocked}
+        onTournament={props.onTournament}
+        onRound={props.onRound}
+        onOwner={props.onOwner}
+        onHole={(number) => props.onHole(number)}
+        onView={props.onView}
+      />
+
+      <header className="scorecard-owner">
+        <div><p>{props.selectedOwner.owner.type === 'team' ? 'Lagscore' : 'Individuell score'}</p><h2>{props.selectedOwner.owner_name}</h2></div>
+        <span>{props.round.name}</span>
+      </header>
+
+      {!scorerConfig.ready && <div className="scoring-notice error" role="alert">{scorerConfig.message}</div>}
+      {navigationWarning && <div className="scoring-notice warning" role="alert">Fullfør eller forkast den pågående scoreendringen før du går videre.</div>}
+      {props.round.status === 'locked' && <div className="scoring-notice">Runden er låst. Scorekortet er skrivebeskyttet.</div>}
+      {props.round.status === 'completed' && <div className="scoring-notice">Runden er fullført. Korrigering er mulig frem til låsing.</div>}
+      {props.card.confirmed && editableRound && !correctionMode && (
+        <div className="correction-gate">
+          <p>Scorekortet er bekreftet og skrivebeskyttet.</p>
+          <button type="button" disabled={navigationLocked || !scorerConfig.ready} onClick={() => setCorrectionKey(ownerKey)}>Korriger score</button>
+        </div>
+      )}
+      {correctionMode && props.card.confirmed && <div className="scoring-notice warning">Korrigeringsmodus er aktiv. Første endring fjerner bekreftelsen.</div>}
+
+      <dl className="scorecard-strip">
+        <div><dt>Brutto</dt><dd>{props.card.holes_scored > 0 ? props.card.gross_total : '–'}</dd></div>
+        <div><dt>Netto</dt><dd>{props.card.holes_scored > 0 ? props.card.net_total : '–'}</dd></div>
+        <div><dt>Hull</dt><dd>{props.card.holes_scored}/{props.card.number_of_holes}</dd></div>
+        <div><dt>Spille-HCP</dt><dd>{props.card.playing_handicap}</dd></div>
+      </dl>
+
+      {props.view === 'hole' ? (
+        <HoleEntry
+          card={props.card}
+          hole={props.hole}
+          sync={sync.snapshot}
+          canEdit={canEdit}
+          navigationLocked={navigationLocked}
+          onScore={sync.setScore}
+          onRetry={sync.retry}
+          onDiscard={sync.discard}
+          onPrevious={() => props.onHole(props.hole.hole_number - 1, true)}
+          onNext={() => props.onHole(props.hole.hole_number + 1, true)}
+        />
+      ) : (
+        <ScorecardSummaryView
+          card={props.card}
+          disabled={navigationLocked}
+          readOnly={!editableRound || !scorerConfig.ready}
+          confirming={confirmation.confirming}
+          confirmationError={confirmation.errorMessage}
+          confirmationRetryable={confirmation.retryable}
+          onHole={(number) => props.onHole(number)}
+          onConfirm={confirmation.confirm}
+        />
+      )}
+    </>
+  )
+}

@@ -1,0 +1,92 @@
+.score-page { max-width: 720px; }
+.score-selectors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 15px 0 20px; border-block: 1px solid #d8ded8; }
+.score-selectors label { display: grid; min-width: 0; gap: 5px; color: #4f5b54; font-size: .72rem; font-weight: 750; }
+.score-selectors label:first-child, .score-selectors label:nth-child(2), .score-view-toggle { grid-column: 1 / -1; }
+.score-selectors select { width: 100%; min-height: 46px; padding: 8px 32px 8px 9px; border: 1px solid #bfc8c0; border-radius: 6px; background: #fff; color: #17201c; }
+.score-view-toggle { min-width: 0; margin: 0; padding: 0; border: 0; }
+.score-view-toggle legend { margin-bottom: 5px; color: #4f5b54; font-size: .72rem; font-weight: 750; }
+.score-view-toggle div { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border: 1px solid #cbd2cc; border-radius: 7px; background: #e8ece8; }
+.score-view-toggle button { min-height: 44px; border: 0; border-radius: 5px; background: transparent; color: #58635c; font-weight: 750; }
+.score-view-toggle button[aria-pressed="true"] { background: #fff; color: #155f3a; box-shadow: 0 1px 4px rgba(27, 43, 34, .13); }
+.score-selectors select:focus-visible, .score-view-toggle button:focus-visible, .hole-entry button:focus-visible, .scorecard-summary button:focus-visible, .correction-gate button:focus-visible { outline: 3px solid #176640; outline-offset: 2px; }
+.score-selectors :disabled { cursor: not-allowed; opacity: .62; }
+.scorecard-owner { display: flex; align-items: end; justify-content: space-between; gap: 12px; padding: 22px 2px 10px; }
+.scorecard-owner > div { min-width: 0; }
+.scorecard-owner p { margin-bottom: 3px; color: #28734f; font-size: .7rem; font-weight: 800; text-transform: uppercase; }
+.scorecard-owner h2 { overflow-wrap: anywhere; font-size: 1.15rem; }
+.scorecard-owner > span { max-width: 42%; color: #68736c; font-size: .76rem; text-align: right; overflow-wrap: anywhere; }
+.scoring-notice, .background-query-error { margin: 8px 0; padding: 11px 12px; border-left: 4px solid #648371; background: #eef2ef; color: #435148; font-size: .8rem; line-height: 1.4; }
+.scoring-notice.error, .background-query-error { border-color: #a33d35; background: #fff2f0; color: #7f2a23; }
+.background-query-error { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.background-query-error button { min-height: 44px; flex: 0 0 auto; padding: 8px 11px; border: 1px solid #a0443c; border-radius: 6px; background: #fff; color: #7d241d; font-weight: 750; }
+.scoring-notice.warning { border-color: #9a7126; background: #fff8e8; color: #694c17; }
+.correction-gate { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0; padding: 11px 12px; border: 1px solid #c7cec8; background: #fff; }
+.correction-gate p { color: #4f5b54; font-size: .8rem; }
+.correction-gate button { min-height: 44px; flex: 0 0 auto; padding: 8px 12px; border: 1px solid #176640; border-radius: 6px; background: #fff; color: #155f3a; font-weight: 800; }
+.scorecard-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 14px 0; border-block: 1px solid #d8ded8; }
+.scorecard-strip div { min-width: 0; padding: 10px 4px; text-align: center; }
+.scorecard-strip dt { color: #68736c; font-size: .64rem; }
+.scorecard-strip dd { margin: 3px 0 0; font-size: .95rem; font-weight: 850; overflow-wrap: anywhere; }
+.hole-entry { overflow: hidden; border: 1px solid #d7ddd8; border-radius: 8px; background: #fff; }
+.hole-entry > header { display: flex; align-items: center; justify-content: space-between; min-height: 94px; padding: 14px 18px; border-bottom: 1px solid #e1e5e1; background: #f9faf8; }
+.hole-entry > header p { color: #68736c; font-size: .72rem; text-transform: uppercase; }
+.hole-entry > header h2 { font-size: 2.4rem; line-height: 1; }
+.hole-entry dl { display: flex; gap: 20px; margin: 0; }
+.hole-entry dl div { text-align: center; }
+.hole-entry dt { color: #68736c; font-size: .68rem; }
+.hole-entry dd { margin: 3px 0 0; font-size: 1.1rem; font-weight: 850; }
+.score-stepper { display: grid; grid-template-columns: 72px minmax(0, 1fr) 72px; align-items: stretch; gap: 8px; min-height: 142px; padding: 20px 12px 12px; }
+.score-stepper > button { min-width: 0; min-height: 72px; border: 1px solid #b8c2ba; border-radius: 8px; background: #f2f5f2; color: #155f3a; }
+.score-stepper > button:not(:disabled) { cursor: pointer; }
+.score-stepper > button svg { width: 32px; height: 32px; }
+.score-stepper > button:disabled { color: #929b95; opacity: .55; }
+.score-stepper .record-par { display: grid; place-content: center; background: #176640; color: #fff; font-size: .78rem; font-weight: 750; }
+.score-stepper .record-par strong { margin-top: 2px; font-size: 2.35rem; }
+.score-stepper output { display: grid; place-content: center; min-width: 0; text-align: center; }
+.score-stepper output strong { font-size: 4rem; line-height: .95; }
+.score-stepper output span { margin-top: 8px; color: #68736c; font-size: .78rem; }
+.score-sync { display: flex; min-height: 28px; align-items: center; justify-content: center; gap: 5px; padding: 2px 12px 12px; color: #5e6962; font-size: .76rem; font-weight: 700; }
+.score-sync svg { width: 15px; }
+.score-sync-failed { color: #922f27; }
+.score-save-error, .confirmation-error { margin: 0 12px 12px; padding: 12px; border: 1px solid #e0aaa5; background: #fff4f2; color: #842c25; }
+.score-save-error p, .confirmation-error p { font-size: .8rem; }
+.score-save-error div { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.score-save-error button, .confirmation-error button { display: inline-flex; min-height: 44px; align-items: center; gap: 5px; padding: 8px 12px; border: 1px solid #a0443c; border-radius: 6px; background: #fff; color: #7d241d; font-weight: 750; }
+.score-save-error svg { width: 16px; }
+.hole-entry > footer { display: grid; grid-template-columns: 88px minmax(0, 1fr) 88px; align-items: center; min-height: 58px; border-top: 1px solid #e1e5e1; }
+.hole-entry > footer button { display: flex; min-height: 48px; align-items: center; justify-content: center; border: 0; background: transparent; color: #176640; font-size: .78rem; font-weight: 800; }
+.hole-entry > footer button:disabled { color: #9aa19c; }
+.hole-entry > footer span { min-width: 0; color: #68736c; font-size: .69rem; text-align: center; overflow-wrap: anywhere; }
+.hole-entry > footer svg { width: 17px; }
+.scorecard-summary { overflow: hidden; border: 1px solid #d7ddd8; border-radius: 8px; background: #fff; }
+.scorecard-summary > header { display: flex; align-items: end; justify-content: space-between; padding: 14px; border-bottom: 1px solid #e1e5e1; }
+.scorecard-summary > header p { color: #68736c; font-size: .7rem; text-transform: uppercase; }
+.scorecard-summary > header h2 { margin-top: 2px; font-size: 1.05rem; }
+.scorecard-summary > header > strong { font-size: 1.15rem; }
+.score-totals { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border-bottom: 1px solid #e1e5e1; }
+.score-totals div { padding: 11px 6px; text-align: center; }
+.score-totals dt { color: #68736c; font-size: .65rem; }
+.score-totals dd { margin: 3px 0 0; font-weight: 850; }
+.scorecard-holes { margin: 0; padding: 0; list-style: none; }
+.scorecard-holes li { border-bottom: 1px solid #e7eae7; }
+.scorecard-holes button { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 8px; width: 100%; min-height: 58px; padding: 8px 12px; border: 0; background: #fff; color: #17201c; text-align: left; }
+.scorecard-holes button:not(:disabled) { cursor: pointer; }
+.scorecard-holes svg { width: 18px; color: #28734f; }
+.scorecard-holes span { display: grid; min-width: 0; }
+.scorecard-holes span:last-child { text-align: right; }
+.scorecard-holes strong { overflow-wrap: anywhere; font-size: .82rem; }
+.scorecard-holes small { margin-top: 2px; color: #68736c; font-size: .68rem; }
+.confirmation-state { padding: 14px; color: #155f3a; font-size: .82rem; font-weight: 800; text-align: center; }
+.confirm-scorecard { width: calc(100% - 24px); min-height: 50px; margin: 12px; border: 0; border-radius: 6px; background: #176640; color: #fff; font-weight: 850; }
+
+@media (max-width: 420px) {
+  .scorecard-owner { align-items: start; flex-direction: column; }
+  .scorecard-owner > span { max-width: 100%; text-align: left; }
+}
+
+@media (min-width: 700px) {
+  .score-selectors { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .score-selectors label:first-child, .score-selectors label:nth-child(2) { grid-column: span 2; }
+  .score-view-toggle { grid-column: 1 / -1; }
+  .score-stepper { grid-template-columns: 96px minmax(0, 1fr) 96px; padding-inline: 28px; }
+}
