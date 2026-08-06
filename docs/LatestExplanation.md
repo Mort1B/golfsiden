@@ -1,49 +1,46 @@
 # Latest explanation
 
-## Atomic round opening
+## Audited scorecards
 
-Round readiness is a pure domain decision built from repository facts. It checks
-the tournament and round states, active entrant assignments, format-specific team
-sizes, the course/tee relationship, handicap ratings, and complete hole and
-stroke-index ranges. The API exposes the same deterministic result before opening
-and returns stable JSON conflicts when an opening attempt is not ready.
+The API now saves individual or team strokes through one tagged owner contract.
+Every changed value is an audited transaction; an identical mobile retry is a true
+no-op. Score identity, round format, opening snapshot eligibility, round tee, and
+editable lifecycle state are checked in the repository and again by PostgreSQL.
 
-Opening repeats those checks inside a transaction after locking the round and
-tournament. Exact integer-tenths arithmetic calculates the stored handicap values;
-the database receives the handicap index as an exact decimal rather than through a
-binary float. Snapshots are inserted before the status changes, and the SSE event
-is sent only after commit.
+All mutations serialize through the round row. Repository operations lock it
+first. Trigger-protected direct SQL acquires the same lock with `NOWAIT`, so it
+cannot create a row-to-round deadlock or race confirmation. Confirmation and
+correction therefore have a deterministic order, and corrections remove the
+current confirmation before another client can observe a confirmed stale card.
 
-PostgreSQL reinforces the boundary. A transaction-local round identifier permits
-snapshot capture and `draft -> open` only within the repository workflow. Status
-transitions are forward-only. Pairing, tee, and hole triggers serialize mutations
-through the same parent-round lock, while snapshot and scoring configuration
-changes are rejected after opening. Deferred restrictive participant references
-allow whole-parent cascades without letting direct entrant deletion erase round
-history.
+Scorecard reads use one repeatable-read snapshot. Individual net scores allocate
+the preserved playing handicap by stroke index. Scramble calculates 35% of the
+lower plus 15% of the higher frozen course handicap with integer-ratio rounding,
+then applies the round allowance once. Current player handicaps are never read.
 
 ## Compact example
 
-The transaction establishes its narrow opening context only after readiness has
-passed:
+The same-value branch commits without touching the row or publishing SSE:
 
 ```rust
-sqlx::query("SELECT set_config('app.round_opening_id', $1::text, true)")
-    .bind(round_id)
-    .execute(&mut *transaction)
-    .await?;
+if let Some(score) = existing.as_ref()
+    && score.gross_strokes == input.gross_strokes
+{
+    transaction.commit().await?;
+    return Ok(MutationResult {
+        value: score.clone(),
+        changed: false,
+    });
+}
 ```
-
-The setting is local to the transaction and disappears on commit or rollback.
 
 ## Validation
 
-- `cargo fmt --all -- --check` passed.
-- `cargo test --workspace --all-targets` passed 15 unit tests.
-- PostgreSQL feature tests passed 29 tests, including snapshot preservation,
-  lifecycle bypass attempts, parent deletion, concurrent opening, and mutation
-  races.
-- Clippy passed for all targets and features with warnings denied.
-- A clean PostgreSQL 17.10 database applied both migrations and loaded the seed:
-  eight players, five rounds, eight teams, sixteen memberships, and eighteen
-  holes.
+- Formatting passed and Clippy passed for every target/feature with warnings
+  denied.
+- Standard tests passed 17 unit tests. PostgreSQL feature tests passed 36 tests:
+  17 unit, 4 database rules, 10 round lifecycle, and 5 scorecard tests.
+- PostgreSQL 17.10 clean migration and seed passed with migrations 1-3, eight
+  players, five rounds, eighteen holes, eight teams, and sixteen memberships.
+- An isolated database successfully upgraded seeded migration 2 state to migration
+  3 without changing those entity counts.

@@ -20,6 +20,11 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
 - Team results can be attributed back to every round member when tournament standings are calculated. There is no permanent tournament team.
 - Locked-round score protection lives in PostgreSQL as well as the domain service. A future correction transaction must explicitly set `app.admin_correction = 'true'`.
 - Score changes are audited by a database trigger.
+- Score writes and confirmation serialize on the round row. Repository writes set
+  a transaction-local context, while database triggers acquire the same lock with
+  `NOWAIT` for direct SQL so reverse lock ordering fails instead of deadlocking.
+- Scorecard confirmation is separate from score submission. A correction removes
+  the current confirmation; stroke audit history remains append-only.
 - Server-Sent Events carry invalidation notifications, not full mutable state. Clients refetch through TanStack Query.
 
 ## API milestone
@@ -38,6 +43,9 @@ Implemented resources:
 | `GET` | `/api/rounds/{round_id}` | Retrieve a round |
 | `GET` | `/api/rounds/{round_id}/pairing-validation` | Validate assignments and course readiness |
 | `POST` | `/api/rounds/{round_id}/open` | Atomically open a ready draft round |
+| `PUT` | `/api/rounds/{round_id}/scores` | Save or correct one hole score |
+| `GET` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}` | Retrieve a gross/net scorecard summary |
+| `POST` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/confirm` | Confirm a complete scorecard |
 | `GET`, `POST` | `/api/rounds/{round_id}/teams` | List and create round teams |
 | `POST` | `/api/teams/{team_id}/members` | Assign a tournament player |
 | `DELETE` | `/api/teams/{team_id}/members/{player_id}` | Remove an assignment |

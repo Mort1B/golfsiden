@@ -21,8 +21,32 @@ impl TeamHandicapFormula for TwoPlayerScramble35And15 {
         } else {
             (*second, *first)
         };
-        Ok((f64::from(lower) * 0.35 + f64::from(higher) * 0.15).round() as i32)
+        Ok(
+            round_ratio_half_away_from_zero(i64::from(lower) * 35 + i64::from(higher) * 15, 100)
+                as i32,
+        )
     }
+}
+
+pub fn scramble_playing_handicap(
+    course_handicaps: &[i32],
+    allowance_percent: i16,
+) -> Result<i32, ScoringError> {
+    let team_handicap = TwoPlayerScramble35And15.playing_handicap(course_handicaps)?;
+    Ok(
+        round_ratio_half_away_from_zero(
+            i64::from(team_handicap) * i64::from(allowance_percent),
+            100,
+        ) as i32,
+    )
+}
+
+fn round_ratio_half_away_from_zero(numerator: i64, denominator: i64) -> i64 {
+    let sign = numerator.signum();
+    let absolute = numerator.abs();
+    let quotient = absolute / denominator;
+    let remainder = absolute % denominator;
+    sign * (quotient + i64::from(remainder * 2 >= denominator))
 }
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
@@ -165,6 +189,12 @@ mod tests {
             TwoPlayerScramble35And15.playing_handicap(&[8]),
             Err(ScoringError::InvalidTeamSize)
         );
+        assert_eq!(
+            TwoPlayerScramble35And15.playing_handicap(&[-10, -10]),
+            Ok(-5)
+        );
+        assert_eq!(scramble_playing_handicap(&[8, 20], 75), Ok(5));
+        assert_eq!(scramble_playing_handicap(&[5, 5], 50), Ok(2));
     }
 
     #[test]

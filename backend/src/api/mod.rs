@@ -1,6 +1,7 @@
 mod live;
 mod players;
 mod rounds;
+mod scorecards;
 mod teams;
 mod tournaments;
 
@@ -21,6 +22,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .merge(players::routes())
         .merge(tournaments::routes())
         .merge(rounds::routes())
+        .merge(scorecards::routes())
         .merge(teams::routes())
         .route("/api/live", get(live::events))
         .layer(TraceLayer::new_for_http())
@@ -28,7 +30,13 @@ pub fn router(state: Arc<AppState>) -> Router {
             CorsLayer::new()
                 .allow_origin(Any)
                 .allow_headers(Any)
-                .allow_methods([Method::GET, Method::POST, Method::PATCH, Method::DELETE]),
+                .allow_methods([
+                    Method::GET,
+                    Method::POST,
+                    Method::PUT,
+                    Method::PATCH,
+                    Method::DELETE,
+                ]),
         )
         .with_state(state)
 }

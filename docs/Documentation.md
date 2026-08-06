@@ -4,11 +4,11 @@
 
 Milestone 1 provides a Rust/Axum API, PostgreSQL schema and migrations, an
 idempotent development seed, and a strict TypeScript React viewer application.
-The first milestone 2 slice adds deterministic round-readiness validation and
-atomic round opening with immutable handicap snapshots. Users can browse
-tournaments, tournament players, rounds, players, and round-specific teams.
-Administrative forms, score entry, leaderboards, and authentication are planned
-but not implemented.
+Milestone 2 now includes deterministic round opening plus backend score entry,
+correction, scorecard summary, and confirmation for individual stroke play and
+two-player scramble. Users can browse tournaments, tournament players, rounds,
+players, and round-specific teams. The mobile score-entry UI, leaderboards,
+administrative forms, and authentication are planned but not implemented.
 
 ## Repository structure
 
@@ -53,6 +53,25 @@ only then publishes an SSE invalidation. Concurrent opens cannot duplicate
 snapshots. Database triggers freeze pairings and scoring configuration after draft
 and require all status/snapshot changes to use the lifecycle transaction.
 
+## Live scorecards
+
+`PUT /api/rounds/{round_id}/scores` immediately saves or corrects one hole. Its
+`owner` is tagged as `player` or `team`; `submitted_by` is temporarily explicit
+until authentication supplies the actor. Same-value retries preserve the original
+submitter, timestamp, confirmation, audit count, and SSE state. Changed strokes
+append an audit row and invalidate any current scorecard confirmation.
+
+`GET /api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}` returns every hole
+in order with partial gross/net totals, the preserved playing handicap,
+completeness, and current confirmation. Individual net uses the opening snapshot.
+Scramble net applies 35%/15% to the members' rounded course handicaps and applies
+the round allowance once.
+
+`POST` to that scorecard path plus `/confirm` requires all holes and records
+`confirmed_by` and `confirmed_at`. Confirmation records represent current state;
+stroke changes remain historically audited, but superseded confirmation states
+are not retained as a separate event history.
+
 ## Development workflow
 
 Follow `README.md` for setup and commands. Agents and contributors must also read
@@ -63,7 +82,6 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 ## Known limitations
 
 - No authentication or authorization enforcement.
-- No score mutation or scorecard API.
 - No gross/net round or tournament leaderboard API.
 - No round completion or locking lifecycle API yet.
 - No admin UI for tournaments, players, courses, rounds, or teams.

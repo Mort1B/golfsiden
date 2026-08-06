@@ -93,7 +93,19 @@ async fn score_cannot_have_both_player_and_team_owners(pool: PgPool) {
 #[sqlx::test(migrations = "../migrations")]
 async fn locked_round_rejects_normal_score_changes(pool: PgPool) {
     seed_base(&pool).await;
+    open_fixture_round(&pool).await;
     let score_id = uuid::Uuid::new_v4();
+    let mut score_write = pool.begin().await.unwrap();
+    sqlx::query("SELECT id FROM rounds WHERE id = $1 FOR UPDATE")
+        .bind(uuid::uuid!("10000000-0000-0000-0000-000000000007"))
+        .fetch_one(&mut *score_write)
+        .await
+        .unwrap();
+    sqlx::query("SELECT set_config('app.score_mutation_round_id', $1::text, true)")
+        .bind(uuid::uuid!("10000000-0000-0000-0000-000000000007"))
+        .execute(&mut *score_write)
+        .await
+        .unwrap();
     sqlx::query("INSERT INTO scores (id, round_id, tournament_id, hole_id, team_id, gross_strokes, submitted_by) VALUES ($1, $2, $3, $4, $5, 4, $6)")
         .bind(score_id)
         .bind(uuid::uuid!("10000000-0000-0000-0000-000000000007"))
@@ -101,8 +113,8 @@ async fn locked_round_rejects_normal_score_changes(pool: PgPool) {
         .bind(uuid::uuid!("10000000-0000-0000-0000-000000000006"))
         .bind(uuid::uuid!("10000000-0000-0000-0000-000000000008"))
         .bind(uuid::uuid!("10000000-0000-0000-0000-000000000001"))
-        .execute(&pool).await.unwrap();
-    open_fixture_round(&pool).await;
+        .execute(&mut *score_write).await.unwrap();
+    score_write.commit().await.unwrap();
     sqlx::query("UPDATE rounds SET status = 'completed' WHERE id = $1")
         .bind(uuid::uuid!("10000000-0000-0000-0000-000000000007"))
         .execute(&pool)

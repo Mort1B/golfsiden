@@ -10,6 +10,13 @@ pub enum ApiError {
     NotFound,
     #[error("{0}")]
     Conflict(String),
+    #[error("{message}")]
+    DomainConflict {
+        code: &'static str,
+        message: &'static str,
+    },
+    #[error("internal server error")]
+    Internal,
     #[error("database operation failed")]
     Database(#[from] sqlx::Error),
 }
@@ -33,6 +40,17 @@ impl IntoResponse for ApiError {
             }
             Self::NotFound => (StatusCode::NOT_FOUND, "not_found", self.to_string()),
             Self::Conflict(message) => (StatusCode::CONFLICT, "conflict", message.clone()),
+            Self::DomainConflict { code, message } => {
+                (StatusCode::CONFLICT, *code, (*message).to_owned())
+            }
+            Self::Internal => {
+                tracing::error!("internal application error");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal_error",
+                    self.to_string(),
+                )
+            }
             Self::Database(error) if is_constraint_violation(error) => (
                 StatusCode::CONFLICT,
                 "constraint_violation",
@@ -87,6 +105,40 @@ fn constraint_message(error: &sqlx::Error) -> String {
             Some("round_opening_snapshots_incomplete") => {
                 "round opening requires one snapshot per active entrant".to_owned()
             }
+            Some("score_mutation_context_required") => {
+                "scores must be changed through the score workflow".to_owned()
+            }
+            Some("score_delete_forbidden") => {
+                "scores cannot be deleted while their round exists".to_owned()
+            }
+            Some("score_round_not_editable") => {
+                "scores require an open or completed round".to_owned()
+            }
+            Some("score_round_lock_required") => {
+                "score mutation could not acquire the round lock".to_owned()
+            }
+            Some("score_identity_immutable") => "score identity is immutable".to_owned(),
+            Some("score_unchanged_submitter") => {
+                "unchanged scores cannot replace their submitter".to_owned()
+            }
+            Some("score_hole_not_in_round") => "hole does not belong to the round tee".to_owned(),
+            Some("score_owner_format_mismatch") => {
+                "score owner does not match the round format".to_owned()
+            }
+            Some("score_owner_ineligible") => {
+                "score owner is not eligible for this round".to_owned()
+            }
+            Some("score_confirmation_context_required") => {
+                "scorecard confirmation must use the score workflow".to_owned()
+            }
+            Some("score_confirmation_immutable") => {
+                "scorecard confirmations are immutable".to_owned()
+            }
+            Some("scorecard_incomplete") => "scorecard is incomplete".to_owned(),
+            Some("score_audit_context_required") => {
+                "score audits must be created by the score workflow".to_owned()
+            }
+            Some("score_audit_immutable") => "score audit history is append-only".to_owned(),
             _ => "request violates a data constraint".to_owned(),
         },
         _ => "request violates a data constraint".to_owned(),
