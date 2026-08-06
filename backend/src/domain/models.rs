@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "tournament_status", rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum TournamentStatus {
@@ -13,7 +13,7 @@ pub enum TournamentStatus {
     Archived,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "scoring_mode", rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum ScoringMode {
@@ -22,7 +22,7 @@ pub enum ScoringMode {
     Combined,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "participant_status", rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum ParticipantStatus {
@@ -40,7 +40,7 @@ pub enum RoundStatus {
     Locked,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, sqlx::Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "scoring_format", rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum ScoringFormat {
@@ -141,4 +141,69 @@ pub struct TeamWithMembers {
     #[serde(flatten)]
     pub team: Team,
     pub members: Vec<TeamMember>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReadinessIssueCode {
+    RoundNotDraft,
+    TournamentNotOpenable,
+    NoActiveEntrants,
+    MissingTeamAssignment,
+    IneligibleTeamAssignment,
+    EmptyTeam,
+    InvalidScrambleTeamSize,
+    MissingCourse,
+    MissingTee,
+    MismatchedCourseTee,
+    MissingHandicapRatings,
+    InvalidHoleCount,
+    InvalidHoleNumbers,
+    InvalidStrokeIndexes,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ReadinessIssue {
+    pub code: ReadinessIssueCode,
+    pub message: &'static str,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ReadinessPlayer {
+    pub player_id: Uuid,
+    pub display_name: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ReadinessTeamSize {
+    pub team_id: Uuid,
+    pub team_name: String,
+    pub player_count: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct PairingValidation {
+    pub round_id: Uuid,
+    pub ready: bool,
+    pub issues: Vec<ReadinessIssue>,
+    pub missing_players: Vec<ReadinessPlayer>,
+    pub ineligible_players: Vec<ReadinessPlayer>,
+    pub team_sizes: Vec<ReadinessTeamSize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, FromRow)]
+pub struct RoundHandicapSnapshot {
+    pub round_id: Uuid,
+    pub tournament_id: Uuid,
+    pub player_id: Uuid,
+    pub handicap_index: f64,
+    pub course_handicap: i16,
+    pub playing_handicap: i16,
+    pub captured_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct OpenRoundResult {
+    pub round: Round,
+    pub handicap_snapshots: Vec<RoundHandicapSnapshot>,
 }

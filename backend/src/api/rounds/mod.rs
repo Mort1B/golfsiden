@@ -1,3 +1,5 @@
+mod lifecycle;
+
 use std::sync::Arc;
 
 use axum::{
@@ -25,6 +27,14 @@ pub fn routes() -> Router<Arc<AppState>> {
             get(list).post(create),
         )
         .route("/api/rounds/{round_id}", get(get_one))
+        .route(
+            "/api/rounds/{round_id}/pairing-validation",
+            get(lifecycle::pairing_validation),
+        )
+        .route(
+            "/api/rounds/{round_id}/open",
+            axum::routing::post(lifecycle::open),
+        )
 }
 
 #[derive(Deserialize)]
@@ -32,7 +42,9 @@ struct CreateRound {
     round_number: i16,
     name: String,
     round_date: NaiveDate,
+    course_id: Option<Uuid>,
     course_name: String,
+    tee_id: Option<Uuid>,
     tee_name: String,
     #[serde(default = "default_holes")]
     number_of_holes: i16,
@@ -46,9 +58,11 @@ struct CreateRound {
 fn default_holes() -> i16 {
     18
 }
+
 fn default_true() -> bool {
     true
 }
+
 fn default_allowance() -> i16 {
     100
 }
@@ -82,6 +96,34 @@ async fn create(
     Path(tournament_id): Path<Uuid>,
     Json(input): Json<CreateRound>,
 ) -> ApiResult<impl IntoResponse> {
+    validate_create(&state, tournament_id, &input).await?;
+    let round = rounds::create(
+        &state.pool,
+        rounds::CreateRoundParams {
+            tournament_id,
+            round_number: input.round_number,
+            name: &input.name,
+            round_date: input.round_date,
+            course_id: input.course_id,
+            course_name: &input.course_name,
+            tee_id: input.tee_id,
+            tee_name: &input.tee_name,
+            number_of_holes: input.number_of_holes,
+            handicap_enabled: input.handicap_enabled,
+            handicap_allowance_percent: input.handicap_allowance_percent,
+            scoring_format: input.scoring_format,
+        },
+    )
+    .await?;
+    state.notify("round", round.id);
+    Ok((StatusCode::CREATED, Json(round)))
+}
+
+async fn validate_create(
+    state: &AppState,
+    tournament_id: Uuid,
+    input: &CreateRound,
+) -> ApiResult<()> {
     require_non_empty(&input.name, "name")?;
     require_non_empty(&input.course_name, "course_name")?;
     require_non_empty(&input.tee_name, "tee_name")?;
@@ -104,20 +146,28 @@ async fn create(
             "handicap_allowance_percent must be between 0 and 100".to_owned(),
         ));
     }
-    let round = rounds::create(
-        &state.pool,
-        tournament_id,
-        input.round_number,
-        &input.name,
-        input.round_date,
-        &input.course_name,
-        &input.tee_name,
-        input.number_of_holes,
-        input.handicap_enabled,
-        input.handicap_allowance_percent,
-        input.scoring_format,
-    )
-    .await?;
-    state.notify("round", round.id);
-    Ok((StatusCode::CREATED, Json(round)))
+    match (input.course_id, input.tee_id) {
+        (None, None) => {}
+        (Some(course_id), Some(tee_id)) => {
+            if !rounds::course_tee_matches(
+                &state.pool,
+                course_id,
+                tee_id,
+                &input.course_name,
+                &input.tee_name,
+            )
+            .await?
+            {
+                return Err(ApiError::BadRequest(
+                    "course and tee identifiers must match their names".to_owned(),
+                ));
+            }
+        }
+        _ => {
+            return Err(ApiError::BadRequest(
+                "course_id and tee_id must be provided together".to_owned(),
+            ));
+        }
+    }
+    Ok(())
 }

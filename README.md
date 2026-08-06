@@ -1,6 +1,6 @@
 # Guttas Golf
 
-Mobile-first tournament software for a private annual golf trip. The current milestone provides the database foundation, Axum REST API, deterministic development data, and read-only React views for tournaments, entrants, rounds, and round-specific teams.
+Mobile-first tournament software for a private annual golf trip. The current milestone provides the database foundation, Axum REST API, deterministic development data, read-only React views, and atomic validation/opening of configured rounds with preserved handicap snapshots.
 
 ## Prerequisites
 
@@ -98,6 +98,6 @@ See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documenta
 
 ## Current limitations
 
-Authentication and authorization, score CRUD, round lifecycle mutations, live leaderboards, course administration, and admin forms are intentionally deferred to milestone 2 or 3. The user/role, score, audit, locking, and handicap snapshot schema is already present so those features can be added without remodelling the core data.
+Authentication and authorization, score CRUD, round completion/locking, live leaderboards, course administration, and admin forms are intentionally deferred to milestone 2 or 3. The user/role, score, audit, locking, and handicap snapshot schema is already present so those features can be added without remodelling the core data.
 
 `npm audit` currently reports a high-severity React Router advisory in its server/RSC action mode. This project uses only client-side routing and no React Server Components or router actions, so the affected path is not exposed; upgrade when the registry publishes a patched version that resolves the overlapping advisories.

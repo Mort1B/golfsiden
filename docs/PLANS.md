@@ -6,26 +6,14 @@ instead of accumulating a historical log here.
 
 ## Active step
 
-None. The agent operating model is installed and milestone 1 is complete.
-
-An implementation step must use this shape before code changes begin:
-
-```text
-Goal:
-Files/modules:
-Exact change:
-Validation:
-Invariants:
-Stop condition:
-```
+None. Round readiness, atomic opening, and immutable opening handicap snapshots
+are complete. Define and approve the score-mutation step before implementation.
 
 ## Upcoming work
 
 ### Milestone 2: Live scoring and leaderboards
 
-- Add round lifecycle operations and capture immutable round handicap snapshots
-  when a round opens.
-- Add pairing-completeness validation before opening a round.
+- Complete and lock rounds only after scorecard completeness can be enforced.
 - Implement individual and two-player scramble score mutation, correction, audit,
   and scorecard summary APIs.
 - Implement round gross/net leaderboards and individual tournament standings,

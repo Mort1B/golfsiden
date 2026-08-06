@@ -26,6 +26,29 @@ async fn seed_base(pool: &PgPool) {
     sqlx::raw_sql(BASE_DATA).execute(pool).await.unwrap();
 }
 
+async fn open_fixture_round(pool: &PgPool) {
+    let round_id = uuid::uuid!("10000000-0000-0000-0000-000000000007");
+    let mut transaction = pool.begin().await.unwrap();
+    sqlx::query("SELECT set_config('app.round_opening_id', $1::text, true)")
+        .bind(round_id)
+        .execute(&mut *transaction)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO round_handicap_snapshots (round_id, tournament_id, player_id, handicap_index, course_handicap, playing_handicap) VALUES ($1, $2, $3, 12.0, 12, 12)")
+        .bind(round_id)
+        .bind(uuid::uuid!("10000000-0000-0000-0000-000000000003"))
+        .bind(uuid::uuid!("10000000-0000-0000-0000-000000000002"))
+        .execute(&mut *transaction)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE rounds SET status = 'open' WHERE id = $1")
+        .bind(round_id)
+        .execute(&mut *transaction)
+        .await
+        .unwrap();
+    transaction.commit().await.unwrap();
+}
+
 #[sqlx::test(migrations = "../migrations")]
 async fn player_cannot_join_two_teams_in_one_round(pool: PgPool) {
     seed_base(&pool).await;
@@ -79,6 +102,12 @@ async fn locked_round_rejects_normal_score_changes(pool: PgPool) {
         .bind(uuid::uuid!("10000000-0000-0000-0000-000000000008"))
         .bind(uuid::uuid!("10000000-0000-0000-0000-000000000001"))
         .execute(&pool).await.unwrap();
+    open_fixture_round(&pool).await;
+    sqlx::query("UPDATE rounds SET status = 'completed' WHERE id = $1")
+        .bind(uuid::uuid!("10000000-0000-0000-0000-000000000007"))
+        .execute(&pool)
+        .await
+        .unwrap();
     sqlx::query("UPDATE rounds SET status = 'locked' WHERE id = $1")
         .bind(uuid::uuid!("10000000-0000-0000-0000-000000000007"))
         .execute(&pool)
@@ -99,11 +128,7 @@ async fn locked_round_rejects_normal_score_changes(pool: PgPool) {
 #[sqlx::test(migrations = "../migrations")]
 async fn handicap_change_does_not_modify_round_snapshot(pool: PgPool) {
     seed_base(&pool).await;
-    sqlx::query("INSERT INTO round_handicap_snapshots (round_id, tournament_id, player_id, handicap_index, course_handicap, playing_handicap) VALUES ($1, $2, $3, 12.0, 12, 12)")
-        .bind(uuid::uuid!("10000000-0000-0000-0000-000000000007"))
-        .bind(uuid::uuid!("10000000-0000-0000-0000-000000000003"))
-        .bind(uuid::uuid!("10000000-0000-0000-0000-000000000002"))
-        .execute(&pool).await.unwrap();
+    open_fixture_round(&pool).await;
     sqlx::query("UPDATE players SET current_handicap_index = 8.0 WHERE id = $1")
         .bind(uuid::uuid!("10000000-0000-0000-0000-000000000002"))
         .execute(&pool)

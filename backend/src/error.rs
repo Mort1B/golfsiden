@@ -63,7 +63,32 @@ fn is_constraint_violation(error: &sqlx::Error) -> bool {
 
 fn constraint_message(error: &sqlx::Error) -> String {
     match error {
-        sqlx::Error::Database(database) => database.message().to_owned(),
+        sqlx::Error::Database(database) => match database.constraint() {
+            Some("round_configuration_frozen") => {
+                "round scoring configuration is frozen after draft".to_owned()
+            }
+            Some("round_pairing_frozen") => "round pairings are frozen after draft".to_owned(),
+            Some("tee_configuration_frozen") => {
+                "tee configuration is frozen after round opening".to_owned()
+            }
+            Some("hole_configuration_frozen") => {
+                "hole configuration is frozen after round opening".to_owned()
+            }
+            Some("round_snapshot_capture_frozen") => {
+                "round handicap snapshots can only be captured by the opening workflow".to_owned()
+            }
+            Some("round_snapshot_immutable") => "round handicap snapshots are immutable".to_owned(),
+            Some("round_status_transition_invalid") => {
+                "round status transition is not allowed".to_owned()
+            }
+            Some("round_opening_context_required") => {
+                "rounds must be opened through the lifecycle workflow".to_owned()
+            }
+            Some("round_opening_snapshots_incomplete") => {
+                "round opening requires one snapshot per active entrant".to_owned()
+            }
+            _ => "request violates a data constraint".to_owned(),
+        },
         _ => "request violates a data constraint".to_owned(),
     }
 }
