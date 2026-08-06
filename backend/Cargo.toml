@@ -1,0 +1,29 @@
+[package]
+name = "golf-api"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+default-run = "golf-api"
+
+[features]
+database-tests = []
+
+[dependencies]
+async-stream.workspace = true
+axum.workspace = true
+chrono.workspace = true
+dotenvy.workspace = true
+futures-util.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+http-body-util = "0.1"
+tower = { version = "0.5", features = ["util"] }
