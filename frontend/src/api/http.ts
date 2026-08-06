@@ -28,7 +28,7 @@ function errorDetails(value: unknown, status: number): { code: string; message: 
 }
 
 async function responseJson(path: string, init?: RequestInit): Promise<unknown> {
-  const response = await fetch(`${apiUrl}${path}`, init)
+  const response = await fetch(`${apiUrl}${path}`, { ...init, credentials: 'include' })
   const body: unknown = await response.json().catch(() => undefined)
   if (!response.ok) {
     const details = errorDetails(body, response.status)
@@ -45,14 +45,16 @@ export async function requestDecoded<T>(
   return decode(await responseJson(path, init))
 }
 
-export async function requestUnchecked<T>(path: string): Promise<T> {
-  return await responseJson(path) as T
+export async function requestUnchecked<T>(path: string, init?: RequestInit): Promise<T> {
+  return await responseJson(path, init) as T
 }
 
-export function jsonRequest(method: 'POST' | 'PUT', body: unknown): RequestInit {
+export function jsonRequest(method: 'POST' | 'PUT', body: unknown, csrfToken?: string): RequestInit {
+  const headers: Record<string, string> = { 'content-type': 'application/json' }
+  if (csrfToken) headers['x-csrf-token'] = csrfToken
   return {
     method,
-    headers: { 'content-type': 'application/json' },
+    headers,
     body: JSON.stringify(body),
   }
 }

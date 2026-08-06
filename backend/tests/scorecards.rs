@@ -6,10 +6,12 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
+use chrono::{Duration as ChronoDuration, Utc};
 use golf_api::{
     AppState, api,
+    auth::{derive_csrf_token, hash_session_token},
     domain::scorecards::ScoreOwner,
-    repositories::{round_completion, round_lifecycle, scorecards},
+    repositories::{auth, round_completion, round_lifecycle, scorecards},
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -28,16 +30,28 @@ const PLAYER_A: Uuid = uuid!("30000000-0000-0000-0000-000000000011");
 const PLAYER_B: Uuid = uuid!("30000000-0000-0000-0000-000000000012");
 const USER_A: Uuid = uuid!("30000000-0000-0000-0000-000000000013");
 const USER_B: Uuid = uuid!("30000000-0000-0000-0000-000000000014");
+const PLAYER_USER_A: Uuid = uuid!("30000000-0000-0000-0000-000000000015");
+const PLAYER_USER_B: Uuid = uuid!("30000000-0000-0000-0000-000000000016");
+const PLAYER_USER_C: Uuid = uuid!("30000000-0000-0000-0000-000000000018");
+const VIEWER_USER: Uuid = uuid!("30000000-0000-0000-0000-000000000019");
+const UNLINKED_PLAYER_USER: Uuid = uuid!("30000000-0000-0000-0000-000000000020");
 const HOLE_1: Uuid = uuid!("30000000-0000-0000-0000-000000000021");
 const HOLE_2: Uuid = uuid!("30000000-0000-0000-0000-000000000022");
 
 const FIXTURE: &str = r#"
 INSERT INTO users (id, email, display_name, role) VALUES
-('30000000-0000-0000-0000-000000000013', 'scorer-a@example.test', 'Scorer A', 'scorer'),
-('30000000-0000-0000-0000-000000000014', 'scorer-b@example.test', 'Scorer B', 'scorer');
+('30000000-0000-0000-0000-000000000013', 'admin-a@example.test', 'Admin A', 'admin'),
+('30000000-0000-0000-0000-000000000014', 'scorer-b@example.test', 'Scorer B', 'scorer'),
+('30000000-0000-0000-0000-000000000019', 'viewer@example.test', 'Viewer', 'viewer'),
+('30000000-0000-0000-0000-000000000020', 'unlinked@example.test', 'Unlinked', 'player');
 INSERT INTO players (id, display_name, current_handicap_index) VALUES
 ('30000000-0000-0000-0000-000000000011', 'Ada', 2.0),
-('30000000-0000-0000-0000-000000000012', 'Bjorn', 6.0);
+('30000000-0000-0000-0000-000000000012', 'Bjorn', 6.0),
+('30000000-0000-0000-0000-000000000017', 'Carla', 12.0);
+INSERT INTO users (id, email, display_name, role, player_id) VALUES
+('30000000-0000-0000-0000-000000000015', 'ada@example.test', 'Ada', 'player', '30000000-0000-0000-0000-000000000011'),
+('30000000-0000-0000-0000-000000000016', 'bjorn@example.test', 'Bjorn', 'player', '30000000-0000-0000-0000-000000000012'),
+('30000000-0000-0000-0000-000000000018', 'carla@example.test', 'Carla', 'player', '30000000-0000-0000-0000-000000000017');
 INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds, status)
 VALUES ('30000000-0000-0000-0000-000000000001', 'Score Cup', '2026-08-01', '2026-08-03', 3, 'active');
 INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap) VALUES
@@ -72,6 +86,25 @@ async fn seed_open(pool: &PgPool) {
     round_lifecycle::open(pool, SCRAMBLE_ROUND_ID)
         .await
         .unwrap();
+    for user_id in [
+        USER_A,
+        USER_B,
+        PLAYER_USER_A,
+        PLAYER_USER_B,
+        PLAYER_USER_C,
+        VIEWER_USER,
+        UNLINKED_PLAYER_USER,
+    ] {
+        let token = token_for_user(user_id);
+        auth::create_session(
+            pool,
+            user_id,
+            &hash_session_token(token),
+            Utc::now() + ChronoDuration::hours(1),
+        )
+        .await
+        .unwrap();
+    }
 }
 
 async fn response_json(response: axum::response::Response) -> Value {
@@ -88,16 +121,41 @@ fn save_request(
 ) -> Request<Body> {
     Request::put(format!("/api/rounds/{round_id}/scores"))
         .header("content-type", "application/json")
+        .header("cookie", format!("golf_session={}", token_for_user(user)))
+        .header("x-csrf-token", derive_csrf_token(token_for_user(user)))
         .body(Body::from(
             json!({
                 "hole_id": hole_id,
                 "owner": owner,
-                "gross_strokes": gross,
-                "submitted_by": user
+                "gross_strokes": gross
             })
             .to_string(),
         ))
         .unwrap()
+}
+
+fn confirm_request(round_id: Uuid, owner_type: &str, owner_id: Uuid, user: Uuid) -> Request<Body> {
+    Request::post(format!(
+        "/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/confirm"
+    ))
+    .header("content-type", "application/json")
+    .header("cookie", format!("golf_session={}", token_for_user(user)))
+    .header("x-csrf-token", derive_csrf_token(token_for_user(user)))
+    .body(Body::from("{}"))
+    .unwrap()
+}
+
+fn token_for_user(user_id: Uuid) -> &'static str {
+    match user_id {
+        USER_A => "score-test-user-a-token",
+        USER_B => "score-test-user-b-token",
+        PLAYER_USER_A => "score-test-player-a-token",
+        PLAYER_USER_B => "score-test-player-b-token",
+        PLAYER_USER_C => "score-test-player-c-token",
+        VIEWER_USER => "score-test-viewer-token",
+        UNLINKED_PLAYER_USER => "score-test-unlinked-player-token",
+        _ => "score-test-missing-user-token",
+    }
 }
 
 #[sqlx::test(migrations = "../migrations")]
@@ -165,14 +223,12 @@ async fn individual_api_saves_corrects_confirms_and_preserves_true_noops(pool: P
 
     let incomplete = app
         .clone()
-        .oneshot(
-            Request::post(format!(
-                "/api/rounds/{INDIVIDUAL_ROUND_ID}/scorecards/player/{PLAYER_A}/confirm"
-            ))
-            .header("content-type", "application/json")
-            .body(Body::from(json!({"confirmed_by": USER_A}).to_string()))
-            .unwrap(),
-        )
+        .oneshot(confirm_request(
+            INDIVIDUAL_ROUND_ID,
+            "player",
+            PLAYER_A,
+            USER_A,
+        ))
         .await
         .unwrap();
     assert_eq!(incomplete.status(), StatusCode::CONFLICT);
@@ -193,14 +249,12 @@ async fn individual_api_saves_corrects_confirms_and_preserves_true_noops(pool: P
         .unwrap();
     let confirmed = app
         .clone()
-        .oneshot(
-            Request::post(format!(
-                "/api/rounds/{INDIVIDUAL_ROUND_ID}/scorecards/player/{PLAYER_A}/confirm"
-            ))
-            .header("content-type", "application/json")
-            .body(Body::from(json!({"confirmed_by": USER_B}).to_string()))
-            .unwrap(),
-        )
+        .oneshot(confirm_request(
+            INDIVIDUAL_ROUND_ID,
+            "player",
+            PLAYER_A,
+            USER_B,
+        ))
         .await
         .unwrap();
     let confirmed_body = response_json(confirmed).await;
@@ -230,14 +284,12 @@ async fn individual_api_saves_corrects_confirms_and_preserves_true_noops(pool: P
     let mut noop_events = state.live_events.subscribe();
     let reconfirmed = app
         .clone()
-        .oneshot(
-            Request::post(format!(
-                "/api/rounds/{INDIVIDUAL_ROUND_ID}/scorecards/player/{PLAYER_A}/confirm"
-            ))
-            .header("content-type", "application/json")
-            .body(Body::from(json!({"confirmed_by": USER_A}).to_string()))
-            .unwrap(),
-        )
+        .oneshot(confirm_request(
+            INDIVIDUAL_ROUND_ID,
+            "player",
+            PLAYER_A,
+            USER_A,
+        ))
         .await
         .unwrap();
     assert_eq!(
@@ -415,7 +467,7 @@ async fn team_summary_and_api_conflicts_are_format_and_round_specific(pool: PgPo
         ))
         .await
         .unwrap();
-    assert_eq!(missing_actor.status(), StatusCode::NOT_FOUND);
+    assert_eq!(missing_actor.status(), StatusCode::UNAUTHORIZED);
 
     let malformed = app
         .oneshot(save_request(
@@ -432,6 +484,204 @@ async fn team_summary_and_api_conflicts_are_format_and_round_specific(pool: PgPo
         response_json(malformed).await["error"]["code"],
         "validation_error"
     );
+}
+
+#[sqlx::test(migrations = "../migrations")]
+async fn both_teammates_can_write_the_team_card_but_other_players_cannot(pool: PgPool) {
+    seed_open(&pool).await;
+    let app = api::router(AppState::new(pool.clone()));
+
+    let access = app
+        .clone()
+        .oneshot(
+            Request::get(format!("/api/rounds/{SCRAMBLE_ROUND_ID}/score-access"))
+                .header(
+                    "cookie",
+                    format!("golf_session={}", token_for_user(PLAYER_USER_A)),
+                )
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(access.status(), StatusCode::OK);
+    assert_eq!(
+        response_json(access).await["writable_owners"],
+        json!([{"type": "team", "id": SCRAMBLE_TEAM_ID}])
+    );
+
+    let owner = json!({"type": "team", "id": SCRAMBLE_TEAM_ID});
+    let first = app
+        .clone()
+        .oneshot(save_request(
+            SCRAMBLE_ROUND_ID,
+            HOLE_1,
+            owner.clone(),
+            4,
+            PLAYER_USER_A,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(first.status(), StatusCode::OK);
+    assert_eq!(
+        response_json(first).await["submitted_by"],
+        PLAYER_USER_A.to_string()
+    );
+
+    let second_hole = app
+        .clone()
+        .oneshot(save_request(
+            SCRAMBLE_ROUND_ID,
+            HOLE_2,
+            owner.clone(),
+            4,
+            PLAYER_USER_B,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(second_hole.status(), StatusCode::OK);
+    let confirmed_by_first_teammate = app
+        .clone()
+        .oneshot(confirm_request(
+            SCRAMBLE_ROUND_ID,
+            "team",
+            SCRAMBLE_TEAM_ID,
+            PLAYER_USER_A,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(confirmed_by_first_teammate.status(), StatusCode::OK);
+    assert_eq!(
+        response_json(confirmed_by_first_teammate).await["confirmed_by"],
+        PLAYER_USER_A.to_string()
+    );
+
+    let teammate_correction = app
+        .clone()
+        .oneshot(save_request(
+            SCRAMBLE_ROUND_ID,
+            HOLE_1,
+            owner.clone(),
+            5,
+            PLAYER_USER_B,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(teammate_correction.status(), StatusCode::OK);
+    assert_eq!(
+        response_json(teammate_correction).await["submitted_by"],
+        PLAYER_USER_B.to_string()
+    );
+    let reconfirmed = app
+        .clone()
+        .oneshot(confirm_request(
+            SCRAMBLE_ROUND_ID,
+            "team",
+            SCRAMBLE_TEAM_ID,
+            PLAYER_USER_B,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(reconfirmed.status(), StatusCode::OK);
+    assert_eq!(
+        response_json(reconfirmed).await["confirmed_by"],
+        PLAYER_USER_B.to_string()
+    );
+
+    let unrelated = app
+        .clone()
+        .oneshot(save_request(
+            SCRAMBLE_ROUND_ID,
+            HOLE_1,
+            owner.clone(),
+            6,
+            PLAYER_USER_C,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(unrelated.status(), StatusCode::FORBIDDEN);
+    assert_eq!(response_json(unrelated).await["error"]["code"], "forbidden");
+    assert_eq!(
+        sqlx::query_scalar::<_, i16>(
+            "SELECT gross_strokes FROM scores WHERE round_id = $1 AND hole_id = $2 AND team_id = $3",
+        )
+        .bind(SCRAMBLE_ROUND_ID)
+        .bind(HOLE_1)
+        .bind(SCRAMBLE_TEAM_ID)
+        .fetch_one(&pool)
+        .await
+        .unwrap(),
+        5
+    );
+
+    let other_individual = app
+        .clone()
+        .oneshot(save_request(
+            INDIVIDUAL_ROUND_ID,
+            HOLE_1,
+            json!({"type": "player", "id": PLAYER_A}),
+            5,
+            PLAYER_USER_B,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(other_individual.status(), StatusCode::FORBIDDEN);
+
+    for denied_user in [VIEWER_USER, UNLINKED_PLAYER_USER] {
+        let denied = app
+            .clone()
+            .oneshot(save_request(
+                SCRAMBLE_ROUND_ID,
+                HOLE_1,
+                owner.clone(),
+                6,
+                denied_user,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+    }
+
+    sqlx::query("UPDATE users SET player_id = NULL WHERE id = $1")
+        .bind(PLAYER_USER_A)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let after_unlink = app
+        .clone()
+        .oneshot(save_request(
+            SCRAMBLE_ROUND_ID,
+            HOLE_1,
+            owner.clone(),
+            6,
+            PLAYER_USER_A,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(after_unlink.status(), StatusCode::FORBIDDEN);
+
+    let spoofed = Request::put(format!("/api/rounds/{SCRAMBLE_ROUND_ID}/scores"))
+        .header("content-type", "application/json")
+        .header(
+            "cookie",
+            format!("golf_session={}", token_for_user(PLAYER_USER_B)),
+        )
+        .header(
+            "x-csrf-token",
+            derive_csrf_token(token_for_user(PLAYER_USER_B)),
+        )
+        .body(Body::from(
+            json!({
+                "hole_id": HOLE_1,
+                "owner": owner,
+                "gross_strokes": 6,
+                "submitted_by": USER_A,
+            })
+            .to_string(),
+        ))
+        .unwrap();
+    let spoofed = app.oneshot(spoofed).await.unwrap();
+    assert_eq!(spoofed.status(), StatusCode::BAD_REQUEST);
 }
 
 #[sqlx::test(migrations = "../migrations")]

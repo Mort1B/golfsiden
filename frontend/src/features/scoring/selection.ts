@@ -27,8 +27,13 @@ export function selectedOwner(
   owners: OwnerCompletionProgress[],
   requestedType: string | null,
   requestedId: string | null,
+  writableOwners: ScoreOwner[] = [],
 ): OwnerCompletionProgress | undefined {
-  return owners.find((item) => item.owner.type === requestedType && item.owner.id === requestedId) ?? owners[0]
+  const requested = owners.find((item) =>
+    item.owner.type === requestedType && item.owner.id === requestedId)
+  if (requested) return requested
+  return owners.find((item) => writableOwners.some((writable) =>
+    writable.type === item.owner.type && writable.id === item.owner.id)) ?? owners[0]
 }
 
 export function parseScoreView(value: string | null): ScoreView {

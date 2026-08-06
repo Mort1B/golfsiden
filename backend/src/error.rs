@@ -1,4 +1,8 @@
-use axum::{Json, http::StatusCode, response::IntoResponse};
+use axum::{
+    Json,
+    http::{StatusCode, header::CACHE_CONTROL},
+    response::IntoResponse,
+};
 use serde::Serialize;
 use thiserror::Error;
 
@@ -15,6 +19,12 @@ pub enum ApiError {
         code: &'static str,
         message: &'static str,
     },
+    #[error("invalid email or password")]
+    InvalidCredentials,
+    #[error("authentication required")]
+    Unauthenticated,
+    #[error("request is not permitted")]
+    Forbidden,
     #[error("internal server error")]
     Internal,
     #[error("database operation failed")]
@@ -43,6 +53,17 @@ impl IntoResponse for ApiError {
             Self::DomainConflict { code, message } => {
                 (StatusCode::CONFLICT, *code, (*message).to_owned())
             }
+            Self::InvalidCredentials => (
+                StatusCode::UNAUTHORIZED,
+                "invalid_credentials",
+                self.to_string(),
+            ),
+            Self::Unauthenticated => (
+                StatusCode::UNAUTHORIZED,
+                "unauthenticated",
+                self.to_string(),
+            ),
+            Self::Forbidden => (StatusCode::FORBIDDEN, "forbidden", self.to_string()),
             Self::Internal => {
                 tracing::error!("internal application error");
                 (
@@ -65,13 +86,18 @@ impl IntoResponse for ApiError {
                 )
             }
         };
-        (
+        let response = (
             status,
             Json(ErrorEnvelope {
                 error: ErrorBody { code, message },
             }),
         )
-            .into_response()
+            .into_response();
+        if matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN) {
+            ([(CACHE_CONTROL, "no-store")], response).into_response()
+        } else {
+            response
+        }
     }
 }
 

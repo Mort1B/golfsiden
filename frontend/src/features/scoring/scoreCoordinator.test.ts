@@ -105,15 +105,16 @@ describe('ScoreCoordinator', () => {
     expect(coordinator.current()).toMatchObject({ desiredValue: 4, phase: 'idle' })
   })
 
-  it('marks a missing configured scorer as non-retryable', async () => {
+  it('marks authorization failures as non-retryable without losing intent', async () => {
     const coordinator = new ScoreCoordinator(scope, 4, {
-      save: async () => { throw new ApiHttpError(404, 'not_found', 'missing') },
+      save: async () => { throw new ApiHttpError(403, 'forbidden', 'denied') },
       verify: async () => 5,
       terminalRefresh: async () => 4,
     })
     coordinator.setDesired(5)
     await settle()
-    expect(coordinator.current().error).toMatchObject({ retryable: false, configuration: true })
+    expect(coordinator.current()).toMatchObject({ desiredValue: 5, phase: 'failed' })
+    expect(coordinator.current().error).toMatchObject({ retryable: false, configuration: false })
   })
 
   it('keeps hole and owner coordinators isolated', async () => {

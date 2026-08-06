@@ -12,7 +12,7 @@ interface HoleScoreSyncInput {
   owner: ScoreOwner
   holeId: string
   serverValue: number | null
-  scorerUserId: string | null
+  csrfToken: string | null
   onVerified: (card: ScorecardSummary) => void
   onTerminal: () => void
 }
@@ -39,8 +39,8 @@ export function useHoleScoreSync(input: HoleScoreSyncInput) {
     holeId: input.holeId,
   }, initialValueRef.current, {
     save: async (value) => {
-      if (!input.scorerUserId) throw new Error('Scorer-ID er ikke konfigurert')
-      await api.saveScore(input.round.id, input.holeId, owner, value, input.scorerUserId)
+      if (!input.csrfToken) throw new Error('Økten er utløpt')
+      await api.saveScore(input.round.id, input.holeId, owner, value, input.csrfToken)
     },
     verify: async () => {
       await invalidateScorecard(queryClient, input.round.id, owner)
@@ -72,7 +72,7 @@ export function useHoleScoreSync(input: HoleScoreSyncInput) {
     input.holeId,
     input.round.id,
     input.round.scoring_format,
-    input.scorerUserId,
+    input.csrfToken,
     input.tournamentId,
     owner,
     queryClient,

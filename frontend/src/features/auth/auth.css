@@ -1,0 +1,20 @@
+.session-bar { position: absolute; z-index: 9; top: 8px; right: 10px; display: flex; align-items: center; gap: 8px; max-width: calc(100vw - 20px); color: #425149; font-size: .78rem; }
+.session-bar span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.session-bar button, .session-bar a { display: flex; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; gap: 6px; border: 1px solid #d8ded8; border-radius: 6px; background: #fff; color: #176640; }
+.session-bar svg { width: 18px; height: 18px; }
+.session-error { position: absolute; z-index: 8; top: 58px; right: 10px; max-width: min(360px, calc(100vw - 20px)); padding: 8px 10px; border: 1px solid #ddaaa5; border-radius: 6px; background: #fff5f3; color: #7d241d; font-size: .78rem; }
+.sign-in-page { display: grid; min-height: 100vh; place-items: center; padding: 24px 16px; }
+.sign-in-panel { width: min(100%, 390px); }
+.sign-in-panel h1 { margin: 5px 0 28px; font-size: 1.85rem; }
+.sign-in-panel form { display: grid; gap: 18px; }
+.sign-in-panel label { display: grid; gap: 7px; color: #35433b; font-size: .85rem; font-weight: 750; }
+.sign-in-panel input { width: 100%; min-height: 50px; padding: 10px 12px; border: 1px solid #aeb8b1; border-radius: 6px; background: #fff; color: #17201c; }
+.sign-in-panel input:focus-visible, .sign-in-panel button:focus-visible { outline: 3px solid #63a984; outline-offset: 2px; }
+.sign-in-panel button { display: flex; min-height: 50px; align-items: center; justify-content: center; gap: 9px; border: 0; border-radius: 6px; background: #176640; color: #fff; font-weight: 800; }
+.sign-in-panel button:disabled { opacity: .65; }
+.sign-in-panel button svg { width: 20px; }
+.sign-in-error { padding: 10px 12px; border-left: 3px solid #9b3c33; background: #fff5f3; color: #7d241d; font-size: .86rem; }
+
+@media (min-width: 700px) {
+  .session-bar { right: 18px; }
+}

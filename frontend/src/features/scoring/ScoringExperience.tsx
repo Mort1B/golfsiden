@@ -1,6 +1,7 @@
 import type { OwnerCompletionProgress, ScorecardHole, ScorecardSummary } from '../../api/scorecards'
-import { scorerConfig } from '../../api/scorerConfig'
 import type { Round, Tournament } from '../../api/types'
+import { useAuth } from '../auth/authContext'
+import { useScoringGuard } from './scoringGuardContext'
 import { HoleEntry } from './HoleEntry'
 import { ScorecardSummaryView } from './ScorecardSummaryView'
 import { ScoreSelectors } from './ScoreSelectors'
@@ -24,6 +25,7 @@ interface ScoringExperienceProps {
   onOwner: (id: string) => void
   onHole: (number: number, adjacent?: boolean) => void
   onView: (view: ScoreView) => void
+  canWrite: boolean
 }
 
 export function ScoringExperience(props: ScoringExperienceProps) {
@@ -31,7 +33,9 @@ export function ScoringExperience(props: ScoringExperienceProps) {
   const [correctionKey, setCorrectionKey] = useState<string | null>(null)
   const correctionMode = correctionKey === ownerKey
   const editableRound = props.round.status === 'open' || props.round.status === 'completed'
-  const scorerUserId = scorerConfig.ready ? scorerConfig.userId : null
+  const auth = useAuth()
+  const { setBlocked } = useScoringGuard()
+  const csrfToken = auth.session?.csrf_token ?? null
 
   const sync = useHoleScoreSync({
     round: props.round,
@@ -39,7 +43,7 @@ export function ScoringExperience(props: ScoringExperienceProps) {
     owner: props.selectedOwner.owner,
     holeId: props.hole.hole_id,
     serverValue: props.hole.score?.gross_strokes ?? null,
-    scorerUserId,
+    csrfToken,
     onVerified: (card) => {
       if (card.confirmed) setCorrectionKey(null)
     },
@@ -50,7 +54,7 @@ export function ScoringExperience(props: ScoringExperienceProps) {
     tournamentId: props.round.tournament_id,
     owner: props.selectedOwner.owner,
     card: props.card,
-    scorerUserId,
+    csrfToken,
     onConfirmed: () => setCorrectionKey(null),
     onTerminal: () => setCorrectionKey(null),
   })
@@ -58,7 +62,8 @@ export function ScoringExperience(props: ScoringExperienceProps) {
   const blocker = useBlocker(navigationLocked)
   const [navigationWarning, setNavigationWarning] = useState(false)
   const canEdit = editableRound
-    && scorerConfig.ready
+    && csrfToken !== null
+    && props.canWrite
     && (!props.card.confirmed || correctionMode)
 
   useEffect(() => {
@@ -69,6 +74,10 @@ export function ScoringExperience(props: ScoringExperienceProps) {
   useEffect(() => {
     if (!navigationLocked) setNavigationWarning(false)
   }, [navigationLocked])
+  useEffect(() => {
+    setBlocked(navigationLocked)
+    return () => setBlocked(false)
+  }, [navigationLocked, setBlocked])
   useEffect(() => {
     if (!navigationLocked) return
     const preventUnload = (event: BeforeUnloadEvent) => {
@@ -104,14 +113,15 @@ export function ScoringExperience(props: ScoringExperienceProps) {
         <span>{props.round.name}</span>
       </header>
 
-      {!scorerConfig.ready && <div className="scoring-notice error" role="alert">{scorerConfig.message}</div>}
+      {!csrfToken && <div className="scoring-notice error" role="alert">Økten er utløpt. Logg inn på nytt for å lagre.</div>}
+      {!props.canWrite && <div className="scoring-notice">Du kan se dette scorekortet, men ikke føre score for det.</div>}
       {navigationWarning && <div className="scoring-notice warning" role="alert">Fullfør eller forkast den pågående scoreendringen før du går videre.</div>}
       {props.round.status === 'locked' && <div className="scoring-notice">Runden er låst. Scorekortet er skrivebeskyttet.</div>}
       {props.round.status === 'completed' && <div className="scoring-notice">Runden er fullført. Korrigering er mulig frem til låsing.</div>}
       {props.card.confirmed && editableRound && !correctionMode && (
         <div className="correction-gate">
           <p>Scorekortet er bekreftet og skrivebeskyttet.</p>
-          <button type="button" disabled={navigationLocked || !scorerConfig.ready} onClick={() => setCorrectionKey(ownerKey)}>Korriger score</button>
+          <button type="button" disabled={navigationLocked || !csrfToken || !props.canWrite} onClick={() => setCorrectionKey(ownerKey)}>Korriger score</button>
         </div>
       )}
       {correctionMode && props.card.confirmed && <div className="scoring-notice warning">Korrigeringsmodus er aktiv. Første endring fjerner bekreftelsen.</div>}
@@ -140,7 +150,7 @@ export function ScoringExperience(props: ScoringExperienceProps) {
         <ScorecardSummaryView
           card={props.card}
           disabled={navigationLocked}
-          readOnly={!editableRound || !scorerConfig.ready}
+          readOnly={!editableRound || !csrfToken || !props.canWrite}
           confirming={confirmation.confirming}
           confirmationError={confirmation.errorMessage}
           confirmationRetryable={confirmation.retryable}

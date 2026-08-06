@@ -32,11 +32,13 @@ interface ScoreCoordinatorDependencies {
 type Listener = (snapshot: ScoreSyncSnapshot) => void
 
 function failure(error: unknown): ScoreSyncError {
-  if (error instanceof ApiHttpError && error.status === 404) {
+  if (error instanceof ApiHttpError && (error.status === 401 || error.status === 403)) {
     return {
-      message: 'Scorer-ID finnes ikke. Kontroller VITE_SCORER_USER_ID.',
+      message: error.status === 401
+        ? 'Økten er utløpt. Logg inn på nytt.'
+        : 'Du har ikke tilgang til dette scorekortet.',
       retryable: false,
-      configuration: true,
+      configuration: false,
     }
   }
   return {

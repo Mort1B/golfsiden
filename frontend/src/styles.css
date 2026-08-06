@@ -13,8 +13,8 @@ button, input, select { font: inherit; }
 h1, h2, h3, p { margin: 0; }
 h1, h2, h3 { letter-spacing: 0; }
 
-.app-shell { min-height: 100vh; }
-.main-content { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+.app-shell { position: relative; min-height: 100vh; }
+.main-content { padding-top: 48px; padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 .page { width: min(100%, 900px); min-height: 100vh; margin: 0 auto; padding: 20px 16px 32px; }
 .page-header { padding: 10px 2px 24px; }
 .brand { color: #28734f; font-size: .75rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
@@ -23,7 +23,9 @@ h1, h2, h3 { letter-spacing: 0; }
 .detail-header h1 { overflow-wrap: anywhere; }
 .back-button { display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid #d8ded8; border-radius: 50%; background: #fff; }
 .description { color: #5b655f; margin: -8px 0 18px 50px; }
-.bottom-nav { position: fixed; z-index: 10; bottom: 0; left: 0; right: 0; display: grid; grid-template-columns: repeat(5, 1fr); min-height: 66px; padding: 6px 6px calc(5px + env(safe-area-inset-bottom)); border-top: 1px solid #d8ded8; background: rgba(255,255,255,.97); }
+.bottom-nav { position: fixed; z-index: 10; bottom: 0; left: 0; right: 0; display: grid; min-height: 66px; padding: 6px 6px calc(5px + env(safe-area-inset-bottom)); border-top: 1px solid #d8ded8; background: rgba(255,255,255,.97); }
+.nav-count-4 { grid-template-columns: repeat(4, 1fr); }
+.nav-count-5 { grid-template-columns: repeat(5, 1fr); }
 .nav-link { display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #68736c; font-size: .68rem; font-weight: 650; }
 .nav-link span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .nav-link.active { color: #176640; }
@@ -86,7 +88,7 @@ h1, h2, h3 { letter-spacing: 0; }
 .team-card li:last-child { border-bottom: 0; }
 
 @media (min-width: 700px) {
-  .main-content { padding-bottom: 0; padding-left: 92px; }
+  .main-content { padding-top: 48px; padding-bottom: 0; padding-left: 92px; }
   .bottom-nav { top: 0; right: auto; grid-template-columns: 1fr; width: 92px; align-content: center; border-top: 0; border-right: 1px solid #d8ded8; }
   .nav-link { min-height: 70px; }
   .page { padding: 34px 28px 48px; }

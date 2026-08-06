@@ -30,9 +30,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = TcpListener::bind(address).await?;
     info!(%address, "golf API listening");
 
-    axum::serve(listener, api::router(AppState::new(pool)))
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
+    axum::serve(
+        listener,
+        api::router(AppState::with_auth(pool, config.auth)),
+    )
+    .with_graceful_shutdown(shutdown_signal())
+    .await?;
     Ok(())
 }
 

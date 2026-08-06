@@ -10,13 +10,20 @@ database-tests = []
 
 [dependencies]
 async-stream.workspace = true
+argon2.workspace = true
 axum.workspace = true
+axum-extra.workspace = true
+base64.workspace = true
 chrono.workspace = true
 dotenvy.workspace = true
 futures-util.workspace = true
+rand.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 sqlx.workspace = true
+subtle.workspace = true
+time.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tower-http.workspace = true

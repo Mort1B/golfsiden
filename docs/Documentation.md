@@ -10,9 +10,9 @@ locking and live gross/net leaderboard APIs for individual stroke play and
 two-player scramble. Users can browse tournaments, tournament players, rounds,
 players, and round-specific teams. The mobile result view supports round and
 tournament gross/net standings with shareable selections and live refetch.
-The mobile score view supports immediate hole entry, correction, confirmation,
-and locked read-only cards for both scoring formats. Administrative forms and
-authentication are planned but not implemented.
+The mobile score view supports authenticated hole entry, correction,
+confirmation, and locked read-only cards for both scoring formats.
+Administrative forms and authorization for non-scoring mutations remain next.
 
 ## Repository structure
 
@@ -61,8 +61,8 @@ and require all status/snapshot changes to use the lifecycle transaction.
 ## Live scorecards
 
 `PUT /api/rounds/{round_id}/scores` immediately saves or corrects one hole. Its
-`owner` is tagged as `player` or `team`; `submitted_by` is temporarily explicit
-until authentication supplies the actor. Same-value retries preserve the original
+`owner` is tagged as `player` or `team`; `submitted_by` is derived exclusively
+from the authenticated session. Same-value retries preserve the original
 submitter, timestamp, confirmation, audit count, and SSE state. Changed strokes
 append an audit row and invalidate any current scorecard confirmation.
 
@@ -72,8 +72,8 @@ completeness, and current confirmation. Individual net uses the opening snapshot
 Scramble net applies 35%/15% to the members' rounded course handicaps and applies
 the round allowance once.
 
-`POST` to that scorecard path plus `/confirm` requires all holes and records
-`confirmed_by` and `confirmed_at`. Confirmation records represent current state;
+`POST` to that scorecard path plus `/confirm` requires all holes and records the
+session actor as `confirmed_by` plus `confirmed_at`. Confirmation records represent current state;
 stroke changes remain historically audited, but superseded confirmation states
 are not retained as a separate event history.
 
@@ -95,9 +95,31 @@ confirmation is unresolved. SSE remains a second invalidation path only.
 Complete cards can be confirmed from their summary. Confirmed editable cards
 require an explicit correction mode; a changed score removes confirmation and
 the corrected card must be confirmed again. Completed rounds remain correctable,
-while locked rounds are read-only. `VITE_SCORER_USER_ID` temporarily supplies the
-seeded submitting user for attribution and leaves the UI read-only when missing
-or malformed. This public build-time value is not an access-control boundary.
+while locked rounds are read-only.
+
+`GET /api/rounds/{round_id}/score-access` supplies the exact player or team owners
+the current session may write. The browser filters the scoring selector with this
+server result and never reproduces role or membership policy.
+
+## Authentication and scoring access
+
+Login creates a revocable server session and returns an opaque token only in an
+`HttpOnly`, `SameSite=Lax` cookie. PostgreSQL stores only the token's SHA-256
+hash. Auth responses are not cacheable, Argon2 password verification runs off
+the async executor, and score mutations plus logout require the session-derived
+CSRF token. Score writes lock and revalidate the session in their existing round
+transaction, so logout cannot complete before an already-authorized write.
+
+Admins and scorers can write any eligible card. A linked player can write only
+their own individual card or their exact team in that round. Both members of a
+two-player scramble team can therefore enter, correct, and confirm the shared
+card, with their own account retained in the audit attribution. Viewers,
+unlinked accounts, and non-members cannot write. Team identity remains specific
+to one round.
+
+Flights are not represented yet. A future normalized round-flight model will
+extend the same score-access resolver so a player may receive both team owners
+in their flight. Equal starting holes or tee times are not treated as flights.
 
 ## Round completion and locking
 
@@ -168,6 +190,7 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 
 ## Known limitations
 
-- No authentication or authorization enforcement.
+- Player, handicap, tournament, entrant, course, round, team, and lifecycle
+  mutations are not yet protected by admin authorization.
 - No admin UI for tournaments, players, courses, rounds, or teams.
-- No offline score queue or public leaderboard link.
+- No flight model, offline score queue, or public leaderboard link.

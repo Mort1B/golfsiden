@@ -1,6 +1,6 @@
 # Guttas Golf
 
-Mobile-first tournament software for a private annual golf trip. The current milestone provides the database foundation, Axum REST API, deterministic development data, atomic round lifecycle operations, audited individual/scramble scorecards, live gross/net leaderboards, and responsive React scoring and leaderboard views.
+Mobile-first tournament software for a private annual golf trip. The current milestone provides the database foundation, Axum REST API, revocable scoring sessions, deterministic development data, atomic round lifecycle operations, audited individual/scramble scorecards, live gross/net leaderboards, and responsive React scoring and leaderboard views.
 
 ## Prerequisites
 
@@ -32,15 +32,14 @@ In a second terminal, start the frontend:
 
 ```bash
 cd frontend
-cp .env.example .env
 npm install
 npm run dev
 ```
 
 The app is available at `http://localhost:5173`. Vite proxies `/api` to the
-backend. `VITE_SCORER_USER_ID` is temporary score attribution only; it is not
-authentication or authorization. For a separate deployed API, set
-`VITE_API_URL` before building the frontend.
+backend, so cookies remain same-origin from the browser's perspective. For a
+separate API origin, set `VITE_API_URL` before building the frontend and set the
+backend `CORS_ALLOWED_ORIGIN` to the exact frontend origin.
 
 ## Database commands
 
@@ -56,7 +55,16 @@ Load or refresh the idempotent development seed:
 cargo run -p golf-api --bin seed
 ```
 
-The seed creates one admin identity, eight players, one course with 18 holes, a five-round tournament, and different two-player teams for rounds one and two.
+The seed creates one admin identity, eight linked player accounts, one course
+with 18 holes, a five-round tournament, and different two-player teams for
+rounds one and two. Development credentials are:
+
+- Admin: `admin@guttas.golf`
+- Players: `anders@example.test` through `henrik@example.test`
+- Shared local password: `golf-dev-2026`
+
+The local `.env.example` explicitly disables the cookie `Secure` flag for HTTP
+development. Keep `SESSION_COOKIE_SECURE=true` in HTTPS environments.
 
 ## Verification
 
@@ -104,9 +112,11 @@ See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documenta
 
 ## Current limitations
 
-Authentication and authorization, course administration, admin forms, offline
-scoring, and locked-round admin corrections remain deferred. The user/role,
-score, audit, locking, and handicap snapshot schema is already present so those
-features can be added without remodelling the core data.
+Authentication and authorization are enforced for score saves, scorecard
+confirmation, score-access discovery, and logout. Other mutations are still
+temporarily public until the next administration authorization milestone.
+Course administration, admin forms, flights, offline scoring, and locked-round
+admin corrections remain deferred. Flights will be modelled explicitly rather
+than inferred from matching tee times or starting holes.
 
 `npm audit` currently reports two high-severity dependency records for one React Router advisory in its server/RSC action mode. This project uses only client-side routing and no React Server Components or router actions, so the affected path is not exposed; upgrade when the registry publishes a patched compatible version.

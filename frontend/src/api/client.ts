@@ -1,9 +1,11 @@
 import { decodeRoundLeaderboard, decodeTournamentLeaderboard } from './leaderboards'
-import { jsonRequest, liveUrl, requestDecoded, requestUnchecked } from './http'
+import { decodeAuthSession } from './auth'
+import { ApiHttpError, jsonRequest, liveUrl, requestDecoded, requestUnchecked } from './http'
 import {
   decodeCompletionValidation,
   decodeSavedScore,
   decodeScorecard,
+  decodeScoreAccess,
   ownerTypeForFormat,
   type ScoreOwner,
 } from './scorecards'
@@ -14,6 +16,20 @@ async function get<T>(path: string): Promise<T> {
 }
 
 export const api = {
+  login: (email: string, password: string) => requestDecoded('/api/auth/login', decodeAuthSession,
+    jsonRequest('POST', { email, password })),
+  session: async () => {
+    try {
+      return await requestDecoded('/api/auth/session', decodeAuthSession)
+    } catch (error) {
+      if (error instanceof ApiHttpError && error.status === 401) return null
+      throw error
+    }
+  },
+  logout: (csrfToken: string) => requestUnchecked<undefined>('/api/auth/logout', {
+    method: 'POST',
+    headers: { 'x-csrf-token': csrfToken },
+  }),
   tournaments: () => get<Tournament[]>('/api/tournaments'),
   tournament: (id: string) => get<Tournament>(`/api/tournaments/${id}`),
   tournamentPlayers: (id: string) => get<TournamentPlayer[]>(`/api/tournaments/${id}/players`),
@@ -30,19 +46,20 @@ export const api = {
   completionValidation: (roundId: string, format: ScoringFormat) =>
     requestDecoded(`/api/rounds/${roundId}/completion-validation`, (value) =>
       decodeCompletionValidation(value, roundId, ownerTypeForFormat(format))),
+  scoreAccess: (roundId: string) => requestDecoded(`/api/rounds/${roundId}/score-access`,
+    (value) => decodeScoreAccess(value, roundId)),
   scorecard: (roundId: string, owner: ScoreOwner) =>
     requestDecoded(`/api/rounds/${roundId}/scorecards/${owner.type}/${owner.id}`, (value) =>
       decodeScorecard(value, roundId, owner)),
-  saveScore: (roundId: string, holeId: string, owner: ScoreOwner, grossStrokes: number, submittedBy: string) =>
+  saveScore: (roundId: string, holeId: string, owner: ScoreOwner, grossStrokes: number, csrfToken: string) =>
     requestDecoded(`/api/rounds/${roundId}/scores`, (value) =>
       decodeSavedScore(value, roundId, holeId, owner, grossStrokes), jsonRequest('PUT', {
         hole_id: holeId,
         owner,
         gross_strokes: grossStrokes,
-        submitted_by: submittedBy,
-      })),
-  confirmScorecard: (roundId: string, owner: ScoreOwner, confirmedBy: string) =>
+      }, csrfToken)),
+  confirmScorecard: (roundId: string, owner: ScoreOwner, csrfToken: string) =>
     requestDecoded(`/api/rounds/${roundId}/scorecards/${owner.type}/${owner.id}/confirm`, (value) =>
-      decodeScorecard(value, roundId, owner), jsonRequest('POST', { confirmed_by: confirmedBy })),
+      decodeScorecard(value, roundId, owner), jsonRequest('POST', {}, csrfToken)),
   liveUrl,
 }

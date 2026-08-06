@@ -16,4 +16,15 @@ describe('HTTP boundary', () => {
       message: 'locked',
     })
   })
+
+  it('includes the session cookie for API requests', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ ok: true }), {
+      headers: { 'content-type': 'application/json' },
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await requestDecoded('/test', () => 'ok')
+
+    expect(fetchMock).toHaveBeenCalledWith('/test', { credentials: 'include' })
+  })
 })

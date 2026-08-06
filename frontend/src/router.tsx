@@ -7,8 +7,11 @@ import { TournamentPage } from './pages/TournamentPage'
 import { TournamentsPage } from './pages/TournamentsPage'
 import { LeaderboardPage } from './pages/LeaderboardPage'
 import { ScorePage } from './pages/ScorePage'
+import { SignInPage } from './pages/SignInPage'
+import { RequireSession } from './features/auth/RequireSession'
 
 export const router = createBrowserRouter([
+  { path: '/login', element: <SignInPage /> },
   {
     element: <AppShell />,
     children: [
@@ -16,9 +19,9 @@ export const router = createBrowserRouter([
       { path: '/tournaments/:tournamentId', element: <TournamentPage /> },
       { path: '/rounds/:roundId', element: <RoundPage /> },
       { path: '/players', element: <PlayersPage /> },
-      { path: '/score', element: <ScorePage /> },
+      { path: '/score', element: <RequireSession><ScorePage /></RequireSession> },
       { path: '/leaderboard', element: <LeaderboardPage /> },
-      { path: '/admin', element: <PlaceholderPage title="Admin" state="Velg en turnering" /> },
+      { path: '/admin', element: <RequireSession role="admin"><PlaceholderPage title="Admin" state="Velg en turnering" /></RequireSession> },
     ],
   },
 ])

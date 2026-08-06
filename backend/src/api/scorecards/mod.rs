@@ -11,17 +11,22 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
+    api::auth::{AuthenticatedSession, MutationSession},
     domain::{
         scorecards::{ScoreEntry, ScoreOwner, ScorecardSummary},
         scoring::ScoringError,
     },
     error::{ApiError, ApiResult},
-    repositories::scorecards::{self, SaveScore, ScorecardError},
+    repositories::{
+        score_authorization::{self, ScoreAuthorizationError},
+        scorecards::{self, AuthenticatedSaveScore, ScorecardError},
+    },
 };
 
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
         .route("/api/rounds/{round_id}/scores", put(save))
+        .route("/api/rounds/{round_id}/score-access", get(score_access))
         .route(
             "/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}",
             get(get_one),
@@ -33,20 +38,20 @@ pub fn routes() -> Router<Arc<AppState>> {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct SaveScoreRequest {
     hole_id: Uuid,
     owner: ScoreOwner,
     gross_strokes: i16,
-    submitted_by: Uuid,
 }
 
 #[derive(Deserialize)]
-struct ConfirmRequest {
-    confirmed_by: Uuid,
-}
+#[serde(deny_unknown_fields)]
+struct ConfirmRequest {}
 
 async fn save(
     State(state): State<Arc<AppState>>,
+    MutationSession(authenticated): MutationSession,
     Path(round_id): Path<Uuid>,
     input: Result<Json<SaveScoreRequest>, JsonRejection>,
 ) -> ApiResult<Json<ScoreEntry>> {
@@ -58,14 +63,14 @@ async fn save(
             "gross_strokes must be between 1 and 20".to_owned(),
         ));
     }
-    let result = scorecards::save(
+    let result = scorecards::save_authenticated(
         &state.pool,
-        SaveScore {
+        AuthenticatedSaveScore {
             round_id,
             hole_id: input.hole_id,
             owner: input.owner,
             gross_strokes: input.gross_strokes,
-            submitted_by: input.submitted_by,
+            session_id: authenticated.principal.session_id,
         },
     )
     .await
@@ -74,6 +79,27 @@ async fn save(
         state.notify("score", round_id);
     }
     Ok(Json(result.value))
+}
+
+#[derive(serde::Serialize)]
+struct ScoreAccessResponse {
+    round_id: Uuid,
+    writable_owners: Vec<ScoreOwner>,
+}
+
+async fn score_access(
+    State(state): State<Arc<AppState>>,
+    authenticated: AuthenticatedSession,
+    Path(round_id): Path<Uuid>,
+) -> ApiResult<Json<ScoreAccessResponse>> {
+    let writable_owners =
+        score_authorization::writable_owners(&state.pool, &authenticated.principal, round_id)
+            .await
+            .map_err(map_authorization_error)?;
+    Ok(Json(ScoreAccessResponse {
+        round_id,
+        writable_owners,
+    }))
 }
 
 async fn get_one(
@@ -90,15 +116,21 @@ async fn get_one(
 
 async fn confirm(
     State(state): State<Arc<AppState>>,
+    MutationSession(authenticated): MutationSession,
     Path((round_id, owner_type, owner_id)): Path<(Uuid, String, Uuid)>,
     input: Result<Json<ConfirmRequest>, JsonRejection>,
 ) -> ApiResult<Json<ScorecardSummary>> {
-    let Json(input) = input
-        .map_err(|_| ApiError::BadRequest("confirmed_by must be a valid user ID".to_owned()))?;
+    let Json(_input) = input
+        .map_err(|_| ApiError::BadRequest("request body must be an empty object".to_owned()))?;
     let owner = parse_owner(&owner_type, owner_id)?;
-    let result = scorecards::confirm(&state.pool, round_id, owner, input.confirmed_by)
-        .await
-        .map_err(map_error)?;
+    let result = scorecards::confirm_authenticated(
+        &state.pool,
+        round_id,
+        owner,
+        authenticated.principal.session_id,
+    )
+    .await
+    .map_err(map_error)?;
     if result.changed {
         state.notify("score", round_id);
     }
@@ -118,6 +150,8 @@ fn parse_owner(owner_type: &str, owner_id: Uuid) -> ApiResult<ScoreOwner> {
 fn map_error(error: ScorecardError) -> ApiError {
     match error {
         ScorecardError::NotFound => ApiError::NotFound,
+        ScorecardError::Unauthenticated => ApiError::Unauthenticated,
+        ScorecardError::Forbidden => ApiError::Forbidden,
         ScorecardError::Conflict(conflict) => ApiError::DomainConflict {
             code: conflict.code(),
             message: conflict.message(),
@@ -128,5 +162,14 @@ fn map_error(error: ScorecardError) -> ApiError {
         },
         ScorecardError::Database(error) => ApiError::Database(error),
         ScorecardError::InvalidStoredData | ScorecardError::Scoring(_) => ApiError::Internal,
+    }
+}
+
+fn map_authorization_error(error: ScoreAuthorizationError) -> ApiError {
+    match error {
+        ScoreAuthorizationError::NotFound => ApiError::NotFound,
+        ScoreAuthorizationError::Unauthenticated => ApiError::Unauthenticated,
+        ScoreAuthorizationError::Forbidden => ApiError::Forbidden,
+        ScoreAuthorizationError::Database(error) => ApiError::Database(error),
     }
 }

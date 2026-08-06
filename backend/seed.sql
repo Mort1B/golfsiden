@@ -15,6 +15,17 @@ INSERT INTO players (id, display_name, current_handicap_index, email) VALUES
 ('00000000-0000-0000-0000-000000001008', 'Henrik', 28.6, 'henrik@example.test')
 ON CONFLICT (id) DO UPDATE SET display_name = EXCLUDED.display_name, current_handicap_index = EXCLUDED.current_handicap_index, email = EXCLUDED.email;
 
+INSERT INTO users (id, email, display_name, role, player_id)
+SELECT id, email, display_name, 'player', id
+FROM players
+WHERE id BETWEEN '00000000-0000-0000-0000-000000001001'
+             AND '00000000-0000-0000-0000-000000001008'
+ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    display_name = EXCLUDED.display_name,
+    role = EXCLUDED.role,
+    player_id = EXCLUDED.player_id;
+
 INSERT INTO handicap_history (id, player_id, handicap_index, reason)
 SELECT ('00000000-0000-0000-0000-' || lpad((1100 + seed_number)::text, 12, '0'))::uuid,
        ('00000000-0000-0000-0000-' || lpad((1000 + seed_number)::text, 12, '0'))::uuid,

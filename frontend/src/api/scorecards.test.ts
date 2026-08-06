@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { decodeCompletionValidation, decodeScorecard } from './scorecards'
-import { readScorerConfig } from './scorerConfig'
+import { decodeCompletionValidation, decodeScoreAccess, decodeScorecard } from './scorecards'
 
 const roundId = '00000000-0000-0000-0000-000000004001'
 const playerId = '00000000-0000-0000-0000-000000001001'
+const secondPlayerId = '00000000-0000-0000-0000-000000001002'
 const userId = '00000000-0000-0000-0000-000000000001'
 const holeId = '00000000-0000-0000-0000-000000003201'
 const owner = { type: 'player' as const, id: playerId }
@@ -41,7 +41,6 @@ describe('scorecard boundaries', () => {
       confirmed_at: null,
     }, roundId, owner)
     expect(card.holes[0]?.score?.gross_strokes).toBe(5)
-    expect(readScorerConfig(userId)).toEqual({ ready: true, userId })
   })
 
   it('decodes completion owners and rejects a format mismatch', () => {
@@ -61,8 +60,14 @@ describe('scorecard boundaries', () => {
     expect(() => decodeCompletionValidation(response, roundId, 'team')).toThrow('owner.type')
   })
 
-  it('keeps missing and malformed scorer configuration read-only', () => {
-    expect(readScorerConfig(undefined).ready).toBe(false)
-    expect(readScorerConfig('not-a-uuid').ready).toBe(false)
+  it('decodes a deterministic writable owner set and rejects duplicates', () => {
+    expect(decodeScoreAccess({
+      round_id: roundId,
+      writable_owners: [owner, { type: 'player', id: secondPlayerId }],
+    }, roundId).writable_owners).toEqual([owner, { type: 'player', id: secondPlayerId }])
+    expect(() => decodeScoreAccess({
+      round_id: roundId,
+      writable_owners: [owner, owner],
+    }, roundId)).toThrow('access.identity')
   })
 })

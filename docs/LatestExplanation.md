@@ -1,62 +1,54 @@
 # Latest explanation
 
-## One-hole mobile scoring
+## Authenticated team scoring
 
-The Score tab now opens the newest eligible round and resolves a stable player
-or team owner from round completion validation. Tournament, round, tagged owner,
-hole, and hole/summary view are canonical URL parameters, so explicit selections
-work with browser history while adjacent-hole movement replaces the current
-entry. Draft rounds are excluded and locked cards remain readable.
+Scoring no longer trusts a build-time browser user ID. Login verifies an Argon2
+hash, stores only a hash of a random session token, and sends the raw token in an
+HttpOnly cookie. Save, confirmation, and logout requests also require a derived
+CSRF value. The backend supplies audit actors from the session and rejects old
+`submitted_by` or `confirmed_by` request fields.
 
-Score input is deliberately separate from cached server state. One coordinator
-owns an exact round/owner/hole, writes the first change immediately, coalesces
-rapid taps without concurrent requests, and keeps the latest desired gross score
-visible. It reports synchronization only after a decoded scorecard refetch agrees
-with that value. Failures retain Retry and Discard actions, and route/unload
-guards keep unresolved intent from being silently abandoned.
+One score-access repository owns the authorization rule. Admins and scorers can
+write every eligible card. A player can write their own individual card or the
+team containing their linked player in that exact round. This means either
+member can enter and correct a scramble team's shared score while unrelated,
+viewer, and unlinked users remain read-only. Authorization is repeated inside
+the score transaction with a session-row lock, so UI filtering is never the
+security boundary.
 
-Net strokes, totals, and playing handicaps always come from the backend.
-Complete cards can be confirmed, confirmed cards require explicit correction
-mode, changed scores remove confirmation, and re-confirmation restores the
-correction gate. Completed rounds remain editable and locked rounds are strictly
-read-only. Until session authentication is implemented,
-`VITE_SCORER_USER_ID` supplies development attribution only and missing or
-malformed configuration disables mutations.
+The React app bootstraps the cookie session, preserves protected score URLs
+through sign-in, and selects only owners returned by `/score-access`. It sends no
+user IDs in mutation bodies. Auth failures remain explicit, non-retryable score
+intent until the scorer discards it or signs in again.
 
 ## Compact example
 
-The coordinator verifies the authoritative scorecard before publishing the final
-sync state and starts one coalesced follow-up only when the desired value moved:
+The team rule is based on normalized membership for the selected round:
 
-```ts
-await dependencies.save(submitted)
-const verified = await dependencies.verify()
-
-if (snapshot.desiredValue !== verified) {
-  void persist()
-} else {
-  update({ serverValue: verified, phase: 'synced' })
-}
+```sql
+SELECT EXISTS(
+    SELECT 1 FROM team_memberships
+    WHERE round_id = $1 AND team_id = $2 AND player_id = $3
+)
 ```
+
+Future flights will extend the resolver's owner set to both flight teams. They
+will not be inferred from a shared starting hole or tee time.
 
 ## Invariants
 
-- Completion validation, not leaderboard order, defines eligible score owners.
-- Client code never calculates handicap or net results.
-- Writes are serialized per exact tagged owner and hole.
-- Confirmation and correction callbacks retain immutable owner scope.
-- SSE remains an invalidation signal; clients refetch authoritative state.
+- Raw passwords and session tokens are not logged or stored.
+- Score and confirmation actors always come from the active session.
+- Both teammates share score access without sharing an account.
+- Round locks, audit triggers, snapshots, and backend net calculations remain authoritative.
+- Public scorecard and leaderboard reads remain public; other mutation auth is explicitly deferred.
 
 ## Validation
 
-- Rust format, 28 unit tests, Clippy with warnings denied, and 35 PostgreSQL/API
-  integration tests pass.
-- `npm ci`, 19 Vitest tests, strict typecheck, ESLint, and production build pass.
-- Real Chrome checks cover 320px, 360px, and desktop layouts; individual and
-  scramble owners; rapid coalescing; injected failure/retry; blocked NavLink and
-  Back navigation; confirmation, correction, re-confirmation, locking, SSE
-  refetch, long content, keyboard focus, and bottom-navigation clearance.
-- Browser validation produced no console errors, failed requests, unexpected
-  HTTP responses, or horizontal overflow.
-- `npm audit` still reports the documented two high-severity React Router
-  server/RSC advisory records; the application uses client-side routes only.
+- Rust format and Clippy with warnings denied pass.
+- 30 Rust unit tests and 40 PostgreSQL/API integration tests pass.
+- 25 frontend tests, strict TypeScript, ESLint, and the production build pass.
+- A disposable database passes all five migrations plus two idempotent seed runs.
+- Real Chrome passes authenticated admin, both-teammate, non-member read-only,
+  forced `403`, refresh, logout failure/success, unresolved-write guard, cookie,
+  console/network, and 320px/390px/desktop layout checks.

@@ -11,7 +11,7 @@ interface ConfirmationInput {
   tournamentId: string
   owner: ScoreOwner
   card: ScorecardSummary
-  scorerUserId: string | null
+  csrfToken: string | null
   onConfirmed: () => void
   onTerminal: () => void
 }
@@ -23,11 +23,11 @@ export function useScorecardConfirmation(input: ConfirmationInput) {
   const mutation = useMutation({
     mutationKey: ['scorecard-confirmation', input.round.id, input.owner.type, input.owner.id],
     mutationFn: async (variables: ConfirmationVariables) => {
-      if (!variables.scorerUserId) throw new Error('Scorer-ID er ikke konfigurert')
+      if (!variables.csrfToken) throw new Error('Økten er utløpt')
       if (!variables.card.complete || variables.card.confirmed) {
         throw new Error('Scorekortet må være komplett og ubekreftet')
       }
-      return api.confirmScorecard(variables.round.id, variables.owner, variables.scorerUserId)
+      return api.confirmScorecard(variables.round.id, variables.owner, variables.csrfToken)
     },
     onSuccess: async (card, variables) => {
       queryClient.setQueryData(scoringKeys.scorecard(variables.round.id, variables.owner), card)
@@ -57,8 +57,10 @@ export function useScorecardConfirmation(input: ConfirmationInput) {
 
   let errorMessage: string | null = null
   let retryable = true
-  if (mutation.error instanceof ApiHttpError && mutation.error.status === 404) {
-    errorMessage = 'Scorer-ID finnes ikke. Kontroller VITE_SCORER_USER_ID.'
+  if (mutation.error instanceof ApiHttpError && (mutation.error.status === 401 || mutation.error.status === 403)) {
+    errorMessage = mutation.error.status === 401
+      ? 'Økten er utløpt. Logg inn på nytt.'
+      : 'Du har ikke tilgang til dette scorekortet.'
     retryable = false
   } else if (mutation.error instanceof ApiHttpError && mutation.error.code === 'round_not_editable') {
     errorMessage = 'Runden kan ikke lenger redigeres.'

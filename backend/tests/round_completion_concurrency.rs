@@ -6,10 +6,12 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
+use chrono::{Duration as ChronoDuration, Utc};
 use golf_api::{
     AppState, api,
+    auth::{derive_csrf_token, hash_session_token},
     domain::scorecards::ScoreOwner,
-    repositories::{round_completion, round_lifecycle, scorecards},
+    repositories::{auth, round_completion, round_lifecycle, scorecards},
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -22,6 +24,7 @@ const USER_ID: Uuid = uuid!("70000000-0000-0000-0000-000000000001");
 const ROUND_ID: Uuid = uuid!("70000000-0000-0000-0000-000000000002");
 const PLAYER_ID: Uuid = uuid!("70000000-0000-0000-0000-000000000003");
 const HOLE_ID: Uuid = uuid!("70000000-0000-0000-0000-000000000004");
+const SESSION_TOKEN: &str = "round-completion-concurrency-token";
 
 const FIXTURE: &str = r#"
 INSERT INTO users (id, email, display_name, role)
@@ -70,6 +73,14 @@ async fn seed_ready_completed(pool: &PgPool) {
     .await
     .unwrap();
     round_completion::complete(pool, ROUND_ID).await.unwrap();
+    auth::create_session(
+        pool,
+        USER_ID,
+        &hash_session_token(SESSION_TOKEN),
+        Utc::now() + ChronoDuration::hours(1),
+    )
+    .await
+    .unwrap();
 }
 
 fn lock_request() -> Request<Body> {
@@ -81,12 +92,13 @@ fn lock_request() -> Request<Body> {
 fn save_request(strokes: i16) -> Request<Body> {
     Request::put(format!("/api/rounds/{ROUND_ID}/scores"))
         .header("content-type", "application/json")
+        .header("cookie", format!("golf_session={SESSION_TOKEN}"))
+        .header("x-csrf-token", derive_csrf_token(SESSION_TOKEN))
         .body(Body::from(
             json!({
                 "hole_id": HOLE_ID,
                 "owner": {"type": "player", "id": PLAYER_ID},
-                "gross_strokes": strokes,
-                "submitted_by": USER_ID
+                "gross_strokes": strokes
             })
             .to_string(),
         ))
@@ -98,7 +110,9 @@ fn confirm_request() -> Request<Body> {
         "/api/rounds/{ROUND_ID}/scorecards/player/{PLAYER_ID}/confirm"
     ))
     .header("content-type", "application/json")
-    .body(Body::from(json!({"confirmed_by": USER_ID}).to_string()))
+    .header("cookie", format!("golf_session={SESSION_TOKEN}"))
+    .header("x-csrf-token", derive_csrf_token(SESSION_TOKEN))
+    .body(Body::from("{}"))
     .unwrap()
 }
 

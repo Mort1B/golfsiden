@@ -54,6 +54,14 @@ describe('scoring selection', () => {
     expect(expectedOwnerType(round(1, 'open', 'team_scramble'))).toBe('team')
   })
 
+  it('preserves a requested read-only owner but prefers a writable default', () => {
+    const owners = [owner('team', 'team-read'), owner('team', 'team-write')]
+    const writable = [{ type: 'team' as const, id: 'team-write' }]
+
+    expect(selectedOwner(owners, 'team', 'team-read', writable)?.owner.id).toBe('team-read')
+    expect(selectedOwner(owners, null, null, writable)?.owner.id).toBe('team-write')
+  })
+
   it('replaces automatic and adjacent navigation but pushes explicit choices', () => {
     expect(replaceScoreHistory('automatic')).toBe(true)
     expect(replaceScoreHistory('previous')).toBe(true)

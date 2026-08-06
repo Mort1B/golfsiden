@@ -1,3 +1,4 @@
+mod mutations;
 mod rows;
 
 use sqlx::{PgConnection, PgPool, Postgres, Transaction};
@@ -5,13 +6,17 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::domain::{
-    models::{RoundStatus, ScoringFormat},
+    models::ScoringFormat,
     scorecards::{ConfirmationState, ScoreEntry, ScoreOwner, ScorecardSummary, summarize},
     scoring::{ScoringError, scramble_playing_handicap},
 };
-
 use rows::{
     ConfirmationRow, HoleScoreRow, RoundContext, ScoreRow, hole_source_from_row, score_from_row,
+};
+
+pub use mutations::{
+    AuthenticatedSaveScore, MutationResult, SaveScore, confirm, confirm_authenticated, save,
+    save_authenticated,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,6 +54,10 @@ impl ScorecardConflict {
 pub enum ScorecardError {
     #[error("resource not found")]
     NotFound,
+    #[error("authentication required")]
+    Unauthenticated,
+    #[error("score owner is not writable by this user")]
+    Forbidden,
     #[error("scorecard conflict")]
     Conflict(ScorecardConflict),
     #[error("stored score data is invalid")]
@@ -57,73 +66,6 @@ pub enum ScorecardError {
     Scoring(#[from] ScoringError),
     #[error("database operation failed")]
     Database(#[from] sqlx::Error),
-}
-
-pub struct MutationResult<T> {
-    pub value: T,
-    pub changed: bool,
-}
-
-pub struct SaveScore {
-    pub round_id: Uuid,
-    pub hole_id: Uuid,
-    pub owner: ScoreOwner,
-    pub gross_strokes: i16,
-    pub submitted_by: Uuid,
-}
-
-pub async fn save(
-    pool: &PgPool,
-    input: SaveScore,
-) -> Result<MutationResult<ScoreEntry>, ScorecardError> {
-    let mut transaction = pool.begin().await?;
-    let context = load_round(&mut transaction, input.round_id, true).await?;
-    require_editable(&context)?;
-    require_user(&mut transaction, input.submitted_by).await?;
-    validate_owner(&mut transaction, &context, input.owner).await?;
-    validate_hole(&mut transaction, &context, input.hole_id).await?;
-    let existing = load_score(&mut transaction, input.round_id, input.hole_id, input.owner).await?;
-    if let Some(score) = existing.as_ref()
-        && score.gross_strokes == input.gross_strokes
-    {
-        transaction.commit().await?;
-        return Ok(MutationResult {
-            value: score.clone(),
-            changed: false,
-        });
-    }
-
-    set_mutation_context(&mut transaction, input.round_id).await?;
-    let row = if let Some(existing) = existing {
-        sqlx::query_as::<_, ScoreRow>(
-            "UPDATE scores SET gross_strokes = $2, submitted_by = $3 WHERE id = $1 RETURNING id, round_id, hole_id, player_id, team_id, gross_strokes, submitted_by, submitted_at, updated_at",
-        )
-        .bind(existing.id)
-        .bind(input.gross_strokes)
-        .bind(input.submitted_by)
-        .fetch_one(&mut *transaction)
-        .await?
-    } else {
-        sqlx::query_as::<_, ScoreRow>(
-            "INSERT INTO scores (id, round_id, tournament_id, hole_id, player_id, team_id, gross_strokes, submitted_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, round_id, hole_id, player_id, team_id, gross_strokes, submitted_by, submitted_at, updated_at",
-        )
-        .bind(Uuid::new_v4())
-        .bind(input.round_id)
-        .bind(context.tournament_id)
-        .bind(input.hole_id)
-        .bind(input.owner.player_id())
-        .bind(input.owner.team_id())
-        .bind(input.gross_strokes)
-        .bind(input.submitted_by)
-        .fetch_one(&mut *transaction)
-        .await?
-    };
-    let score = score_from_row(row)?;
-    transaction.commit().await?;
-    Ok(MutationResult {
-        value: score,
-        changed: true,
-    })
 }
 
 pub async fn get(
@@ -141,53 +83,6 @@ pub async fn get(
     Ok(summary)
 }
 
-pub async fn confirm(
-    pool: &PgPool,
-    round_id: Uuid,
-    owner: ScoreOwner,
-    confirmed_by: Uuid,
-) -> Result<MutationResult<ScorecardSummary>, ScorecardError> {
-    let mut transaction = pool.begin().await?;
-    let context = load_round(&mut transaction, round_id, true).await?;
-    require_editable(&context)?;
-    require_user(&mut transaction, confirmed_by).await?;
-    validate_owner(&mut transaction, &context, owner).await?;
-    let score_count = count_scores(&mut transaction, round_id, owner).await?;
-    if score_count != i64::from(context.number_of_holes) {
-        return Err(ScorecardError::Conflict(ScorecardConflict::Incomplete));
-    }
-    let existing = load_confirmation(&mut transaction, round_id, owner).await?;
-    let changed = existing.is_none();
-    if changed {
-        set_mutation_context(&mut transaction, round_id).await?;
-        sqlx::query("INSERT INTO scorecard_confirmations (id, round_id, tournament_id, player_id, team_id, confirmed_by) VALUES ($1, $2, $3, $4, $5, $6)")
-            .bind(Uuid::new_v4())
-            .bind(round_id)
-            .bind(context.tournament_id)
-            .bind(owner.player_id())
-            .bind(owner.team_id())
-            .bind(confirmed_by)
-            .execute(&mut *transaction)
-            .await?;
-    }
-    let summary = build_summary(&mut transaction, &context, owner).await?;
-    transaction.commit().await?;
-    Ok(MutationResult {
-        value: summary,
-        changed,
-    })
-}
-
-fn require_editable(context: &RoundContext) -> Result<(), ScorecardError> {
-    if matches!(context.status, RoundStatus::Open | RoundStatus::Completed) {
-        Ok(())
-    } else {
-        Err(ScorecardError::Conflict(
-            ScorecardConflict::RoundNotEditable,
-        ))
-    }
-}
-
 async fn load_round(
     transaction: &mut Transaction<'_, Postgres>,
     round_id: Uuid,
@@ -203,21 +98,6 @@ async fn load_round(
         .fetch_optional(&mut **transaction)
         .await?
         .ok_or(ScorecardError::NotFound)
-}
-
-async fn require_user(
-    transaction: &mut Transaction<'_, Postgres>,
-    user_id: Uuid,
-) -> Result<(), ScorecardError> {
-    let exists = sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)")
-        .bind(user_id)
-        .fetch_one(&mut **transaction)
-        .await?;
-    if exists {
-        Ok(())
-    } else {
-        Err(ScorecardError::NotFound)
-    }
 }
 
 async fn validate_hole(
@@ -307,17 +187,6 @@ async fn owner_missing_or_ineligible(
     } else {
         Err(ScorecardError::NotFound)
     }
-}
-
-async fn set_mutation_context(
-    transaction: &mut Transaction<'_, Postgres>,
-    round_id: Uuid,
-) -> Result<(), sqlx::Error> {
-    sqlx::query("SELECT set_config('app.score_mutation_round_id', $1::text, true)")
-        .bind(round_id)
-        .execute(&mut **transaction)
-        .await?;
-    Ok(())
 }
 
 async fn load_score(

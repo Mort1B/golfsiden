@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { api } from '../api/client'
-import { scoringKeys } from '../api/scorecards'
+import { ownerEquals, scoringKeys } from '../api/scorecards'
 import { ScoringExperience } from '../features/scoring/ScoringExperience'
 import {
   parseHoleNumber,
@@ -38,11 +38,22 @@ export function ScorePage() {
     queryFn: () => api.completionValidation(round?.id ?? '', round?.scoring_format ?? 'individual_stroke_play'),
     enabled: round !== undefined,
   })
+  const accessQuery = useQuery({
+    queryKey: scoringKeys.access(round?.id ?? ''),
+    queryFn: () => api.scoreAccess(round?.id ?? ''),
+    enabled: round !== undefined,
+    retry: false,
+  })
+  const progressOwners = completionQuery.data?.owners ?? []
+  const writableOwners = accessQuery.data?.writable_owners ?? []
   const owner = selectedOwner(
-    completionQuery.data?.owners ?? [],
+    progressOwners,
     searchParams.get('owner_type'),
     searchParams.get('owner'),
+    writableOwners,
   )
+  const canWrite = owner !== undefined
+    && writableOwners.some((writable) => ownerEquals(writable, owner.owner))
   const cardQuery = useQuery({
     queryKey: scoringKeys.scorecard(round?.id ?? '', owner?.owner ?? { type: 'player', id: '' }),
     queryFn: () => api.scorecard(round?.id ?? '', owner?.owner ?? { type: 'player', id: '' }),
@@ -67,9 +78,12 @@ export function ScorePage() {
     return <ScoreState><ErrorState error={roundsQuery.error} onRetry={() => void roundsQuery.refetch()} /></ScoreState>
   }
   if (!round) return <ScoreState><EmptyState>Turneringen har ingen åpne, fullførte eller låste runder</EmptyState></ScoreState>
-  if (completionQuery.isPending) return <ScoreState><LoadingState /></ScoreState>
+  if (completionQuery.isPending || accessQuery.isPending) return <ScoreState><LoadingState /></ScoreState>
   if (completionQuery.error && !completionQuery.data) {
     return <ScoreState><ErrorState error={completionQuery.error} onRetry={() => void completionQuery.refetch()} /></ScoreState>
+  }
+  if (accessQuery.error && !accessQuery.data) {
+    return <ScoreState><ErrorState error={accessQuery.error} onRetry={() => void accessQuery.refetch()} /></ScoreState>
   }
   if (!owner) return <ScoreState><EmptyState>Runden har ingen kvalifiserte scorekort</EmptyState></ScoreState>
   if (cardQuery.isPending) return <ScoreState><LoadingState /></ScoreState>
@@ -100,12 +114,13 @@ export function ScorePage() {
   return (
     <section className="page score-page">
       <header className="page-header"><p className="brand">Guttas Golf</p><h1>Score</h1></header>
-      {(roundsQuery.error || completionQuery.error || cardQuery.error) && (
+      {(roundsQuery.error || completionQuery.error || accessQuery.error || cardQuery.error) && (
         <div className="background-query-error" role="alert">
           <p>Noe kunne ikke oppdateres. Viste data beholdes.</p>
           <button type="button" onClick={() => {
             if (roundsQuery.error) void roundsQuery.refetch()
             if (completionQuery.error) void completionQuery.refetch()
+            if (accessQuery.error) void accessQuery.refetch()
             if (cardQuery.error) void cardQuery.refetch()
           }}>Prøv oppdatering</button>
         </div>
@@ -114,15 +129,16 @@ export function ScorePage() {
         tournaments={tournaments}
         rounds={eligibleRounds}
         round={{ ...round, status: completionQuery.data?.status ?? round.status }}
-        owners={completionQuery.data?.owners ?? []}
+        owners={progressOwners}
         selectedOwner={owner}
         card={cardQuery.data}
         hole={hole}
         view={view}
+        canWrite={canWrite}
         onTournament={(id) => navigate({ tournamentId: id, view: 'hole' }, 'tournament')}
         onRound={(id) => navigate({ tournamentId: tournament.id, roundId: id, view: 'hole' }, 'round')}
         onOwner={(id) => {
-          const next = completionQuery.data?.owners.find((item) => item.owner.id === id)
+          const next = progressOwners.find((item) => item.owner.id === id)
           if (next) navigate({ tournamentId: tournament.id, roundId: round.id, owner: next.owner, holeNumber: 1, view: 'hole' }, 'owner')
         }}
         onHole={(number, adjacent) => navigate({ ...base('hole'), holeNumber: number }, adjacent ? (number < hole.hole_number ? 'previous' : 'next') : 'hole')}

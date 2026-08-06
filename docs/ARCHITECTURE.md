@@ -7,7 +7,7 @@
 - `migrations/` owns the production database schema.
 - `docs/` records architecture and phased delivery decisions.
 
-Backend request handling is split into `api`, `repositories`, and `domain`. Handlers own HTTP validation and response mapping, repositories own SQL and transaction mechanics, and pure handicap/scoring/lifecycle behavior stays in `domain`. Authentication is a separate future boundary; the database already represents users and roles.
+Backend request handling is split into `api`, `repositories`, and `domain`. Handlers own HTTP validation and response mapping, repositories own SQL and transaction mechanics, and pure handicap/scoring/lifecycle behavior stays in `domain`. Authentication and score authorization are isolated modules rather than handler-local policy.
 
 ## Domain decisions
 
@@ -17,6 +17,16 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
 - Course handicap uses exact tenths and rational arithmetic for `index * slope / 113 + rating - par`. Individual allowance is applied to the unrounded result before final rounding; scramble member snapshots retain rounded course handicaps for the later team formula.
 - Team, membership, tee, and hole mutation guards serialize through the parent-round lock. Once open, scoring configuration and pairings cannot drift.
 - A score has exactly one owner through an exclusive player/team check constraint.
+- Session tokens are opaque 256-bit values stored only as SHA-256 hashes.
+  Nullable unique `users.player_id` links an account to a golf identity without
+  email inference. Session roles remain extensible.
+- The score authorization resolver returns tagged round owners. Admin/scorer
+  roles receive all eligible owners; players receive their exact individual or
+  round-team owner. Save and confirm recheck this policy under a session-row lock
+  in the score transaction.
+- A future explicit flight relation can extend that resolver to return both
+  teams in one flight. Starting-hole and tee-time coincidences carry no
+  authorization meaning.
 - Team results can be attributed back to every round member when tournament standings are calculated. There is no permanent tournament team.
 - Locked-round score protection lives in PostgreSQL as well as the domain service. A future correction transaction must explicitly set `app.admin_correction = 'true'`.
 - Score changes are audited by a database trigger.
@@ -74,6 +84,7 @@ Implemented resources:
 | `GET` | `/api/rounds/{round_id}/pairing-validation` | Validate assignments and course readiness |
 | `POST` | `/api/rounds/{round_id}/open` | Atomically open a ready draft round |
 | `GET` | `/api/rounds/{round_id}/completion-validation` | Inspect per-owner completion and lock readiness |
+| `GET` | `/api/rounds/{round_id}/score-access` | Retrieve writable score owners for the session |
 | `POST` | `/api/rounds/{round_id}/complete` | Complete a ready open round atomically |
 | `POST` | `/api/rounds/{round_id}/lock` | Lock a ready completed round atomically |
 | `GET` | `/api/rounds/{round_id}/leaderboards/gross` | Retrieve the live gross round leaderboard |
@@ -88,12 +99,16 @@ Implemented resources:
 | `GET` | `/api/tournaments/{tournament_id}/leaderboards/net` | Retrieve individual tournament net standings |
 | `GET` | `/api/live` | SSE invalidation events |
 | `GET` | `/api/health` | Liveness response |
+| `POST` | `/api/auth/login` | Verify credentials and create a session |
+| `GET` | `/api/auth/session` | Retrieve the current session and CSRF value |
+| `POST` | `/api/auth/logout` | Revoke and clear the current session |
 
 Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 
 ## Deferred decisions
 
-- Authentication provider, session mechanism, and authorization policy.
+- Authorization for all non-scoring mutation routes and production login rate limiting.
+- Normalized round flights and flight-wide score permissions.
 - Separate migration and runtime database roles plus production privilege policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.
 - Scramble formulas beyond the initial configurable 35%/15% implementation.

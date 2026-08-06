@@ -57,6 +57,11 @@ export interface OwnerCompletionProgress {
   confirmed: boolean
 }
 
+export interface ScoreAccess {
+  round_id: string
+  writable_owners: ScoreOwner[]
+}
+
 export type CompletionIssueCode =
   | 'no_required_owners'
   | 'incomplete_scorecards'
@@ -79,9 +84,24 @@ export interface RoundCompletionValidation {
 }
 
 export const scoringKeys = {
+  access: (roundId: string) => ['rounds', roundId, 'score-access'] as const,
   completion: (roundId: string) => ['rounds', roundId, 'completion-validation'] as const,
   scorecard: (roundId: string, owner: ScoreOwner) =>
     ['scorecards', roundId, owner.type, owner.id] as const,
+}
+
+export function decodeScoreAccess(value: unknown, expectedRoundId: string): ScoreAccess {
+  const data = decodeObject(value, 'access', 'scorekortdata')
+  const roundId = decodeUuid(data.round_id, 'access.round_id', 'scorekortdata')
+  const writableOwners = decodeArray(
+    data.writable_owners,
+    'access.writable_owners',
+    owner,
+    'scorekortdata',
+  )
+  const identities = new Set(writableOwners.map((item) => `${item.type}:${item.id}`))
+  if (roundId !== expectedRoundId || identities.size !== writableOwners.length) invalid('access.identity')
+  return { round_id: roundId, writable_owners: writableOwners }
 }
 
 export function ownerEquals(left: ScoreOwner, right: ScoreOwner): boolean {
