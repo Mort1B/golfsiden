@@ -9,7 +9,7 @@ use axum::{
 use golf_api::{
     AppState, api,
     domain::scorecards::ScoreOwner,
-    repositories::{round_lifecycle, scorecards},
+    repositories::{round_completion, round_lifecycle, scorecards},
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -25,6 +25,7 @@ const DRAFT_ROUND_ID: Uuid = uuid!("30000000-0000-0000-0000-000000000008");
 const INDIVIDUAL_TEAM_ID: Uuid = uuid!("30000000-0000-0000-0000-000000000009");
 const SCRAMBLE_TEAM_ID: Uuid = uuid!("30000000-0000-0000-0000-000000000010");
 const PLAYER_A: Uuid = uuid!("30000000-0000-0000-0000-000000000011");
+const PLAYER_B: Uuid = uuid!("30000000-0000-0000-0000-000000000012");
 const USER_A: Uuid = uuid!("30000000-0000-0000-0000-000000000013");
 const USER_B: Uuid = uuid!("30000000-0000-0000-0000-000000000014");
 const HOLE_1: Uuid = uuid!("30000000-0000-0000-0000-000000000021");
@@ -559,9 +560,40 @@ async fn database_guards_preserve_audits_locking_and_parent_cascades(pool: PgPoo
         Some("score_audit_immutable")
     );
 
-    sqlx::query("UPDATE rounds SET status = 'completed' WHERE id = $1")
-        .bind(INDIVIDUAL_ROUND_ID)
-        .execute(&pool)
+    scorecards::save(
+        &pool,
+        scorecards::SaveScore {
+            round_id: INDIVIDUAL_ROUND_ID,
+            hole_id: HOLE_2,
+            owner,
+            gross_strokes: 4,
+            submitted_by: USER_A,
+        },
+    )
+    .await
+    .unwrap();
+    scorecards::confirm(&pool, INDIVIDUAL_ROUND_ID, owner, USER_A)
+        .await
+        .unwrap();
+    let other_owner = ScoreOwner::Player { id: PLAYER_B };
+    for hole_id in [HOLE_1, HOLE_2] {
+        scorecards::save(
+            &pool,
+            scorecards::SaveScore {
+                round_id: INDIVIDUAL_ROUND_ID,
+                hole_id,
+                owner: other_owner,
+                gross_strokes: 5,
+                submitted_by: USER_A,
+            },
+        )
+        .await
+        .unwrap();
+    }
+    scorecards::confirm(&pool, INDIVIDUAL_ROUND_ID, other_owner, USER_A)
+        .await
+        .unwrap();
+    round_completion::complete(&pool, INDIVIDUAL_ROUND_ID)
         .await
         .unwrap();
     let completed_correction = scorecards::save(
@@ -577,9 +609,10 @@ async fn database_guards_preserve_audits_locking_and_parent_cascades(pool: PgPoo
     .await
     .unwrap();
     assert!(completed_correction.changed);
-    sqlx::query("UPDATE rounds SET status = 'locked' WHERE id = $1")
-        .bind(INDIVIDUAL_ROUND_ID)
-        .execute(&pool)
+    scorecards::confirm(&pool, INDIVIDUAL_ROUND_ID, owner, USER_B)
+        .await
+        .unwrap();
+    round_completion::lock(&pool, INDIVIDUAL_ROUND_ID)
         .await
         .unwrap();
     let locked = scorecards::save(

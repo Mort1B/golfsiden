@@ -25,6 +25,14 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   `NOWAIT` for direct SQL so reverse lock ordering fails instead of deadlocking.
 - Scorecard confirmation is separate from score submission. A correction removes
   the current confirmation; stroke audit history remains append-only.
+- Completion and locking serialize on the round row before reading scorecard
+  state. Individual readiness is keyed by immutable round snapshots; scramble
+  readiness is keyed by frozen round teams. Both the repository and lifecycle
+  trigger require every owner to have exactly the configured hole count and a
+  current confirmation.
+- Transaction-local lifecycle settings route application writes through the
+  expected integrity paths; they are not an authorization boundary. Runtime role
+  separation and database privilege hardening belong with authentication work.
 - Server-Sent Events carry invalidation notifications, not full mutable state. Clients refetch through TanStack Query.
 
 ## API milestone
@@ -43,6 +51,9 @@ Implemented resources:
 | `GET` | `/api/rounds/{round_id}` | Retrieve a round |
 | `GET` | `/api/rounds/{round_id}/pairing-validation` | Validate assignments and course readiness |
 | `POST` | `/api/rounds/{round_id}/open` | Atomically open a ready draft round |
+| `GET` | `/api/rounds/{round_id}/completion-validation` | Inspect per-owner completion and lock readiness |
+| `POST` | `/api/rounds/{round_id}/complete` | Complete a ready open round atomically |
+| `POST` | `/api/rounds/{round_id}/lock` | Lock a ready completed round atomically |
 | `PUT` | `/api/rounds/{round_id}/scores` | Save or correct one hole score |
 | `GET` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}` | Retrieve a gross/net scorecard summary |
 | `POST` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/confirm` | Confirm a complete scorecard |
@@ -57,6 +68,7 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 ## Deferred decisions
 
 - Authentication provider, session mechanism, and authorization policy.
+- Separate migration and runtime database roles plus production privilege policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.
 - Scramble formulas beyond the initial configurable 35%/15% implementation.
 - Tie-break ordering and tournament treatment of incomplete scorecards.

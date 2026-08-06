@@ -1,46 +1,43 @@
 # Latest explanation
 
-## Audited scorecards
+## Atomic completion and locking
 
-The API now saves individual or team strokes through one tagged owner contract.
-Every changed value is an audited transaction; an identical mobile retry is a true
-no-op. Score identity, round format, opening snapshot eligibility, round tee, and
-editable lifecycle state are checked in the repository and again by PostgreSQL.
+Round completion is now a separate lifecycle boundary instead of a direct status
+update. A repeatable-read validation endpoint reports deterministic progress for
+every required scorecard. Individual rounds derive owners from immutable opening
+snapshots, while scramble rounds derive owners from the teams frozen at opening.
+Every owner needs exactly the configured number of hole scores and a current
+confirmation.
 
-All mutations serialize through the round row. Repository operations lock it
-first. Trigger-protected direct SQL acquires the same lock with `NOWAIT`, so it
-cannot create a row-to-round deadlock or race confirmation. Confirmation and
-correction therefore have a deterministic order, and corrections remove the
-current confirmation before another client can observe a confirmed stale card.
+Completion and locking take the same round-row lock used by score saves and
+confirmations. They re-read readiness inside that transaction, set a
+round-specific lifecycle context, perform only `open -> completed` or
+`completed -> locked`, and commit before the API emits SSE. A correction that
+wins before locking invalidates confirmation and blocks the lock; a lock that
+wins first makes waiting ordinary score operations re-read `locked` and fail.
 
-Scorecard reads use one repeatable-read snapshot. Individual net scores allocate
-the preserved playing handicap by stroke index. Scramble calculates 35% of the
-lower plus 15% of the higher frozen course handicap with integer-ratio rounding,
-then applies the round allowance once. Current player handicaps are never read.
+Migration 4 preserves all opening guards, adds per-owner transition backstops,
+locks relevant tables during its upgrade preflight, and rejects existing invalid
+completed or locked rounds with their identifiers. Lifecycle settings enforce
+the expected database integrity path but are not an authorization mechanism;
+separate runtime roles remain planned with authentication hardening.
 
 ## Compact example
 
-The same-value branch commits without touching the row or publishing SSE:
+The repository rejects a transition before changing status when current facts
+are not ready:
 
 ```rust
-if let Some(score) = existing.as_ref()
-    && score.gross_strokes == input.gross_strokes
-{
-    transaction.commit().await?;
-    return Ok(MutationResult {
-        value: score.clone(),
-        changed: false,
-    });
+let validation = validate(facts);
+if let Some(blocker) = transition_blocker(&validation, action) {
+    return Err(RoundCompletionError::Blocked { action, blocker });
 }
 ```
 
 ## Validation
 
-- Formatting passed and Clippy passed for every target/feature with warnings
-  denied.
-- Standard tests passed 17 unit tests. PostgreSQL feature tests passed 36 tests:
-  17 unit, 4 database rules, 10 round lifecycle, and 5 scorecard tests.
-- PostgreSQL 17.10 clean migration and seed passed with migrations 1-3, eight
-  players, five rounds, eighteen holes, eight teams, and sixteen memberships.
-- An isolated database successfully upgraded seeded migration 2 state to migration
-  3 without changing those entity counts.
+- Formatting, diff checks, and Clippy with all features and warnings denied pass.
+- The standard suite passes 20 tests; the PostgreSQL feature suite passes 49.
+- Automated migration tests cover valid and invalid version-3 upgrades.
+- Clean migration and seed validation retains eight players, five rounds, and
+  eight round-specific teams.

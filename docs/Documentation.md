@@ -4,11 +4,12 @@
 
 Milestone 1 provides a Rust/Axum API, PostgreSQL schema and migrations, an
 idempotent development seed, and a strict TypeScript React viewer application.
-Milestone 2 now includes deterministic round opening plus backend score entry,
-correction, scorecard summary, and confirmation for individual stroke play and
-two-player scramble. Users can browse tournaments, tournament players, rounds,
-players, and round-specific teams. The mobile score-entry UI, leaderboards,
-administrative forms, and authentication are planned but not implemented.
+Milestone 2 now includes deterministic round opening, backend score entry,
+correction, scorecard summary and confirmation, plus atomic round completion and
+locking for individual stroke play and two-player scramble. Users can browse
+tournaments, tournament players, rounds, players, and round-specific teams. The
+mobile score-entry UI, leaderboards, administrative forms, and authentication are
+planned but not implemented.
 
 ## Repository structure
 
@@ -72,6 +73,27 @@ the round allowance once.
 stroke changes remain historically audited, but superseded confirmation states
 are not retained as a separate event history.
 
+## Round completion and locking
+
+`GET /api/rounds/{round_id}/completion-validation` returns a repeatable-read,
+deterministically ordered view of every required player or team scorecard. It
+reports holes scored, required holes, confirmation state, and separate
+`ready_to_complete` and `ready_to_lock` flags for every existing round state.
+
+`POST /api/rounds/{round_id}/complete` accepts only an open round, and
+`POST /api/rounds/{round_id}/lock` accepts only a completed round. Both serialize
+on the same round-row lock used by scoring, recompute per-owner readiness inside
+the transition transaction, and publish one round SSE invalidation after commit.
+Individual owners come from immutable opening snapshots; scramble owners come
+from the round's frozen teams. Empty, incomplete, or unconfirmed owner sets are
+rejected with stable conflict codes.
+
+Corrections remain available while a round is completed. A correction removes
+that scorecard's current confirmation, so the round cannot be locked until it is
+confirmed again. Once locked, ordinary score changes remain rejected. Migration
+4 also fails fast when upgrading a database that already contains an invalid
+completed or locked round.
+
 ## Development workflow
 
 Follow `README.md` for setup and commands. Agents and contributors must also read
@@ -83,6 +105,5 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 
 - No authentication or authorization enforcement.
 - No gross/net round or tournament leaderboard API.
-- No round completion or locking lifecycle API yet.
 - No admin UI for tournaments, players, courses, rounds, or teams.
 - No offline score queue or public leaderboard link.

@@ -1,3 +1,4 @@
+mod completion;
 mod lifecycle;
 
 use std::sync::Arc;
@@ -34,6 +35,18 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route(
             "/api/rounds/{round_id}/open",
             axum::routing::post(lifecycle::open),
+        )
+        .route(
+            "/api/rounds/{round_id}/completion-validation",
+            get(completion::validation),
+        )
+        .route(
+            "/api/rounds/{round_id}/complete",
+            axum::routing::post(completion::complete),
+        )
+        .route(
+            "/api/rounds/{round_id}/lock",
+            axum::routing::post(completion::lock),
         )
 }
 

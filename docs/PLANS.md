@@ -6,15 +6,13 @@ instead of accumulating a historical log here.
 
 ## Active step
 
-None. Individual and scramble score mutation, correction audits, scorecard
-summaries, and confirmation are complete. Define and approve the leaderboard or
-round completion slice before implementation.
+None. Atomic scorecard completion validation, round completion, and round locking
+are complete. Define and approve the leaderboard slice before implementation.
 
 ## Upcoming work
 
 ### Milestone 2: Live scoring and leaderboards
 
-- Complete and lock rounds only after scorecard completeness can be enforced.
 - Implement round gross/net leaderboards and individual tournament standings,
   including attribution of team results to every team member.
 - Build the one-hole mobile scoring flow with immediate save, explicit sync state,

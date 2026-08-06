@@ -1,5 +1,6 @@
 #![cfg(feature = "database-tests")]
 
+use golf_api::repositories::round_completion;
 use sqlx::{PgPool, Row};
 
 const BASE_DATA: &str = r#"
@@ -114,15 +115,32 @@ async fn locked_round_rejects_normal_score_changes(pool: PgPool) {
         .bind(uuid::uuid!("10000000-0000-0000-0000-000000000008"))
         .bind(uuid::uuid!("10000000-0000-0000-0000-000000000001"))
         .execute(&mut *score_write).await.unwrap();
-    score_write.commit().await.unwrap();
-    sqlx::query("UPDATE rounds SET status = 'completed' WHERE id = $1")
+    let second_score_id = uuid::Uuid::new_v4();
+    sqlx::query("INSERT INTO scores (id, round_id, tournament_id, hole_id, team_id, gross_strokes, submitted_by) VALUES ($1, $2, $3, $4, $5, 4, $6)")
+        .bind(second_score_id)
         .bind(uuid::uuid!("10000000-0000-0000-0000-000000000007"))
-        .execute(&pool)
+        .bind(uuid::uuid!("10000000-0000-0000-0000-000000000003"))
+        .bind(uuid::uuid!("10000000-0000-0000-0000-000000000006"))
+        .bind(uuid::uuid!("10000000-0000-0000-0000-000000000009"))
+        .bind(uuid::uuid!("10000000-0000-0000-0000-000000000001"))
+        .execute(&mut *score_write).await.unwrap();
+    for team_id in [
+        uuid::uuid!("10000000-0000-0000-0000-000000000008"),
+        uuid::uuid!("10000000-0000-0000-0000-000000000009"),
+    ] {
+        sqlx::query("INSERT INTO scorecard_confirmations (id, round_id, tournament_id, team_id, confirmed_by) VALUES ($1, $2, $3, $4, $5)")
+            .bind(uuid::Uuid::new_v4())
+            .bind(uuid::uuid!("10000000-0000-0000-0000-000000000007"))
+            .bind(uuid::uuid!("10000000-0000-0000-0000-000000000003"))
+            .bind(team_id)
+            .bind(uuid::uuid!("10000000-0000-0000-0000-000000000001"))
+            .execute(&mut *score_write).await.unwrap();
+    }
+    score_write.commit().await.unwrap();
+    round_completion::complete(&pool, uuid::uuid!("10000000-0000-0000-0000-000000000007"))
         .await
         .unwrap();
-    sqlx::query("UPDATE rounds SET status = 'locked' WHERE id = $1")
-        .bind(uuid::uuid!("10000000-0000-0000-0000-000000000007"))
-        .execute(&pool)
+    round_completion::lock(&pool, uuid::uuid!("10000000-0000-0000-0000-000000000007"))
         .await
         .unwrap();
     let error = sqlx::query("UPDATE scores SET gross_strokes = 5 WHERE id = $1")

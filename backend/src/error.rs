@@ -105,6 +105,15 @@ fn constraint_message(error: &sqlx::Error) -> String {
             Some("round_opening_snapshots_incomplete") => {
                 "round opening requires one snapshot per active entrant".to_owned()
             }
+            Some("round_completion_context_required") => {
+                "rounds must be completed through the completion workflow".to_owned()
+            }
+            Some("round_lock_context_required") => {
+                "rounds must be locked through the locking workflow".to_owned()
+            }
+            Some("round_scorecards_not_ready") => {
+                "round requires complete confirmed scorecards".to_owned()
+            }
             Some("score_mutation_context_required") => {
                 "scores must be changed through the score workflow".to_owned()
             }
