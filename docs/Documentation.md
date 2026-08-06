@@ -6,10 +6,10 @@ Milestone 1 provides a Rust/Axum API, PostgreSQL schema and migrations, an
 idempotent development seed, and a strict TypeScript React viewer application.
 Milestone 2 now includes deterministic round opening, backend score entry,
 correction, scorecard summary and confirmation, plus atomic round completion and
-locking for individual stroke play and two-player scramble. Users can browse
-tournaments, tournament players, rounds, players, and round-specific teams. The
-mobile score-entry UI, leaderboards, administrative forms, and authentication are
-planned but not implemented.
+locking and live gross/net leaderboard APIs for individual stroke play and
+two-player scramble. Users can browse tournaments, tournament players, rounds,
+players, and round-specific teams. Mobile score-entry and leaderboard screens,
+administrative forms, and authentication are planned but not implemented.
 
 ## Repository structure
 
@@ -94,6 +94,32 @@ confirmed again. Once locked, ordinary score changes remain rejected. Migration
 4 also fails fast when upgrading a database that already contains an invalid
 completed or locked round.
 
+## Leaderboards
+
+Round leaderboards are available at
+`GET /api/rounds/{round_id}/leaderboards/gross` and `/net`. They return all
+preserved player owners for individual play or frozen round teams for scramble,
+including unstarted cards. Live positions compare the selected partial total to
+par for the holes actually scored. Equal scores use competition positions and
+holes played affect display order, not the tie itself. Net totals allocate the
+preserved or calculated playing handicap by each scored hole's stroke index.
+
+Tournament leaderboards are available at
+`GET /api/tournaments/{tournament_id}/leaderboards/gross` and `/net`. They include
+all registered players, including withdrawn and zero-result entries, but aggregate
+only completed or locked rounds. Individual results stay with their snapshot
+owner; each scramble result is attributed once to every member of that exact
+round team. Players with more attributed completed rounds rank before players
+with fewer, then by the selected total. Current-team data comes from the
+highest-numbered open round, independent of its scoring format.
+
+Completed status is authoritative for tournament totals. A completed-round score
+correction therefore updates the leaderboard immediately even though the changed
+card must be reconfirmed before locking. Current player handicaps are never read
+for historical net totals. All leaderboard reads use one repeatable-read snapshot
+and bounded bulk queries; inconsistent completed-round or owner data fails closed
+instead of producing plausible partial standings.
+
 ## Development workflow
 
 Follow `README.md` for setup and commands. Agents and contributors must also read
@@ -104,6 +130,6 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 ## Known limitations
 
 - No authentication or authorization enforcement.
-- No gross/net round or tournament leaderboard API.
+- No mobile leaderboard screen yet.
 - No admin UI for tournaments, players, courses, rounds, or teams.
 - No offline score queue or public leaderboard link.

@@ -16,6 +16,7 @@ pub(super) struct RoundContext {
     pub tee_id: Option<Uuid>,
     pub number_of_holes: i16,
     pub status: RoundStatus,
+    pub handicap_enabled: bool,
     pub handicap_allowance_percent: i16,
     pub scoring_format: ScoringFormat,
 }

@@ -1,3 +1,4 @@
+pub mod leaderboards;
 pub mod players;
 pub mod round_completion;
 pub mod round_lifecycle;

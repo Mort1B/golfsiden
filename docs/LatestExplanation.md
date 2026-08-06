@@ -1,43 +1,51 @@
 # Latest explanation
 
-## Atomic completion and locking
+## Live leaderboard APIs
 
-Round completion is now a separate lifecycle boundary instead of a direct status
-update. A repeatable-read validation endpoint reports deterministic progress for
-every required scorecard. Individual rounds derive owners from immutable opening
-snapshots, while scramble rounds derive owners from the teams frozen at opening.
-Every owner needs exactly the configured number of hole scores and a current
-confirmation.
+The backend now exposes separate gross and net routes for round and tournament
+leaderboards. Round entries are format-aware: individual owners come from opening
+snapshots, while scramble owners come from frozen teams and use the shared 35/15
+handicap formula. Live partial positions compare strokes to par on the holes
+actually scored, so entering holes out of order remains correct.
 
-Completion and locking take the same round-row lock used by score saves and
-confirmations. They re-read readiness inside that transaction, set a
-round-specific lifecycle context, perform only `open -> completed` or
-`completed -> locked`, and commit before the API emits SSE. A correction that
-wins before locking invalidates confirmation and blocks the lock; a lock that
-wins first makes waiting ordinary score operations re-read `locked` and fail.
+Tournament assembly starts from registrations, then attributes each completed or
+locked round once per player. Individual scores follow the snapshot owner;
+scramble scores are copied to each member of that round's team. Team changes in
+later rounds therefore cannot rewrite earlier attribution. Completed-round count
+is ranked before the selected total, and equal selected results use competition
+positions without gross/net cross-breaking.
 
-Migration 4 preserves all opening guards, adds per-owner transition backstops,
-locks relevant tables during its upgrade preflight, and rejects existing invalid
-completed or locked rounds with their identifiers. Lifecycle settings enforce
-the expected database integrity path but are not an authorization mechanism;
-separate runtime roles remain planned with authentication hardening.
+Repositories issue bounded bulk reads inside one repeatable-read, read-only
+transaction. Domain assembly rejects unexpected owners, holes, duplicates,
+missing scramble snapshots, incomplete completed rounds, and invalid
+confirmations. A corrected completed card may be unconfirmed but remains complete
+and included, matching the lifecycle contract.
 
 ## Compact example
 
-The repository rejects a transition before changing status when current facts
-are not ready:
+Scramble results are attributed through the membership carried by that exact
+round entry:
 
 ```rust
-let validation = validate(facts);
-if let Some(blocker) = transition_blocker(&validation, action) {
-    return Err(RoundCompletionError::Blocked { action, blocker });
+for member in entry.members {
+    add_result(
+        &participants,
+        &mut totals,
+        &mut attributed,
+        round.round.round_id,
+        member.player_id,
+        entry.gross_total,
+        entry.net_total,
+    )?;
 }
 ```
 
 ## Validation
 
 - Formatting, diff checks, and Clippy with all features and warnings denied pass.
-- The standard suite passes 20 tests; the PostgreSQL feature suite passes 49.
-- Automated migration tests cover valid and invalid version-3 upgrades.
-- Clean migration and seed validation retains eight players, five rounds, and
-  eight round-specific teams.
+- The standard suite passes 28 tests; the PostgreSQL feature suite passes 63.
+- API coverage includes exact round/tournament JSON, gross/net separation,
+  completed corrections, multiple open rounds, invalid stored data, and
+  repeatable-read concurrency.
+- Handicap-disabled scramble scorecards and leaderboards both report zero playing
+  handicap with net equal to gross.

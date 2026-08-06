@@ -194,9 +194,9 @@ async fn load_round(
     lock: bool,
 ) -> Result<RoundContext, ScorecardError> {
     let sql = if lock {
-        "SELECT id, tournament_id, tee_id, number_of_holes, status, handicap_allowance_percent, scoring_format FROM rounds WHERE id = $1 FOR UPDATE"
+        "SELECT id, tournament_id, tee_id, number_of_holes, status, handicap_enabled, handicap_allowance_percent, scoring_format FROM rounds WHERE id = $1 FOR UPDATE"
     } else {
-        "SELECT id, tournament_id, tee_id, number_of_holes, status, handicap_allowance_percent, scoring_format FROM rounds WHERE id = $1"
+        "SELECT id, tournament_id, tee_id, number_of_holes, status, handicap_enabled, handicap_allowance_percent, scoring_format FROM rounds WHERE id = $1"
     };
     sqlx::query_as(sql)
         .bind(round_id)
@@ -247,7 +247,11 @@ async fn validate_owner(
             let handicap = sqlx::query_scalar::<_, i16>("SELECT playing_handicap FROM round_handicap_snapshots WHERE round_id = $1 AND player_id = $2")
                 .bind(context.id).bind(id).fetch_optional(&mut *connection).await?;
             if let Some(handicap) = handicap {
-                return Ok(i32::from(handicap));
+                return Ok(if context.handicap_enabled {
+                    i32::from(handicap)
+                } else {
+                    0
+                });
             }
             owner_missing_or_ineligible(connection, "players", id).await
         }
@@ -267,6 +271,9 @@ async fn validate_owner(
             }
             let handicaps = sqlx::query_scalar::<_, i16>("SELECT rhs.course_handicap FROM team_memberships tm JOIN round_handicap_snapshots rhs ON rhs.round_id = tm.round_id AND rhs.player_id = tm.player_id WHERE tm.team_id = $1 ORDER BY rhs.course_handicap, rhs.player_id")
                 .bind(id).fetch_all(&mut *connection).await?;
+            if !context.handicap_enabled && handicaps.len() == 2 {
+                return Ok(0);
+            }
             scramble_playing_handicap(
                 &handicaps.into_iter().map(i32::from).collect::<Vec<_>>(),
                 context.handicap_allowance_percent,

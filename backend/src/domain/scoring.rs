@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use uuid::Uuid;
 
 use super::models::RoundStatus;
@@ -118,65 +116,6 @@ pub fn require_score_editable(
     Ok(())
 }
 
-#[derive(Debug, Clone)]
-pub struct RoundPlayerResult {
-    pub player_id: Uuid,
-    pub round_id: Uuid,
-    pub team_id: Option<Uuid>,
-    pub gross: i32,
-    pub net: i32,
-    pub completed: bool,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TournamentStanding {
-    pub player_id: Uuid,
-    pub gross: i32,
-    pub net: i32,
-    pub completed_rounds: usize,
-    pub position: usize,
-    pub tied: bool,
-}
-
-pub fn tournament_standings(results: &[RoundPlayerResult]) -> Vec<TournamentStanding> {
-    let mut totals: HashMap<Uuid, (i32, i32, usize)> = HashMap::new();
-    for result in results.iter().filter(|result| result.completed) {
-        let total = totals.entry(result.player_id).or_default();
-        total.0 += result.gross;
-        total.1 += result.net;
-        total.2 += 1;
-    }
-    let mut standings: Vec<_> = totals
-        .into_iter()
-        .map(
-            |(player_id, (gross, net, completed_rounds))| TournamentStanding {
-                player_id,
-                gross,
-                net,
-                completed_rounds,
-                position: 0,
-                tied: false,
-            },
-        )
-        .collect();
-    standings.sort_by_key(|standing| (standing.net, standing.gross, standing.player_id));
-    for index in 0..standings.len() {
-        let same_as_previous = index > 0
-            && standings[index].net == standings[index - 1].net
-            && standings[index].gross == standings[index - 1].gross;
-        standings[index].position = if same_as_previous {
-            standings[index - 1].position
-        } else {
-            index + 1
-        };
-        standings[index].tied = same_as_previous
-            || standings.get(index + 1).is_some_and(|next| {
-                next.net == standings[index].net && next.gross == standings[index].gross
-            });
-    }
-    standings
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -244,50 +183,6 @@ mod tests {
         assert_ne!(
             net_total(84, preserved_round_handicap),
             net_total(84, current_handicap_after_change)
-        );
-    }
-
-    #[test]
-    fn standings_follow_players_across_different_round_teams() {
-        let player = Uuid::new_v4();
-        let other = Uuid::new_v4();
-        let results = vec![
-            RoundPlayerResult {
-                player_id: player,
-                round_id: Uuid::new_v4(),
-                team_id: Some(Uuid::new_v4()),
-                gross: 80,
-                net: 70,
-                completed: true,
-            },
-            RoundPlayerResult {
-                player_id: player,
-                round_id: Uuid::new_v4(),
-                team_id: Some(Uuid::new_v4()),
-                gross: 82,
-                net: 71,
-                completed: true,
-            },
-            RoundPlayerResult {
-                player_id: other,
-                round_id: Uuid::new_v4(),
-                team_id: None,
-                gross: 160,
-                net: 145,
-                completed: true,
-            },
-        ];
-        let standings = tournament_standings(&results);
-        assert_eq!(
-            standings[0],
-            TournamentStanding {
-                player_id: player,
-                gross: 162,
-                net: 141,
-                completed_rounds: 2,
-                position: 1,
-                tied: false
-            }
         );
     }
 }

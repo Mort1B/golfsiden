@@ -1,3 +1,4 @@
+mod leaderboards;
 mod live;
 mod players;
 mod rounds;
@@ -20,6 +21,7 @@ pub fn router(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/api/health", get(health))
         .merge(players::routes())
+        .merge(leaderboards::routes())
         .merge(tournaments::routes())
         .merge(rounds::routes())
         .merge(scorecards::routes())

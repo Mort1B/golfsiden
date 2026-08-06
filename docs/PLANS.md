@@ -6,15 +6,16 @@ instead of accumulating a historical log here.
 
 ## Active step
 
-None. Atomic scorecard completion validation, round completion, and round locking
-are complete. Define and approve the leaderboard slice before implementation.
+None. Live gross/net round leaderboards and individual tournament standings are
+complete. Define and approve the mobile leaderboard or scoring UI slice before
+implementation.
 
 ## Upcoming work
 
 ### Milestone 2: Live scoring and leaderboards
 
-- Implement round gross/net leaderboards and individual tournament standings,
-  including attribution of team results to every team member.
+- Build mobile gross/net round and tournament leaderboard screens with SSE-driven
+  refetch and complete loading, error, empty, and live-progress states.
 - Build the one-hole mobile scoring flow with immediate save, explicit sync state,
   correction support, and SSE-driven refetch.
 - Add API and PostgreSQL integration coverage for scoring, locking, correction,

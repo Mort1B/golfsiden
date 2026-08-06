@@ -33,6 +33,14 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
 - Transaction-local lifecycle settings route application writes through the
   expected integrity paths; they are not an authorization boundary. Runtime role
   separation and database privilege hardening belong with authentication work.
+- Round leaderboards calculate live gross/net score-to-par from the holes actually
+  scored. Tournament leaderboards aggregate only completed or locked rounds and
+  attribute scramble results through frozen membership for that round. Separate
+  gross and net routes never use the other metric as a hidden tie-break.
+- Leaderboard repositories bulk-load rounds, holes, snapshots, teams,
+  memberships, scores, and confirmations inside one repeatable-read, read-only
+  transaction. Pure domain assembly validates stored facts, calculates handicap
+  results, attributes players, and applies deterministic competition ranking.
 - Server-Sent Events carry invalidation notifications, not full mutable state. Clients refetch through TanStack Query.
 
 ## API milestone
@@ -54,12 +62,16 @@ Implemented resources:
 | `GET` | `/api/rounds/{round_id}/completion-validation` | Inspect per-owner completion and lock readiness |
 | `POST` | `/api/rounds/{round_id}/complete` | Complete a ready open round atomically |
 | `POST` | `/api/rounds/{round_id}/lock` | Lock a ready completed round atomically |
+| `GET` | `/api/rounds/{round_id}/leaderboards/gross` | Retrieve the live gross round leaderboard |
+| `GET` | `/api/rounds/{round_id}/leaderboards/net` | Retrieve the live net round leaderboard |
 | `PUT` | `/api/rounds/{round_id}/scores` | Save or correct one hole score |
 | `GET` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}` | Retrieve a gross/net scorecard summary |
 | `POST` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/confirm` | Confirm a complete scorecard |
 | `GET`, `POST` | `/api/rounds/{round_id}/teams` | List and create round teams |
 | `POST` | `/api/teams/{team_id}/members` | Assign a tournament player |
 | `DELETE` | `/api/teams/{team_id}/members/{player_id}` | Remove an assignment |
+| `GET` | `/api/tournaments/{tournament_id}/leaderboards/gross` | Retrieve individual tournament gross standings |
+| `GET` | `/api/tournaments/{tournament_id}/leaderboards/net` | Retrieve individual tournament net standings |
 | `GET` | `/api/live` | SSE invalidation events |
 | `GET` | `/api/health` | Liveness response |
 
@@ -71,6 +83,6 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 - Separate migration and runtime database roles plus production privilege policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.
 - Scramble formulas beyond the initial configurable 35%/15% implementation.
-- Tie-break ordering and tournament treatment of incomplete scorecards.
+- Configurable tie-break ordering beyond shared competition positions.
 - Public leaderboard token/link design.
 - Offline mutation queue and score conflict presentation.
