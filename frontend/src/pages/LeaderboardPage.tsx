@@ -1,0 +1,141 @@
+import { useQuery } from '@tanstack/react-query'
+import { Navigate, useSearchParams } from 'react-router-dom'
+import { api } from '../api/client'
+import { leaderboardKeys } from '../api/leaderboards'
+import { LeaderboardControls } from '../features/leaderboards/LeaderboardControls'
+import { RoundStandings } from '../features/leaderboards/RoundStandings'
+import {
+  leaderboardSearch,
+  parseMetric,
+  parseScope,
+  preferredRound,
+  type LeaderboardScope,
+} from '../features/leaderboards/selection'
+import { TournamentStandings } from '../features/leaderboards/TournamentStandings'
+import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
+
+export function LeaderboardPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tournamentsQuery = useQuery({ queryKey: ['tournaments'], queryFn: api.tournaments })
+  const tournaments = tournamentsQuery.data ?? []
+  const requestedTournamentId = searchParams.get('tournament')
+  const selectedTournament = tournaments.find((item) => item.id === requestedTournamentId)
+    ?? tournaments.find((item) => item.status === 'active')
+    ?? tournaments[0]
+  const tournamentId = selectedTournament?.id ?? ''
+  const scope = parseScope(searchParams.get('scope'))
+  const metric = parseMetric(searchParams.get('metric'))
+
+  const roundsQuery = useQuery({
+    queryKey: ['tournament', tournamentId, 'rounds'],
+    queryFn: () => api.rounds(tournamentId),
+    enabled: tournamentId.length > 0,
+  })
+  const rounds = roundsQuery.data ?? []
+  const requestedRoundId = searchParams.get('round')
+  const selectedRound = rounds.find((round) => round.id === requestedRoundId) ?? preferredRound(rounds)
+
+  const roundLeaderboardQuery = useQuery({
+    queryKey: leaderboardKeys.round(selectedRound?.id ?? '', metric),
+    queryFn: () => api.roundLeaderboard(selectedRound?.id ?? '', metric),
+    enabled: scope === 'round' && selectedRound !== undefined,
+  })
+  const tournamentLeaderboardQuery = useQuery({
+    queryKey: leaderboardKeys.tournament(tournamentId, metric),
+    queryFn: () => api.tournamentLeaderboard(tournamentId, metric),
+    enabled: scope === 'tournament' && tournamentId.length > 0,
+  })
+
+  if (tournamentsQuery.isPending) return <section className="page leaderboard-page"><LoadingState /></section>
+  if (tournamentsQuery.error && tournaments.length === 0) {
+    return (
+      <section className="page leaderboard-page">
+        <header className="page-header"><p className="brand">Guttas Golf</p><h1>Resultater</h1></header>
+        <ErrorState error={tournamentsQuery.error} onRetry={() => void tournamentsQuery.refetch()} />
+      </section>
+    )
+  }
+  if (!selectedTournament) {
+    return (
+      <section className="page leaderboard-page">
+        <header className="page-header"><p className="brand">Guttas Golf</p><h1>Resultater</h1></header>
+        <EmptyState>Ingen turneringer er opprettet</EmptyState>
+      </section>
+    )
+  }
+
+  if (roundsQuery.data) {
+    const canonical = leaderboardSearch(tournamentId, scope, selectedRound?.id, metric)
+    if (searchParams.toString() !== canonical.toString()) {
+      return <Navigate replace to={`/leaderboard?${canonical.toString()}`} />
+    }
+  }
+
+  const setSelection = (
+    nextTournamentId: string,
+    nextScope: LeaderboardScope,
+    nextRoundId: string | undefined,
+    nextMetric: typeof metric,
+  ) => setSearchParams(leaderboardSearch(nextTournamentId, nextScope, nextRoundId, nextMetric))
+
+  const activeQuery = scope === 'round' ? roundLeaderboardQuery : tournamentLeaderboardQuery
+
+  return (
+    <section className="page leaderboard-page">
+      <header className="page-header leaderboard-header">
+        <div><p className="brand">Guttas Golf</p><h1>Resultater</h1></div>
+        {activeQuery.isFetching && !activeQuery.isPending && <span role="status">Oppdaterer …</span>}
+      </header>
+
+      <LeaderboardControls
+        tournaments={tournaments}
+        rounds={rounds}
+        tournamentId={tournamentId}
+        roundId={selectedRound?.id}
+        scope={scope}
+        metric={metric}
+        roundsPending={roundsQuery.isPending}
+        onTournamentChange={(id) => setSelection(id, scope, undefined, metric)}
+        onRoundChange={(id) => setSelection(tournamentId, scope, id, metric)}
+        onScopeChange={(nextScope) => setSelection(tournamentId, nextScope, selectedRound?.id, metric)}
+        onMetricChange={(nextMetric) => setSelection(tournamentId, scope, selectedRound?.id, nextMetric)}
+      />
+
+      {tournamentsQuery.error && tournaments.length > 0 && (
+        <ErrorState error={tournamentsQuery.error} onRetry={() => void tournamentsQuery.refetch()} />
+      )}
+
+      {roundsQuery.error && (
+        <ErrorState error={roundsQuery.error} onRetry={() => void roundsQuery.refetch()} />
+      )}
+
+      {scope === 'round' && !roundsQuery.error && roundsQuery.isPending && <LoadingState />}
+      {scope === 'round' && !roundsQuery.error && !roundsQuery.isPending && rounds.length === 0 && (
+        <EmptyState>Turneringen har ingen runder ennå</EmptyState>
+      )}
+
+      {activeQuery.isPending && !(scope === 'round' && (roundsQuery.isPending || rounds.length === 0)) && <LoadingState />}
+      {activeQuery.error && (
+        <ErrorState error={activeQuery.error} onRetry={() => void activeQuery.refetch()} />
+      )}
+
+      {scope === 'round' && roundLeaderboardQuery.data?.entries.length === 0 && (
+        <EmptyState>
+          {roundLeaderboardQuery.data.status === 'draft'
+            ? 'Runden er fortsatt en kladd. Resultater vises når runden åpnes.'
+            : 'Runden har ingen resultatlinjer ennå.'}
+        </EmptyState>
+      )}
+      {scope === 'round' && roundLeaderboardQuery.data && roundLeaderboardQuery.data.entries.length > 0 && (
+        <RoundStandings leaderboard={roundLeaderboardQuery.data} />
+      )}
+
+      {scope === 'tournament' && tournamentLeaderboardQuery.data?.entries.length === 0 && (
+        <EmptyState>Ingen spillere er registrert i turneringen</EmptyState>
+      )}
+      {scope === 'tournament' && tournamentLeaderboardQuery.data && tournamentLeaderboardQuery.data.entries.length > 0 && (
+        <TournamentStandings leaderboard={tournamentLeaderboardQuery.data} />
+      )}
+    </section>
+  )
+}

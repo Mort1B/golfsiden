@@ -42,6 +42,10 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   transaction. Pure domain assembly validates stored facts, calculates handicap
   results, attributes players, and applies deterministic competition ranking.
 - Server-Sent Events carry invalidation notifications, not full mutable state. Clients refetch through TanStack Query.
+- The global leaderboard route owns selection in canonical URL parameters instead
+  of a client store. It validates round ownership before enabling hierarchical
+  queries, and leaderboard responses pass focused runtime decoding before
+  entering the query cache.
 
 ## API milestone
 

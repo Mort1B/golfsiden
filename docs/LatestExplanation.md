@@ -1,51 +1,54 @@
 # Latest explanation
 
-## Live leaderboard APIs
+## Mobile live leaderboards
 
-The backend now exposes separate gross and net routes for round and tournament
-leaderboards. Round entries are format-aware: individual owners come from opening
-snapshots, while scramble owners come from frozen teams and use the shared 35/15
-handicap formula. Live partial positions compare strokes to par on the holes
-actually scored, so entering holes out of order remains correct.
+The result tab now displays backend-calculated gross and net standings for either
+a selected round or the whole tournament. Tournament, scope, round, and metric
+live in canonical URL parameters, so refreshes and browser history preserve the
+view without introducing a client store. A requested round is checked against
+the selected tournament before its query can run.
 
-Tournament assembly starts from registrations, then attributes each completed or
-locked round once per player. Individual scores follow the snapshot owner;
-scramble scores are copied to each member of that round's team. Team changes in
-later rounds therefore cannot rewrite earlier attribution. Completed-round count
-is ranked before the selected total, and equal selected results use competition
-positions without gross/net cross-breaking.
+Round rows show live score to par, the selected stroke total, holes played,
+confirmation state, and exact scramble membership. Tournament rows show the
+selected accumulated total, completed-round count, withdrawn state, and the
+current open-round team returned by the backend. Unstarted owners remain visible
+and unranked instead of displaying zero as a played result.
 
-Repositories issue bounded bulk reads inside one repeatable-read, read-only
-transaction. Domain assembly rejects unexpected owners, holes, duplicates,
-missing scramble snapshots, incomplete completed rounds, and invalid
-confirmations. A corrected completed card may be unconfirmed but remains complete
-and included, matching the lifecycle contract.
+The new leaderboard endpoints cross a strict runtime decoder before responses
+enter TanStack Query. Malformed identifiers, tagged owners, finite states,
+nullability, numeric fields, or response identity fail into a query-owned retry
+state. The existing single EventSource remains invalidation-only: score and round
+events trigger an authoritative refetch rather than merging event data or
+recalculating handicap results in React.
 
 ## Compact example
 
-Scramble results are attributed through the membership carried by that exact
-round entry:
+The round query cannot start until URL selection has resolved to a round owned by
+the selected tournament:
 
-```rust
-for member in entry.members {
-    add_result(
-        &participants,
-        &mut totals,
-        &mut attributed,
-        round.round.round_id,
-        member.player_id,
-        entry.gross_total,
-        entry.net_total,
-    )?;
-}
+```tsx
+const selectedRound = rounds.find((round) => round.id === requestedRoundId)
+  ?? preferredRound(rounds)
+
+useQuery({
+  queryKey: leaderboardKeys.round(selectedRound?.id ?? '', metric),
+  queryFn: () => api.roundLeaderboard(selectedRound?.id ?? '', metric),
+  enabled: scope === 'round' && selectedRound !== undefined,
+})
 ```
 
 ## Validation
 
-- Formatting, diff checks, and Clippy with all features and warnings denied pass.
-- The standard suite passes 28 tests; the PostgreSQL feature suite passes 63.
-- API coverage includes exact round/tournament JSON, gross/net separation,
-  completed corrections, multiple open rounds, invalid stored data, and
-  repeatable-read concurrency.
-- Handicap-disabled scramble scorecards and leaderboards both report zero playing
-  handicap with net equal to gross.
+- `npm ci`, four Vitest tests, strict typecheck, ESLint, production build, and
+  diff checks pass.
+- Chrome checks pass at 320x720, 390x844, and 1280x900 with no console errors,
+  failed requests, horizontal overflow, undersized touch targets, or navigation
+  overlap.
+- Browser coverage includes canonical defaults, keyboard focus and activation,
+  Back navigation, round/tournament and gross/net switching, a real partial
+  score, unstarted owners, and SSE-driven refetch.
+- Intercepted browser cases cover loading, no tournaments, malformed-response
+  retry, cached tournament-refresh failure, and long names at 320px.
+- `npm audit` still reports two high-severity records for the documented React
+  Router server/RSC advisory; this client-only app does not use the affected
+  server action path.

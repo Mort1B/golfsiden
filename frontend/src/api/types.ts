@@ -2,6 +2,8 @@ export type TournamentStatus = 'draft' | 'active' | 'completed' | 'archived'
 export type ScoringMode = 'individual' | 'team' | 'combined'
 export type RoundStatus = 'draft' | 'open' | 'completed' | 'locked'
 export type ScoringFormat = 'individual_stroke_play' | 'team_scramble'
+export type ParticipantStatus = 'active' | 'withdrawn'
+export type LeaderboardMetric = 'gross' | 'net'
 
 export interface Tournament {
   id: string
@@ -33,7 +35,7 @@ export interface TournamentPlayer {
   display_name: string
   tournament_handicap: number
   seed: number | null
-  status: 'active' | 'withdrawn'
+  status: ParticipantStatus
 }
 
 export interface Round {
@@ -65,4 +67,67 @@ export interface Team {
   starting_hole: number | null
   tee_time: string | null
   members: TeamMember[]
+}
+
+export type LeaderboardOwner =
+  | { type: 'player'; id: string }
+  | { type: 'team'; id: string }
+
+export interface LeaderboardMember {
+  player_id: string
+  display_name: string
+  display_order: number | null
+}
+
+export interface RoundLeaderboardEntry {
+  position: number | null
+  tied: boolean
+  owner: LeaderboardOwner
+  owner_name: string
+  members: LeaderboardMember[]
+  holes_scored: number
+  number_of_holes: number
+  complete: boolean
+  confirmed: boolean
+  playing_handicap: number
+  gross_total: number
+  net_total: number
+  par_played: number
+  score_to_par: number
+}
+
+export interface RoundLeaderboard {
+  round_id: string
+  tournament_id: string
+  status: RoundStatus
+  scoring_format: ScoringFormat
+  metric: LeaderboardMetric
+  number_of_holes: number
+  entries: RoundLeaderboardEntry[]
+}
+
+export interface CurrentTeam {
+  round_id: string
+  team_id: string
+  team_name: string
+}
+
+export interface TournamentLeaderboardEntry {
+  position: number | null
+  tied: boolean
+  player_id: string
+  display_name: string
+  status: ParticipantStatus
+  completed_rounds: number
+  gross_total: number
+  net_total: number
+  current_team: CurrentTeam | null
+}
+
+export interface TournamentLeaderboard {
+  tournament_id: string
+  metric: LeaderboardMetric
+  current_round_id: string | null
+  included_round_ids: string[]
+  entries: TournamentLeaderboardEntry[]
 }

@@ -8,8 +8,10 @@ Milestone 2 now includes deterministic round opening, backend score entry,
 correction, scorecard summary and confirmation, plus atomic round completion and
 locking and live gross/net leaderboard APIs for individual stroke play and
 two-player scramble. Users can browse tournaments, tournament players, rounds,
-players, and round-specific teams. Mobile score-entry and leaderboard screens,
-administrative forms, and authentication are planned but not implemented.
+players, and round-specific teams. The mobile result view supports round and
+tournament gross/net standings with shareable selections and live refetch.
+Mobile score entry, administrative forms, and authentication are planned but
+not implemented.
 
 ## Repository structure
 
@@ -18,6 +20,7 @@ administrative forms, and authentication are planned but not implemented.
 - `backend/src/repositories/`: SQLx queries and persistence operations.
 - `backend/tests/`: PostgreSQL integration tests.
 - `frontend/src/api/`: typed frontend API boundary.
+- `frontend/src/features/`: focused feature controls, presentation, and pure utilities.
 - `frontend/src/pages/`: route-level mobile-first views.
 - `frontend/src/ui/`: reusable application UI.
 - `migrations/`: forward PostgreSQL schema changes.
@@ -120,6 +123,19 @@ for historical net totals. All leaderboard reads use one repeatable-read snapsho
 and bounded bulk queries; inconsistent completed-round or owner data fails closed
 instead of producing plausible partial standings.
 
+The React `/leaderboard` page stores tournament, round/tournament scope, round,
+and gross/net selection in URL search parameters. Invalid or stale selections
+are replaced with a valid active/latest default before a leaderboard query is
+enabled, including validation that the selected round belongs to the selected
+tournament. Round rows distinguish unstarted, partial, complete, and confirmed
+cards; tournament rows retain registered players with zero completed rounds.
+
+Leaderboard responses cross a focused runtime decoder before entering TanStack
+Query. The decoder checks tagged owners, finite states, identifiers, nullability,
+numeric fields, and response identity. The single application EventSource
+remains an invalidation signal only; clients refetch the selected authoritative
+leaderboard instead of calculating or merging score state in the browser.
+
 ## Development workflow
 
 Follow `README.md` for setup and commands. Agents and contributors must also read
@@ -130,6 +146,5 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 ## Known limitations
 
 - No authentication or authorization enforcement.
-- No mobile leaderboard screen yet.
 - No admin UI for tournaments, players, courses, rounds, or teams.
 - No offline score queue or public leaderboard link.

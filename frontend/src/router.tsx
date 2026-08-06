@@ -5,6 +5,7 @@ import { PlayersPage } from './pages/PlayersPage'
 import { RoundPage } from './pages/RoundPage'
 import { TournamentPage } from './pages/TournamentPage'
 import { TournamentsPage } from './pages/TournamentsPage'
+import { LeaderboardPage } from './pages/LeaderboardPage'
 
 export const router = createBrowserRouter([
   {
@@ -15,7 +16,7 @@ export const router = createBrowserRouter([
       { path: '/rounds/:roundId', element: <RoundPage /> },
       { path: '/players', element: <PlayersPage /> },
       { path: '/score', element: <PlaceholderPage title="Score" state="Ingen åpne scorekort" /> },
-      { path: '/leaderboard', element: <PlaceholderPage title="Resultater" state="Ingen registrerte resultater" /> },
+      { path: '/leaderboard', element: <LeaderboardPage /> },
       { path: '/admin', element: <PlaceholderPage title="Admin" state="Velg en turnering" /> },
     ],
   },

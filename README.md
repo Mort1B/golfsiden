@@ -1,6 +1,6 @@
 # Guttas Golf
 
-Mobile-first tournament software for a private annual golf trip. The current milestone provides the database foundation, Axum REST API, deterministic development data, read-only React views, atomic round lifecycle operations, audited individual/scramble scorecards, and live gross/net leaderboard APIs.
+Mobile-first tournament software for a private annual golf trip. The current milestone provides the database foundation, Axum REST API, deterministic development data, atomic round lifecycle operations, audited individual/scramble scorecards, live gross/net leaderboard APIs, and responsive React leaderboard views.
 
 ## Prerequisites
 
@@ -75,6 +75,7 @@ Run frontend checks:
 
 ```bash
 cd frontend
+npm run test
 npm run typecheck
 npm run lint
 npm run build
@@ -90,6 +91,7 @@ npm run build
 - `backend/src/bin`: migration and seed commands
 - `backend/tests`: PostgreSQL integrity tests
 - `frontend/src/pages`: milestone viewer pages
+- `frontend/src/features`: focused mobile feature components and utilities
 - `frontend/src/api`: typed API client and resource types
 - `migrations`: PostgreSQL schema and integrity triggers
 - `docs`: architecture decisions and phased plan
@@ -98,6 +100,6 @@ See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documenta
 
 ## Current limitations
 
-Authentication and authorization, the mobile scoring and leaderboard screens, course administration, and admin forms are intentionally deferred to later milestone 2 or 3 slices. The user/role, score, audit, locking, and handicap snapshot schema is already present so those features can be added without remodelling the core data.
+Authentication and authorization, mobile score entry, course administration, and admin forms are intentionally deferred to later milestone 2 or 3 slices. The user/role, score, audit, locking, and handicap snapshot schema is already present so those features can be added without remodelling the core data.
 
-`npm audit` currently reports a high-severity React Router advisory in its server/RSC action mode. This project uses only client-side routing and no React Server Components or router actions, so the affected path is not exposed; upgrade when the registry publishes a patched version that resolves the overlapping advisories.
+`npm audit` currently reports two high-severity dependency records for one React Router advisory in its server/RSC action mode. This project uses only client-side routing and no React Server Components or router actions, so the affected path is not exposed; upgrade when the registry publishes a patched compatible version.

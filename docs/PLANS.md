@@ -6,16 +6,13 @@ instead of accumulating a historical log here.
 
 ## Active step
 
-None. Live gross/net round leaderboards and individual tournament standings are
-complete. Define and approve the mobile leaderboard or scoring UI slice before
-implementation.
+None. Mobile gross/net round and tournament leaderboard views are complete.
+Define and approve the one-hole scoring slice before implementation.
 
 ## Upcoming work
 
 ### Milestone 2: Live scoring and leaderboards
 
-- Build mobile gross/net round and tournament leaderboard screens with SSE-driven
-  refetch and complete loading, error, empty, and live-progress states.
 - Build the one-hole mobile scoring flow with immediate save, explicit sync state,
   correction support, and SSE-driven refetch.
 - Add API and PostgreSQL integration coverage for scoring, locking, correction,
