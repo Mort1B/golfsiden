@@ -82,6 +82,8 @@ npm run build
 
 ## Repository map
 
+- `AGENTS.md`: repository-wide engineering and agent operating contract
+- `.codex/agents`: project-scoped explorer, implementation, review, and validation agents
 - `backend/src/api`: routes, handlers, request validation, SSE
 - `backend/src/domain`: API/domain models and pure scoring/handicap services
 - `backend/src/repositories`: SQLx database access
@@ -92,7 +94,7 @@ npm run build
 - `migrations`: PostgreSQL schema and integrity triggers
 - `docs`: architecture decisions and phased plan
 
-See [Architecture](docs/ARCHITECTURE.md) and [Plan](docs/PLAN.md) for the API inventory, domain decisions, assumptions, and next milestone.
+See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documentation.md), [Active plans](docs/PLANS.md), and [Agent workflow](docs/AGENT_WORKFLOW.md) for the API inventory, domain decisions, current behavior, and next milestone.
 
 ## Current limitations
 

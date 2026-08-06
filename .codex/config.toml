@@ -1,0 +1,24 @@
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 4
+interrupt_message = true
+
+[agents.project_explorer]
+description = "Read-only planner and code-path explorer for bounded cross-stack work."
+config_file = "agents/project_explorer.toml"
+
+[agents.backend_engineer]
+description = "Rust, Axum, SQLx, PostgreSQL, and domain implementation specialist."
+config_file = "agents/backend_engineer.toml"
+
+[agents.frontend_engineer]
+description = "Strict TypeScript and mobile-first React implementation specialist."
+config_file = "agents/frontend_engineer.toml"
+
+[agents.reviewer]
+description = "Read-only correctness, security, invariant, and regression reviewer."
+config_file = "agents/reviewer.toml"
+
+[agents.validator]
+description = "Command-only validation specialist for Rust, PostgreSQL, frontend, and browser checks."
+config_file = "agents/validator.toml"
