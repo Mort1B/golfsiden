@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod leaderboards;
+pub mod onboarding;
 pub mod players;
 pub mod round_completion;
 pub mod round_lifecycle;

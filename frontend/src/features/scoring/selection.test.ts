@@ -16,13 +16,17 @@ function round(number: number, status: RoundStatus, format: ScoringFormat = 'ind
     round_number: number,
     name: `Round ${number}`,
     round_date: '2026-09-10',
+    course_id: null,
     course_name: 'Course',
+    tee_id: null,
     tee_name: 'Tee',
     number_of_holes: 18,
     status,
     handicap_enabled: true,
     handicap_allowance_percent: 100,
     scoring_format: format,
+    created_at: '2026-08-16T12:00:00Z',
+    updated_at: '2026-08-16T12:00:00Z',
   }
 }
 

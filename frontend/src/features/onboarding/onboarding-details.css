@@ -1,0 +1,143 @@
+.round-editor {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 18px 14px 16px;
+  border: 1px solid #d4dbd5;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.round-editor legend {
+  padding: 0 7px;
+  color: #244b37;
+  font-size: .86rem;
+  font-weight: 850;
+}
+
+.icon-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid #d4dbd5;
+  border-radius: 6px;
+  background: #fff;
+  color: #843129;
+}
+
+.icon-button svg {
+  width: 18px;
+}
+
+.remove-round {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.add-round {
+  width: 100%;
+  margin-top: 14px;
+  border-style: dashed;
+  background: transparent;
+  color: #176640;
+}
+
+.review-summary {
+  display: grid;
+  margin: 0;
+  border-block: 1px solid #d8ded8;
+}
+
+.review-summary > div {
+  display: grid;
+  grid-template-columns: minmax(110px, .7fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #e1e5e1;
+}
+
+.review-summary > div:last-child {
+  border-bottom: 0;
+}
+
+.review-summary dt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #68736c;
+  font-size: .79rem;
+}
+
+.review-summary svg {
+  width: 17px;
+}
+
+.review-summary dd {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.review-summary dd span {
+  color: #68736c;
+  font-size: .78rem;
+}
+
+.review-rounds {
+  display: grid;
+  gap: 8px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-rounds li {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.review-rounds li > span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e2eee6;
+  color: #176640;
+  font-weight: 850;
+}
+
+.review-rounds li div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.review-rounds strong,
+.review-rounds small {
+  overflow-wrap: anywhere;
+}
+
+.review-rounds small {
+  color: #68736c;
+}
+
+@media (min-width: 560px) {
+  .round-editor {
+    grid-template-columns: 1fr 1fr;
+    padding: 22px 18px;
+  }
+
+  .round-editor label:first-of-type {
+    grid-column: 1 / -1;
+  }
+}

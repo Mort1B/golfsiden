@@ -1,52 +1,50 @@
 # Latest explanation
 
-## Tournament-scoped authority
+## Atomic creator onboarding
 
-Global account roles could not safely represent a private tournament: making a
-creator an admin would also grant authority in every other trip. The new
-`tournament_memberships` relation assigns `admin`, `scorer`, `player`, or
-`viewer` inside one tournament. Existing global administrators and scorers are
-explicitly backfilled for compatibility, while linked players are backfilled
-only into tournaments they actually entered.
+A first-time visitor now creates one player identity, one global credential
+account, and one tournament-scoped admin membership without receiving platform
+authority. The submitted rounds are the source for the server-derived round
+count and individual, team, or combined tournament scoring mode. Course and tee
+references remain unconfigured in draft, so existing readiness rules still
+prevent opening incomplete rounds.
 
-Every protected repository revalidates the active session and matching
-tournament membership inside the mutation transaction. Round and team routes
-derive their tournament from stored ownership rather than trusting a client ID.
-Score access uses the same membership roles: tournament admins/scorers receive
-all eligible cards, and both players on a scramble team retain their shared team
-card without receiving access elsewhere.
+Password hashing runs off Tokio's async executor under a four-task semaphore.
+The owned permit moves into the blocking closure, which keeps the limit correct
+even when the HTTP request is cancelled. PostgreSQL then creates both handicap
+histories, tournament graph, hashed invitation, and hashed session in one
+transaction. Cookies and SSE invalidation happen only after commit.
 
-Tournament handicap changes now update `tournament_players` and append an audit
-row attributed to the session user. Round opening snapshots this tournament
-value. Changing it affects later rounds but never rewrites an opened round.
+The frontend keeps the password in retryable form state and the returned invite
+secret only in the one-time success view. It seeds non-secret tournament caches,
+keys membership data by the session user ID, and clears identity-scoped caches
+when accounts change.
 
 ## Compact example
 
-The membership lock is part of the write transaction:
+The database requires an invitation creator to belong to the same tournament:
 
 ```sql
-SELECT role
-FROM tournament_memberships
-WHERE tournament_id = $1 AND user_id = $2
-FOR SHARE
+FOREIGN KEY (tournament_id, created_by_user_id)
+    REFERENCES tournament_memberships(tournament_id, user_id)
+    ON DELETE CASCADE
 ```
 
 ## Invariants
 
-- Global roles do not bypass tournament membership.
-- Account and audit identity comes from the active session, never submitted email
-  or actor fields.
-- Tournament players remain independent from round-specific teams.
-- Both teammates can enter their shared team score.
-- Handicap changes affect only future round snapshots.
-- Public read restriction is deferred until the onboarding frontend can consume
-  membership-scoped resources.
+- Creator authority is tournament-scoped; the global account role is `player`.
+- Player, entrant, team, and account identities remain separate.
+- Both global and tournament handicap histories start with the exact submitted
+  handicap.
+- Raw password, session token, and invitation token never enter PostgreSQL or
+  application logs.
+- Failed transactions produce no onboarding rows, cookie, or SSE event.
 
 ## Validation
 
-- Rust format, check, and Clippy with warnings denied pass.
-- The complete PostgreSQL unit/API/integration suite passes with 76 tests.
-- Migration 6 and two consecutive seed runs pass against PostgreSQL.
-- Focused tests cover backfill, cross-tournament IDOR, session/CSRF failures,
-  tournament handicap history, lifecycle concurrency, membership score access,
-  role downgrade/removal, and both-teammate scoring.
+- Rust format, check, strict Clippy, and the complete PostgreSQL suite pass: 36
+  unit tests and 52 integration tests.
+- Frontend tests pass: 45 Vitest tests plus strict typecheck, lint, and build.
+- Real Chrome flows pass at 320/390 px and desktop. A two-round mixed-format
+  tournament was created and opened with no console errors, failed requests, or
+  horizontal overflow.

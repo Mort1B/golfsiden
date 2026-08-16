@@ -1,0 +1,64 @@
+.success-page {
+  display: grid;
+  place-items: start center;
+}
+
+.success-panel {
+  width: min(100%, 600px);
+  padding-top: 24px;
+}
+
+.success-mark {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: #d9f0e2;
+  color: #155f3a;
+}
+
+.invitation-block {
+  margin: 28px 0 20px;
+  padding-block: 20px;
+  border-block: 1px solid #d8ded8;
+}
+
+.invitation-block h2 {
+  margin-bottom: 8px;
+  font-size: 1.1rem;
+}
+
+.invitation-block > p {
+  margin-bottom: 17px;
+  color: #59655e;
+  line-height: 1.5;
+}
+
+.invitation-block label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: .82rem;
+  font-weight: 750;
+}
+
+.invitation-block input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .76rem;
+}
+
+.copy-button {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.invitation-block .copy-status {
+  min-height: 20px;
+  margin-top: 9px;
+  font-size: .78rem;
+}
+
+.open-tournament {
+  width: 100%;
+}

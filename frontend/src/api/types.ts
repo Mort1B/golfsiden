@@ -44,13 +44,17 @@ export interface Round {
   round_number: number
   name: string
   round_date: string
+  course_id: string | null
   course_name: string
+  tee_id: string | null
   tee_name: string
   number_of_holes: number
   status: RoundStatus
   handicap_enabled: boolean
   handicap_allowance_percent: number
   scoring_format: ScoringFormat
+  created_at: string
+  updated_at: string
 }
 
 export interface TeamMember {

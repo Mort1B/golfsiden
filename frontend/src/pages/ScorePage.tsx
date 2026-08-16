@@ -3,6 +3,7 @@ import { Navigate, useSearchParams } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { api } from '../api/client'
 import { ownerEquals, scoringKeys } from '../api/scorecards'
+import { tournamentKeys } from '../api/tournaments'
 import { ScoringExperience } from '../features/scoring/ScoringExperience'
 import {
   parseHoleNumber,
@@ -20,13 +21,13 @@ import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 
 export function ScorePage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const tournamentsQuery = useQuery({ queryKey: ['tournaments'], queryFn: api.tournaments })
+  const tournamentsQuery = useQuery({ queryKey: tournamentKeys.publicList, queryFn: api.tournaments })
   const tournaments = tournamentsQuery.data ?? []
   const tournament = tournaments.find((item) => item.id === searchParams.get('tournament'))
     ?? tournaments.find((item) => item.status === 'active')
     ?? tournaments[0]
   const roundsQuery = useQuery({
-    queryKey: ['tournament', tournament?.id ?? '', 'rounds'],
+    queryKey: tournamentKeys.rounds(tournament?.id ?? ''),
     queryFn: () => api.rounds(tournament?.id ?? ''),
     enabled: tournament !== undefined,
   })

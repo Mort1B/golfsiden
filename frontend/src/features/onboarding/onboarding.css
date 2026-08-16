@@ -1,0 +1,248 @@
+.onboarding-page {
+  min-height: 100vh;
+  padding: max(24px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+}
+
+.button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-weight: 800;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.button svg {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 auto;
+}
+
+.button.primary {
+  background: #176640;
+  color: #fff;
+}
+
+.button.secondary {
+  border-color: #aeb8b1;
+  background: #fff;
+  color: #244b37;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+.button:focus-visible,
+.onboarding-page input:focus-visible,
+.onboarding-page textarea:focus-visible,
+.onboarding-page select:focus-visible,
+.onboarding-page a:focus-visible,
+.icon-button:focus-visible {
+  outline: 3px solid #63a984;
+  outline-offset: 2px;
+}
+
+.onboarding-shell {
+  width: min(100%, 650px);
+  margin: 0 auto;
+}
+
+.onboarding-brand {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+}
+
+.wizard-progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 12px 0 32px;
+  padding: 0;
+  list-style: none;
+}
+
+.wizard-progress li {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+  gap: 5px;
+  color: #7a837d;
+  font-size: .68rem;
+  text-align: center;
+}
+
+.wizard-progress li::before {
+  position: absolute;
+  z-index: -1;
+  top: 15px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: #d5dbd6;
+  content: '';
+}
+
+.wizard-progress li:first-child::before {
+  display: none;
+}
+
+.wizard-progress span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 2px solid #c7cec8;
+  border-radius: 50%;
+  background: #f4f6f2;
+  font-weight: 850;
+}
+
+.wizard-progress .reached {
+  color: #176640;
+}
+
+.wizard-progress .reached::before,
+.wizard-progress .reached span {
+  border-color: #28734f;
+  background-color: #28734f;
+  color: #fff;
+}
+
+.wizard-step > header {
+  margin-bottom: 26px;
+}
+
+.eyebrow {
+  color: #28734f;
+  font-size: .75rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.wizard-step h1,
+.success-panel h1 {
+  margin: 5px 0 10px;
+  font-size: 2rem;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.wizard-step h1:focus {
+  outline: none;
+}
+
+.wizard-step header > p:last-child,
+.success-panel > p {
+  color: #5c6861;
+  line-height: 1.5;
+}
+
+.form-fields,
+.round-editor-list {
+  display: grid;
+  gap: 19px;
+}
+
+.form-fields label,
+.round-editor label {
+  display: grid;
+  gap: 7px;
+  color: #35433b;
+  font-size: .86rem;
+  font-weight: 750;
+}
+
+.form-fields label > span,
+.round-editor label > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.form-fields small,
+.round-editor small {
+  color: #737d77;
+  font-weight: 500;
+}
+
+.form-fields input,
+.form-fields textarea,
+.round-editor input,
+.round-editor select,
+.invitation-block input {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid #aeb8b1;
+  border-radius: 6px;
+  background: #fff;
+  color: #17201c;
+}
+
+.form-fields textarea {
+  min-height: 104px;
+  resize: vertical;
+}
+
+.onboarding-page [aria-invalid="true"] {
+  border-color: #a23830;
+}
+
+.field-error {
+  color: #8b2c24;
+  font-size: .78rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.field-help {
+  color: #68736c;
+  font-size: .77rem;
+  font-weight: 500;
+}
+
+.date-fields {
+  display: grid;
+  gap: 19px;
+}
+
+.wizard-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 32px;
+  padding-top: 18px;
+  border-top: 1px solid #d8ded8;
+}
+
+.submission-error {
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border-left: 4px solid #9b3c33;
+  background: #fff5f3;
+  color: #7d241d;
+  line-height: 1.45;
+}
+
+@media (min-width: 560px) {
+  .date-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .onboarding-page {
+    padding-inline: 28px;
+  }
+
+  .wizard-step h1,
+  .success-panel h1 {
+    font-size: 2.35rem;
+  }
+}

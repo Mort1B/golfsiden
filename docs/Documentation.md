@@ -13,8 +13,9 @@ tournament gross/net standings with shareable selections and live refetch.
 The mobile score view supports authenticated hole entry, correction,
 confirmation, and locked read-only cards for both scoring formats.
 Tournament-scoped memberships now authorize entrant, round, team, lifecycle,
-handicap, and score mutations. Administrative forms and self-service tournament
-onboarding remain next.
+handicap, and score mutations. A first-time visitor can create their account,
+player identity, draft tournament, complete round plan, admin membership,
+initial invitation, and session through one mobile onboarding flow.
 
 ## Repository structure
 
@@ -127,6 +128,32 @@ write transaction. Global player/profile mutations and the temporary legacy
 tournament-creation route remain platform-admin-only. `GET /api/me/tournaments`
 returns only the active user's tournament roles and linked entrant identities.
 
+## Creator onboarding
+
+`POST /api/onboarding/tournaments` accepts nested creator account/player data,
+tournament dates, and one to thirty contiguous round definitions. It rejects
+unknown privileged fields, already-authenticated callers, duplicate normalized
+emails, invalid date ranges, unsupported formats, oversized bodies, and bounded
+field violations before running Argon2.
+
+One transaction creates the linked player and global `player` account, both
+initial handicap histories, draft tournament, tournament-admin membership,
+entrant, all draft rounds, hashed invitation, and hashed session. The server
+derives round count and the individual/team/combined tournament scoring mode.
+Draft rounds intentionally have null course/tee IDs until later configuration,
+so the existing opening-readiness checks keep them closed.
+
+The initial invitation is unlimited-use until its expiry seven days after the
+tournament end date. Its URL uses `/join/{invitation_id}#token={secret}` and only
+the hash is stored. The raw secret appears once in a `Cache-Control: no-store`
+response and transient browser state. Invitation redemption and authenticated
+reissue are not implemented yet.
+
+The React `/` route is the signed-out start screen, `/create` is the accessible
+mobile setup wizard, and `/tournaments` lists only the signed-in user's
+memberships. Membership query keys include the account ID and identity-scoped
+caches are cleared when sessions change.
+
 Flights are not represented yet. A future normalized round-flight model will
 extend the same score-access resolver so a player may receive both team owners
 in their flight. Equal starting holes or tee times are not treated as flights.
@@ -203,6 +230,9 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 - Public read routes still expose the pre-onboarding viewer model. They will
   become membership-scoped during the frontend cutover; later public access will
   use explicit share tokens.
-- No self-service tournament creation, invitation flow, or tournament admin UI.
+- Invitation links are issued but cannot be redeemed, rotated, or reissued yet.
+- Creator email ownership and request throttling are not implemented, so the
+  public onboarding endpoint is not ready for an internet-facing deployment.
+- No tournament management workspace beyond the creation flow.
 - Course and tee administration are not implemented.
 - No flight model, offline score queue, or public leaderboard link.

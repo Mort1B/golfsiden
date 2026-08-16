@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../api/client'
 import { ApiHttpError } from '../../api/http'
 import { scoringKeys, type ScoreOwner, type ScorecardSummary } from '../../api/scorecards'
+import { tournamentKeys } from '../../api/tournaments'
 import type { Round } from '../../api/types'
 import { invalidateScorecard, invalidateScoreDependents } from './queries'
 
@@ -47,7 +48,7 @@ export function useScorecardConfirmation(input: ConfirmationInput) {
       queryClient.setQueryData(['round', variables.round.id], round)
       queryClient.setQueryData(scoringKeys.completion(variables.round.id), completion)
       queryClient.setQueryData(scoringKeys.scorecard(variables.round.id, variables.owner), card)
-      await queryClient.invalidateQueries({ queryKey: ['tournament', variables.tournamentId, 'rounds'], exact: true })
+      await queryClient.invalidateQueries({ queryKey: tournamentKeys.rounds(variables.tournamentId), exact: true })
     },
   })
   const reset = mutation.reset

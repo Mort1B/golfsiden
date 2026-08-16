@@ -162,7 +162,7 @@ async fn logout(
     ))
 }
 
-fn session_cookie(
+pub(crate) fn session_cookie(
     state: &AppState,
     token: String,
     expires_at: chrono::DateTime<Utc>,

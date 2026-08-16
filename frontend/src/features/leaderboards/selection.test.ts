@@ -9,13 +9,17 @@ function round(roundNumber: number, status: RoundStatus): Round {
     round_number: roundNumber,
     name: `Runde ${roundNumber}`,
     round_date: '2026-09-10',
+    course_id: null,
     course_name: 'Fjord Golfklubb',
+    tee_id: null,
     tee_name: 'Gul',
     number_of_holes: 18,
     status,
     handicap_enabled: true,
     handicap_allowance_percent: 100,
     scoring_format: 'team_scramble',
+    created_at: '2026-08-16T12:00:00Z',
+    updated_at: '2026-08-16T12:00:00Z',
   }
 }
 

@@ -24,6 +24,18 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   Nullable unique `users.player_id` links an account to a golf identity without
   email inference. Global roles remain temporarily for platform compatibility;
   `tournament_memberships` is authoritative for trip administration and scoring.
+- First-time creator onboarding is one transaction across the player, account,
+  both initial handicap histories, tournament, admin membership, entrant,
+  complete draft round plan, invitation, and session. Client-supplied roles,
+  actor IDs, lifecycle status, round count, and tournament scoring summary are
+  absent from the contract. The server derives them from preserved facts.
+- Invitation URLs contain a non-secret UUID in the path and a 256-bit secret in
+  the fragment. PostgreSQL stores only its SHA-256 hash. The invitation creator
+  must be a member of the same tournament, and the raw secret is returned once
+  with a non-cacheable response.
+- Argon2 creation work is capped to four blocking tasks. An owned semaphore
+  permit stays inside the non-cancellable blocking closure, so request
+  cancellation cannot release capacity while hashing continues.
 - Tournament mutation repositories resolve the target trip from tournament,
   round, or team identifiers and revalidate the active session plus membership
   inside the write transaction. A global administrator is not a cross-tournament
@@ -112,13 +124,14 @@ Implemented resources:
 | `GET` | `/api/auth/session` | Retrieve the current session and CSRF value |
 | `POST` | `/api/auth/logout` | Revoke and clear the current session |
 | `GET` | `/api/me/tournaments` | List the session user's tournament memberships and player links |
+| `POST` | `/api/onboarding/tournaments` | Atomically create a first-time creator, draft tournament plan, invitation, and session |
 
 Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 
 ## Deferred decisions
 
-- Self-service creator onboarding, invitations, private-read cutover, and
-  production signup/login rate limiting.
+- Invitation redemption/reissue, creator email verification, private-read
+  cutover, and production signup/login rate limiting.
 - Normalized round flights and flight-wide score permissions.
 - Separate migration and runtime database roles plus production privilege policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.

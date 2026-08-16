@@ -42,6 +42,31 @@ pub async fn create_session(
     .await
 }
 
+pub async fn create_session_in_transaction(
+    transaction: &mut Transaction<'_, Postgres>,
+    user_id: Uuid,
+    token_hash: &[u8],
+    expires_at: DateTime<Utc>,
+) -> Result<SessionPrincipal, sqlx::Error> {
+    let session_id = Uuid::new_v4();
+    sqlx::query_as(
+        "WITH inserted AS (
+            INSERT INTO user_sessions (id, user_id, token_hash, expires_at)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id, user_id, expires_at
+         )
+         SELECT inserted.id AS session_id, u.id AS user_id, u.display_name,
+                u.role, u.player_id, inserted.expires_at
+         FROM inserted JOIN users u ON u.id = inserted.user_id",
+    )
+    .bind(session_id)
+    .bind(user_id)
+    .bind(token_hash)
+    .bind(expires_at)
+    .fetch_one(&mut **transaction)
+    .await
+}
+
 pub async fn find_active_session(
     pool: &PgPool,
     token_hash: &[u8],

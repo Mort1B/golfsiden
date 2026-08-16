@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { BarChart3, ClipboardPen, LogIn, LogOut, Settings, Trophy, Users } from 'lucide-react'
+import { BarChart3, ClipboardPen, LogIn, LogOut, Trophy, Users } from 'lucide-react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../features/auth/authContext'
 import { useScoringGuard } from '../features/scoring/scoringGuardContext'
 
 const baseNavItems = [
-  { to: '/', label: 'Turnering', icon: Trophy },
+  { to: '/tournaments', label: 'Turnering', icon: Trophy },
   { to: '/score', label: 'Score', icon: ClipboardPen },
   { to: '/leaderboard', label: 'Resultater', icon: BarChart3 },
   { to: '/players', label: 'Spillere', icon: Users },
@@ -18,9 +18,7 @@ export function AppShell() {
   const auth = useAuth()
   const scoringGuard = useScoringGuard()
   const [signOutError, setSignOutError] = useState<string | null>(null)
-  const navItems = auth.session?.role === 'admin'
-    ? [...baseNavItems, { to: '/admin', label: 'Admin', icon: Settings }]
-    : baseNavItems
+  const navItems = baseNavItems
 
   useEffect(() => {
     const events = new EventSource(api.liveUrl, { withCredentials: true })
@@ -51,7 +49,7 @@ export function AppShell() {
       </main>
       <nav className={`bottom-nav nav-count-${navItems.length}`} aria-label="Hovedmeny">
         {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+          <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
             <Icon aria-hidden="true" size={21} strokeWidth={2} />
             <span>{label}</span>
           </NavLink>

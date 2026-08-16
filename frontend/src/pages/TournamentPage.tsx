@@ -4,19 +4,20 @@ import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { ErrorState, LoadingState } from '../ui/AsyncState'
 import { StatusBadge } from '../ui/StatusBadge'
+import { tournamentKeys } from '../api/tournaments'
 
 export function TournamentPage() {
   const { tournamentId = '' } = useParams()
-  const tournament = useQuery({ queryKey: ['tournament', tournamentId], queryFn: () => api.tournament(tournamentId) })
-  const players = useQuery({ queryKey: ['tournament', tournamentId, 'players'], queryFn: () => api.tournamentPlayers(tournamentId) })
-  const rounds = useQuery({ queryKey: ['tournament', tournamentId, 'rounds'], queryFn: () => api.rounds(tournamentId) })
+  const tournament = useQuery({ queryKey: tournamentKeys.detail(tournamentId), queryFn: () => api.tournament(tournamentId) })
+  const players = useQuery({ queryKey: tournamentKeys.players(tournamentId), queryFn: () => api.tournamentPlayers(tournamentId) })
+  const rounds = useQuery({ queryKey: tournamentKeys.rounds(tournamentId), queryFn: () => api.rounds(tournamentId) })
 
   if (tournament.isPending) return <section className="page"><LoadingState /></section>
   if (tournament.error) return <section className="page"><ErrorState error={tournament.error} /></section>
   return (
     <section className="page">
       <header className="detail-header">
-        <Link to="/" className="back-button" aria-label="Tilbake til turneringer"><ChevronLeft /></Link>
+        <Link to="/tournaments" className="back-button" aria-label="Tilbake til turneringer"><ChevronLeft /></Link>
         <div><p className="brand">Turnering</p><h1>{tournament.data.name}</h1></div>
         <StatusBadge status={tournament.data.status} />
       </header>
@@ -31,7 +32,7 @@ export function TournamentPage() {
         {rounds.data?.map((round) => (
           <Link to={`/rounds/${round.id}`} className="round-row" key={round.id}>
             <span className="round-number">{round.round_number}</span>
-            <div><h3>{round.name}</h3><p><MapPin size={14} /> {round.course_name} · {round.tee_name}</p></div>
+            <div><h3>{round.name}</h3><p><MapPin size={14} /> {round.course_id && round.tee_id ? `${round.course_name} · ${round.tee_name}` : 'Bane ikke konfigurert'}</p></div>
             <div className="round-end"><StatusBadge status={round.status} /><ChevronRight size={18} /></div>
           </Link>
         ))}

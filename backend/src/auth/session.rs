@@ -7,12 +7,28 @@ pub const SESSION_COOKIE_NAME: &str = "golf_session";
 const TOKEN_BYTES: usize = 32;
 
 pub fn generate_session_token() -> Result<String, rand::rand_core::OsError> {
+    generate_opaque_token()
+}
+
+pub fn generate_invitation_token() -> Result<String, rand::rand_core::OsError> {
+    generate_opaque_token()
+}
+
+fn generate_opaque_token() -> Result<String, rand::rand_core::OsError> {
     let mut bytes = [0_u8; TOKEN_BYTES];
     OsRng.try_fill_bytes(&mut bytes)?;
     Ok(URL_SAFE_NO_PAD.encode(bytes))
 }
 
 pub fn hash_session_token(token: &str) -> [u8; TOKEN_BYTES] {
+    hash_opaque_token(token)
+}
+
+pub fn hash_invitation_token(token: &str) -> [u8; TOKEN_BYTES] {
+    hash_opaque_token(token)
+}
+
+fn hash_opaque_token(token: &str) -> [u8; TOKEN_BYTES] {
     Sha256::digest(token.as_bytes()).into()
 }
 
@@ -42,6 +58,11 @@ mod tests {
         let second = generate_session_token().unwrap();
         assert_ne!(first, second);
         assert_eq!(URL_SAFE_NO_PAD.decode(first).unwrap().len(), TOKEN_BYTES);
+        let invitation = generate_invitation_token().unwrap();
+        assert_eq!(
+            URL_SAFE_NO_PAD.decode(invitation).unwrap().len(),
+            TOKEN_BYTES
+        );
     }
 
     #[test]

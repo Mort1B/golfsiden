@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'r
 import { useQueryClient } from '@tanstack/react-query'
 import { api } from '../../api/client'
 import { scoringKeys, type ScoreOwner, type ScorecardSummary } from '../../api/scorecards'
+import { tournamentKeys } from '../../api/tournaments'
 import type { Round } from '../../api/types'
 import { invalidateScorecard, invalidateScoreDependents } from './queries'
 import { ScoreCoordinator, hasUnresolvedIntent } from './scoreCoordinator'
@@ -61,7 +62,7 @@ export function useHoleScoreSync(input: HoleScoreSyncInput) {
       queryClient.setQueryData(scoringKeys.completion(input.round.id), completion)
       queryClient.setQueryData(scoringKeys.scorecard(input.round.id, owner), card)
       await queryClient.invalidateQueries({
-        queryKey: ['tournament', input.tournamentId, 'rounds'],
+        queryKey: tournamentKeys.rounds(input.tournamentId),
         exact: true,
       })
       await invalidateScoreDependents(queryClient, input.round.id, input.tournamentId)

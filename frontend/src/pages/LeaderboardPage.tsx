@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { leaderboardKeys } from '../api/leaderboards'
+import { tournamentKeys } from '../api/tournaments'
 import { LeaderboardControls } from '../features/leaderboards/LeaderboardControls'
 import { RoundStandings } from '../features/leaderboards/RoundStandings'
 import {
@@ -16,7 +17,7 @@ import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 
 export function LeaderboardPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const tournamentsQuery = useQuery({ queryKey: ['tournaments'], queryFn: api.tournaments })
+  const tournamentsQuery = useQuery({ queryKey: tournamentKeys.publicList, queryFn: api.tournaments })
   const tournaments = tournamentsQuery.data ?? []
   const requestedTournamentId = searchParams.get('tournament')
   const selectedTournament = tournaments.find((item) => item.id === requestedTournamentId)
@@ -27,7 +28,7 @@ export function LeaderboardPage() {
   const metric = parseMetric(searchParams.get('metric'))
 
   const roundsQuery = useQuery({
-    queryKey: ['tournament', tournamentId, 'rounds'],
+    queryKey: tournamentKeys.rounds(tournamentId),
     queryFn: () => api.rounds(tournamentId),
     enabled: tournamentId.length > 0,
   })

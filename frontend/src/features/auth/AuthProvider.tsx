@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../api/client'
 import { authKeys } from '../../api/auth'
 import { AuthContext } from './authContext'
 import { ApiHttpError } from '../../api/http'
+import { tournamentKeys } from '../../api/tournaments'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
@@ -14,8 +15,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     staleTime: 30_000,
   })
 
+  useEffect(() => {
+    if (sessionQuery.isSuccess && sessionQuery.data === null) {
+      queryClient.removeQueries({ queryKey: tournamentKeys.mineRoot })
+    }
+  }, [queryClient, sessionQuery.data, sessionQuery.isSuccess])
+
   const clearProtectedState = () => {
     queryClient.setQueryData(authKeys.session, null)
+    queryClient.removeQueries({ queryKey: tournamentKeys.mineRoot })
     queryClient.removeQueries({
       predicate: (query) => query.queryKey[0] === 'rounds' && query.queryKey[2] === 'score-access',
     })
@@ -28,8 +36,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error: sessionQuery.error,
       signIn: async (email, password) => {
         const session = await api.login(email, password)
+        queryClient.removeQueries({ queryKey: tournamentKeys.mineRoot })
         queryClient.setQueryData(authKeys.session, session)
         return session
+      },
+      establishSession: (session) => {
+        queryClient.removeQueries({ queryKey: tournamentKeys.mineRoot })
+        queryClient.setQueryData(authKeys.session, session)
       },
       signOut: async () => {
         const session = sessionQuery.data

@@ -1,6 +1,8 @@
 import { decodeRoundLeaderboard, decodeTournamentLeaderboard } from './leaderboards'
 import { decodeAuthSession } from './auth'
 import { ApiHttpError, jsonRequest, liveUrl, requestDecoded, requestUnchecked } from './http'
+import { decodeArray } from './decoder'
+import { decodeRound, decodeTournament, tournamentApi } from './tournaments'
 import {
   decodeCompletionValidation,
   decodeSavedScore,
@@ -9,7 +11,7 @@ import {
   ownerTypeForFormat,
   type ScoreOwner,
 } from './scorecards'
-import type { LeaderboardMetric, Player, Round, ScoringFormat, Team, Tournament, TournamentPlayer } from './types'
+import type { LeaderboardMetric, Player, ScoringFormat, Team, TournamentPlayer } from './types'
 
 async function get<T>(path: string): Promise<T> {
   return requestUnchecked<T>(path)
@@ -30,11 +32,13 @@ export const api = {
     method: 'POST',
     headers: { 'x-csrf-token': csrfToken },
   }),
-  tournaments: () => get<Tournament[]>('/api/tournaments'),
-  tournament: (id: string) => get<Tournament>(`/api/tournaments/${id}`),
+  tournaments: () => requestDecoded('/api/tournaments', (value) =>
+    decodeArray(value, 'tournaments', decodeTournament, 'turneringsdata')),
+  myTournaments: tournamentApi.mine,
+  tournament: tournamentApi.detail,
   tournamentPlayers: (id: string) => get<TournamentPlayer[]>(`/api/tournaments/${id}/players`),
-  rounds: (id: string) => get<Round[]>(`/api/tournaments/${id}/rounds`),
-  round: (id: string) => get<Round>(`/api/rounds/${id}`),
+  rounds: tournamentApi.rounds,
+  round: (id: string) => requestDecoded(`/api/rounds/${id}`, (value) => decodeRound(value)),
   teams: (id: string) => get<Team[]>(`/api/rounds/${id}/teams`),
   players: () => get<Player[]>('/api/players'),
   roundLeaderboard: (id: string, metric: LeaderboardMetric) =>

@@ -6,10 +6,9 @@ import { signInTarget } from './navigation'
 
 interface RequireSessionProps {
   children: ReactNode
-  role?: 'admin'
 }
 
-export function RequireSession({ children, role }: RequireSessionProps) {
+export function RequireSession({ children }: RequireSessionProps) {
   const auth = useAuth()
   const location = useLocation()
   if (auth.loading) return <RouteState><LoadingState /></RouteState>
@@ -17,7 +16,6 @@ export function RequireSession({ children, role }: RequireSessionProps) {
   if (!auth.session) {
     return <Navigate replace to={signInTarget(location.pathname, location.search, location.hash)} />
   }
-  if (role && auth.session.role !== role) return <Navigate replace to="/" />
   return children
 }
 

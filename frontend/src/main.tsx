@@ -9,6 +9,10 @@ import './styles.css'
 import './features/leaderboards/leaderboards.css'
 import './features/scoring/scoring.css'
 import './features/auth/auth.css'
+import './features/onboarding/onboarding.css'
+import './features/onboarding/onboarding-details.css'
+import './features/onboarding/onboarding-success.css'
+import './features/onboarding/home.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {
