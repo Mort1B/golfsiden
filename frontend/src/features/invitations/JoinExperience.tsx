@@ -83,7 +83,7 @@ export function JoinExperience({ invitationId }: JoinExperienceProps) {
     gcTime: 0,
   })
 
-  const finish = async (result: JoinSuccess) => {
+  const finish = async (result: JoinSuccess, userId: string) => {
     tokenRef.current = null
     clearInvitationFragment()
     setSuccess({
@@ -92,9 +92,10 @@ export function JoinExperience({ invitationId }: JoinExperienceProps) {
       player_id: result.player_id,
     })
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: tournamentKeys.mineRoot }),
-      queryClient.invalidateQueries({ queryKey: tournamentKeys.detail(result.tournament_id) }),
-      queryClient.invalidateQueries({ queryKey: tournamentKeys.players(result.tournament_id) }),
+      queryClient.invalidateQueries({ queryKey: tournamentKeys.mine(userId), exact: true }),
+      queryClient.invalidateQueries({ queryKey: tournamentKeys.list(userId), exact: true }),
+      queryClient.invalidateQueries({ queryKey: tournamentKeys.detail(userId, result.tournament_id), exact: true }),
+      queryClient.invalidateQueries({ queryKey: tournamentKeys.players(userId, result.tournament_id), exact: true }),
     ])
   }
 
@@ -104,7 +105,7 @@ export function JoinExperience({ invitationId }: JoinExperienceProps) {
       registration.reset()
       auth.establishSession(result.session)
       queryClient.setQueryData(authKeys.session, result.session)
-      await finish(result)
+      await finish(result, result.session.user_id)
     } catch {
       return
     }
@@ -114,7 +115,9 @@ export function JoinExperience({ invitationId }: JoinExperienceProps) {
     try {
       const result = await acceptance.mutateAsync()
       acceptance.reset()
-      await finish(result)
+      const userId = auth.session?.user_id
+      if (!userId) throw new Error('Økten mangler. Logg inn på nytt.')
+      await finish(result, userId)
     } catch {
       return
     }

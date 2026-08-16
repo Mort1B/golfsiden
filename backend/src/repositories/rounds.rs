@@ -1,5 +1,5 @@
 use chrono::NaiveDate;
-use sqlx::PgPool;
+use sqlx::{PgPool, Postgres, Transaction};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -20,11 +20,58 @@ pub enum RoundMutationError {
 
 pub async fn list(pool: &PgPool, tournament_id: Uuid) -> Result<Vec<Round>, sqlx::Error> {
     sqlx::query_as::<_, Round>(&format!(
-        "SELECT {COLUMNS} FROM rounds WHERE tournament_id = $1 ORDER BY round_number"
+        "SELECT {COLUMNS} FROM rounds WHERE tournament_id = $1 ORDER BY round_number, id"
     ))
     .bind(tournament_id)
     .fetch_all(pool)
     .await
+}
+
+pub async fn list_for_member(
+    pool: &PgPool,
+    user_id: Uuid,
+    tournament_id: Uuid,
+) -> Result<Vec<Round>, AuthorizationError> {
+    let mut transaction = read_transaction(pool).await?;
+    tournament_authorization::require_tournament_member_read(
+        &mut transaction,
+        user_id,
+        tournament_id,
+    )
+    .await?;
+    let rounds = sqlx::query_as::<_, Round>(&format!(
+        "SELECT {COLUMNS} FROM rounds
+         WHERE tournament_id = $1 ORDER BY round_number, id"
+    ))
+    .bind(tournament_id)
+    .fetch_all(&mut *transaction)
+    .await?;
+    transaction.commit().await?;
+    Ok(rounds)
+}
+
+pub async fn get_for_member(
+    pool: &PgPool,
+    user_id: Uuid,
+    round_id: Uuid,
+) -> Result<Round, AuthorizationError> {
+    let mut transaction = read_transaction(pool).await?;
+    tournament_authorization::require_round_member_read(&mut transaction, user_id, round_id)
+        .await?;
+    let round = sqlx::query_as::<_, Round>(&format!("SELECT {COLUMNS} FROM rounds WHERE id = $1"))
+        .bind(round_id)
+        .fetch_one(&mut *transaction)
+        .await?;
+    transaction.commit().await?;
+    Ok(round)
+}
+
+async fn read_transaction(pool: &PgPool) -> Result<Transaction<'_, Postgres>, sqlx::Error> {
+    let mut transaction = pool.begin().await?;
+    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        .execute(&mut *transaction)
+        .await?;
+    Ok(transaction)
 }
 
 pub async fn get(pool: &PgPool, id: Uuid) -> Result<Option<Round>, sqlx::Error> {

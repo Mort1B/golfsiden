@@ -3,15 +3,20 @@ use std::sync::Arc;
 use axum::{
     Json,
     extract::{Path, State},
+    http::header::CACHE_CONTROL,
+    response::IntoResponse,
 };
 use uuid::Uuid;
 
 use crate::{
     AppState,
-    api::{auth::MutationSession, authorization::map_authorization_error},
+    api::{
+        auth::{AuthenticatedSession, MutationSession},
+        authorization::map_authorization_error,
+    },
     domain::{
         models::Round,
-        round_completion::{RoundCompletionValidation, TransitionAction, TransitionBlocker},
+        round_completion::{TransitionAction, TransitionBlocker},
     },
     error::{ApiError, ApiResult},
     repositories::round_completion::{self, RoundCompletionError},
@@ -20,11 +25,16 @@ use crate::{
 pub async fn validation(
     State(state): State<Arc<AppState>>,
     Path(round_id): Path<Uuid>,
-) -> ApiResult<Json<RoundCompletionValidation>> {
-    let validation = round_completion::validation(&state.pool, round_id)
-        .await?
-        .ok_or(ApiError::NotFound)?;
-    Ok(Json(validation))
+    authenticated: AuthenticatedSession,
+) -> ApiResult<impl IntoResponse> {
+    let validation = round_completion::validation_for_member(
+        &state.pool,
+        authenticated.principal.user_id,
+        round_id,
+    )
+    .await
+    .map_err(map_authorization_error)?;
+    Ok(([(CACHE_CONTROL, "private, no-store")], Json(validation)))
 }
 
 pub async fn complete(

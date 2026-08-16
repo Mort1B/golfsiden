@@ -1,4 +1,4 @@
-use sqlx::PgPool;
+use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
 use crate::{
@@ -7,7 +7,7 @@ use crate::{
         TournamentHandicapHistoryEntry, TournamentHandicapLockReason, TournamentPlayer,
         TournamentPlayerRoster,
     },
-    repositories::tournament_authorization,
+    repositories::tournament_authorization::{self, AuthorizationError},
 };
 
 use super::TournamentMutationError;
@@ -20,6 +20,35 @@ pub async fn list_players(
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
         .execute(&mut *transaction)
         .await?;
+    let roster = list_players_in_transaction(&mut transaction, tournament_id).await?;
+    transaction.commit().await?;
+    Ok(roster)
+}
+
+pub async fn list_players_for_member(
+    pool: &PgPool,
+    user_id: Uuid,
+    tournament_id: Uuid,
+) -> Result<TournamentPlayerRoster, AuthorizationError> {
+    let mut transaction = pool.begin().await?;
+    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        .execute(&mut *transaction)
+        .await?;
+    tournament_authorization::require_tournament_member_read(
+        &mut transaction,
+        user_id,
+        tournament_id,
+    )
+    .await?;
+    let roster = list_players_in_transaction(&mut transaction, tournament_id).await?;
+    transaction.commit().await?;
+    Ok(roster)
+}
+
+async fn list_players_in_transaction(
+    transaction: &mut Transaction<'_, Postgres>,
+    tournament_id: Uuid,
+) -> Result<TournamentPlayerRoster, sqlx::Error> {
     let players = sqlx::query_as::<_, TournamentPlayer>(
         "SELECT tp.tournament_id, tp.player_id, p.display_name,
                 tp.tournament_handicap::float8 AS tournament_handicap,
@@ -30,13 +59,13 @@ pub async fn list_players(
          ORDER BY tp.seed NULLS LAST, p.display_name, tp.player_id",
     )
     .bind(tournament_id)
-    .fetch_all(&mut *transaction)
+    .fetch_all(&mut **transaction)
     .await?;
     let lock_reason = sqlx::query_scalar::<_, TournamentHandicapLockReason>(
         "SELECT reason FROM tournament_handicap_locks WHERE tournament_id = $1",
     )
     .bind(tournament_id)
-    .fetch_optional(&mut *transaction)
+    .fetch_optional(&mut **transaction)
     .await?;
     let handicap_correction = match lock_reason {
         Some(reason) => TournamentHandicapCorrectionState::Locked { reason },
@@ -46,7 +75,6 @@ pub async fn list_players(
         handicap_correction,
         players,
     };
-    transaction.commit().await?;
     Ok(roster)
 }
 

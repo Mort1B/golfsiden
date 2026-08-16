@@ -61,6 +61,25 @@ pub async fn validation(
     Ok(validation)
 }
 
+pub async fn validation_for_member(
+    pool: &PgPool,
+    user_id: Uuid,
+    round_id: Uuid,
+) -> Result<RoundCompletionValidation, AuthorizationError> {
+    let mut transaction = pool.begin().await?;
+    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        .execute(&mut *transaction)
+        .await?;
+    tournament_authorization::require_round_member_read(&mut transaction, user_id, round_id)
+        .await?;
+    let validation = load_facts(&mut transaction, round_id, false)
+        .await?
+        .map(validate)
+        .ok_or(AuthorizationError::NotFound)?;
+    transaction.commit().await?;
+    Ok(validation)
+}
+
 pub async fn complete(pool: &PgPool, round_id: Uuid) -> Result<Round, RoundCompletionError> {
     transition(pool, round_id, TransitionAction::Complete).await
 }

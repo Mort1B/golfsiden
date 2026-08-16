@@ -9,6 +9,13 @@ describe('authentication navigation', () => {
     expect(safeReturnTo(returnTo)).toBe('/score?round=one&hole=7#entry')
   })
 
+  it('preserves protected workspace detail and leaderboard URLs', () => {
+    expect(safeReturnTo(new URL(`https://local.test${signInTarget('/tournaments/tour-one', '', '')}`)
+      .searchParams.get('returnTo'))).toBe('/tournaments/tour-one')
+    expect(safeReturnTo(new URL(`https://local.test${signInTarget('/leaderboard', '?scope=round', '')}`)
+      .searchParams.get('returnTo'))).toBe('/leaderboard?scope=round')
+  })
+
   it('rejects external and protocol-relative redirects', () => {
     expect(safeReturnTo('https://example.test')).toBe('/score')
     expect(safeReturnTo('//example.test')).toBe('/score')

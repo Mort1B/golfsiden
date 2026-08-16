@@ -4,11 +4,15 @@ import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 import { StatusBadge } from '../ui/StatusBadge'
+import { tournamentKeys } from '../api/tournaments'
+import { useAuth } from '../features/auth/authContext'
 
 export function RoundPage() {
   const { roundId = '' } = useParams()
-  const round = useQuery({ queryKey: ['round', roundId], queryFn: () => api.round(roundId) })
-  const teams = useQuery({ queryKey: ['round', roundId, 'teams'], queryFn: () => api.teams(roundId) })
+  const auth = useAuth()
+  const userId = auth.session?.user_id ?? ''
+  const round = useQuery({ queryKey: tournamentKeys.round(userId, roundId), queryFn: () => api.round(roundId) })
+  const teams = useQuery({ queryKey: tournamentKeys.teams(userId, roundId), queryFn: () => api.teams(roundId) })
   if (round.isPending) return <section className="page"><LoadingState /></section>
   if (round.error) return <section className="page"><ErrorState error={round.error} /></section>
   return (

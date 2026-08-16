@@ -20,12 +20,13 @@ import {
   decodeUuid,
   invalidData,
 } from './decoder'
+import { privateWorkspaceKeys } from './privateWorkspace'
 
 export const leaderboardKeys = {
-  round: (roundId: string, metric: LeaderboardMetric) =>
-    ['leaderboards', 'round', roundId, metric] as const,
-  tournament: (tournamentId: string, metric: LeaderboardMetric) =>
-    ['leaderboards', 'tournament', tournamentId, metric] as const,
+  round: (userId: string, roundId: string, metric: LeaderboardMetric) =>
+    [...privateWorkspaceKeys.user(userId), 'leaderboards', 'round', roundId, metric] as const,
+  tournament: (userId: string, tournamentId: string, metric: LeaderboardMetric) =>
+    [...privateWorkspaceKeys.user(userId), 'leaderboards', 'tournament', tournamentId, metric] as const,
 }
 
 function invalid(path: string): never {

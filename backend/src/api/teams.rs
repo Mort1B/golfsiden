@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::{
     Json, Router,
     extract::{Path, State},
-    http::StatusCode,
+    http::{StatusCode, header::CACHE_CONTROL},
     response::IntoResponse,
     routing::{delete, get, post},
 };
@@ -13,13 +13,13 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
-    api::{auth::MutationSession, authorization::map_authorization_error},
-    domain::models::{TeamMember, TeamWithMembers},
-    error::{ApiError, ApiResult, require_non_empty},
-    repositories::{
-        rounds,
-        teams::{self, TeamMutationError},
+    api::{
+        auth::{AuthenticatedSession, MutationSession},
+        authorization::map_authorization_error,
     },
+    domain::models::TeamMember,
+    error::{ApiError, ApiResult, require_non_empty},
+    repositories::teams::{self, TeamMutationError},
 };
 
 pub fn routes() -> Router<Arc<AppState>> {
@@ -50,11 +50,12 @@ struct AssignPlayer {
 async fn list(
     State(state): State<Arc<AppState>>,
     Path(round_id): Path<Uuid>,
-) -> ApiResult<Json<Vec<TeamWithMembers>>> {
-    if rounds::get(&state.pool, round_id).await?.is_none() {
-        return Err(ApiError::NotFound);
-    }
-    Ok(Json(teams::list(&state.pool, round_id).await?))
+    authenticated: AuthenticatedSession,
+) -> ApiResult<impl IntoResponse> {
+    let teams = teams::list_for_member(&state.pool, authenticated.principal.user_id, round_id)
+        .await
+        .map_err(map_authorization_error)?;
+    Ok(([(CACHE_CONTROL, "private, no-store")], Json(teams)))
 }
 
 async fn create(

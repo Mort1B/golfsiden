@@ -6,8 +6,9 @@ instead of accumulating a historical log here.
 
 ## Planning status
 
-Phase 4A username accounts and fixed tournament handicaps is complete. No active
-implementation step is approved. Phase 4B is the recommended next step.
+Phase 4A and the first Phase 4B private-workspace step are complete. No active
+implementation step is approved. The validation repair below is the smallest
+recommended next step before continuing provider-backed course work.
 
 ## Product decisions
 
@@ -66,11 +67,19 @@ implementation step is approved. Phase 4B is the recommended next step.
 
 ## Upcoming work
 
+### Validation repair: HTML-compatible username constraint
+
+- Replace the sign-in username input's invalid browser `pattern` character class
+  with an HTML `/v`-compatible constraint while keeping the backend username
+  grammar unchanged. Add focused browser coverage with a clean console.
+- **Stop condition:** login renders without pattern-compilation console errors in
+  supported Chrome at phone and desktop widths, and accepted/rejected usernames
+  still match the backend contract.
+
 ### Phase 4B: Private workspace and provider-backed courses
 
-- Move tournament, entrant, round, team, and leaderboard reads behind active
-  membership. Add `/manage/tournaments/:tournamentId` with admin-only sections
-  for settings, entrants, invitations, rounds, courses, pairings, and lifecycle.
+- Add `/manage/tournaments/:tournamentId` with admin-only sections for settings,
+  entrants, invitations, rounds, courses, pairings, and lifecycle.
 - Add a backend-only GolfCourseAPI client and normalized search/detail endpoints;
   keep its API key out of the browser and logs. Follow the official OpenAPI at
   `https://api.golfcourseapi.com/docs/api/`; respect provider rate limits with

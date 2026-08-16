@@ -297,6 +297,7 @@ async fn tournament_roles_sessions_csrf_and_me_read_model_are_authoritative(pool
         .await
         .unwrap();
     assert_eq!(mine.status(), StatusCode::OK);
+    assert_eq!(mine.headers()[header::CACHE_CONTROL], "private, no-store");
     let mine = body(mine).await;
     assert_eq!(mine.as_array().unwrap().len(), 1);
     assert_eq!(mine[0]["tournament"]["id"], TOURNAMENT_B.to_string());
@@ -358,9 +359,12 @@ async fn tournament_handicap_correction_is_audited_then_locked_by_first_open(poo
     let editable_roster = app
         .clone()
         .oneshot(
-            Request::get(format!("/api/tournaments/{TOURNAMENT_B}/players"))
-                .body(Body::empty())
-                .unwrap(),
+            authorized(
+                Request::get(format!("/api/tournaments/{TOURNAMENT_B}/players")),
+                "admin-b-token",
+            )
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();
@@ -452,9 +456,12 @@ async fn tournament_handicap_correction_is_audited_then_locked_by_first_open(poo
 
     let roster = app
         .oneshot(
-            Request::get(format!("/api/tournaments/{TOURNAMENT_B}/players"))
-                .body(Body::empty())
-                .unwrap(),
+            authorized(
+                Request::get(format!("/api/tournaments/{TOURNAMENT_B}/players")),
+                "admin-b-token",
+            )
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();

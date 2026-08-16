@@ -57,6 +57,12 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   round, or team identifiers and revalidate the active session plus membership
   inside the write transaction. A global administrator is not a cross-tournament
   authorization bypass.
+- Tournament workspace read repositories resolve the target trip from stored
+  tournament or round relations and require any tournament membership. Multi-query
+  reads use one repeatable-read transaction and hold that membership `FOR SHARE`
+  through response assembly; tournament collections join memberships directly.
+  Successful private responses are `private, no-store`, and global roles are no
+  cross-tournament read bypass.
 - The score authorization resolver returns tagged round owners. Tournament
   admins/scorers receive all eligible owners; tournament players receive their
   exact individual or round-team owner. Save and confirm recheck this policy
@@ -89,6 +95,10 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   transaction. Pure domain assembly validates stored facts, calculates handicap
   results, attributes players, and applies deterministic competition ranking.
 - Server-Sent Events carry invalidation notifications, not full mutable state. Clients refetch through TanStack Query.
+- Private workspace query keys are rooted by session user ID. Initial or changed
+  identities clear that root before publication; same-user refreshes preserve it.
+  SSE invalidation excludes the auth query so live events do not unmount protected
+  scoring state.
 - The global leaderboard route owns selection in canonical URL parameters instead
   of a client store. It validates round ownership before enabling hierarchical
   queries, and leaderboard responses pass focused runtime decoding before
@@ -153,8 +163,8 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 
 ## Deferred decisions
 
-- Private-read cutover and production signup/login and invitation-registration
-  rate limiting.
+- Global player, scorecard, and live-event read visibility; production signup,
+  login, and invitation-registration rate limiting.
 - Normalized round flights and flight-wide score permissions.
 - Separate migration and runtime database roles plus production privilege policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.

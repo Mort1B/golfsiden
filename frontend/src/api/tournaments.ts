@@ -12,6 +12,7 @@ import {
 } from './decoder'
 import { requestDecoded } from './http'
 import { jsonRequest } from './http'
+import { privateWorkspaceKeys } from './privateWorkspace'
 import type {
   Round,
   RoundStatus,
@@ -164,13 +165,19 @@ export function decodeMyTournaments(value: unknown): MyTournament[] {
 }
 
 export const tournamentKeys = {
-  root: ['tournaments'] as const,
-  publicList: ['tournaments', 'public'] as const,
-  mineRoot: ['tournaments', 'mine'] as const,
-  mine: (userId: string) => ['tournaments', 'mine', userId] as const,
-  detail: (tournamentId: string) => ['tournaments', tournamentId, 'detail'] as const,
-  players: (tournamentId: string) => ['tournaments', tournamentId, 'players'] as const,
-  rounds: (tournamentId: string) => ['tournaments', tournamentId, 'rounds'] as const,
+  root: (userId: string) => [...privateWorkspaceKeys.user(userId), 'tournaments'] as const,
+  list: (userId: string) => [...privateWorkspaceKeys.user(userId), 'tournaments', 'list'] as const,
+  mine: (userId: string) => [...privateWorkspaceKeys.user(userId), 'tournaments', 'mine'] as const,
+  detail: (userId: string, tournamentId: string) =>
+    [...privateWorkspaceKeys.user(userId), 'tournaments', tournamentId, 'detail'] as const,
+  players: (userId: string, tournamentId: string) =>
+    [...privateWorkspaceKeys.user(userId), 'tournaments', tournamentId, 'players'] as const,
+  rounds: (userId: string, tournamentId: string) =>
+    [...privateWorkspaceKeys.user(userId), 'tournaments', tournamentId, 'rounds'] as const,
+  round: (userId: string, roundId: string) =>
+    [...privateWorkspaceKeys.user(userId), 'rounds', roundId, 'detail'] as const,
+  teams: (userId: string, roundId: string) =>
+    [...privateWorkspaceKeys.user(userId), 'rounds', roundId, 'teams'] as const,
 }
 
 export function withCreatedTournament(current: Tournament[] | undefined, created: Tournament): Tournament[] {

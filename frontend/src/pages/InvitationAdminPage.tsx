@@ -4,7 +4,6 @@ import { ChevronLeft } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import {
   buildInvitationUrl,
-  invitationKeys,
   issueInvitation,
   listInvitations,
   revokeInvitation,
@@ -14,6 +13,7 @@ import {
 import { isCanonicalUuid } from '../api/decoder'
 import { tournamentApi, tournamentKeys } from '../api/tournaments'
 import { ApiHttpError } from '../api/http'
+import { privateWorkspaceKeys } from '../api/privateWorkspace'
 import { InvitationIssueForm } from '../features/invitations/InvitationIssueForm'
 import { InvitationList } from '../features/invitations/InvitationList'
 import { OneTimeInvitationLink } from '../features/invitations/OneTimeInvitationLink'
@@ -45,7 +45,7 @@ export function InvitationAdminPage() {
   const membership = memberships.data?.find((entry) => entry.tournament.id === tournamentId)
   const authorized = membership?.role === 'admin'
   const invitations = useQuery({
-    queryKey: invitationKeys.list(tournamentId),
+    queryKey: privateWorkspaceKeys.invitations(userId, tournamentId),
     queryFn: () => listInvitations(tournamentId),
     enabled: authorized && isCanonicalUuid(tournamentId),
   })
@@ -65,7 +65,10 @@ export function InvitationAdminPage() {
     mutationFn: (invitationId: string) => revokeInvitation(tournamentId, invitationId, auth.session?.csrf_token ?? ''),
   })
 
-  const refreshList = () => queryClient.invalidateQueries({ queryKey: invitationKeys.list(tournamentId), exact: true })
+  const refreshList = () => queryClient.invalidateQueries({
+    queryKey: privateWorkspaceKeys.invitations(userId, tournamentId),
+    exact: true,
+  })
 
   const handleIssue = async (input: InvitationIssueInput) => {
     setActionError(null)

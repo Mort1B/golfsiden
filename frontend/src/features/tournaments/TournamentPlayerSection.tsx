@@ -35,6 +35,7 @@ function mutationMessage(error: Error | null): string | null {
 export function TournamentPlayerSection(props: TournamentPlayerSectionProps) {
   const auth = useAuth()
   const queryClient = useQueryClient()
+  const userId = auth.session?.user_id ?? ''
   const [editingId, setEditingId] = useState<string | null>(null)
   const [handicap, setHandicap] = useState('')
   const [reason, setReason] = useState('')
@@ -92,18 +93,18 @@ export function TournamentPlayerSection(props: TournamentPlayerSectionProps) {
         handicapIndex: parsed.value,
         correctionReason: reason.trim(),
       })
-      queryClient.setQueryData<TournamentPlayerRoster>(tournamentKeys.players(props.tournamentId), (current) => current ? {
+      queryClient.setQueryData<TournamentPlayerRoster>(tournamentKeys.players(userId, props.tournamentId), (current) => current ? {
         ...current,
         players: current.players.map((entry) => entry.player_id === result.player.player_id ? result.player : entry),
       } : current)
-      await queryClient.invalidateQueries({ queryKey: tournamentKeys.players(props.tournamentId) })
+      await queryClient.invalidateQueries({ queryKey: tournamentKeys.players(userId, props.tournamentId) })
       setReceipt(`${result.player.display_name} er oppdatert til HCP ${formatHandicap(result.player.tournament_handicap)}. Endringen er lagret i historikken.`)
       setEditingId(null)
     } catch (error) {
       if (error instanceof ApiHttpError && error.code === 'tournament_handicap_locked') {
         await Promise.all([
-          queryClient.invalidateQueries({ queryKey: tournamentKeys.players(props.tournamentId) }),
-          queryClient.invalidateQueries({ queryKey: tournamentKeys.rounds(props.tournamentId) }),
+          queryClient.invalidateQueries({ queryKey: tournamentKeys.players(userId, props.tournamentId) }),
+          queryClient.invalidateQueries({ queryKey: tournamentKeys.rounds(userId, props.tournamentId) }),
         ])
       }
     }

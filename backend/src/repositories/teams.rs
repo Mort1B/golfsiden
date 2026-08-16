@@ -1,5 +1,5 @@
 use chrono::NaiveTime;
-use sqlx::PgPool;
+use sqlx::{PgPool, Postgres, Transaction};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -17,12 +17,38 @@ pub enum TeamMutationError {
 }
 
 pub async fn list(pool: &PgPool, round_id: Uuid) -> Result<Vec<TeamWithMembers>, sqlx::Error> {
-    let teams = sqlx::query_as::<_, Team>("SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name")
-        .bind(round_id).fetch_all(pool).await?;
+    let mut transaction = pool.begin().await?;
+    let result = list_in_transaction(&mut transaction, round_id).await?;
+    transaction.commit().await?;
+    Ok(result)
+}
+
+pub async fn list_for_member(
+    pool: &PgPool,
+    user_id: Uuid,
+    round_id: Uuid,
+) -> Result<Vec<TeamWithMembers>, AuthorizationError> {
+    let mut transaction = pool.begin().await?;
+    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        .execute(&mut *transaction)
+        .await?;
+    tournament_authorization::require_round_member_read(&mut transaction, user_id, round_id)
+        .await?;
+    let result = list_in_transaction(&mut transaction, round_id).await?;
+    transaction.commit().await?;
+    Ok(result)
+}
+
+async fn list_in_transaction(
+    transaction: &mut Transaction<'_, Postgres>,
+    round_id: Uuid,
+) -> Result<Vec<TeamWithMembers>, sqlx::Error> {
+    let teams = sqlx::query_as::<_, Team>("SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id")
+        .bind(round_id).fetch_all(&mut **transaction).await?;
     let mut result = Vec::with_capacity(teams.len());
     for team in teams {
-        let members = sqlx::query_as::<_, TeamMember>("SELECT tm.player_id, p.display_name, tm.display_order FROM team_memberships tm JOIN players p ON p.id = tm.player_id WHERE tm.team_id = $1 ORDER BY tm.display_order NULLS LAST, p.display_name")
-            .bind(team.id).fetch_all(pool).await?;
+        let members = sqlx::query_as::<_, TeamMember>("SELECT tm.player_id, p.display_name, tm.display_order FROM team_memberships tm JOIN players p ON p.id = tm.player_id WHERE tm.team_id = $1 ORDER BY tm.display_order NULLS LAST, p.display_name, tm.player_id")
+            .bind(team.id).fetch_all(&mut **transaction).await?;
         result.push(TeamWithMembers { team, members });
     }
     Ok(result)

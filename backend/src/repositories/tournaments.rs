@@ -1,6 +1,6 @@
 mod handicaps;
 
-pub use handicaps::{change_player_handicap_authorized, list_players};
+pub use handicaps::{change_player_handicap_authorized, list_players, list_players_for_member};
 
 use chrono::NaiveDate;
 use sqlx::{FromRow, PgPool, Postgres, Transaction};
@@ -48,10 +48,49 @@ struct MyTournamentRow {
 
 pub async fn list(pool: &PgPool) -> Result<Vec<Tournament>, sqlx::Error> {
     sqlx::query_as::<_, Tournament>(&format!(
-        "SELECT {COLUMNS} FROM tournaments ORDER BY start_date DESC, name"
+        "SELECT {COLUMNS} FROM tournaments ORDER BY start_date DESC, name, id"
     ))
     .fetch_all(pool)
     .await
+}
+
+pub async fn list_for_member(pool: &PgPool, user_id: Uuid) -> Result<Vec<Tournament>, sqlx::Error> {
+    sqlx::query_as::<_, Tournament>(&format!(
+        "SELECT t.{columns}
+         FROM tournament_memberships tm
+         JOIN tournaments t ON t.id = tm.tournament_id
+         WHERE tm.user_id = $1
+         ORDER BY t.start_date DESC, t.name, t.id",
+        columns = COLUMNS.replace(", ", ", t.")
+    ))
+    .bind(user_id)
+    .fetch_all(pool)
+    .await
+}
+
+pub async fn get_for_member(
+    pool: &PgPool,
+    user_id: Uuid,
+    tournament_id: Uuid,
+) -> Result<Tournament, AuthorizationError> {
+    let mut transaction = pool.begin().await?;
+    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        .execute(&mut *transaction)
+        .await?;
+    tournament_authorization::require_tournament_member_read(
+        &mut transaction,
+        user_id,
+        tournament_id,
+    )
+    .await?;
+    let tournament = sqlx::query_as::<_, Tournament>(&format!(
+        "SELECT {COLUMNS} FROM tournaments WHERE id = $1"
+    ))
+    .bind(tournament_id)
+    .fetch_one(&mut *transaction)
+    .await?;
+    transaction.commit().await?;
+    Ok(tournament)
 }
 
 pub async fn get(pool: &PgPool, id: Uuid) -> Result<Option<Tournament>, sqlx::Error> {

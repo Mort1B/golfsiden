@@ -3,9 +3,11 @@ import { useQueryClient } from '@tanstack/react-query'
 import { api } from '../../api/client'
 import { scoringKeys, type ScoreOwner, type ScorecardSummary } from '../../api/scorecards'
 import { tournamentKeys } from '../../api/tournaments'
+import { privateWorkspaceKeys } from '../../api/privateWorkspace'
 import type { Round } from '../../api/types'
 import { invalidateScorecard, invalidateScoreDependents } from './queries'
 import { ScoreCoordinator, hasUnresolvedIntent } from './scoreCoordinator'
+import { useAuth } from '../auth/authContext'
 
 interface HoleScoreSyncInput {
   round: Round
@@ -24,6 +26,8 @@ function holeValue(card: ScorecardSummary, holeId: string): number | null {
 
 export function useHoleScoreSync(input: HoleScoreSyncInput) {
   const queryClient = useQueryClient()
+  const auth = useAuth()
+  const userId = auth.session?.user_id ?? ''
   const verifiedRef = useRef(input.onVerified)
   const terminalRef = useRef(input.onTerminal)
   const initialValueRef = useRef(input.serverValue)
@@ -47,7 +51,7 @@ export function useHoleScoreSync(input: HoleScoreSyncInput) {
       await invalidateScorecard(queryClient, input.round.id, owner)
       const card = await api.scorecard(input.round.id, owner)
       queryClient.setQueryData(scoringKeys.scorecard(input.round.id, owner), card)
-      await invalidateScoreDependents(queryClient, input.round.id, input.tournamentId)
+      await invalidateScoreDependents(queryClient, userId, input.round.id, input.tournamentId)
       verifiedRef.current(card)
       return holeValue(card, input.holeId)
     },
@@ -58,14 +62,14 @@ export function useHoleScoreSync(input: HoleScoreSyncInput) {
         api.completionValidation(input.round.id, input.round.scoring_format),
         api.scorecard(input.round.id, owner),
       ])
-      queryClient.setQueryData(['round', input.round.id], round)
-      queryClient.setQueryData(scoringKeys.completion(input.round.id), completion)
+      queryClient.setQueryData(tournamentKeys.round(userId, input.round.id), round)
+      queryClient.setQueryData(privateWorkspaceKeys.completion(userId, input.round.id), completion)
       queryClient.setQueryData(scoringKeys.scorecard(input.round.id, owner), card)
       await queryClient.invalidateQueries({
-        queryKey: tournamentKeys.rounds(input.tournamentId),
+        queryKey: tournamentKeys.rounds(userId, input.tournamentId),
         exact: true,
       })
-      await invalidateScoreDependents(queryClient, input.round.id, input.tournamentId)
+      await invalidateScoreDependents(queryClient, userId, input.round.id, input.tournamentId)
       verifiedRef.current(card)
       return holeValue(card, input.holeId)
     },
@@ -77,6 +81,7 @@ export function useHoleScoreSync(input: HoleScoreSyncInput) {
     input.tournamentId,
     owner,
     queryClient,
+    userId,
   ])
 
   const subscribe = useCallback((listener: () => void) => coordinator.subscribe(listener), [coordinator])

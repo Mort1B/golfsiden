@@ -1,48 +1,40 @@
-import { useEffect, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../api/client'
 import { authKeys } from '../../api/auth'
 import { AuthContext } from './authContext'
 import { ApiHttpError } from '../../api/http'
-import { tournamentKeys } from '../../api/tournaments'
+import { publishSessionTransition, resolveSessionTransition } from './sessionTransition'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const sessionQuery = useQuery({
     queryKey: authKeys.session,
-    queryFn: api.session,
+    queryFn: () => resolveSessionTransition(queryClient, api.session),
     retry: false,
     staleTime: 30_000,
   })
 
-  useEffect(() => {
-    if (sessionQuery.isSuccess && sessionQuery.data === null) {
-      queryClient.removeQueries({ queryKey: tournamentKeys.mineRoot })
-    }
-  }, [queryClient, sessionQuery.data, sessionQuery.isSuccess])
-
   const clearProtectedState = () => {
-    queryClient.setQueryData(authKeys.session, null)
-    queryClient.removeQueries({ queryKey: tournamentKeys.mineRoot })
-    queryClient.removeQueries({
-      predicate: (query) => query.queryKey[0] === 'rounds' && query.queryKey[2] === 'score-access',
-    })
+    publishSessionTransition(queryClient, null)
+  }
+
+  const establishProtectedState = (session: NonNullable<typeof sessionQuery.data>) => {
+    publishSessionTransition(queryClient, session)
   }
 
   return (
     <AuthContext.Provider value={{
       session: sessionQuery.data ?? null,
       loading: sessionQuery.isPending,
-      error: sessionQuery.error,
+      error: sessionQuery.data === undefined ? sessionQuery.error : null,
       signIn: async (username, password) => {
         const session = await api.login(username, password)
-        queryClient.removeQueries({ queryKey: tournamentKeys.mineRoot })
-        queryClient.setQueryData(authKeys.session, session)
+        establishProtectedState(session)
         return session
       },
       establishSession: (session) => {
-        queryClient.removeQueries({ queryKey: tournamentKeys.mineRoot })
-        queryClient.setQueryData(authKeys.session, session)
+        establishProtectedState(session)
       },
       signOut: async () => {
         const session = sessionQuery.data

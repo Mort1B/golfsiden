@@ -3,13 +3,16 @@ use std::sync::Arc;
 use axum::{
     Json, Router,
     extract::{Path, State},
+    http::header::CACHE_CONTROL,
+    response::{IntoResponse, Response},
     routing::get,
 };
 use uuid::Uuid;
 
 use crate::{
     AppState,
-    domain::leaderboards::{LeaderboardMetric, RoundLeaderboard, TournamentLeaderboard},
+    api::{auth::AuthenticatedSession, authorization::map_authorization_error},
+    domain::leaderboards::LeaderboardMetric,
     error::{ApiError, ApiResult},
     repositories::leaderboards::{self, LeaderboardError},
 };
@@ -34,59 +37,98 @@ pub fn routes() -> Router<Arc<AppState>> {
 async fn round_gross(
     State(state): State<Arc<AppState>>,
     Path(round_id): Path<Uuid>,
-) -> ApiResult<Json<RoundLeaderboard>> {
-    round(&state, round_id, LeaderboardMetric::Gross).await
+    authenticated: AuthenticatedSession,
+) -> ApiResult<Response> {
+    round(
+        &state,
+        authenticated.principal.user_id,
+        round_id,
+        LeaderboardMetric::Gross,
+    )
+    .await
 }
 
 async fn round_net(
     State(state): State<Arc<AppState>>,
     Path(round_id): Path<Uuid>,
-) -> ApiResult<Json<RoundLeaderboard>> {
-    round(&state, round_id, LeaderboardMetric::Net).await
+    authenticated: AuthenticatedSession,
+) -> ApiResult<Response> {
+    round(
+        &state,
+        authenticated.principal.user_id,
+        round_id,
+        LeaderboardMetric::Net,
+    )
+    .await
 }
 
 async fn tournament_gross(
     State(state): State<Arc<AppState>>,
     Path(tournament_id): Path<Uuid>,
-) -> ApiResult<Json<TournamentLeaderboard>> {
-    tournament(&state, tournament_id, LeaderboardMetric::Gross).await
+    authenticated: AuthenticatedSession,
+) -> ApiResult<Response> {
+    tournament(
+        &state,
+        authenticated.principal.user_id,
+        tournament_id,
+        LeaderboardMetric::Gross,
+    )
+    .await
 }
 
 async fn tournament_net(
     State(state): State<Arc<AppState>>,
     Path(tournament_id): Path<Uuid>,
-) -> ApiResult<Json<TournamentLeaderboard>> {
-    tournament(&state, tournament_id, LeaderboardMetric::Net).await
+    authenticated: AuthenticatedSession,
+) -> ApiResult<Response> {
+    tournament(
+        &state,
+        authenticated.principal.user_id,
+        tournament_id,
+        LeaderboardMetric::Net,
+    )
+    .await
 }
 
 async fn round(
     state: &AppState,
+    user_id: Uuid,
     round_id: Uuid,
     metric: LeaderboardMetric,
-) -> ApiResult<Json<RoundLeaderboard>> {
-    Ok(Json(
-        leaderboards::round(&state.pool, round_id, metric)
-            .await
-            .map_err(map_error)?,
-    ))
+) -> ApiResult<Response> {
+    Ok((
+        [(CACHE_CONTROL, "private, no-store")],
+        Json(
+            leaderboards::round_for_member(&state.pool, user_id, round_id, metric)
+                .await
+                .map_err(map_error)?,
+        ),
+    )
+        .into_response())
 }
 
 async fn tournament(
     state: &AppState,
+    user_id: Uuid,
     tournament_id: Uuid,
     metric: LeaderboardMetric,
-) -> ApiResult<Json<TournamentLeaderboard>> {
-    Ok(Json(
-        leaderboards::tournament(&state.pool, tournament_id, metric)
-            .await
-            .map_err(map_error)?,
-    ))
+) -> ApiResult<Response> {
+    Ok((
+        [(CACHE_CONTROL, "private, no-store")],
+        Json(
+            leaderboards::tournament_for_member(&state.pool, user_id, tournament_id, metric)
+                .await
+                .map_err(map_error)?,
+        ),
+    )
+        .into_response())
 }
 
 fn map_error(error: LeaderboardError) -> ApiError {
     match error {
         LeaderboardError::NotFound => ApiError::NotFound,
         LeaderboardError::InvalidStoredData => ApiError::Internal,
+        LeaderboardError::Authorization(error) => map_authorization_error(error),
         LeaderboardError::Database(error) => ApiError::Database(error),
     }
 }

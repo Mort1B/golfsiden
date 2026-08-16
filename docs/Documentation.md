@@ -7,15 +7,17 @@ idempotent development seed, and a strict TypeScript React viewer application.
 Milestone 2 now includes deterministic round opening, backend score entry,
 correction, scorecard summary and confirmation, plus atomic round completion and
 locking and live gross/net leaderboard APIs for individual stroke play and
-two-player scramble. Users can browse tournaments, tournament players, rounds,
-players, and round-specific teams. The mobile result view supports round and
-tournament gross/net standings with shareable selections and live refetch.
+two-player scramble. Signed-in tournament members can browse their tournaments,
+tournament players, rounds, round-specific teams, and gross/net standings. The
+mobile result view supports shareable selections and live refetch inside that
+private workspace. Global player reads remain a separate legacy surface.
 The mobile score view supports authenticated hole entry, correction,
 confirmation, and locked read-only cards for both scoring formats.
 Tournament-scoped memberships now authorize entrant, round, team, lifecycle,
-handicap, and score mutations. A first-time visitor can create their account,
-player identity, draft tournament, complete round plan, admin membership,
-initial invitation, and session through one mobile onboarding flow.
+handicap, and score mutations as well as tournament workspace reads. A first-time
+visitor can create their account, player identity, draft tournament, complete
+round plan, admin membership, initial invitation, and session through one mobile
+onboarding flow.
 Shared invitation links now support minimal preview, atomic new-player
 registration, exact linked-player acceptance, and tournament-admin issue,
 rotation, and revocation from mobile-first React views.
@@ -135,6 +137,15 @@ the shared card, with their own account retained in the audit attribution.
 Viewers, unlinked accounts, cross-tournament roles, and non-members cannot write.
 Team identity remains specific to one round.
 
+Tournament detail, roster, round, team, readiness, completion-validation, and
+round/tournament leaderboard reads require an active session plus any membership
+role in the target tournament. The tournament collection is selected directly
+through the current user's memberships. Existing resources outside that scope
+return `403`, missing resources return `404`, and successful private reads use
+`Cache-Control: private, no-store`. Multi-query reads authorize and assemble the
+response in one repeatable-read transaction while holding the membership row
+`FOR SHARE`, so membership removal cannot commit partway through a response.
+
 Management and lifecycle mutations resolve the target tournament from the
 resource and lock/revalidate both the session and admin membership inside the
 write transaction. Global player/profile mutations and the temporary legacy
@@ -165,7 +176,10 @@ reissue use the same hashed-secret model.
 The React `/` route is the signed-out start screen, `/create` is the accessible
 mobile setup wizard, and `/tournaments` lists only the signed-in user's
 memberships. Membership query keys include the account ID and identity-scoped
-caches are cleared when sessions change.
+caches are cleared before an initial or changed identity is published. Tournament,
+round, score, and leaderboard routes are session-protected. Same-user background
+session refreshes keep the workspace mounted, and SSE invalidation excludes the
+auth query while refetching affected workspace data.
 
 ## Invitation onboarding
 
@@ -267,6 +281,8 @@ card must be reconfirmed before locking. Current player handicaps are never read
 for historical net totals. All leaderboard reads use one repeatable-read snapshot
 and bounded bulk queries; inconsistent completed-round or owner data fails closed
 instead of producing plausible partial standings.
+Both round and tournament leaderboard routes require membership in the target
+tournament and are returned as private, non-cacheable responses.
 
 The React `/leaderboard` page stores tournament, round/tournament scope, round,
 and gross/net selection in URL search parameters. Invalid or stale selections
@@ -290,9 +306,12 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 
 ## Known limitations
 
-- Public read routes still expose the pre-onboarding viewer model. They will
-  become membership-scoped during the frontend cutover; later public access will
-  use explicit share tokens.
+- The sign-in username input's HTML `pattern` character class is not compatible
+  with Chrome's `/v` pattern parsing and emits a console diagnostic; backend
+  validation remains authoritative. A focused repair is queued in `PLANS.md`.
+- Global player reads, scorecard read visibility, and SSE event visibility still
+  need explicit private/public policy decisions. Later public tournament or
+  leaderboard access will use explicit share tokens.
 - Request throttling is not implemented, so the public onboarding and
   registration endpoints are not ready for an internet-facing deployment.
 - No tournament management workspace beyond the creation flow.

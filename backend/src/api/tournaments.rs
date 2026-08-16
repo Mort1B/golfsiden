@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::{
     Json, Router,
     extract::{Path, State, rejection::JsonRejection},
-    http::StatusCode,
+    http::{StatusCode, header::CACHE_CONTROL},
     response::IntoResponse,
     routing::get,
 };
@@ -17,10 +17,7 @@ use crate::{
         auth::{AuthenticatedSession, MutationSession, PlatformAdminSession},
         authorization::map_authorization_error,
     },
-    domain::models::{
-        MyTournament, ScoringMode, Tournament, TournamentHandicapCorrection,
-        TournamentPlayerRoster, TournamentStatus,
-    },
+    domain::models::{ScoringMode, TournamentHandicapCorrection, TournamentStatus},
     error::{ApiError, ApiResult, require_non_empty},
     repositories::tournaments::{self, TournamentMutationError},
 };
@@ -77,19 +74,24 @@ fn default_scoring_mode() -> ScoringMode {
     ScoringMode::Combined
 }
 
-async fn list(State(state): State<Arc<AppState>>) -> ApiResult<Json<Vec<Tournament>>> {
-    Ok(Json(tournaments::list(&state.pool).await?))
+async fn list(
+    State(state): State<Arc<AppState>>,
+    authenticated: AuthenticatedSession,
+) -> ApiResult<impl IntoResponse> {
+    let tournaments =
+        tournaments::list_for_member(&state.pool, authenticated.principal.user_id).await?;
+    Ok(([(CACHE_CONTROL, "private, no-store")], Json(tournaments)))
 }
 
 async fn get_one(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
-) -> ApiResult<Json<Tournament>> {
-    Ok(Json(
-        tournaments::get(&state.pool, id)
-            .await?
-            .ok_or(ApiError::NotFound)?,
-    ))
+    authenticated: AuthenticatedSession,
+) -> ApiResult<impl IntoResponse> {
+    let tournament = tournaments::get_for_member(&state.pool, authenticated.principal.user_id, id)
+        .await
+        .map_err(map_authorization_error)?;
+    Ok(([(CACHE_CONTROL, "private, no-store")], Json(tournament)))
 }
 
 async fn create(
@@ -128,20 +130,23 @@ async fn create(
 async fn list_mine(
     State(state): State<Arc<AppState>>,
     authenticated: AuthenticatedSession,
-) -> ApiResult<Json<Vec<MyTournament>>> {
-    Ok(Json(
-        tournaments::list_for_user(&state.pool, authenticated.principal.user_id).await?,
+) -> ApiResult<impl IntoResponse> {
+    Ok((
+        [(CACHE_CONTROL, "private, no-store")],
+        Json(tournaments::list_for_user(&state.pool, authenticated.principal.user_id).await?),
     ))
 }
 
 async fn list_players(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
-) -> ApiResult<Json<TournamentPlayerRoster>> {
-    if tournaments::get(&state.pool, id).await?.is_none() {
-        return Err(ApiError::NotFound);
-    }
-    Ok(Json(tournaments::list_players(&state.pool, id).await?))
+    authenticated: AuthenticatedSession,
+) -> ApiResult<impl IntoResponse> {
+    let roster =
+        tournaments::list_players_for_member(&state.pool, authenticated.principal.user_id, id)
+            .await
+            .map_err(map_authorization_error)?;
+    Ok(([(CACHE_CONTROL, "private, no-store")], Json(roster)))
 }
 
 async fn add_player(

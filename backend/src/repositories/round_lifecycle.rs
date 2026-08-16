@@ -95,6 +95,25 @@ pub async fn pairing_validation(
         .map(|loaded| validate(&loaded.facts)))
 }
 
+pub async fn pairing_validation_for_member(
+    pool: &PgPool,
+    user_id: Uuid,
+    round_id: Uuid,
+) -> Result<PairingValidation, AuthorizationError> {
+    let mut transaction = pool.begin().await?;
+    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        .execute(&mut *transaction)
+        .await?;
+    tournament_authorization::require_round_member_read(&mut transaction, user_id, round_id)
+        .await?;
+    let validation = load(&mut transaction, round_id, false)
+        .await?
+        .map(|loaded| validate(&loaded.facts))
+        .ok_or(AuthorizationError::NotFound)?;
+    transaction.commit().await?;
+    Ok(validation)
+}
+
 pub async fn open(pool: &PgPool, round_id: Uuid) -> Result<OpenRoundResult, OpenRoundError> {
     let mut transaction = pool.begin().await?;
     let result = open_in_transaction(&mut transaction, round_id).await?;

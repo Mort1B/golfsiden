@@ -14,10 +14,13 @@ import {
 } from '../features/leaderboards/selection'
 import { TournamentStandings } from '../features/leaderboards/TournamentStandings'
 import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
+import { useAuth } from '../features/auth/authContext'
 
 export function LeaderboardPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const tournamentsQuery = useQuery({ queryKey: tournamentKeys.publicList, queryFn: api.tournaments })
+  const auth = useAuth()
+  const userId = auth.session?.user_id ?? ''
+  const tournamentsQuery = useQuery({ queryKey: tournamentKeys.list(userId), queryFn: api.tournaments })
   const tournaments = tournamentsQuery.data ?? []
   const requestedTournamentId = searchParams.get('tournament')
   const selectedTournament = tournaments.find((item) => item.id === requestedTournamentId)
@@ -28,7 +31,7 @@ export function LeaderboardPage() {
   const metric = parseMetric(searchParams.get('metric'))
 
   const roundsQuery = useQuery({
-    queryKey: tournamentKeys.rounds(tournamentId),
+    queryKey: tournamentKeys.rounds(userId, tournamentId),
     queryFn: () => api.rounds(tournamentId),
     enabled: tournamentId.length > 0,
   })
@@ -37,12 +40,12 @@ export function LeaderboardPage() {
   const selectedRound = rounds.find((round) => round.id === requestedRoundId) ?? preferredRound(rounds)
 
   const roundLeaderboardQuery = useQuery({
-    queryKey: leaderboardKeys.round(selectedRound?.id ?? '', metric),
+    queryKey: leaderboardKeys.round(userId, selectedRound?.id ?? '', metric),
     queryFn: () => api.roundLeaderboard(selectedRound?.id ?? '', metric),
     enabled: scope === 'round' && selectedRound !== undefined,
   })
   const tournamentLeaderboardQuery = useQuery({
-    queryKey: leaderboardKeys.tournament(tournamentId, metric),
+    queryKey: leaderboardKeys.tournament(userId, tournamentId, metric),
     queryFn: () => api.tournamentLeaderboard(tournamentId, metric),
     enabled: scope === 'tournament' && tournamentId.length > 0,
   })

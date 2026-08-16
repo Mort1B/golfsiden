@@ -4,8 +4,10 @@ import { api } from '../../api/client'
 import { ApiHttpError } from '../../api/http'
 import { scoringKeys, type ScoreOwner, type ScorecardSummary } from '../../api/scorecards'
 import { tournamentKeys } from '../../api/tournaments'
+import { privateWorkspaceKeys } from '../../api/privateWorkspace'
 import type { Round } from '../../api/types'
 import { invalidateScorecard, invalidateScoreDependents } from './queries'
+import { useAuth } from '../auth/authContext'
 
 interface ConfirmationInput {
   round: Round
@@ -21,6 +23,8 @@ type ConfirmationVariables = ConfirmationInput
 
 export function useScorecardConfirmation(input: ConfirmationInput) {
   const queryClient = useQueryClient()
+  const auth = useAuth()
+  const userId = auth.session?.user_id ?? ''
   const mutation = useMutation({
     mutationKey: ['scorecard-confirmation', input.round.id, input.owner.type, input.owner.id],
     mutationFn: async (variables: ConfirmationVariables) => {
@@ -34,7 +38,7 @@ export function useScorecardConfirmation(input: ConfirmationInput) {
       queryClient.setQueryData(scoringKeys.scorecard(variables.round.id, variables.owner), card)
       await invalidateScorecard(queryClient, variables.round.id, variables.owner)
       queryClient.setQueryData(scoringKeys.scorecard(variables.round.id, variables.owner), card)
-      await invalidateScoreDependents(queryClient, variables.round.id, variables.tournamentId)
+      await invalidateScoreDependents(queryClient, userId, variables.round.id, variables.tournamentId)
       variables.onConfirmed()
     },
     onError: async (error, variables) => {
@@ -45,10 +49,10 @@ export function useScorecardConfirmation(input: ConfirmationInput) {
         api.completionValidation(variables.round.id, variables.round.scoring_format),
         api.scorecard(variables.round.id, variables.owner),
       ])
-      queryClient.setQueryData(['round', variables.round.id], round)
-      queryClient.setQueryData(scoringKeys.completion(variables.round.id), completion)
+      queryClient.setQueryData(tournamentKeys.round(userId, variables.round.id), round)
+      queryClient.setQueryData(privateWorkspaceKeys.completion(userId, variables.round.id), completion)
       queryClient.setQueryData(scoringKeys.scorecard(variables.round.id, variables.owner), card)
-      await queryClient.invalidateQueries({ queryKey: tournamentKeys.rounds(variables.tournamentId), exact: true })
+      await queryClient.invalidateQueries({ queryKey: tournamentKeys.rounds(userId, variables.tournamentId), exact: true })
     },
   })
   const reset = mutation.reset

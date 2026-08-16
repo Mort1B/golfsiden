@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { api } from '../api/client'
 import { ownerEquals, scoringKeys } from '../api/scorecards'
 import { tournamentKeys } from '../api/tournaments'
+import { privateWorkspaceKeys } from '../api/privateWorkspace'
 import { ScoringExperience } from '../features/scoring/ScoringExperience'
 import {
   parseHoleNumber,
@@ -18,16 +19,19 @@ import {
   type ScoreView,
 } from '../features/scoring/selection'
 import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
+import { useAuth } from '../features/auth/authContext'
 
 export function ScorePage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const tournamentsQuery = useQuery({ queryKey: tournamentKeys.publicList, queryFn: api.tournaments })
+  const auth = useAuth()
+  const userId = auth.session?.user_id ?? ''
+  const tournamentsQuery = useQuery({ queryKey: tournamentKeys.list(userId), queryFn: api.tournaments })
   const tournaments = tournamentsQuery.data ?? []
   const tournament = tournaments.find((item) => item.id === searchParams.get('tournament'))
     ?? tournaments.find((item) => item.status === 'active')
     ?? tournaments[0]
   const roundsQuery = useQuery({
-    queryKey: tournamentKeys.rounds(tournament?.id ?? ''),
+    queryKey: tournamentKeys.rounds(userId, tournament?.id ?? ''),
     queryFn: () => api.rounds(tournament?.id ?? ''),
     enabled: tournament !== undefined,
   })
@@ -35,12 +39,12 @@ export function ScorePage() {
   const round = eligibleRounds.find((item) => item.id === searchParams.get('round'))
     ?? preferredScoreRound(eligibleRounds)
   const completionQuery = useQuery({
-    queryKey: scoringKeys.completion(round?.id ?? ''),
+    queryKey: privateWorkspaceKeys.completion(userId, round?.id ?? ''),
     queryFn: () => api.completionValidation(round?.id ?? '', round?.scoring_format ?? 'individual_stroke_play'),
     enabled: round !== undefined,
   })
   const accessQuery = useQuery({
-    queryKey: scoringKeys.access(round?.id ?? ''),
+    queryKey: privateWorkspaceKeys.scoreAccess(userId, round?.id ?? ''),
     queryFn: () => api.scoreAccess(round?.id ?? ''),
     enabled: round !== undefined,
     retry: false,

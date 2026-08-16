@@ -3,13 +3,18 @@ use std::sync::Arc;
 use axum::{
     Json,
     extract::{Path, State},
+    http::header::CACHE_CONTROL,
+    response::IntoResponse,
 };
 use uuid::Uuid;
 
 use crate::{
     AppState,
-    api::{auth::MutationSession, authorization::map_authorization_error},
-    domain::models::{OpenRoundResult, PairingValidation, ReadinessIssueCode},
+    api::{
+        auth::{AuthenticatedSession, MutationSession},
+        authorization::map_authorization_error,
+    },
+    domain::models::{OpenRoundResult, ReadinessIssueCode},
     error::{ApiError, ApiResult},
     repositories::round_lifecycle::{self, OpenRoundError},
 };
@@ -17,11 +22,16 @@ use crate::{
 pub async fn pairing_validation(
     State(state): State<Arc<AppState>>,
     Path(round_id): Path<Uuid>,
-) -> ApiResult<Json<PairingValidation>> {
-    let validation = round_lifecycle::pairing_validation(&state.pool, round_id)
-        .await?
-        .ok_or(ApiError::NotFound)?;
-    Ok(Json(validation))
+    authenticated: AuthenticatedSession,
+) -> ApiResult<impl IntoResponse> {
+    let validation = round_lifecycle::pairing_validation_for_member(
+        &state.pool,
+        authenticated.principal.user_id,
+        round_id,
+    )
+    .await
+    .map_err(map_authorization_error)?;
+    Ok(([(CACHE_CONTROL, "private, no-store")], Json(validation)))
 }
 
 pub async fn open(

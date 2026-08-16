@@ -6,10 +6,12 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
+use chrono::{Duration as ChronoDuration, Utc};
 use golf_api::{
     AppState, api,
+    auth::hash_session_token,
     domain::scorecards::ScoreOwner,
-    repositories::{round_completion, round_lifecycle, scorecards},
+    repositories::{auth, round_completion, round_lifecycle, scorecards},
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -35,6 +37,7 @@ const LATEST_TEAM: Uuid = uuid!("50000000-0000-0000-0000-000000000036");
 const HOLE_ONE: Uuid = uuid!("50000000-0000-0000-0000-000000000041");
 const HOLE_TWO: Uuid = uuid!("50000000-0000-0000-0000-000000000042");
 const USER: Uuid = uuid!("50000000-0000-0000-0000-000000000051");
+const SESSION_TOKEN: &str = "leaderboard-private-token";
 
 const FIXTURE: &str = r#"
 INSERT INTO users (id, username, display_name, role) VALUES
@@ -88,6 +91,23 @@ INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id, displ
 
 async fn seed(pool: &PgPool) {
     sqlx::raw_sql(FIXTURE).execute(pool).await.unwrap();
+    sqlx::query(
+        "INSERT INTO tournament_memberships (tournament_id, user_id, role)
+         VALUES ($1, $2, 'scorer') ON CONFLICT DO NOTHING",
+    )
+    .bind(TOURNAMENT)
+    .bind(USER)
+    .execute(pool)
+    .await
+    .unwrap();
+    auth::create_session(
+        pool,
+        USER,
+        &hash_session_token(SESSION_TOKEN),
+        Utc::now() + ChronoDuration::hours(1),
+    )
+    .await
+    .unwrap();
 }
 
 async fn open(pool: &PgPool, round_id: Uuid) {
@@ -101,7 +121,12 @@ async fn body(response: axum::response::Response) -> Value {
 async fn get(app: &axum::Router, path: String) -> (StatusCode, Value) {
     let response = app
         .clone()
-        .oneshot(Request::get(path).body(Body::empty()).unwrap())
+        .oneshot(
+            Request::get(path)
+                .header("cookie", format!("golf_session={SESSION_TOKEN}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
     (response.status(), body(response).await)

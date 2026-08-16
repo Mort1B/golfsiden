@@ -49,9 +49,14 @@ describe('tournament memberships', () => {
   })
 
   it('uses stable hierarchical cache keys', () => {
-    expect(tournamentKeys.mineRoot).toEqual(['tournaments', 'mine'])
-    expect(tournamentKeys.mine('user-one')).toEqual(['tournaments', 'mine', 'user-one'])
-    expect(tournamentKeys.rounds(tournament.id)).toEqual(['tournaments', tournament.id, 'rounds'])
+    expect(tournamentKeys.root('user-one')).toEqual(['private-workspace', 'user-one', 'tournaments'])
+    expect(tournamentKeys.mine('user-one')).toEqual(['private-workspace', 'user-one', 'tournaments', 'mine'])
+    expect(tournamentKeys.rounds('user-one', tournament.id)).toEqual([
+      'private-workspace', 'user-one', 'tournaments', tournament.id, 'rounds',
+    ])
+    expect(tournamentKeys.round('user-two', 'round-one')).not.toEqual(
+      tournamentKeys.round('user-one', 'round-one'),
+    )
   })
 
   it('adds a created tournament without retaining a duplicate', () => {

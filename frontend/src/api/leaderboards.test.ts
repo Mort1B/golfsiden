@@ -1,10 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { decodeRoundLeaderboard, decodeTournamentLeaderboard } from './leaderboards'
+import { decodeRoundLeaderboard, decodeTournamentLeaderboard, leaderboardKeys } from './leaderboards'
 
 const seedTournamentId = '00000000-0000-0000-0000-000000002001'
 const seedRoundId = '00000000-0000-0000-0000-000000004001'
 
 describe('leaderboard decoders', () => {
+  it('isolates leaderboard caches by session user', () => {
+    expect(leaderboardKeys.round('user-one', seedRoundId, 'net')).toEqual([
+      'private-workspace', 'user-one', 'leaderboards', 'round', seedRoundId, 'net',
+    ])
+    expect(leaderboardKeys.tournament('user-two', seedTournamentId, 'gross')).toEqual([
+      'private-workspace', 'user-two', 'leaderboards', 'tournament', seedTournamentId, 'gross',
+    ])
+  })
+
   it('accepts the canonical zero-version UUIDs used by development seed data', () => {
     const round = decodeRoundLeaderboard({
       round_id: seedRoundId,

@@ -197,9 +197,9 @@ async fn api_completes_and_locks_once_with_sse_after_each_commit(pool: PgPool) {
     let validation = app
         .clone()
         .oneshot(
-            Request::get(format!(
+            authorize(Request::get(format!(
                 "/api/rounds/{INDIVIDUAL_ROUND}/completion-validation"
-            ))
+            )))
             .body(Body::empty())
             .unwrap(),
         )
@@ -227,9 +227,9 @@ async fn api_completes_and_locks_once_with_sse_after_each_commit(pool: PgPool) {
     let completed_validation = app
         .clone()
         .oneshot(
-            Request::get(format!(
+            authorize(Request::get(format!(
                 "/api/rounds/{INDIVIDUAL_ROUND}/completion-validation"
-            ))
+            )))
             .body(Body::empty())
             .unwrap(),
         )
@@ -279,9 +279,9 @@ async fn api_completes_and_locks_once_with_sse_after_each_commit(pool: PgPool) {
     let locked_validation = app
         .clone()
         .oneshot(
-            Request::get(format!(
+            authorize(Request::get(format!(
                 "/api/rounds/{INDIVIDUAL_ROUND}/completion-validation"
-            ))
+            )))
             .body(Body::empty())
             .unwrap(),
         )
@@ -314,9 +314,12 @@ async fn api_completes_and_locks_once_with_sse_after_each_commit(pool: PgPool) {
     let missing = app
         .clone()
         .oneshot(
-            Request::get(format!("/api/rounds/{}/completion-validation", missing_id))
-                .body(Body::empty())
-                .unwrap(),
+            authorize(Request::get(format!(
+                "/api/rounds/{}/completion-validation",
+                missing_id
+            )))
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();

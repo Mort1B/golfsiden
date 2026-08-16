@@ -147,9 +147,11 @@ async fn api_opens_once_with_exact_snapshots_and_emits_only_after_success(pool: 
     let readiness = app
         .clone()
         .oneshot(
-            Request::get(format!("/api/rounds/{ROUND_ID}/pairing-validation"))
-                .body(Body::empty())
-                .unwrap(),
+            authorize(Request::get(format!(
+                "/api/rounds/{ROUND_ID}/pairing-validation"
+            )))
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();

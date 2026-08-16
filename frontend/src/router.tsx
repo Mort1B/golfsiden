@@ -22,12 +22,12 @@ export const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       { path: '/tournaments', element: <RequireSession><TournamentsPage /></RequireSession> },
-      { path: '/tournaments/:tournamentId', element: <TournamentPage /> },
+      { path: '/tournaments/:tournamentId', element: <RequireSession><TournamentPage /></RequireSession> },
       { path: '/tournaments/:tournamentId/invitations', element: <RequireSession><InvitationAdminPage /></RequireSession> },
-      { path: '/rounds/:roundId', element: <RoundPage /> },
+      { path: '/rounds/:roundId', element: <RequireSession><RoundPage /></RequireSession> },
       { path: '/players', element: <PlayersPage /> },
       { path: '/score', element: <RequireSession><ScorePage /></RequireSession> },
-      { path: '/leaderboard', element: <LeaderboardPage /> },
+      { path: '/leaderboard', element: <RequireSession><LeaderboardPage /></RequireSession> },
     ],
   },
 ])

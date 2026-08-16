@@ -6,7 +6,7 @@ use std::sync::Arc;
 use axum::{
     Json, Router,
     extract::{Path, State},
-    http::StatusCode,
+    http::{StatusCode, header::CACHE_CONTROL},
     response::IntoResponse,
     routing::get,
 };
@@ -16,8 +16,11 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
-    api::{auth::MutationSession, authorization::map_authorization_error},
-    domain::models::{Round, ScoringFormat},
+    api::{
+        auth::{AuthenticatedSession, MutationSession},
+        authorization::map_authorization_error,
+    },
+    domain::models::ScoringFormat,
     error::{ApiError, ApiResult, require_non_empty},
     repositories::{
         rounds::{self, RoundMutationError},
@@ -88,25 +91,24 @@ fn default_allowance() -> i16 {
 async fn list(
     State(state): State<Arc<AppState>>,
     Path(tournament_id): Path<Uuid>,
-) -> ApiResult<Json<Vec<Round>>> {
-    if tournaments::get(&state.pool, tournament_id)
-        .await?
-        .is_none()
-    {
-        return Err(ApiError::NotFound);
-    }
-    Ok(Json(rounds::list(&state.pool, tournament_id).await?))
+    authenticated: AuthenticatedSession,
+) -> ApiResult<impl IntoResponse> {
+    let rounds =
+        rounds::list_for_member(&state.pool, authenticated.principal.user_id, tournament_id)
+            .await
+            .map_err(map_authorization_error)?;
+    Ok(([(CACHE_CONTROL, "private, no-store")], Json(rounds)))
 }
 
 async fn get_one(
     State(state): State<Arc<AppState>>,
     Path(round_id): Path<Uuid>,
-) -> ApiResult<Json<Round>> {
-    Ok(Json(
-        rounds::get(&state.pool, round_id)
-            .await?
-            .ok_or(ApiError::NotFound)?,
-    ))
+    authenticated: AuthenticatedSession,
+) -> ApiResult<impl IntoResponse> {
+    let round = rounds::get_for_member(&state.pool, authenticated.principal.user_id, round_id)
+        .await
+        .map_err(map_authorization_error)?;
+    Ok(([(CACHE_CONTROL, "private, no-store")], Json(round)))
 }
 
 async fn create(

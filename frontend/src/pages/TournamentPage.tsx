@@ -12,9 +12,9 @@ export function TournamentPage() {
   const { tournamentId = '' } = useParams()
   const auth = useAuth()
   const userId = auth.session?.user_id ?? ''
-  const tournament = useQuery({ queryKey: tournamentKeys.detail(tournamentId), queryFn: () => api.tournament(tournamentId) })
-  const players = useQuery({ queryKey: tournamentKeys.players(tournamentId), queryFn: () => api.tournamentPlayers(tournamentId) })
-  const rounds = useQuery({ queryKey: tournamentKeys.rounds(tournamentId), queryFn: () => api.rounds(tournamentId) })
+  const tournament = useQuery({ queryKey: tournamentKeys.detail(userId, tournamentId), queryFn: () => api.tournament(tournamentId) })
+  const players = useQuery({ queryKey: tournamentKeys.players(userId, tournamentId), queryFn: () => api.tournamentPlayers(tournamentId) })
+  const rounds = useQuery({ queryKey: tournamentKeys.rounds(userId, tournamentId), queryFn: () => api.rounds(tournamentId) })
   const memberships = useQuery({ queryKey: tournamentKeys.mine(userId), queryFn: api.myTournaments, enabled: userId.length > 0 })
   const isTournamentAdmin = memberships.data?.some((entry) => entry.tournament.id === tournamentId && entry.role === 'admin') ?? false
 

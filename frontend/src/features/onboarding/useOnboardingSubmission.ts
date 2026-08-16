@@ -52,9 +52,9 @@ export function useOnboardingSubmission(onCreated: () => void) {
       onCreated()
       auth.establishSession(response.session)
       queryClient.setQueryData<MyTournament[]>(tournamentKeys.mine(response.session.user_id), [membership])
-      queryClient.setQueryData(tournamentKeys.detail(response.tournament.id), response.tournament)
-      queryClient.setQueryData(tournamentKeys.rounds(response.tournament.id), response.rounds)
-      queryClient.setQueryData<Tournament[]>(tournamentKeys.publicList, (current) =>
+      queryClient.setQueryData(tournamentKeys.detail(response.session.user_id, response.tournament.id), response.tournament)
+      queryClient.setQueryData(tournamentKeys.rounds(response.session.user_id, response.tournament.id), response.rounds)
+      queryClient.setQueryData<Tournament[]>(tournamentKeys.list(response.session.user_id), (current) =>
         withCreatedTournament(current, response.tournament))
       setState({
         status: 'success',
