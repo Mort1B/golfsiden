@@ -1,0 +1,217 @@
+.join-page {
+  min-height: 100vh;
+  padding: max(20px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+}
+
+.join-shell {
+  width: min(100%, 700px);
+  margin: 0 auto;
+}
+
+.join-brand {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: #28734f;
+  font-size: .78rem;
+  font-weight: 850;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.join-header {
+  padding: 28px 0 24px;
+  border-bottom: 1px solid #d8ded8;
+}
+
+.join-header h1,
+.join-success h1,
+.join-failure h1 {
+  margin: 5px 0 10px;
+  font-size: clamp(1.9rem, 9vw, 2.7rem);
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+}
+
+.join-dates {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #59655e;
+  line-height: 1.45;
+}
+
+.join-dates svg {
+  width: 18px;
+  flex: 0 0 auto;
+}
+
+.join-options {
+  display: grid;
+  gap: 30px;
+}
+
+.join-section {
+  padding: 28px 0 2px;
+}
+
+.join-section + .join-section {
+  border-top: 1px solid #d8ded8;
+}
+
+.join-section h2,
+.invitation-admin-section h2,
+.one-time-link h2 {
+  margin-bottom: 18px;
+  font-size: 1.15rem;
+}
+
+.invitation-form,
+.invitation-issue-form {
+  display: grid;
+  gap: 18px;
+}
+
+.invitation-form label,
+.invitation-issue-form label,
+.one-time-link label {
+  display: grid;
+  gap: 7px;
+  color: #35433b;
+  font-size: .86rem;
+  font-weight: 750;
+}
+
+.invitation-form input,
+.invitation-issue-form input,
+.one-time-link input {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid #aeb8b1;
+  border-radius: 6px;
+  background: #fff;
+  color: #17201c;
+}
+
+.invitation-form small,
+.one-time-help {
+  color: #68736c;
+  font-size: .77rem;
+  font-weight: 500;
+}
+
+.invitation-primary,
+.invitation-secondary,
+.invitation-danger,
+.invitation-icon-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-weight: 800;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.invitation-primary { background: #176640; color: #fff; }
+.invitation-secondary { border-color: #aeb8b1; background: #fff; color: #244b37; }
+.invitation-danger { border-color: #98372f; background: #98372f; color: #fff; }
+.invitation-icon-button { width: 44px; padding: 0; border-color: #cfd6d0; background: #fff; color: #59655e; }
+.invitation-primary svg, .invitation-secondary svg, .invitation-danger svg { width: 18px; flex: 0 0 auto; }
+
+.invitation-primary:disabled,
+.invitation-secondary:disabled,
+.invitation-danger:disabled { cursor: not-allowed; opacity: .58; }
+
+.join-page :focus-visible,
+.invitation-admin-page :focus-visible,
+.tournament-admin-actions a:focus-visible {
+  outline: 3px solid #63a984;
+  outline-offset: 2px;
+}
+
+.invitation-error,
+.invitation-notice {
+  padding: 11px 13px;
+  border-left: 4px solid #9b3c33;
+  background: #fff5f3;
+  color: #7d241d;
+  font-size: .86rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.join-state,
+.join-failure,
+.join-success,
+.invitation-empty {
+  margin-top: 30px;
+  padding: 26px 0;
+  color: #626d66;
+}
+
+.join-failure p,
+.join-success p { max-width: 520px; line-height: 1.5; }
+.join-failure .invitation-secondary { margin-top: 20px; }
+.join-success > svg { width: 44px; height: 44px; margin-bottom: 14px; color: #176640; }
+.join-success .invitation-primary { margin-top: 24px; }
+.signed-in .invitation-primary { margin-top: 18px; }
+
+.invitation-admin-page { overflow-x: hidden; }
+.invitation-admin-page .detail-header { grid-template-columns: 44px minmax(0, 1fr) auto; }
+.invitation-admin-page .back-button { width: 44px; height: 44px; }
+.invitation-admin-section { margin-top: 28px; padding-top: 24px; border-top: 1px solid #d8ded8; }
+.invitation-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.invitation-section-heading h2 { margin: 4px 0 0; }
+.invitation-section-heading > span { color: #68736c; font-size: .85rem; }
+
+.one-time-link {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  margin: 6px 0 30px;
+  padding: 18px;
+  border: 1px solid #a8c5b2;
+  border-radius: 8px;
+  background: #f2faf5;
+}
+
+.one-time-link h2 { margin: 4px 50px 0 0; }
+.dismiss-link { position: absolute; top: 12px; right: 12px; }
+.one-time-link input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem; }
+
+.invitation-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.invitation-list > li { min-width: 0; padding: 16px; border: 1px solid #dce1dc; border-radius: 8px; background: #fff; }
+.invitation-row-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; color: #626d66; font-size: .8rem; }
+.invitation-status { display: inline-flex; min-height: 25px; align-items: center; padding: 3px 9px; border-radius: 999px; background: #ecefec; color: #536058; font-size: .7rem; font-weight: 850; text-transform: uppercase; }
+.invitation-status-active { background: #d9f0e2; color: #155f3a; }
+.invitation-status-expired, .invitation-status-exhausted { background: #f4ead7; color: #775416; }
+.invitation-status-revoked { background: #f3dfdd; color: #7d2922; }
+
+.invitation-list dl { display: grid; gap: 7px; margin: 14px 0 0; }
+.invitation-list dl div { display: grid; grid-template-columns: minmax(82px, .45fr) minmax(0, 1fr); gap: 10px; font-size: .8rem; }
+.invitation-list dt { color: #707a74; }
+.invitation-list dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.invitation-row-actions { display: grid; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #e3e7e3; }
+.revoke-confirm { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.invitation-empty { margin: 0; border: 1px dashed #cdd4ce; border-radius: 8px; text-align: center; }
+
+.tournament-admin-actions { display: flex; justify-content: flex-end; margin: 0 0 18px; }
+.tournament-admin-actions a { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid #aeb8b1; border-radius: 6px; background: #fff; color: #244b37; font-size: .84rem; font-weight: 800; }
+.tournament-admin-actions svg { width: 18px; }
+
+@media (min-width: 620px) {
+  .join-page { padding-inline: 28px; }
+  .join-options { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 34px; }
+  .join-section + .join-section { border-top: 0; border-left: 1px solid #d8ded8; padding-left: 34px; }
+  .invitation-issue-form { grid-template-columns: 1fr 1fr; align-items: end; }
+  .invitation-issue-form .invitation-error, .invitation-issue-form button { grid-column: 1 / -1; }
+  .invitation-row-actions { grid-template-columns: max-content max-content; }
+  .revoke-confirm { grid-template-columns: max-content max-content; }
+  .one-time-link .invitation-secondary { justify-self: start; }
+}

@@ -6,27 +6,15 @@ instead of accumulating a historical log here.
 
 ## Planning status
 
-Phase 2 is complete. No implementation step is currently approved. Invitation
-redemption and the private-read workspace remain proposed later phases.
+Phase 3 is complete. No implementation step is currently approved. The
+private-read workspace remains an unapproved later phase.
 
 ## Active step
 
-No active implementation step. A direct approval is required before Phase 3 or
+No active implementation step. A direct approval is required before Phase 4 or
 another bounded step begins.
 
 ## Upcoming work
-
-### Phase 3: Reusable invitation onboarding
-
-- Add append-only invitation redemptions with locked expiry, revocation, maximum
-  use, duplicate-membership, and concurrency enforcement.
-- Use a non-secret invitation ID plus a URL-fragment token. Provide minimal
-  preview, new-account registration, authenticated acceptance, rotation, and
-  revocation without matching identity by email.
-- Add authenticated invitation reissue so an admin can recover from a lost
-  one-time onboarding response without storing a recoverable plaintext secret.
-- Add `/join/:invitationId` and atomically create/reuse identity, entrant, player
-  membership, redemption, and session.
 
 ### Phase 4: Private tournament workspace
 

@@ -1,3 +1,4 @@
+pub mod invitations;
 pub mod leaderboards;
 pub mod models;
 pub mod onboarding;

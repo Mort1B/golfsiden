@@ -16,6 +16,9 @@ Tournament-scoped memberships now authorize entrant, round, team, lifecycle,
 handicap, and score mutations. A first-time visitor can create their account,
 player identity, draft tournament, complete round plan, admin membership,
 initial invitation, and session through one mobile onboarding flow.
+Shared invitation links now support minimal preview, atomic new-player
+registration, exact linked-player acceptance, and tournament-admin issue,
+rotation, and revocation from mobile-first React views.
 
 ## Repository structure
 
@@ -147,12 +150,45 @@ The initial invitation is unlimited-use until its expiry seven days after the
 tournament end date. Its URL uses `/join/{invitation_id}#token={secret}` and only
 the hash is stored. The raw secret appears once in a `Cache-Control: no-store`
 response and transient browser state. Invitation redemption and authenticated
-reissue are not implemented yet.
+reissue use the same hashed-secret model.
 
 The React `/` route is the signed-out start screen, `/create` is the accessible
 mobile setup wizard, and `/tournaments` lists only the signed-in user's
 memberships. Membership query keys include the account ID and identity-scoped
 caches are cleared when sessions change.
+
+## Invitation onboarding
+
+`POST /api/invitations/{invitation_id}/preview` authenticates the fragment token
+from a JSON body before revealing only the tournament name, dates, and invitation
+expiry. New visitors use `/register`; the server preflights the link before
+Argon2, then atomically creates the account, player, both handicap histories,
+entrant, player membership, append-only redemption, and session. Authenticated
+visitors use the CSRF-protected `/accept` route, which relies only on the exact
+session-linked player and never infers identity from email.
+
+Complete active participation is idempotent even after a link is later expired,
+revoked, rotated, or exhausted. Viewer memberships are promoted to player;
+player, scorer, and admin roles are retained. Inactive players, withdrawn
+entrants, and accounts without a linked player fail closed. Joining creates no
+team or flight assignment.
+
+Tournament admins manage links at
+`/api/tournaments/{tournament_id}/invitations`. Rotation revokes one active link
+and creates one successor with the same expiry, maximum uses, and series root.
+Capacity is counted across the entire series. PostgreSQL serializes redemption
+against exact identity, membership, invitation, series, and entrant rows and
+rejects invalid lifecycle or over-capacity inserts. Redemption facts are
+immutable during tournament lifetime; explicit tournament deletion may cascade
+them. Legacy revocations retain an explicit unknown-actor marker instead of
+inventing audit provenance.
+
+The React `/join/:invitationId` page keeps the fragment through preview and
+retry so a reload can recover, but sends the secret only in JSON bodies and
+clears the fragment after successful joining. It never places the token in query
+keys, query parameters, storage, logs, or request URLs. The admin page shows
+newly issued plaintext links once in component state; lost links are replaced
+through rotation rather than recovered from storage.
 
 Flights are not represented yet. A future normalized round-flight model will
 extend the same score-access resolver so a player may receive both team owners
@@ -230,9 +266,9 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 - Public read routes still expose the pre-onboarding viewer model. They will
   become membership-scoped during the frontend cutover; later public access will
   use explicit share tokens.
-- Invitation links are issued but cannot be redeemed, rotated, or reissued yet.
 - Creator email ownership and request throttling are not implemented, so the
-  public onboarding endpoint is not ready for an internet-facing deployment.
+  public onboarding and registration endpoints are not ready for an
+  internet-facing deployment.
 - No tournament management workspace beyond the creation flow.
 - Course and tee administration are not implemented.
 - No flight model, offline score queue, or public leaderboard link.

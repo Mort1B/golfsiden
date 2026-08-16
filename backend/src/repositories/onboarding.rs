@@ -168,8 +168,8 @@ pub async fn create(
     let invitation_id = Uuid::new_v4();
     sqlx::query(
         "INSERT INTO tournament_invitations
-           (id, tournament_id, token_hash, created_by_user_id, expires_at, max_uses)
-         VALUES ($1, $2, $3, $4, $5, NULL)",
+           (id, tournament_id, token_hash, created_by_user_id, expires_at, max_uses, series_id)
+         VALUES ($1, $2, $3, $4, $5, NULL, $1)",
     )
     .bind(invitation_id)
     .bind(tournament_id)

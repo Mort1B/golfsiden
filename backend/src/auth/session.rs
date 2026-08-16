@@ -28,6 +28,11 @@ pub fn hash_invitation_token(token: &str) -> [u8; TOKEN_BYTES] {
     hash_opaque_token(token)
 }
 
+pub fn verify_invitation_token_hash(token: &str, stored_hash: &[u8]) -> bool {
+    let presented_hash = hash_invitation_token(token);
+    presented_hash.as_slice().ct_eq(stored_hash).into()
+}
+
 fn hash_opaque_token(token: &str) -> [u8; TOKEN_BYTES] {
     Sha256::digest(token.as_bytes()).into()
 }
@@ -71,5 +76,13 @@ mod tests {
         let csrf = derive_csrf_token(token);
         assert!(verify_csrf_token(token, &csrf));
         assert!(!verify_csrf_token("other-session", &csrf));
+    }
+
+    #[test]
+    fn invitation_hash_comparison_is_exact() {
+        let stored = hash_invitation_token("correct");
+        assert!(verify_invitation_token_hash("correct", &stored));
+        assert!(!verify_invitation_token_hash("wrong", &stored));
+        assert!(!verify_invitation_token_hash("correct", &[0_u8; 31]));
     }
 }

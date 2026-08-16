@@ -100,6 +100,23 @@ pub async fn lock_active_session(
     .await
 }
 
+pub async fn lock_active_session_exclusive(
+    transaction: &mut Transaction<'_, Postgres>,
+    session_id: Uuid,
+) -> Result<Option<SessionPrincipal>, sqlx::Error> {
+    sqlx::query_as(
+        "SELECT s.id AS session_id, u.id AS user_id, u.display_name, u.role,
+                u.player_id, s.expires_at
+         FROM user_sessions s
+         JOIN users u ON u.id = s.user_id
+         WHERE s.id = $1 AND s.revoked_at IS NULL AND s.expires_at > now()
+         FOR UPDATE OF s, u",
+    )
+    .bind(session_id)
+    .fetch_optional(&mut **transaction)
+    .await
+}
+
 pub async fn revoke_session(pool: &PgPool, session_id: Uuid) -> Result<(), sqlx::Error> {
     sqlx::query(
         "UPDATE user_sessions

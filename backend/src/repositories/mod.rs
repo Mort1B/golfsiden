@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod invitations;
 pub mod leaderboards;
 pub mod onboarding;
 pub mod players;

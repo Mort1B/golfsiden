@@ -1,5 +1,6 @@
 mod auth;
 mod authorization;
+mod invitations;
 mod leaderboards;
 mod live;
 mod onboarding;
@@ -26,6 +27,7 @@ pub fn router(state: Arc<AppState>) -> Router {
     let router = Router::new()
         .route("/api/health", get(health))
         .merge(auth::routes())
+        .merge(invitations::routes())
         .merge(onboarding::routes())
         .merge(players::routes())
         .merge(leaderboards::routes())

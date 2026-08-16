@@ -37,6 +37,16 @@ async function responseJson(path: string, init?: RequestInit): Promise<unknown> 
   return body
 }
 
+export async function requestNoContent(path: string, init?: RequestInit): Promise<void> {
+  const response = await fetch(`${apiUrl}${path}`, { ...init, credentials: 'include' })
+  if (!response.ok) {
+    const body: unknown = await response.json().catch(() => undefined)
+    const details = errorDetails(body, response.status)
+    throw new ApiHttpError(response.status, details.code, details.message)
+  }
+  if (response.status !== 204) throw new Error(`Ugyldig svar fra serveren (${path})`)
+}
+
 export async function requestDecoded<T>(
   path: string,
   decode: (value: unknown) => T,

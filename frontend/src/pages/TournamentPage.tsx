@@ -1,16 +1,21 @@
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, Flag, MapPin, Users } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Flag, Link2, MapPin, Users } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { ErrorState, LoadingState } from '../ui/AsyncState'
 import { StatusBadge } from '../ui/StatusBadge'
 import { tournamentKeys } from '../api/tournaments'
+import { useAuth } from '../features/auth/authContext'
 
 export function TournamentPage() {
   const { tournamentId = '' } = useParams()
+  const auth = useAuth()
+  const userId = auth.session?.user_id ?? ''
   const tournament = useQuery({ queryKey: tournamentKeys.detail(tournamentId), queryFn: () => api.tournament(tournamentId) })
   const players = useQuery({ queryKey: tournamentKeys.players(tournamentId), queryFn: () => api.tournamentPlayers(tournamentId) })
   const rounds = useQuery({ queryKey: tournamentKeys.rounds(tournamentId), queryFn: () => api.rounds(tournamentId) })
+  const memberships = useQuery({ queryKey: tournamentKeys.mine(userId), queryFn: api.myTournaments, enabled: userId.length > 0 })
+  const isTournamentAdmin = memberships.data?.some((entry) => entry.tournament.id === tournamentId && entry.role === 'admin') ?? false
 
   if (tournament.isPending) return <section className="page"><LoadingState /></section>
   if (tournament.error) return <section className="page"><ErrorState error={tournament.error} /></section>
@@ -22,6 +27,7 @@ export function TournamentPage() {
         <StatusBadge status={tournament.data.status} />
       </header>
       {tournament.data.description && <p className="description">{tournament.data.description}</p>}
+      {isTournamentAdmin && <div className="tournament-admin-actions"><Link to={`/tournaments/${tournamentId}/invitations`}><Link2 aria-hidden="true" />Administrer invitasjoner</Link></div>}
       <div className="summary-strip">
         <div><Flag /><strong>{tournament.data.number_of_rounds}</strong><span>Runder</span></div>
         <div><Users /><strong>{players.data?.length ?? '–'}</strong><span>Spillere</span></div>

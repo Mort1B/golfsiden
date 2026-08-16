@@ -1,50 +1,52 @@
 # Latest explanation
 
-## Atomic creator onboarding
+## Reusable invitation onboarding
 
-A first-time visitor now creates one player identity, one global credential
-account, and one tournament-scoped admin membership without receiving platform
-authority. The submitted rounds are the source for the server-derived round
-count and individual, team, or combined tournament scoring mode. Course and tee
-references remain unconfigured in draft, so existing readiness rules still
-prevent opening incomplete rounds.
+A tournament invitation is now a reusable, rotatable capability rather than a
+recoverable plaintext secret. The URL carries a public UUID plus a 256-bit token
+in its fragment; only the token hash reaches PostgreSQL. Preview and registration
+authenticate that token before revealing lifecycle or account-specific errors.
+New registration creates the linked account, player, handicap histories,
+tournament membership, entrant, redemption, and session in one transaction.
+Existing-account acceptance uses only the session's exact linked player.
 
-Password hashing runs off Tokio's async executor under a four-task semaphore.
-The owned permit moves into the blocking closure, which keeps the limit correct
-even when the HTTP request is cancelled. PostgreSQL then creates both handicap
-histories, tournament graph, hashed invitation, and hashed session in one
-transaction. Cookies and SSE invalidation happen only after commit.
+Rotation creates a successor that retains the original series root, expiry, and
+maximum uses. Application transactions and a database insert guard use one lock
+order across identity, membership, invitation, series root, and entrant rows.
+That prevents final-slot over-redemption and direct-SQL bypasses without adding a
+second source of identity truth. Redemptions remain append-only, and legacy
+revoked links explicitly report that their actor is unknown.
 
-The frontend keeps the password in retryable form state and the returned invite
-secret only in the one-time success view. It seeds non-secret tournament caches,
-keys membership data by the session user ID, and clears identity-scoped caches
-when accounts change.
+The React join page keeps the fragment through retry and reload recovery, sends
+it only in JSON bodies, and clears it after success. TanStack keys and mutation
+variables never contain the token. Tournament admins can issue, copy once,
+rotate, and revoke links; plaintext exists only in current component state.
 
 ## Compact example
 
-The database requires an invitation creator to belong to the same tournament:
+Series capacity is checked while the stable root is locked:
 
 ```sql
-FOREIGN KEY (tournament_id, created_by_user_id)
-    REFERENCES tournament_memberships(tournament_id, user_id)
-    ON DELETE CASCADE
+SELECT count(*)
+FROM invitation_redemptions
+WHERE tournament_id = target_invitation.tournament_id
+  AND series_id = target_invitation.series_id;
 ```
 
 ## Invariants
 
-- Creator authority is tournament-scoped; the global account role is `player`.
-- Player, entrant, team, and account identities remain separate.
-- Both global and tournament handicap histories start with the exact submitted
-  handicap.
-- Raw password, session token, and invitation token never enter PostgreSQL or
-  application logs.
-- Failed transactions produce no onboarding rows, cookie, or SSE event.
+- Tournament player identity remains independent of round teams and flights.
+- Handicap snapshots and histories remain authoritative after joining.
+- A user and linked player can redeem only once per tournament.
+- Revoked, expired, closed, and exhausted links cannot create new redemptions.
+- Complete active participation returns `already_joined` without consuming use.
+- Raw invitation tokens never enter PostgreSQL, storage, logs, or request URLs.
 
 ## Validation
 
-- Rust format, check, strict Clippy, and the complete PostgreSQL suite pass: 36
-  unit tests and 52 integration tests.
-- Frontend tests pass: 45 Vitest tests plus strict typecheck, lint, and build.
-- Real Chrome flows pass at 320/390 px and desktop. A two-round mixed-format
-  tournament was created and opened with no console errors, failed requests, or
-  horizontal overflow.
+- Rust formatting, check, strict Clippy, and 39 unit tests pass.
+- The complete PostgreSQL suite passes 111 integration tests.
+- Frontend tests pass: 70 Vitest tests plus strict typecheck, lint, and build.
+- Real Chrome flows pass at 320 px, 390 px, and desktop for join and admin
+  workflows with no overflow, sub-44 px controls, console failures, storage
+  leakage, or token-bearing request URLs.

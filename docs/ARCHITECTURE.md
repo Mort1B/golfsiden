@@ -33,6 +33,19 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   the fragment. PostgreSQL stores only its SHA-256 hash. The invitation creator
   must be a member of the same tournament, and the raw secret is returned once
   with a non-cacheable response.
+- Invitation rotation creates an immutable successor in the same series and
+  preserves expiry and maximum-use policy. Redemptions are exact user/player/
+  membership/entrant facts, unique per tournament identity, and append-only
+  during tournament lifetime. Series-root locking plus a PostgreSQL insert guard
+  enforces lifecycle and capacity for repository and direct SQL writes.
+- Authenticated invitation acceptance uses only `users.player_id`. A complete
+  active membership/entrant pair is idempotent before lifecycle checks; partial
+  compatible state is repaired, while inactive or withdrawn identities fail
+  closed. Joining never creates team or flight membership.
+- Public invitation handlers authenticate an extractable token before strict
+  secondary-field decoding. Registration hashes outside the transaction after a
+  cheap link preflight, then revalidates with database time after row-lock waits.
+  Cookies and SSE invalidations remain post-commit only.
 - Argon2 creation work is capped to four blocking tasks. An owned semaphore
   permit stays inside the non-cancellable blocking closure, so request
   cancellation cannot release capacity while hashing continues.
@@ -125,13 +138,19 @@ Implemented resources:
 | `POST` | `/api/auth/logout` | Revoke and clear the current session |
 | `GET` | `/api/me/tournaments` | List the session user's tournament memberships and player links |
 | `POST` | `/api/onboarding/tournaments` | Atomically create a first-time creator, draft tournament plan, invitation, and session |
+| `POST` | `/api/invitations/{invitation_id}/preview` | Preview minimal tournament data for an authenticated invitation token |
+| `POST` | `/api/invitations/{invitation_id}/register` | Atomically register and join a new player account |
+| `POST` | `/api/invitations/{invitation_id}/accept` | Join the exact session-linked player idempotently |
+| `GET`, `POST` | `/api/tournaments/{tournament_id}/invitations` | List metadata or issue a tournament-admin invitation |
+| `POST` | `/api/tournaments/{tournament_id}/invitations/{invitation_id}/rotate` | Revoke and replace one active invitation |
+| `DELETE` | `/api/tournaments/{tournament_id}/invitations/{invitation_id}` | Idempotently revoke an invitation |
 
 Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 
 ## Deferred decisions
 
-- Invitation redemption/reissue, creator email verification, private-read
-  cutover, and production signup/login rate limiting.
+- Creator email verification, private-read cutover, and production signup/login
+  and invitation-registration rate limiting.
 - Normalized round flights and flight-wide score permissions.
 - Separate migration and runtime database roles plus production privilege policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.

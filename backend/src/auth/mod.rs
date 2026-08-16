@@ -10,6 +10,7 @@ pub use password::{hash_password, hash_password_bounded, verify_password};
 pub use session::{
     SESSION_COOKIE_NAME, derive_csrf_token, generate_invitation_token, generate_session_token,
     hash_invitation_token, hash_session_token, verify_csrf_token, verify_derived_csrf,
+    verify_invitation_token_hash,
 };
 
 #[derive(Debug, Clone)]
