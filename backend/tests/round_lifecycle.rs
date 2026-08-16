@@ -6,10 +6,12 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
+use chrono::{Duration as ChronoDuration, Utc};
 use golf_api::{
     AppState, api,
+    auth::{derive_csrf_token, hash_session_token},
     domain::models::ReadinessIssueCode,
-    repositories::{round_lifecycle, round_lifecycle::OpenRoundError},
+    repositories::{auth, round_lifecycle, round_lifecycle::OpenRoundError},
 };
 use http_body_util::BodyExt;
 use serde_json::Value;
@@ -25,6 +27,8 @@ const TEAM_ID: Uuid = uuid!("20000000-0000-0000-0000-000000000005");
 const PLAYER_A: Uuid = uuid!("20000000-0000-0000-0000-000000000011");
 const PLAYER_B: Uuid = uuid!("20000000-0000-0000-0000-000000000012");
 const PLAYER_C: Uuid = uuid!("20000000-0000-0000-0000-000000000013");
+const ADMIN_ID: Uuid = uuid!("20000000-0000-0000-0000-000000000099");
+const SESSION_TOKEN: &str = "round-lifecycle-admin-token";
 
 const READY_FIXTURE: &str = r#"
 INSERT INTO players (id, display_name, current_handicap_index) VALUES
@@ -56,6 +60,48 @@ INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id, displ
 
 async fn seed_ready(pool: &PgPool) {
     sqlx::raw_sql(READY_FIXTURE).execute(pool).await.unwrap();
+    sqlx::query(
+        "INSERT INTO users (id, email, display_name, role)
+         VALUES ($1, 'lifecycle-admin@example.test', 'Lifecycle Admin', 'admin')
+         ON CONFLICT (id) DO NOTHING",
+    )
+    .bind(ADMIN_ID)
+    .execute(pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO tournament_memberships (tournament_id, user_id, role)
+         VALUES ($1, $2, 'admin') ON CONFLICT DO NOTHING",
+    )
+    .bind(TOURNAMENT_ID)
+    .bind(ADMIN_ID)
+    .execute(pool)
+    .await
+    .unwrap();
+    let token_hash = hash_session_token(SESSION_TOKEN);
+    let exists = sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(SELECT 1 FROM user_sessions WHERE token_hash = $1)",
+    )
+    .bind(token_hash.as_slice())
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    if !exists {
+        auth::create_session(
+            pool,
+            ADMIN_ID,
+            &token_hash,
+            Utc::now() + ChronoDuration::hours(1),
+        )
+        .await
+        .unwrap();
+    }
+}
+
+fn authorize(builder: axum::http::request::Builder) -> axum::http::request::Builder {
+    builder
+        .header("cookie", format!("golf_session={SESSION_TOKEN}"))
+        .header("x-csrf-token", derive_csrf_token(SESSION_TOKEN))
 }
 
 async fn response_json(response: axum::response::Response) -> Value {
@@ -72,15 +118,23 @@ fn issue_codes(
 #[sqlx::test(migrations = "../migrations")]
 async fn api_opens_once_with_exact_snapshots_and_emits_only_after_success(pool: PgPool) {
     seed_ready(&pool).await;
+    sqlx::query("UPDATE players SET current_handicap_index = 2.0 WHERE id = $1")
+        .bind(PLAYER_C)
+        .execute(&pool)
+        .await
+        .unwrap();
     let state = AppState::new(pool.clone());
     let app = api::router(Arc::clone(&state));
 
     let missing = app
         .clone()
         .oneshot(
-            Request::post(format!("/api/rounds/{}/open", Uuid::new_v4()))
-                .body(Body::empty())
-                .unwrap(),
+            authorize(Request::post(format!(
+                "/api/rounds/{}/open",
+                Uuid::new_v4()
+            )))
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();
@@ -106,7 +160,7 @@ async fn api_opens_once_with_exact_snapshots_and_emits_only_after_success(pool: 
     let opened = app
         .clone()
         .oneshot(
-            Request::post(format!("/api/rounds/{ROUND_ID}/open"))
+            authorize(Request::post(format!("/api/rounds/{ROUND_ID}/open")))
                 .header("content-type", "application/json")
                 .body(Body::empty())
                 .unwrap(),
@@ -124,9 +178,11 @@ async fn api_opens_once_with_exact_snapshots_and_emits_only_after_success(pool: 
     let frozen_pairing = app
         .clone()
         .oneshot(
-            Request::delete(format!("/api/teams/{TEAM_ID}/members/{PLAYER_A}"))
-                .body(Body::empty())
-                .unwrap(),
+            authorize(Request::delete(format!(
+                "/api/teams/{TEAM_ID}/members/{PLAYER_A}"
+            )))
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();
@@ -153,7 +209,7 @@ async fn api_opens_once_with_exact_snapshots_and_emits_only_after_success(pool: 
     let mut rollback_events = state.live_events.subscribe();
     let repeated = app
         .oneshot(
-            Request::post(format!("/api/rounds/{ROUND_ID}/open"))
+            authorize(Request::post(format!("/api/rounds/{ROUND_ID}/open")))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -169,11 +225,6 @@ async fn api_opens_once_with_exact_snapshots_and_emits_only_after_success(pool: 
         Err(TryRecvError::Empty)
     ));
 
-    sqlx::query("UPDATE players SET current_handicap_index = 2.0 WHERE id = $1")
-        .bind(PLAYER_C)
-        .execute(&pool)
-        .await
-        .unwrap();
     let preserved = sqlx::query_scalar::<_, f64>(
         "SELECT handicap_index::float8 FROM round_handicap_snapshots WHERE round_id = $1 AND player_id = $2",
     )
@@ -217,7 +268,7 @@ async fn readiness_reports_pairing_eligibility_and_format_rules(pool: PgPool) {
     let mut rollback_events = state.live_events.subscribe();
     let response = api::router(state)
         .oneshot(
-            Request::post(format!("/api/rounds/{ROUND_ID}/open"))
+            authorize(Request::post(format!("/api/rounds/{ROUND_ID}/open")))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -341,25 +392,27 @@ async fn course_and_tee_pair_must_match_during_round_creation(pool: PgPool) {
 
     let response = api::router(AppState::new(pool.clone()))
         .oneshot(
-            Request::post(format!("/api/tournaments/{TOURNAMENT_ID}/rounds"))
-                .header("content-type", "application/json")
-                .body(Body::from(
-                    serde_json::json!({
-                        "round_number": 2,
-                        "name": "Second round",
-                        "round_date": "2026-08-02",
-                        "course_id": "20000000-0000-0000-0000-000000000002",
-                        "course_name": "Wrong course",
-                        "tee_id": TEE_ID,
-                        "tee_name": "White",
-                        "number_of_holes": 3,
-                        "handicap_enabled": true,
-                        "handicap_allowance_percent": 95,
-                        "scoring_format": "individual_stroke_play"
-                    })
-                    .to_string(),
-                ))
-                .unwrap(),
+            authorize(Request::post(format!(
+                "/api/tournaments/{TOURNAMENT_ID}/rounds"
+            )))
+            .header("content-type", "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "round_number": 2,
+                    "name": "Second round",
+                    "round_date": "2026-08-02",
+                    "course_id": "20000000-0000-0000-0000-000000000002",
+                    "course_name": "Wrong course",
+                    "tee_id": TEE_ID,
+                    "tee_name": "White",
+                    "number_of_holes": 3,
+                    "handicap_enabled": true,
+                    "handicap_allowance_percent": 95,
+                    "scoring_format": "individual_stroke_play"
+                })
+                .to_string(),
+            ))
+            .unwrap(),
         )
         .await
         .unwrap();

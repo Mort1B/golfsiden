@@ -3,8 +3,11 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
-    auth::{SessionPrincipal, UserRole},
-    domain::{models::ScoringFormat, scorecards::ScoreOwner},
+    auth::SessionPrincipal,
+    domain::{
+        models::{ScoringFormat, TournamentRole},
+        scorecards::ScoreOwner,
+    },
     repositories::auth,
 };
 
@@ -26,13 +29,15 @@ pub async fn writable_owners(
     round_id: Uuid,
 ) -> Result<Vec<ScoreOwner>, ScoreAuthorizationError> {
     let mut connection = pool.acquire().await?;
-    let format =
-        sqlx::query_scalar::<_, ScoringFormat>("SELECT scoring_format FROM rounds WHERE id = $1")
-            .bind(round_id)
-            .fetch_optional(&mut *connection)
-            .await?
-            .ok_or(ScoreAuthorizationError::NotFound)?;
-    list_for_principal(&mut connection, principal, round_id, format).await
+    let context = sqlx::query_as::<_, (Uuid, ScoringFormat)>(
+        "SELECT tournament_id, scoring_format FROM rounds WHERE id = $1",
+    )
+    .bind(round_id)
+    .fetch_optional(&mut *connection)
+    .await?
+    .ok_or(ScoreAuthorizationError::NotFound)?;
+    let role = membership_role(&mut connection, context.0, principal.user_id).await?;
+    list_for_principal(&mut connection, principal, role, round_id, context.1).await
 }
 
 pub async fn authorize_mutation(
@@ -42,10 +47,24 @@ pub async fn authorize_mutation(
     format: ScoringFormat,
     owner: ScoreOwner,
 ) -> Result<Uuid, ScoreAuthorizationError> {
+    let tournament_id =
+        sqlx::query_scalar::<_, Uuid>("SELECT tournament_id FROM rounds WHERE id = $1")
+            .bind(round_id)
+            .fetch_optional(&mut **transaction)
+            .await?
+            .ok_or(ScoreAuthorizationError::NotFound)?;
     let principal = auth::lock_active_session(transaction, session_id)
         .await?
         .ok_or(ScoreAuthorizationError::Unauthenticated)?;
-    if owner_allowed(transaction, &principal, round_id, format, owner).await? {
+    let role = sqlx::query_scalar::<_, TournamentRole>(
+        "SELECT role FROM tournament_memberships
+         WHERE tournament_id = $1 AND user_id = $2 FOR SHARE",
+    )
+    .bind(tournament_id)
+    .bind(principal.user_id)
+    .fetch_optional(&mut **transaction)
+    .await?;
+    if owner_allowed(transaction, &principal, role, round_id, format, owner).await? {
         Ok(principal.user_id)
     } else {
         Err(ScoreAuthorizationError::Forbidden)
@@ -55,15 +74,13 @@ pub async fn authorize_mutation(
 async fn list_for_principal(
     connection: &mut PgConnection,
     principal: &SessionPrincipal,
+    role: Option<TournamentRole>,
     round_id: Uuid,
     format: ScoringFormat,
 ) -> Result<Vec<ScoreOwner>, ScoreAuthorizationError> {
-    if matches!(principal.role, UserRole::Viewer) {
-        return Ok(Vec::new());
-    }
     match format {
         ScoringFormat::IndividualStrokePlay => {
-            let ids = if auth::can_score_all(principal.role) {
+            let ids = if matches!(role, Some(TournamentRole::Admin | TournamentRole::Scorer)) {
                 sqlx::query_scalar::<_, Uuid>(
                     "SELECT rhs.player_id
                      FROM round_handicap_snapshots rhs
@@ -74,7 +91,7 @@ async fn list_for_principal(
                 .bind(round_id)
                 .fetch_all(connection)
                 .await?
-            } else if principal.role == UserRole::Player {
+            } else if role == Some(TournamentRole::Player) {
                 let Some(player_id) = principal.player_id else {
                     return Ok(Vec::new());
                 };
@@ -97,14 +114,14 @@ async fn list_for_principal(
                 .collect())
         }
         ScoringFormat::TeamScramble => {
-            let ids = if auth::can_score_all(principal.role) {
+            let ids = if matches!(role, Some(TournamentRole::Admin | TournamentRole::Scorer)) {
                 sqlx::query_scalar::<_, Uuid>(
                     "SELECT id FROM teams WHERE round_id = $1 ORDER BY lower(name), id",
                 )
                 .bind(round_id)
                 .fetch_all(connection)
                 .await?
-            } else if principal.role == UserRole::Player {
+            } else if role == Some(TournamentRole::Player) {
                 let Some(player_id) = principal.player_id else {
                     return Ok(Vec::new());
                 };
@@ -120,14 +137,15 @@ async fn list_for_principal(
 async fn owner_allowed(
     connection: &mut PgConnection,
     principal: &SessionPrincipal,
+    role: Option<TournamentRole>,
     round_id: Uuid,
     format: ScoringFormat,
     owner: ScoreOwner,
 ) -> Result<bool, sqlx::Error> {
-    if auth::can_score_all(principal.role) {
+    if matches!(role, Some(TournamentRole::Admin | TournamentRole::Scorer)) {
         return Ok(true);
     }
-    if principal.role != UserRole::Player {
+    if role != Some(TournamentRole::Player) {
         return Ok(false);
     }
     let Some(player_id) = principal.player_id else {
@@ -150,6 +168,21 @@ async fn owner_allowed(
         }
         _ => Ok(false),
     }
+}
+
+async fn membership_role(
+    connection: &mut PgConnection,
+    tournament_id: Uuid,
+    user_id: Uuid,
+) -> Result<Option<TournamentRole>, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT role FROM tournament_memberships
+         WHERE tournament_id = $1 AND user_id = $2",
+    )
+    .bind(tournament_id)
+    .bind(user_id)
+    .fetch_optional(connection)
+    .await
 }
 
 async fn direct_team_ids(

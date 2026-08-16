@@ -40,14 +40,38 @@ ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.desc
 INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap, seed)
 SELECT '00000000-0000-0000-0000-000000002001', id, current_handicap_index, row_number() OVER (ORDER BY current_handicap_index)
 FROM players WHERE id BETWEEN '00000000-0000-0000-0000-000000001001' AND '00000000-0000-0000-0000-000000001008'
-ON CONFLICT (tournament_id, player_id) DO UPDATE SET tournament_handicap = EXCLUDED.tournament_handicap, seed = EXCLUDED.seed;
+ON CONFLICT (tournament_id, player_id) DO NOTHING;
+
+INSERT INTO tournament_memberships (tournament_id, user_id, role) VALUES
+('00000000-0000-0000-0000-000000002001', '00000000-0000-0000-0000-000000000001', 'admin')
+ON CONFLICT (tournament_id, user_id) DO NOTHING;
+
+INSERT INTO tournament_memberships (tournament_id, user_id, role)
+SELECT '00000000-0000-0000-0000-000000002001', id, 'player'
+FROM users
+WHERE player_id BETWEEN '00000000-0000-0000-0000-000000001001'
+                    AND '00000000-0000-0000-0000-000000001008'
+ON CONFLICT (tournament_id, user_id) DO NOTHING;
+
+INSERT INTO tournament_handicap_history (
+    id, tournament_id, player_id, handicap_index, changed_by, reason
+)
+SELECT ('00000000-0000-0000-0000-' || lpad((2100 + row_number() OVER (ORDER BY tp.player_id))::text, 12, '0'))::uuid,
+       tp.tournament_id,
+       tp.player_id,
+       tp.tournament_handicap,
+       '00000000-0000-0000-0000-000000000001',
+       'development seed'
+FROM tournament_players tp
+WHERE tp.tournament_id = '00000000-0000-0000-0000-000000002001'
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO courses (id, name, location)
 VALUES ('00000000-0000-0000-0000-000000003001', 'Fjord Golfklubb', 'Vestlandet')
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
 INSERT INTO tees (id, course_id, name, slope_rating, course_rating)
 VALUES ('00000000-0000-0000-0000-000000003101', '00000000-0000-0000-0000-000000003001', 'Gul', 132, 71.8)
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
+ON CONFLICT (id) DO NOTHING;
 INSERT INTO holes (id, tee_id, hole_number, par, stroke_index, yardage)
 SELECT ('00000000-0000-0000-0000-' || lpad((3200 + hole_number)::text, 12, '0'))::uuid,
        '00000000-0000-0000-0000-000000003101', hole_number,
@@ -55,7 +79,11 @@ SELECT ('00000000-0000-0000-0000-' || lpad((3200 + hole_number)::text, 12, '0'))
        hole_number,
        120 + hole_number * 15
 FROM generate_series(1, 18) AS hole_number
-ON CONFLICT (id) DO UPDATE SET par = EXCLUDED.par, stroke_index = EXCLUDED.stroke_index, yardage = EXCLUDED.yardage;
+WHERE NOT EXISTS (
+    SELECT 1 FROM holes existing
+    WHERE existing.id = ('00000000-0000-0000-0000-' || lpad((3200 + hole_number)::text, 12, '0'))::uuid
+)
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO rounds (id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, scoring_format) VALUES
 ('00000000-0000-0000-0000-000000004001', '00000000-0000-0000-0000-000000002001', 1, 'Åpningsrunden', '2026-09-10', '00000000-0000-0000-0000-000000003001', 'Fjord Golfklubb', '00000000-0000-0000-0000-000000003101', 'Gul', 'team_scramble'),
@@ -63,9 +91,12 @@ INSERT INTO rounds (id, tournament_id, round_number, name, round_date, course_id
 ('00000000-0000-0000-0000-000000004003', '00000000-0000-0000-0000-000000002001', 3, 'Moving Day', '2026-09-12', '00000000-0000-0000-0000-000000003001', 'Fjord Golfklubb', '00000000-0000-0000-0000-000000003101', 'Gul', 'individual_stroke_play'),
 ('00000000-0000-0000-0000-000000004004', '00000000-0000-0000-0000-000000002001', 4, 'Lørdagsduellen', '2026-09-13', '00000000-0000-0000-0000-000000003001', 'Fjord Golfklubb', '00000000-0000-0000-0000-000000003101', 'Gul', 'team_scramble'),
 ('00000000-0000-0000-0000-000000004005', '00000000-0000-0000-0000-000000002001', 5, 'Finalen', '2026-09-14', '00000000-0000-0000-0000-000000003001', 'Fjord Golfklubb', '00000000-0000-0000-0000-000000003101', 'Gul', 'individual_stroke_play')
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, round_date = EXCLUDED.round_date, scoring_format = EXCLUDED.scoring_format;
+ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO teams (id, round_id, tournament_id, name, starting_hole) VALUES
+INSERT INTO teams (id, round_id, tournament_id, name, starting_hole)
+SELECT seeded.id::uuid, seeded.round_id::uuid, seeded.tournament_id::uuid,
+       seeded.name, seeded.starting_hole
+FROM (VALUES
 ('00000000-0000-0000-0000-000000005001', '00000000-0000-0000-0000-000000004001', '00000000-0000-0000-0000-000000002001', 'Lag 1', 1),
 ('00000000-0000-0000-0000-000000005002', '00000000-0000-0000-0000-000000004001', '00000000-0000-0000-0000-000000002001', 'Lag 2', 1),
 ('00000000-0000-0000-0000-000000005003', '00000000-0000-0000-0000-000000004001', '00000000-0000-0000-0000-000000002001', 'Lag 3', 10),
@@ -74,9 +105,14 @@ INSERT INTO teams (id, round_id, tournament_id, name, starting_hole) VALUES
 ('00000000-0000-0000-0000-000000005006', '00000000-0000-0000-0000-000000004002', '00000000-0000-0000-0000-000000002001', 'Lag 2', 1),
 ('00000000-0000-0000-0000-000000005007', '00000000-0000-0000-0000-000000004002', '00000000-0000-0000-0000-000000002001', 'Lag 3', 10),
 ('00000000-0000-0000-0000-000000005008', '00000000-0000-0000-0000-000000004002', '00000000-0000-0000-0000-000000002001', 'Lag 4', 10)
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, starting_hole = EXCLUDED.starting_hole;
+) AS seeded(id, round_id, tournament_id, name, starting_hole)
+WHERE NOT EXISTS (SELECT 1 FROM teams existing WHERE existing.id = seeded.id::uuid)
+ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id, display_order) VALUES
+INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id, display_order)
+SELECT seeded.team_id::uuid, seeded.round_id::uuid, seeded.tournament_id::uuid,
+       seeded.player_id::uuid, seeded.display_order
+FROM (VALUES
 ('00000000-0000-0000-0000-000000005001', '00000000-0000-0000-0000-000000004001', '00000000-0000-0000-0000-000000002001', '00000000-0000-0000-0000-000000001001', 1),
 ('00000000-0000-0000-0000-000000005001', '00000000-0000-0000-0000-000000004001', '00000000-0000-0000-0000-000000002001', '00000000-0000-0000-0000-000000001008', 2),
 ('00000000-0000-0000-0000-000000005002', '00000000-0000-0000-0000-000000004001', '00000000-0000-0000-0000-000000002001', '00000000-0000-0000-0000-000000001002', 1),
@@ -93,6 +129,12 @@ INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id, displ
 ('00000000-0000-0000-0000-000000005007', '00000000-0000-0000-0000-000000004002', '00000000-0000-0000-0000-000000002001', '00000000-0000-0000-0000-000000001008', 2),
 ('00000000-0000-0000-0000-000000005008', '00000000-0000-0000-0000-000000004002', '00000000-0000-0000-0000-000000002001', '00000000-0000-0000-0000-000000001004', 1),
 ('00000000-0000-0000-0000-000000005008', '00000000-0000-0000-0000-000000004002', '00000000-0000-0000-0000-000000002001', '00000000-0000-0000-0000-000000001007', 2)
-ON CONFLICT (team_id, player_id) DO UPDATE SET display_order = EXCLUDED.display_order;
+) AS seeded(team_id, round_id, tournament_id, player_id, display_order)
+WHERE NOT EXISTS (
+    SELECT 1 FROM team_memberships existing
+    WHERE existing.team_id = seeded.team_id::uuid
+      AND existing.player_id = seeded.player_id::uuid
+)
+ON CONFLICT (team_id, player_id) DO NOTHING;
 
 COMMIT;

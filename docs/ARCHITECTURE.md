@@ -12,18 +12,26 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
 ## Domain decisions
 
 - Team membership is round-specific. `team_memberships` includes `round_id`, with a unique constraint on `(round_id, player_id)`.
-- Tournament entrants preserve an initial handicap, and `round_handicap_snapshots` preserves the exact handicap, course handicap, and playing handicap used in each round.
+- `tournament_players.tournament_handicap` is the current competition handicap
+  for one trip. Its append-only history retains tournament changes, while
+  `round_handicap_snapshots` preserves the exact handicap, course handicap, and
+  playing handicap used in each opened round.
 - Round opening locks the round and tournament, repeats readiness validation, and captures one immutable snapshot for each active entrant before changing status. A transaction-local opening context prevents direct status or snapshot bypasses.
 - Course handicap uses exact tenths and rational arithmetic for `index * slope / 113 + rating - par`. Individual allowance is applied to the unrounded result before final rounding; scramble member snapshots retain rounded course handicaps for the later team formula.
 - Team, membership, tee, and hole mutation guards serialize through the parent-round lock. Once open, scoring configuration and pairings cannot drift.
 - A score has exactly one owner through an exclusive player/team check constraint.
 - Session tokens are opaque 256-bit values stored only as SHA-256 hashes.
   Nullable unique `users.player_id` links an account to a golf identity without
-  email inference. Session roles remain extensible.
-- The score authorization resolver returns tagged round owners. Admin/scorer
-  roles receive all eligible owners; players receive their exact individual or
-  round-team owner. Save and confirm recheck this policy under a session-row lock
-  in the score transaction.
+  email inference. Global roles remain temporarily for platform compatibility;
+  `tournament_memberships` is authoritative for trip administration and scoring.
+- Tournament mutation repositories resolve the target trip from tournament,
+  round, or team identifiers and revalidate the active session plus membership
+  inside the write transaction. A global administrator is not a cross-tournament
+  authorization bypass.
+- The score authorization resolver returns tagged round owners. Tournament
+  admins/scorers receive all eligible owners; tournament players receive their
+  exact individual or round-team owner. Save and confirm recheck this policy
+  under session and membership locks in the score transaction.
 - A future explicit flight relation can extend that resolver to return both
   teams in one flight. Starting-hole and tee-time coincidences carry no
   authorization meaning.
@@ -79,6 +87,7 @@ Implemented resources:
 | `GET`, `POST` | `/api/tournaments` | List and create tournaments |
 | `GET` | `/api/tournaments/{tournament_id}` | Retrieve a tournament |
 | `GET`, `POST` | `/api/tournaments/{tournament_id}/players` | List and register entrants |
+| `POST` | `/api/tournaments/{tournament_id}/players/{player_id}/handicaps` | Change a tournament entrant's current handicap |
 | `GET`, `POST` | `/api/tournaments/{tournament_id}/rounds` | List and create rounds |
 | `GET` | `/api/rounds/{round_id}` | Retrieve a round |
 | `GET` | `/api/rounds/{round_id}/pairing-validation` | Validate assignments and course readiness |
@@ -102,12 +111,14 @@ Implemented resources:
 | `POST` | `/api/auth/login` | Verify credentials and create a session |
 | `GET` | `/api/auth/session` | Retrieve the current session and CSRF value |
 | `POST` | `/api/auth/logout` | Revoke and clear the current session |
+| `GET` | `/api/me/tournaments` | List the session user's tournament memberships and player links |
 
 Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 
 ## Deferred decisions
 
-- Authorization for all non-scoring mutation routes and production login rate limiting.
+- Self-service creator onboarding, invitations, private-read cutover, and
+  production signup/login rate limiting.
 - Normalized round flights and flight-wide score permissions.
 - Separate migration and runtime database roles plus production privilege policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.

@@ -71,14 +71,31 @@ impl FromRequestParts<Arc<AppState>> for MutationSession {
         parts: &mut Parts,
         state: &Arc<AppState>,
     ) -> Result<Self, Self::Rejection> {
+        let session = AuthenticatedSession::from_request_parts(parts, state).await?;
         let presented = parts
             .headers
             .get(CSRF_HEADER)
             .and_then(|value| value.to_str().ok())
             .map(str::to_owned)
             .ok_or(ApiError::Forbidden)?;
-        let session = AuthenticatedSession::from_request_parts(parts, state).await?;
         if !verify_derived_csrf(&session.csrf_token, &presented) {
+            return Err(ApiError::Forbidden);
+        }
+        Ok(Self(session))
+    }
+}
+
+pub struct PlatformAdminSession(pub AuthenticatedSession);
+
+impl FromRequestParts<Arc<AppState>> for PlatformAdminSession {
+    type Rejection = ApiError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &Arc<AppState>,
+    ) -> Result<Self, Self::Rejection> {
+        let MutationSession(session) = MutationSession::from_request_parts(parts, state).await?;
+        if session.principal.role != crate::auth::UserRole::Admin {
             return Err(ApiError::Forbidden);
         }
         Ok(Self(session))

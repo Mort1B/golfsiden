@@ -12,7 +12,9 @@ players, and round-specific teams. The mobile result view supports round and
 tournament gross/net standings with shareable selections and live refetch.
 The mobile score view supports authenticated hole entry, correction,
 confirmation, and locked read-only cards for both scoring formats.
-Administrative forms and authorization for non-scoring mutations remain next.
+Tournament-scoped memberships now authorize entrant, round, team, lifecycle,
+handicap, and score mutations. Administrative forms and self-service tournament
+onboarding remain next.
 
 ## Repository structure
 
@@ -32,9 +34,10 @@ Administrative forms and authorization for non-scoring mutations remain next.
 
 - Tournament players retain identity and accumulated results across changing
   round teams.
-- Opening a round captures the current handicap index and calculated course and
-  playing handicaps for every active entrant. Later player handicap changes do
-  not change these snapshots.
+- Opening a round captures the tournament entrant's current handicap and the
+  calculated course and playing handicaps. Tournament handicap changes are
+  audited and affect only rounds opened afterward; existing snapshots never
+  change.
 - Team membership is unique per player and round.
 - Scores have exclusive player/team ownership.
 - Locked-round score mutations require an explicit admin correction setting.
@@ -110,12 +113,19 @@ the async executor, and score mutations plus logout require the session-derived
 CSRF token. Score writes lock and revalidate the session in their existing round
 transaction, so logout cannot complete before an already-authorized write.
 
-Admins and scorers can write any eligible card. A linked player can write only
-their own individual card or their exact team in that round. Both members of a
-two-player scramble team can therefore enter, correct, and confirm the shared
-card, with their own account retained in the audit attribution. Viewers,
-unlinked accounts, and non-members cannot write. Team identity remains specific
-to one round.
+`tournament_memberships` owns the role for a specific trip. Tournament admins
+and scorers can write any eligible card in that tournament. A tournament player
+can write only their own individual card or their exact team in that round. Both
+members of a two-player scramble team can therefore enter, correct, and confirm
+the shared card, with their own account retained in the audit attribution.
+Viewers, unlinked accounts, cross-tournament roles, and non-members cannot write.
+Team identity remains specific to one round.
+
+Management and lifecycle mutations resolve the target tournament from the
+resource and lock/revalidate both the session and admin membership inside the
+write transaction. Global player/profile mutations and the temporary legacy
+tournament-creation route remain platform-admin-only. `GET /api/me/tournaments`
+returns only the active user's tournament roles and linked entrant identities.
 
 Flights are not represented yet. A future normalized round-flight model will
 extend the same score-access resolver so a player may receive both team owners
@@ -190,7 +200,9 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 
 ## Known limitations
 
-- Player, handicap, tournament, entrant, course, round, team, and lifecycle
-  mutations are not yet protected by admin authorization.
-- No admin UI for tournaments, players, courses, rounds, or teams.
+- Public read routes still expose the pre-onboarding viewer model. They will
+  become membership-scoped during the frontend cutover; later public access will
+  use explicit share tokens.
+- No self-service tournament creation, invitation flow, or tournament admin UI.
+- Course and tee administration are not implemented.
 - No flight model, offline score queue, or public leaderboard link.

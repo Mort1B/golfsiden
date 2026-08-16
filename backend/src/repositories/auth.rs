@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use sqlx::{FromRow, PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
-use crate::auth::{SessionPrincipal, UserRole};
+use crate::auth::SessionPrincipal;
 
 #[derive(Debug, FromRow)]
 pub struct LoginUser {
@@ -85,8 +85,4 @@ pub async fn revoke_session(pool: &PgPool, session_id: Uuid) -> Result<(), sqlx:
     .execute(pool)
     .await?;
     Ok(())
-}
-
-pub fn can_score_all(role: UserRole) -> bool {
-    matches!(role, UserRole::Admin | UserRole::Scorer)
 }

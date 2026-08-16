@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
+    api::{auth::MutationSession, authorization::map_authorization_error},
     domain::models::{OpenRoundResult, PairingValidation, ReadinessIssueCode},
     error::{ApiError, ApiResult},
     repositories::round_lifecycle::{self, OpenRoundError},
@@ -26,10 +27,12 @@ pub async fn pairing_validation(
 pub async fn open(
     State(state): State<Arc<AppState>>,
     Path(round_id): Path<Uuid>,
+    MutationSession(authenticated): MutationSession,
 ) -> ApiResult<Json<OpenRoundResult>> {
-    let result = round_lifecycle::open(&state.pool, round_id)
-        .await
-        .map_err(map_open_error)?;
+    let result =
+        round_lifecycle::open_authorized(&state.pool, authenticated.principal.session_id, round_id)
+            .await
+            .map_err(map_open_error)?;
     state.notify("round", round_id);
     Ok(Json(result))
 }
@@ -46,6 +49,7 @@ fn map_open_error(error: OpenRoundError) -> ApiError {
             ApiError::Conflict("round must be draft".to_owned())
         }
         OpenRoundError::NotReady(_) => ApiError::Conflict("round is not ready to open".to_owned()),
+        OpenRoundError::Authorization(error) => map_authorization_error(error),
         OpenRoundError::Database(error) => ApiError::Database(error),
     }
 }

@@ -51,6 +51,14 @@ VALUES ('70000000-0000-0000-0000-000000000013', '70000000-0000-0000-0000-0000000
 
 async fn seed_ready_completed(pool: &PgPool) {
     sqlx::raw_sql(FIXTURE).execute(pool).await.unwrap();
+    sqlx::query(
+        "INSERT INTO tournament_memberships (tournament_id, user_id, role)
+         VALUES ('70000000-0000-0000-0000-000000000010', $1, 'admin')",
+    )
+    .bind(USER_ID)
+    .execute(pool)
+    .await
+    .unwrap();
     round_lifecycle::open(pool, ROUND_ID).await.unwrap();
     scorecards::save(
         pool,
@@ -85,6 +93,8 @@ async fn seed_ready_completed(pool: &PgPool) {
 
 fn lock_request() -> Request<Body> {
     Request::post(format!("/api/rounds/{ROUND_ID}/lock"))
+        .header("cookie", format!("golf_session={SESSION_TOKEN}"))
+        .header("x-csrf-token", derive_csrf_token(SESSION_TOKEN))
         .body(Body::empty())
         .unwrap()
 }

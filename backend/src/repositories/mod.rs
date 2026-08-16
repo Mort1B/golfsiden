@@ -7,4 +7,5 @@ pub mod rounds;
 pub mod score_authorization;
 pub mod scorecards;
 pub mod teams;
+pub mod tournament_authorization;
 pub mod tournaments;

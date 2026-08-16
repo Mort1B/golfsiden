@@ -112,11 +112,15 @@ See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documenta
 
 ## Current limitations
 
-Authentication and authorization are enforced for score saves, scorecard
-confirmation, score-access discovery, and logout. Other mutations are still
-temporarily public until the next administration authorization milestone.
-Course administration, admin forms, flights, offline scoring, and locked-round
-admin corrections remain deferred. Flights will be modelled explicitly rather
-than inferred from matching tee times or starting holes.
+Tournament-scoped membership authorization is enforced for entrant, handicap,
+round, team, lifecycle, score-save, score-confirmation, and score-access
+operations. Global player/profile mutations and legacy tournament creation are
+platform-admin-only. Public read routes remain on the pre-onboarding viewer model
+until the private frontend cutover.
+
+Self-service tournament creation, reusable invitations, course administration,
+admin forms, flights, offline scoring, and locked-round admin corrections remain
+deferred. Flights will be modelled explicitly rather than inferred from matching
+tee times or starting holes.
 
 `npm audit` currently reports two high-severity dependency records for one React Router advisory in its server/RSC action mode. This project uses only client-side routing and no React Server Components or router actions, so the affected path is not exposed; upgrade when the registry publishes a patched compatible version.

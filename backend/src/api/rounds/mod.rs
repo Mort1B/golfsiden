@@ -16,9 +16,13 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
+    api::{auth::MutationSession, authorization::map_authorization_error},
     domain::models::{Round, ScoringFormat},
     error::{ApiError, ApiResult, require_non_empty},
-    repositories::{rounds, tournaments},
+    repositories::{
+        rounds::{self, RoundMutationError},
+        tournaments,
+    },
 };
 
 pub fn routes() -> Router<Arc<AppState>> {
@@ -51,6 +55,7 @@ pub fn routes() -> Router<Arc<AppState>> {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct CreateRound {
     round_number: i16,
     name: String,
@@ -107,11 +112,13 @@ async fn get_one(
 async fn create(
     State(state): State<Arc<AppState>>,
     Path(tournament_id): Path<Uuid>,
+    MutationSession(authenticated): MutationSession,
     Json(input): Json<CreateRound>,
 ) -> ApiResult<impl IntoResponse> {
     validate_create(&state, tournament_id, &input).await?;
-    let round = rounds::create(
+    let round = rounds::create_authorized(
         &state.pool,
+        authenticated.principal.session_id,
         rounds::CreateRoundParams {
             tournament_id,
             round_number: input.round_number,
@@ -127,9 +134,17 @@ async fn create(
             scoring_format: input.scoring_format,
         },
     )
-    .await?;
+    .await
+    .map_err(map_mutation_error)?;
     state.notify("round", round.id);
     Ok((StatusCode::CREATED, Json(round)))
+}
+
+fn map_mutation_error(error: RoundMutationError) -> ApiError {
+    match error {
+        RoundMutationError::Authorization(error) => map_authorization_error(error),
+        RoundMutationError::Database(error) => ApiError::Database(error),
+    }
 }
 
 async fn validate_create(

@@ -48,6 +48,16 @@ pub enum ScoringFormat {
     TeamScramble,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "tournament_role", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum TournamentRole {
+    Admin,
+    Scorer,
+    Player,
+    Viewer,
+}
+
 #[derive(Debug, Clone, Serialize, FromRow)]
 pub struct Player {
     pub id: Uuid,
@@ -85,6 +95,13 @@ pub struct Tournament {
     pub updated_at: DateTime<Utc>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct MyTournament {
+    pub tournament: Tournament,
+    pub role: TournamentRole,
+    pub player_id: Option<Uuid>,
+}
+
 #[derive(Debug, Clone, Serialize, FromRow)]
 pub struct TournamentPlayer {
     pub tournament_id: Uuid,
@@ -95,6 +112,18 @@ pub struct TournamentPlayer {
     pub status: ParticipantStatus,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, FromRow)]
+pub struct TournamentHandicapHistoryEntry {
+    pub id: Uuid,
+    pub tournament_id: Uuid,
+    pub player_id: Uuid,
+    pub handicap_index: f64,
+    pub effective_from: DateTime<Utc>,
+    pub changed_by: Option<Uuid>,
+    pub reason: Option<String>,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Serialize, FromRow)]

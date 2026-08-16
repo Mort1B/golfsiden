@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Path, State, rejection::JsonRejection},
     http::StatusCode,
     response::IntoResponse,
     routing::get,
@@ -13,22 +13,35 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
-    domain::models::{ScoringMode, Tournament, TournamentPlayer, TournamentStatus},
+    api::{
+        auth::{AuthenticatedSession, MutationSession, PlatformAdminSession},
+        authorization::map_authorization_error,
+    },
+    domain::models::{
+        MyTournament, ScoringMode, Tournament, TournamentHandicapHistoryEntry, TournamentPlayer,
+        TournamentStatus,
+    },
     error::{ApiError, ApiResult, require_non_empty},
-    repositories::tournaments,
+    repositories::tournaments::{self, TournamentMutationError},
 };
 
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
         .route("/api/tournaments", get(list).post(create))
+        .route("/api/me/tournaments", get(list_mine))
         .route("/api/tournaments/{tournament_id}", get(get_one))
         .route(
             "/api/tournaments/{tournament_id}/players",
             get(list_players).post(add_player),
         )
+        .route(
+            "/api/tournaments/{tournament_id}/players/{player_id}/handicaps",
+            axum::routing::post(change_player_handicap),
+        )
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct CreateTournament {
     name: String,
     #[serde(default)]
@@ -43,10 +56,18 @@ struct CreateTournament {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AddTournamentPlayer {
     player_id: Uuid,
     tournament_handicap: Option<f64>,
     seed: Option<i16>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ChangeTournamentHandicap {
+    handicap_index: f64,
+    reason: Option<String>,
 }
 
 fn default_status() -> TournamentStatus {
@@ -73,6 +94,7 @@ async fn get_one(
 
 async fn create(
     State(state): State<Arc<AppState>>,
+    PlatformAdminSession(authenticated): PlatformAdminSession,
     Json(input): Json<CreateTournament>,
 ) -> ApiResult<impl IntoResponse> {
     require_non_empty(&input.name, "name")?;
@@ -86,8 +108,9 @@ async fn create(
             "number_of_rounds must be between 1 and 30".to_owned(),
         ));
     }
-    let tournament = tournaments::create(
+    let tournament = tournaments::create_platform_authorized(
         &state.pool,
+        authenticated.principal.session_id,
         &input.name,
         &input.description,
         input.start_date,
@@ -96,9 +119,19 @@ async fn create(
         input.status,
         input.scoring_mode,
     )
-    .await?;
+    .await
+    .map_err(map_mutation_error)?;
     state.notify("tournament", tournament.id);
     Ok((StatusCode::CREATED, Json(tournament)))
+}
+
+async fn list_mine(
+    State(state): State<Arc<AppState>>,
+    authenticated: AuthenticatedSession,
+) -> ApiResult<Json<Vec<MyTournament>>> {
+    Ok(Json(
+        tournaments::list_for_user(&state.pool, authenticated.principal.user_id).await?,
+    ))
 }
 
 async fn list_players(
@@ -114,6 +147,7 @@ async fn list_players(
 async fn add_player(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
+    MutationSession(authenticated): MutationSession,
     Json(input): Json<AddTournamentPlayer>,
 ) -> ApiResult<impl IntoResponse> {
     if let Some(handicap) = input.tournament_handicap
@@ -123,14 +157,52 @@ async fn add_player(
             "tournament_handicap must be between -10.0 and 54.0".to_owned(),
         ));
     }
-    let player = tournaments::add_player(
+    let player = tournaments::add_player_authorized(
         &state.pool,
+        authenticated.principal.session_id,
         id,
         input.player_id,
         input.tournament_handicap,
         input.seed,
     )
-    .await?;
+    .await
+    .map_err(map_mutation_error)?;
     state.notify("tournament", id);
     Ok((StatusCode::CREATED, Json(player)))
+}
+
+async fn change_player_handicap(
+    State(state): State<Arc<AppState>>,
+    Path((tournament_id, player_id)): Path<(Uuid, Uuid)>,
+    MutationSession(authenticated): MutationSession,
+    input: Result<Json<ChangeTournamentHandicap>, JsonRejection>,
+) -> ApiResult<impl IntoResponse> {
+    let Json(input) = input.map_err(|_| {
+        ApiError::BadRequest("request must contain only handicap_index and reason".to_owned())
+    })?;
+    if !input.handicap_index.is_finite() || !(-10.0..=54.0).contains(&input.handicap_index) {
+        return Err(ApiError::BadRequest(
+            "handicap must be between -10.0 and 54.0".to_owned(),
+        ));
+    }
+    let entry: TournamentHandicapHistoryEntry = tournaments::change_player_handicap_authorized(
+        &state.pool,
+        authenticated.principal.session_id,
+        tournament_id,
+        player_id,
+        input.handicap_index,
+        input.reason.as_deref(),
+    )
+    .await
+    .map_err(map_mutation_error)?;
+    state.notify("tournament", tournament_id);
+    Ok((StatusCode::CREATED, Json(entry)))
+}
+
+fn map_mutation_error(error: TournamentMutationError) -> ApiError {
+    match error {
+        TournamentMutationError::NotFound => ApiError::NotFound,
+        TournamentMutationError::Authorization(error) => map_authorization_error(error),
+        TournamentMutationError::Database(error) => ApiError::Database(error),
+    }
 }

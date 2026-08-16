@@ -1,14 +1,17 @@
-use sqlx::{FromRow, PgConnection, PgPool};
+use sqlx::{FromRow, PgConnection, PgPool, Postgres, Transaction};
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::domain::{
-    models::{Round, RoundStatus, ScoringFormat},
-    round_completion::{
-        CompletionFacts, OwnerProgressFact, RoundCompletionValidation, TransitionAction,
-        TransitionBlocker, transition_blocker, validate,
+use crate::{
+    domain::{
+        models::{Round, RoundStatus, ScoringFormat},
+        round_completion::{
+            CompletionFacts, OwnerProgressFact, RoundCompletionValidation, TransitionAction,
+            TransitionBlocker, transition_blocker, validate,
+        },
+        scorecards::ScoreOwner,
     },
-    scorecards::ScoreOwner,
+    repositories::tournament_authorization::{self, AuthorizationError},
 };
 
 const ROUND_COLUMNS: &str = "id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, status, handicap_enabled, handicap_allowance_percent, scoring_format, created_at, updated_at";
@@ -22,6 +25,8 @@ pub enum RoundCompletionError {
         action: TransitionAction,
         blocker: TransitionBlocker,
     },
+    #[error(transparent)]
+    Authorization(#[from] AuthorizationError),
     #[error("database operation failed")]
     Database(#[from] sqlx::Error),
 }
@@ -64,13 +69,52 @@ pub async fn lock(pool: &PgPool, round_id: Uuid) -> Result<Round, RoundCompletio
     transition(pool, round_id, TransitionAction::Lock).await
 }
 
+pub async fn complete_authorized(
+    pool: &PgPool,
+    session_id: Uuid,
+    round_id: Uuid,
+) -> Result<Round, RoundCompletionError> {
+    transition_authorized(pool, session_id, round_id, TransitionAction::Complete).await
+}
+
+pub async fn lock_authorized(
+    pool: &PgPool,
+    session_id: Uuid,
+    round_id: Uuid,
+) -> Result<Round, RoundCompletionError> {
+    transition_authorized(pool, session_id, round_id, TransitionAction::Lock).await
+}
+
 async fn transition(
     pool: &PgPool,
     round_id: Uuid,
     action: TransitionAction,
 ) -> Result<Round, RoundCompletionError> {
     let mut transaction = pool.begin().await?;
-    let facts = load_facts(&mut transaction, round_id, true)
+    let round = transition_in_transaction(&mut transaction, round_id, action).await?;
+    transaction.commit().await?;
+    Ok(round)
+}
+
+async fn transition_authorized(
+    pool: &PgPool,
+    session_id: Uuid,
+    round_id: Uuid,
+    action: TransitionAction,
+) -> Result<Round, RoundCompletionError> {
+    let mut transaction = pool.begin().await?;
+    tournament_authorization::require_round_admin(&mut transaction, session_id, round_id).await?;
+    let round = transition_in_transaction(&mut transaction, round_id, action).await?;
+    transaction.commit().await?;
+    Ok(round)
+}
+
+async fn transition_in_transaction(
+    transaction: &mut Transaction<'_, Postgres>,
+    round_id: Uuid,
+    action: TransitionAction,
+) -> Result<Round, RoundCompletionError> {
+    let facts = load_facts(transaction, round_id, true)
         .await?
         .ok_or(RoundCompletionError::NotFound)?;
     let validation = validate(facts);
@@ -93,13 +137,13 @@ async fn transition(
     sqlx::query("SELECT set_config($1, $2::text, true)")
         .bind(setting)
         .bind(round_id)
-        .execute(&mut *transaction)
+        .execute(&mut **transaction)
         .await?;
     let update = sqlx::query("UPDATE rounds SET status = $2 WHERE id = $1 AND status = $3")
         .bind(round_id)
         .bind(target_status)
         .bind(source_status)
-        .execute(&mut *transaction)
+        .execute(&mut **transaction)
         .await?;
     if update.rows_affected() != 1 {
         return Err(RoundCompletionError::Blocked {
@@ -110,9 +154,8 @@ async fn transition(
     let round =
         sqlx::query_as::<_, Round>(&format!("SELECT {ROUND_COLUMNS} FROM rounds WHERE id = $1"))
             .bind(round_id)
-            .fetch_one(&mut *transaction)
+            .fetch_one(&mut **transaction)
             .await?;
-    transaction.commit().await?;
     Ok(round)
 }
 

@@ -1,17 +1,20 @@
 use std::collections::HashMap;
 
-use sqlx::{FromRow, PgConnection, PgPool};
+use sqlx::{FromRow, PgConnection, PgPool, Postgres, Transaction};
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::domain::{
-    models::{
-        OpenRoundResult, PairingValidation, ParticipantStatus, Round, RoundHandicapSnapshot,
-        RoundStatus, ScoringFormat, TournamentStatus,
+use crate::{
+    domain::{
+        models::{
+            OpenRoundResult, PairingValidation, ParticipantStatus, Round, RoundHandicapSnapshot,
+            RoundStatus, ScoringFormat, TournamentStatus,
+        },
+        round_lifecycle::{
+            ConfigurationFact, EntrantFact, ReadinessFacts, TeamFact, calculate_handicap, validate,
+        },
     },
-    round_lifecycle::{
-        ConfigurationFact, EntrantFact, ReadinessFacts, TeamFact, calculate_handicap, validate,
-    },
+    repositories::tournament_authorization::{self, AuthorizationError},
 };
 
 const ROUND_COLUMNS: &str = "id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, status, handicap_enabled, handicap_allowance_percent, scoring_format, created_at, updated_at";
@@ -22,6 +25,8 @@ pub enum OpenRoundError {
     NotFound,
     #[error("round is not ready to open")]
     NotReady(PairingValidation),
+    #[error(transparent)]
+    Authorization(#[from] AuthorizationError),
     #[error("database operation failed")]
     Database(#[from] sqlx::Error),
 }
@@ -93,7 +98,28 @@ pub async fn pairing_validation(
 
 pub async fn open(pool: &PgPool, round_id: Uuid) -> Result<OpenRoundResult, OpenRoundError> {
     let mut transaction = pool.begin().await?;
-    let loaded = load(&mut transaction, round_id, true)
+    let result = open_in_transaction(&mut transaction, round_id).await?;
+    transaction.commit().await?;
+    Ok(result)
+}
+
+pub async fn open_authorized(
+    pool: &PgPool,
+    session_id: Uuid,
+    round_id: Uuid,
+) -> Result<OpenRoundResult, OpenRoundError> {
+    let mut transaction = pool.begin().await?;
+    tournament_authorization::require_round_admin(&mut transaction, session_id, round_id).await?;
+    let result = open_in_transaction(&mut transaction, round_id).await?;
+    transaction.commit().await?;
+    Ok(result)
+}
+
+async fn open_in_transaction(
+    transaction: &mut Transaction<'_, Postgres>,
+    round_id: Uuid,
+) -> Result<OpenRoundResult, OpenRoundError> {
+    let loaded = load(transaction, round_id, true)
         .await?
         .ok_or(OpenRoundError::NotFound)?;
     let validation = validate(&loaded.facts);
@@ -103,7 +129,7 @@ pub async fn open(pool: &PgPool, round_id: Uuid) -> Result<OpenRoundResult, Open
 
     sqlx::query("SELECT set_config('app.round_opening_id', $1::text, true)")
         .bind(round_id)
-        .execute(&mut *transaction)
+        .execute(&mut **transaction)
         .await?;
 
     let slope_rating = loaded.facts.configuration.slope_rating.unwrap_or(113);
@@ -131,27 +157,25 @@ pub async fn open(pool: &PgPool, round_id: Uuid) -> Result<OpenRoundResult, Open
             .bind(entrant.handicap_index_tenths)
             .bind(handicap.course_handicap)
             .bind(handicap.playing_handicap)
-            .execute(&mut *transaction)
+            .execute(&mut **transaction)
             .await?;
     }
 
     sqlx::query("UPDATE rounds SET status = 'open' WHERE id = $1 AND status = 'draft'")
         .bind(round_id)
-        .execute(&mut *transaction)
+        .execute(&mut **transaction)
         .await?;
     let round =
         sqlx::query_as::<_, Round>(&format!("SELECT {ROUND_COLUMNS} FROM rounds WHERE id = $1"))
             .bind(round_id)
-            .fetch_one(&mut *transaction)
+            .fetch_one(&mut **transaction)
             .await?;
     let handicap_snapshots = sqlx::query_as::<_, RoundHandicapSnapshot>(
         "SELECT round_id, tournament_id, player_id, handicap_index::float8 AS handicap_index, course_handicap, playing_handicap, captured_at FROM round_handicap_snapshots WHERE round_id = $1 ORDER BY player_id",
     )
     .bind(round_id)
-    .fetch_all(&mut *transaction)
+    .fetch_all(&mut **transaction)
     .await?;
-    transaction.commit().await?;
-
     Ok(OpenRoundResult {
         round,
         handicap_snapshots,
@@ -255,9 +279,9 @@ async fn load_entrants(
     lock_for_open: bool,
 ) -> Result<Vec<EntrantFact>, sqlx::Error> {
     let sql = if lock_for_open {
-        "SELECT tp.player_id, p.display_name, tp.status AS participant_status, p.active AS player_active, (p.current_handicap_index * 10)::int4 AS handicap_index_tenths FROM tournament_players tp JOIN players p ON p.id = tp.player_id WHERE tp.tournament_id = $1 ORDER BY p.display_name, tp.player_id FOR SHARE OF tp, p"
+        "SELECT tp.player_id, p.display_name, tp.status AS participant_status, p.active AS player_active, (tp.tournament_handicap * 10)::int4 AS handicap_index_tenths FROM tournament_players tp JOIN players p ON p.id = tp.player_id WHERE tp.tournament_id = $1 ORDER BY p.display_name, tp.player_id FOR SHARE OF tp, p"
     } else {
-        "SELECT tp.player_id, p.display_name, tp.status AS participant_status, p.active AS player_active, (p.current_handicap_index * 10)::int4 AS handicap_index_tenths FROM tournament_players tp JOIN players p ON p.id = tp.player_id WHERE tp.tournament_id = $1 ORDER BY p.display_name, tp.player_id"
+        "SELECT tp.player_id, p.display_name, tp.status AS participant_status, p.active AS player_active, (tp.tournament_handicap * 10)::int4 AS handicap_index_tenths FROM tournament_players tp JOIN players p ON p.id = tp.player_id WHERE tp.tournament_id = $1 ORDER BY p.display_name, tp.player_id"
     };
     Ok(sqlx::query_as::<_, EntrantRow>(sql)
         .bind(tournament_id)

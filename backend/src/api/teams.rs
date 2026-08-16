@@ -13,9 +13,13 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
+    api::{auth::MutationSession, authorization::map_authorization_error},
     domain::models::{TeamMember, TeamWithMembers},
     error::{ApiError, ApiResult, require_non_empty},
-    repositories::{rounds, teams},
+    repositories::{
+        rounds,
+        teams::{self, TeamMutationError},
+    },
 };
 
 pub fn routes() -> Router<Arc<AppState>> {
@@ -29,6 +33,7 @@ pub fn routes() -> Router<Arc<AppState>> {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct CreateTeam {
     name: String,
     starting_hole: Option<i16>,
@@ -36,6 +41,7 @@ struct CreateTeam {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AssignPlayer {
     player_id: Uuid,
     display_order: Option<i16>,
@@ -54,6 +60,7 @@ async fn list(
 async fn create(
     State(state): State<Arc<AppState>>,
     Path(round_id): Path<Uuid>,
+    MutationSession(authenticated): MutationSession,
     Json(input): Json<CreateTeam>,
 ) -> ApiResult<impl IntoResponse> {
     require_non_empty(&input.name, "name")?;
@@ -64,14 +71,16 @@ async fn create(
             "starting_hole must be between 1 and 36".to_owned(),
         ));
     }
-    let team = teams::create(
+    let team = teams::create_authorized(
         &state.pool,
+        authenticated.principal.session_id,
         round_id,
         &input.name,
         input.starting_hole,
         input.tee_time,
     )
-    .await?;
+    .await
+    .map_err(map_mutation_error)?;
     state.notify("round", round_id);
     Ok((StatusCode::CREATED, Json(team)))
 }
@@ -79,10 +88,18 @@ async fn create(
 async fn assign_player(
     State(state): State<Arc<AppState>>,
     Path(team_id): Path<Uuid>,
+    MutationSession(authenticated): MutationSession,
     Json(input): Json<AssignPlayer>,
 ) -> ApiResult<impl IntoResponse> {
-    let member: TeamMember =
-        teams::assign_player(&state.pool, team_id, input.player_id, input.display_order).await?;
+    let member: TeamMember = teams::assign_player_authorized(
+        &state.pool,
+        authenticated.principal.session_id,
+        team_id,
+        input.player_id,
+        input.display_order,
+    )
+    .await
+    .map_err(map_mutation_error)?;
     state.notify("team", team_id);
     Ok((StatusCode::CREATED, Json(member)))
 }
@@ -90,10 +107,26 @@ async fn assign_player(
 async fn remove_player(
     State(state): State<Arc<AppState>>,
     Path((team_id, player_id)): Path<(Uuid, Uuid)>,
+    MutationSession(authenticated): MutationSession,
 ) -> ApiResult<StatusCode> {
-    if !teams::remove_player(&state.pool, team_id, player_id).await? {
+    if !teams::remove_player_authorized(
+        &state.pool,
+        authenticated.principal.session_id,
+        team_id,
+        player_id,
+    )
+    .await
+    .map_err(map_mutation_error)?
+    {
         return Err(ApiError::NotFound);
     }
     state.notify("team", team_id);
     Ok(StatusCode::NO_CONTENT)
+}
+
+fn map_mutation_error(error: TeamMutationError) -> ApiError {
+    match error {
+        TeamMutationError::Authorization(error) => map_authorization_error(error),
+        TeamMutationError::Database(error) => ApiError::Database(error),
+    }
 }

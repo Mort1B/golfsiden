@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Path, State, rejection::JsonRejection},
     http::StatusCode,
     response::IntoResponse,
     routing::get,
@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
+    api::auth::PlatformAdminSession,
     domain::models::{HandicapHistoryEntry, Player},
     error::{ApiError, ApiResult, require_non_empty},
     repositories::players,
@@ -31,6 +32,7 @@ pub fn routes() -> Router<Arc<AppState>> {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct CreatePlayer {
     display_name: String,
     current_handicap_index: f64,
@@ -39,6 +41,7 @@ struct CreatePlayer {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct UpdatePlayer {
     display_name: Option<String>,
     email: Option<String>,
@@ -47,9 +50,9 @@ struct UpdatePlayer {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct ChangeHandicap {
     handicap_index: f64,
-    changed_by: Option<Uuid>,
     reason: Option<String>,
 }
 
@@ -70,6 +73,7 @@ async fn get_one(
 
 async fn create(
     State(state): State<Arc<AppState>>,
+    _admin: PlatformAdminSession,
     Json(input): Json<CreatePlayer>,
 ) -> ApiResult<impl IntoResponse> {
     require_non_empty(&input.display_name, "display_name")?;
@@ -89,6 +93,7 @@ async fn create(
 async fn update(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
+    _admin: PlatformAdminSession,
     Json(input): Json<UpdatePlayer>,
 ) -> ApiResult<Json<Player>> {
     if let Some(name) = &input.display_name {
@@ -111,6 +116,7 @@ async fn update(
 async fn deactivate(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
+    _admin: PlatformAdminSession,
 ) -> ApiResult<StatusCode> {
     if !players::deactivate(&state.pool, id).await? {
         return Err(ApiError::NotFound);
@@ -122,14 +128,18 @@ async fn deactivate(
 async fn change_handicap(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
-    Json(input): Json<ChangeHandicap>,
+    PlatformAdminSession(authenticated): PlatformAdminSession,
+    input: Result<Json<ChangeHandicap>, JsonRejection>,
 ) -> ApiResult<impl IntoResponse> {
+    let Json(input) = input.map_err(|_| {
+        ApiError::BadRequest("request must contain only handicap_index and reason".to_owned())
+    })?;
     validate_handicap(input.handicap_index)?;
     let entry = players::change_handicap(
         &state.pool,
         id,
         input.handicap_index,
-        input.changed_by,
+        Some(authenticated.principal.user_id),
         input.reason.as_deref(),
     )
     .await?

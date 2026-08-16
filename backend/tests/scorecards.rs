@@ -57,6 +57,14 @@ VALUES ('30000000-0000-0000-0000-000000000001', 'Score Cup', '2026-08-01', '2026
 INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap) VALUES
 ('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000011', 2.0),
 ('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000012', 6.0);
+INSERT INTO tournament_memberships (tournament_id, user_id, role) VALUES
+('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000013', 'admin'),
+('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000014', 'scorer'),
+('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000015', 'player'),
+('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000016', 'player'),
+('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000018', 'player'),
+('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000019', 'viewer'),
+('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000020', 'player');
 INSERT INTO courses (id, name) VALUES
 ('30000000-0000-0000-0000-000000000002', 'Score Course');
 INSERT INTO tees (id, course_id, name, slope_rating, course_rating) VALUES
@@ -143,6 +151,13 @@ fn confirm_request(round_id: Uuid, owner_type: &str, owner_id: Uuid, user: Uuid)
     .header("x-csrf-token", derive_csrf_token(token_for_user(user)))
     .body(Body::from("{}"))
     .unwrap()
+}
+
+fn access_request(round_id: Uuid, user: Uuid) -> Request<Body> {
+    Request::get(format!("/api/rounds/{round_id}/score-access"))
+        .header("cookie", format!("golf_session={}", token_for_user(user)))
+        .body(Body::empty())
+        .unwrap()
 }
 
 fn token_for_user(user_id: Uuid) -> &'static str {
@@ -682,6 +697,166 @@ async fn both_teammates_can_write_the_team_card_but_other_players_cannot(pool: P
         .unwrap();
     let spoofed = app.oneshot(spoofed).await.unwrap();
     assert_eq!(spoofed.status(), StatusCode::BAD_REQUEST);
+}
+
+#[sqlx::test(migrations = "../migrations")]
+async fn tournament_membership_is_authoritative_for_privileged_score_access(pool: PgPool) {
+    seed_open(&pool).await;
+    let other_tournament = uuid!("30000000-0000-0000-0000-000000000099");
+    sqlx::query(
+        "DELETE FROM tournament_memberships
+         WHERE tournament_id = $1 AND user_id IN ($2, $3)",
+    )
+    .bind(TOURNAMENT_ID)
+    .bind(USER_A)
+    .bind(USER_B)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO tournaments
+           (id, name, start_date, end_date, number_of_rounds)
+         VALUES ($1, 'Other score trip', '2026-09-01', '2026-09-01', 1)",
+    )
+    .bind(other_tournament)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO tournament_memberships (tournament_id, user_id, role)
+         VALUES ($1, $2, 'admin'), ($1, $3, 'scorer')",
+    )
+    .bind(other_tournament)
+    .bind(USER_A)
+    .bind(USER_B)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let app = api::router(AppState::new(pool.clone()));
+    for user in [USER_A, USER_B] {
+        let access = app
+            .clone()
+            .oneshot(access_request(INDIVIDUAL_ROUND_ID, user))
+            .await
+            .unwrap();
+        assert_eq!(access.status(), StatusCode::OK);
+        assert_eq!(response_json(access).await["writable_owners"], json!([]));
+        let save = app
+            .clone()
+            .oneshot(save_request(
+                INDIVIDUAL_ROUND_ID,
+                HOLE_1,
+                json!({"type": "player", "id": PLAYER_A}),
+                4,
+                user,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(save.status(), StatusCode::FORBIDDEN);
+        let confirm = app
+            .clone()
+            .oneshot(confirm_request(
+                INDIVIDUAL_ROUND_ID,
+                "player",
+                PLAYER_A,
+                user,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(confirm.status(), StatusCode::FORBIDDEN);
+    }
+
+    sqlx::query(
+        "INSERT INTO tournament_memberships (tournament_id, user_id, role)
+         VALUES ($1, $2, 'admin'), ($1, $3, 'scorer')",
+    )
+    .bind(TOURNAMENT_ID)
+    .bind(USER_A)
+    .bind(USER_B)
+    .execute(&pool)
+    .await
+    .unwrap();
+    for user in [USER_A, USER_B] {
+        let access = app
+            .clone()
+            .oneshot(access_request(INDIVIDUAL_ROUND_ID, user))
+            .await
+            .unwrap();
+        assert_eq!(
+            response_json(access).await["writable_owners"]
+                .as_array()
+                .unwrap()
+                .len(),
+            2
+        );
+    }
+    for (hole_id, user) in [(HOLE_1, USER_A), (HOLE_2, USER_B)] {
+        let saved = app
+            .clone()
+            .oneshot(save_request(
+                INDIVIDUAL_ROUND_ID,
+                hole_id,
+                json!({"type": "player", "id": PLAYER_A}),
+                4,
+                user,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(saved.status(), StatusCode::OK);
+    }
+    let confirmed = app
+        .clone()
+        .oneshot(confirm_request(
+            INDIVIDUAL_ROUND_ID,
+            "player",
+            PLAYER_A,
+            USER_B,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(confirmed.status(), StatusCode::OK);
+
+    sqlx::query(
+        "UPDATE tournament_memberships SET role = 'viewer'
+         WHERE tournament_id = $1 AND user_id = $2",
+    )
+    .bind(TOURNAMENT_ID)
+    .bind(USER_A)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let role_changed = app
+        .clone()
+        .oneshot(save_request(
+            INDIVIDUAL_ROUND_ID,
+            HOLE_1,
+            json!({"type": "player", "id": PLAYER_B}),
+            5,
+            USER_A,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(role_changed.status(), StatusCode::FORBIDDEN);
+
+    sqlx::query(
+        "DELETE FROM tournament_memberships
+         WHERE tournament_id = $1 AND user_id = $2",
+    )
+    .bind(TOURNAMENT_ID)
+    .bind(USER_B)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let revoked = app
+        .oneshot(confirm_request(
+            INDIVIDUAL_ROUND_ID,
+            "player",
+            PLAYER_A,
+            USER_B,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(revoked.status(), StatusCode::FORBIDDEN);
 }
 
 #[sqlx::test(migrations = "../migrations")]

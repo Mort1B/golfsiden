@@ -1,10 +1,22 @@
 use chrono::NaiveDate;
 use sqlx::PgPool;
+use thiserror::Error;
 use uuid::Uuid;
 
-use crate::domain::models::{Round, ScoringFormat};
+use crate::{
+    domain::models::{Round, ScoringFormat},
+    repositories::tournament_authorization::{self, AuthorizationError},
+};
 
 const COLUMNS: &str = "id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, status, handicap_enabled, handicap_allowance_percent, scoring_format, created_at, updated_at";
+
+#[derive(Debug, Error)]
+pub enum RoundMutationError {
+    #[error(transparent)]
+    Authorization(#[from] AuthorizationError),
+    #[error("database operation failed")]
+    Database(#[from] sqlx::Error),
+}
 
 pub async fn list(pool: &PgPool, tournament_id: Uuid) -> Result<Vec<Round>, sqlx::Error> {
     sqlx::query_as::<_, Round>(&format!(
@@ -56,6 +68,43 @@ pub async fn create(pool: &PgPool, input: CreateRoundParams<'_>) -> Result<Round
         .execute(pool)
         .await?;
     get(pool, id).await?.ok_or(sqlx::Error::RowNotFound)
+}
+
+pub async fn create_authorized(
+    pool: &PgPool,
+    session_id: Uuid,
+    input: CreateRoundParams<'_>,
+) -> Result<Round, RoundMutationError> {
+    let mut transaction = pool.begin().await?;
+    tournament_authorization::require_tournament_admin(
+        &mut transaction,
+        session_id,
+        input.tournament_id,
+    )
+    .await?;
+    let id = Uuid::new_v4();
+    let round = sqlx::query_as::<_, Round>(&format!(
+        "INSERT INTO rounds (id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, handicap_enabled, handicap_allowance_percent, scoring_format)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         RETURNING {COLUMNS}"
+    ))
+    .bind(id)
+    .bind(input.tournament_id)
+    .bind(input.round_number)
+    .bind(input.name.trim())
+    .bind(input.round_date)
+    .bind(input.course_id)
+    .bind(input.course_name.trim())
+    .bind(input.tee_id)
+    .bind(input.tee_name.trim())
+    .bind(input.number_of_holes)
+    .bind(input.handicap_enabled)
+    .bind(input.handicap_allowance_percent)
+    .bind(input.scoring_format)
+    .fetch_one(&mut *transaction)
+    .await?;
+    transaction.commit().await?;
+    Ok(round)
 }
 
 pub async fn course_tee_matches(

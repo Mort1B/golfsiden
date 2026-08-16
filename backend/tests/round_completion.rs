@@ -6,10 +6,12 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
+use chrono::{Duration as ChronoDuration, Utc};
 use golf_api::{
     AppState, api,
+    auth::{derive_csrf_token, hash_session_token},
     domain::{round_completion::TransitionBlocker, scorecards::ScoreOwner},
-    repositories::{round_completion, round_completion::RoundCompletionError, scorecards},
+    repositories::{auth, round_completion, round_completion::RoundCompletionError, scorecards},
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -27,6 +29,7 @@ const PLAYER_B: Uuid = uuid!("40000000-0000-0000-0000-000000000012");
 const SCRAMBLE_TEAM: Uuid = uuid!("40000000-0000-0000-0000-000000000022");
 const HOLE_1: Uuid = uuid!("40000000-0000-0000-0000-000000000031");
 const HOLE_2: Uuid = uuid!("40000000-0000-0000-0000-000000000032");
+const SESSION_TOKEN: &str = "round-completion-admin-token";
 
 const FIXTURE: &str = r#"
 INSERT INTO users (id, email, display_name, role)
@@ -60,6 +63,23 @@ INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id) VALUE
 
 async fn seed_open(pool: &PgPool) {
     sqlx::raw_sql(FIXTURE).execute(pool).await.unwrap();
+    sqlx::query(
+        "INSERT INTO tournament_memberships (tournament_id, user_id, role)
+         VALUES ($1, $2, 'admin')",
+    )
+    .bind(TOURNAMENT_ID)
+    .bind(USER_ID)
+    .execute(pool)
+    .await
+    .unwrap();
+    auth::create_session(
+        pool,
+        USER_ID,
+        &hash_session_token(SESSION_TOKEN),
+        Utc::now() + ChronoDuration::hours(1),
+    )
+    .await
+    .unwrap();
     for round_id in [INDIVIDUAL_ROUND, SCRAMBLE_ROUND] {
         let mut transaction = pool.begin().await.unwrap();
         sqlx::query("SELECT id FROM rounds WHERE id = $1 FOR UPDATE")
@@ -84,6 +104,12 @@ async fn seed_open(pool: &PgPool) {
             .unwrap();
         transaction.commit().await.unwrap();
     }
+}
+
+fn authorize(builder: axum::http::request::Builder) -> axum::http::request::Builder {
+    builder
+        .header("cookie", format!("golf_session={SESSION_TOKEN}"))
+        .header("x-csrf-token", derive_csrf_token(SESSION_TOKEN))
 }
 
 async fn fill_and_confirm(pool: &PgPool, round_id: Uuid, owner: ScoreOwner) {
@@ -186,9 +212,11 @@ async fn api_completes_and_locks_once_with_sse_after_each_commit(pool: PgPool) {
     let completed = app
         .clone()
         .oneshot(
-            Request::post(format!("/api/rounds/{INDIVIDUAL_ROUND}/complete"))
-                .body(Body::empty())
-                .unwrap(),
+            authorize(Request::post(format!(
+                "/api/rounds/{INDIVIDUAL_ROUND}/complete"
+            )))
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();
@@ -215,9 +243,11 @@ async fn api_completes_and_locks_once_with_sse_after_each_commit(pool: PgPool) {
     let repeated = app
         .clone()
         .oneshot(
-            Request::post(format!("/api/rounds/{INDIVIDUAL_ROUND}/complete"))
-                .body(Body::empty())
-                .unwrap(),
+            authorize(Request::post(format!(
+                "/api/rounds/{INDIVIDUAL_ROUND}/complete"
+            )))
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();
@@ -234,9 +264,11 @@ async fn api_completes_and_locks_once_with_sse_after_each_commit(pool: PgPool) {
     let locked = app
         .clone()
         .oneshot(
-            Request::post(format!("/api/rounds/{INDIVIDUAL_ROUND}/lock"))
-                .body(Body::empty())
-                .unwrap(),
+            authorize(Request::post(format!(
+                "/api/rounds/{INDIVIDUAL_ROUND}/lock"
+            )))
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();
@@ -264,9 +296,11 @@ async fn api_completes_and_locks_once_with_sse_after_each_commit(pool: PgPool) {
     let repeated_lock = app
         .clone()
         .oneshot(
-            Request::post(format!("/api/rounds/{INDIVIDUAL_ROUND}/lock"))
-                .body(Body::empty())
-                .unwrap(),
+            authorize(Request::post(format!(
+                "/api/rounds/{INDIVIDUAL_ROUND}/lock"
+            )))
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();
@@ -295,7 +329,7 @@ async fn api_completes_and_locks_once_with_sse_after_each_commit(pool: PgPool) {
         let missing_post = app
             .clone()
             .oneshot(
-                Request::post(format!("/api/rounds/{missing_id}/{path}"))
+                authorize(Request::post(format!("/api/rounds/{missing_id}/{path}")))
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -318,7 +352,7 @@ async fn scramble_completion_and_source_state_conflicts_are_enforced(pool: PgPoo
     let wrong_state = app
         .clone()
         .oneshot(
-            Request::post(format!("/api/rounds/{SCRAMBLE_ROUND}/lock"))
+            authorize(Request::post(format!("/api/rounds/{SCRAMBLE_ROUND}/lock")))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -331,9 +365,11 @@ async fn scramble_completion_and_source_state_conflicts_are_enforced(pool: PgPoo
     );
     let incomplete_api = app
         .oneshot(
-            Request::post(format!("/api/rounds/{SCRAMBLE_ROUND}/complete"))
-                .body(Body::empty())
-                .unwrap(),
+            authorize(Request::post(format!(
+                "/api/rounds/{SCRAMBLE_ROUND}/complete"
+            )))
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();
@@ -415,9 +451,11 @@ async fn completed_correction_requires_reconfirmation_before_lock(pool: PgPool) 
     let mut events = state.live_events.subscribe();
     let blocked = api::router(state)
         .oneshot(
-            Request::post(format!("/api/rounds/{INDIVIDUAL_ROUND}/lock"))
-                .body(Body::empty())
-                .unwrap(),
+            authorize(Request::post(format!(
+                "/api/rounds/{INDIVIDUAL_ROUND}/lock"
+            )))
+            .body(Body::empty())
+            .unwrap(),
         )
         .await
         .unwrap();

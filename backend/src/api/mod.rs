@@ -1,4 +1,5 @@
 mod auth;
+mod authorization;
 mod leaderboards;
 mod live;
 mod players;

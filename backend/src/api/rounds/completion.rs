@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
+    api::{auth::MutationSession, authorization::map_authorization_error},
     domain::{
         models::Round,
         round_completion::{RoundCompletionValidation, TransitionAction, TransitionBlocker},
@@ -29,10 +30,15 @@ pub async fn validation(
 pub async fn complete(
     State(state): State<Arc<AppState>>,
     Path(round_id): Path<Uuid>,
+    MutationSession(authenticated): MutationSession,
 ) -> ApiResult<Json<Round>> {
-    let round = round_completion::complete(&state.pool, round_id)
-        .await
-        .map_err(map_error)?;
+    let round = round_completion::complete_authorized(
+        &state.pool,
+        authenticated.principal.session_id,
+        round_id,
+    )
+    .await
+    .map_err(map_error)?;
     state.notify("round", round_id);
     Ok(Json(round))
 }
@@ -40,10 +46,15 @@ pub async fn complete(
 pub async fn lock(
     State(state): State<Arc<AppState>>,
     Path(round_id): Path<Uuid>,
+    MutationSession(authenticated): MutationSession,
 ) -> ApiResult<Json<Round>> {
-    let round = round_completion::lock(&state.pool, round_id)
-        .await
-        .map_err(map_error)?;
+    let round = round_completion::lock_authorized(
+        &state.pool,
+        authenticated.principal.session_id,
+        round_id,
+    )
+    .await
+    .map_err(map_error)?;
     state.notify("round", round_id);
     Ok(Json(round))
 }
@@ -55,6 +66,7 @@ fn map_error(error: RoundCompletionError) -> ApiError {
             let (code, message) = conflict_details(action, blocker);
             ApiError::DomainConflict { code, message }
         }
+        RoundCompletionError::Authorization(error) => map_authorization_error(error),
         RoundCompletionError::Database(error) => ApiError::Database(error),
     }
 }
