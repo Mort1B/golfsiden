@@ -17,19 +17,25 @@ another bounded step begins.
 
 ## Product decisions
 
-- Accounts use a required, case-insensitive-unique username for login. Email is
-  never a credential or an identity link; whether it remains required contact/
-  recovery data is decided before Phase 4A implementation.
-- The handicap registered when a player joins a tournament is the immutable
-  tournament handicap. A later global player-handicap change applies only to a
-  future tournament. Round snapshots derive course and playing handicaps from
-  that fixed tournament value and the round's selected tee.
+- Accounts use only a required, case-insensitive-unique username and password for
+  registration and login. Account requests and UI contain no email. Existing
+  account email data may be used once for collision-safe username migration, but
+  is not retained as a credential, recovery requirement, or identity link.
+- The handicap registered when a player joins a tournament becomes the fixed
+  tournament handicap. A tournament admin may make an audited correction only
+  while every round is still draft and no round snapshot has ever been captured.
+  After the first round opens it is immutable. A later global player-handicap
+  change applies only to a future tournament.
+- In scramble rounds, cap each registered tournament handicap index at `36.0`
+  before converting it for the selected tee. Individual formats retain the full
+  registered index. Round snapshots preserve the exact input and derived course/
+  playing handicaps used by that format.
 - Norwegian UI accepts both `14,4` and `14.4`, rejects more than one decimal
   place, and displays `14,4`. JSON remains numeric and PostgreSQL retains exact
   `NUMERIC(4,1)` values.
-- Every round selects an exact course and tee. Provider data is imported into
-  local course/tee/hole revisions so slope, course rating, par, yardage, and hole
-  stroke index remain reproducible after the provider changes.
+- Everyone in a round uses the same selected course and tee. Provider data is
+  imported into local course/tee/hole revisions so slope, course rating, par,
+  yardage, and hole stroke index remain reproducible after the provider changes.
 - Flights are explicit, round-specific groups independent of teams, tee times,
   and starting holes. An admin assigns players, teams, and one designated
   scorekeeper for each flight. That scorekeeper may write every eligible
@@ -43,22 +49,17 @@ another bounded step begins.
 - Leaderboard rows link to read-only scorecards. A player drilldown shows every
   round contribution and its player/team owner; a team drilldown shows that
   round's shared card. Gross and net views use the same preserved strokes.
+- Players can view live gross/net standings for the current round and live
+  tournament-wide standings that include the active round. While the final round
+  is open, holes 10-18 are excluded from every non-admin leaderboard projection;
+  only that tournament's admins see full live standings. Completing the final
+  round reveals the final results to all authorized tournament viewers.
 
 ## Decision gates
 
 - Approve username syntax and legacy backfill. Recommended: 3-32 ASCII letters,
   digits, `_`, and `-`, compared case-insensitively, with collision-safe suffixes
   for migrated users. Keep display names separate and Unicode-friendly.
-- Decide whether email is optional or required for recovery/contact. Login and
-  authorization must use neither email nor display name after the username cutover.
-- Confirm whether the scramble maximum of 36 applies to the registered handicap
-  index before tee conversion or to each rounded course handicap before the team
-  formula. Recommended interpretation: cap the registered tournament handicap
-  index at `36.0` for scramble calculations only, then calculate the course
-  handicap for the selected tee. Individual formats keep the uncapped value.
-- The first course milestone assumes one tee for the whole round. Per-player or
-  per-team tees require a separate assignment and snapshot model and must be
-  approved before Phase 4B if needed.
 - The designated flight scorekeeper must have an active account linked to a
   player in that flight. Decide later whether a backup scorekeeper is useful;
   do not grant every flight member write access implicitly.
@@ -80,21 +81,24 @@ another bounded step begins.
   tournament-player, round-opening, handicap/scoring services, seed and tests;
   frontend auth/onboarding/join APIs, forms, handicap utilities and tests.
 - **Change:** add normalized usernames and migrate existing users without
-  collisions; replace email login in every flow; apply the approved email contact
-  rule; remove the ordinary tournament-handicap mutation path; retain an explicit
-  audited admin correction only before any round has opened; apply the approved
-  scramble-36 rule in the handicap domain service; centralize comma parsing and
-  Norwegian display formatting.
+  collisions; replace email registration/login in every flow with username and
+  password; remove account email from active contracts; replace the ordinary
+  tournament-handicap mutation path with an audited tournament-admin correction
+  that locks permanently when the first round opens; apply the scramble index cap
+  before tee conversion in the handicap domain service; centralize comma parsing
+  and Norwegian display formatting.
 - **Validation:** clean/upgrade migration tests, normalized-username concurrency,
   auth timing/error behavior, onboarding/invitation browser flows, immutable
-  tournament handicap tests, scramble cap boundaries, round snapshot history,
-  Rust/PostgreSQL/frontend ladders, and mobile/desktop browser checks.
+  tournament handicap correction/locking tests, scramble cap and tee-conversion
+  boundaries, round snapshot history, Rust/PostgreSQL/frontend ladders, and
+  mobile/desktop browser checks.
 - **Invariants:** authorization continues to use user/player UUIDs; email never
   links identities; a global handicap change cannot alter an existing tournament;
   completed history remains unchanged; formulas stay outside handlers.
 - **Stop condition:** all account flows use username, all tournament handicap
-  paths preserve one registered value, locale behavior is consistent, the cap is
-  proven at its boundary, and existing databases migrate safely.
+  paths preserve one registered value after the first round opens, pre-start
+  corrections are audited, locale behavior is consistent, the cap is proven at
+  its boundary, and existing databases migrate safely.
 
 ### Phase 4B: Private workspace and provider-backed courses
 
@@ -148,7 +152,7 @@ another bounded step begins.
 - **Stop condition:** foursomes works end to end and every supported format has
   explicit owner, team-size, handicap, completion, and ranking tests.
 
-### Phase 7: Best-N standings and scorecard drilldown
+### Phase 7: Live best-N standings, final-nine blackout, and scorecards
 
 - Add `counted_rounds` with `1 <= counted_rounds <= number_of_rounds`, editable
   only while tournament configuration is mutable.
@@ -156,13 +160,32 @@ another bounded step begins.
   gross and net. Return every round contribution with round ID, tagged player or
   team owner, metric totals, and counted/excluded state; keep deterministic ties
   and changing-team attribution.
+- Include the current open round as an explicitly provisional contribution in
+  both round and tournament standings, with holes played exposed so uneven live
+  progress is not presented as final. Re-evaluate the provisional best N whenever
+  an authoritative score change is received.
+- Apply a role-aware visibility policy in the backend domain/repository boundary.
+  For non-admins, remove holes 10-18 of the open final round before gross, net,
+  position, tie, and tournament aggregate calculations. Tournament admins receive
+  the complete projection. SSE remains payload-free invalidation and cannot leak
+  hidden strokes.
+- Mark role-dependent leaderboard and scorecard responses private/non-cacheable;
+  include session identity in client query ownership and clear privileged cached
+  projections when the session changes.
 - Add URL-backed, membership-scoped read-only player history and scorecard routes.
   Make round and tournament leaderboard rows navigable, label “Best N of M,” and
   visibly distinguish counted from discarded rounds. Read DTOs must omit score
-  mutation actor identifiers that viewers do not need.
+  mutation actor identifiers that viewers do not need. Non-admin read-only cards
+  obey the same final-nine redaction; authorized scoring views still show the
+  scorekeeper's writable flight cards so those scores can be entered and corrected.
+- Test tournament-admin versus scorer/player/viewer projections, both metrics,
+  round and tournament APIs, direct scorecard reads, cache/session changes,
+  completion reveal, and attempts to infer hidden totals from response fields.
 - **Stop condition:** mixed individual/team rounds select the correct best N per
-  metric, incomplete competitors cannot gain an advantage, and every displayed
-  contribution deep-links to the preserved gross/net card.
+  metric, live totals include the active round, incomplete competitors cannot gain
+  an advantage, final-round back-nine strokes are absent from every non-admin read
+  projection until completion, and each visible contribution deep-links to its
+  preserved gross/net card.
 
 ### Later product work
 
@@ -172,5 +195,3 @@ another bounded step begins.
   and missing-score alerts, optional backup scorekeepers, configurable tie-breaks,
   share links, offline scoring, account recovery, rate limiting, deployment,
   backups, and production database roles.
-- Consider per-player tees only if a real round requires them; do not complicate
-  the round-wide tee snapshot in advance.
