@@ -1,14 +1,16 @@
 use chrono::{DateTime, Days, NaiveDate, Utc};
 
-use crate::domain::models::{ScoringFormat, ScoringMode};
+use crate::domain::{
+    accounts::normalize_and_validate_username,
+    models::{ScoringFormat, ScoringMode},
+};
 
 const MAX_NAME_BYTES: usize = 120;
 const MAX_DESCRIPTION_BYTES: usize = 2_000;
-const MAX_EMAIL_BYTES: usize = 254;
 
 #[derive(Debug)]
 pub struct OnboardingInput {
-    pub email: String,
+    pub username: String,
     pub password: String,
     pub display_name: String,
     pub handicap_index: f64,
@@ -29,7 +31,7 @@ pub struct RoundInput {
 
 #[derive(Debug)]
 pub struct ValidatedOnboarding {
-    pub email: String,
+    pub username: String,
     pub password: String,
     pub display_name: String,
     pub handicap_index: f64,
@@ -54,8 +56,8 @@ pub fn validate(
     mut input: OnboardingInput,
     today: NaiveDate,
 ) -> Result<ValidatedOnboarding, &'static str> {
-    input.email = input.email.trim().to_lowercase();
-    validate_email(&input.email)?;
+    input.username = normalize_and_validate_username(&input.username)
+        .map_err(|_| "creator.account.username is invalid")?;
     if !(12..=128).contains(&input.password.len()) {
         return Err("creator.account.password must be between 12 and 128 bytes");
     }
@@ -125,7 +127,7 @@ pub fn validate(
         .collect();
 
     Ok(ValidatedOnboarding {
-        email: input.email,
+        username: input.username,
         password: input.password,
         display_name: input.display_name.trim().to_owned(),
         handicap_index: input.handicap_index,
@@ -137,29 +139,6 @@ pub fn validate(
         invitation_expires_at: DateTime::from_naive_utc_and_offset(expiry_naive, Utc),
         rounds,
     })
-}
-
-fn validate_email(email: &str) -> Result<(), &'static str> {
-    if email.is_empty()
-        || email.len() > MAX_EMAIL_BYTES
-        || email
-            .chars()
-            .any(|character| character.is_whitespace() || character.is_control())
-    {
-        return Err("creator.account.email must be a valid email of at most 254 bytes");
-    }
-    let Some((local, domain)) = email.split_once('@') else {
-        return Err("creator.account.email must be a valid email of at most 254 bytes");
-    };
-    if local.is_empty()
-        || domain.is_empty()
-        || domain.contains('@')
-        || domain.starts_with('.')
-        || domain.ends_with('.')
-    {
-        return Err("creator.account.email must be a valid email of at most 254 bytes");
-    }
-    Ok(())
 }
 
 fn validate_name(value: &str, message: &'static str) -> Result<(), &'static str> {
@@ -175,7 +154,7 @@ mod tests {
 
     fn valid_input() -> OnboardingInput {
         OnboardingInput {
-            email: " CREATOR@Example.Test ".to_owned(),
+            username: " Creator_1 ".to_owned(),
             password: "long-test-password".to_owned(),
             display_name: " Creator ".to_owned(),
             handicap_index: 12.3,
@@ -204,7 +183,7 @@ mod tests {
     fn normalizes_and_derives_combined_round_plan() {
         let validated =
             validate(valid_input(), NaiveDate::from_ymd_opt(2026, 8, 16).unwrap()).unwrap();
-        assert_eq!(validated.email, "creator@example.test");
+        assert_eq!(validated.username, "creator_1");
         assert_eq!(validated.scoring_mode, ScoringMode::Combined);
         assert_eq!(validated.rounds[0].round_number, 1);
         assert_eq!(

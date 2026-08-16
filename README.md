@@ -62,8 +62,9 @@ The seed creates one admin identity, eight linked player accounts, one course
 with 18 holes, a five-round tournament, and different two-player teams for
 rounds one and two. Development credentials are:
 
-- Admin: `admin@guttas.golf`
-- Players: `anders@example.test` through `henrik@example.test`
+- Admin username: `admin`
+- Player usernames: `anders`, `bjarne`, `christian`, `daniel`, `eirik`,
+  `fredrik`, `geir`, and `henrik`
 - Shared local password: `golf-dev-2026`
 
 The local `.env.example` explicitly disables the cookie `Secure` flag for HTTP
@@ -121,12 +122,17 @@ operations. Global player/profile mutations and legacy tournament creation are
 platform-admin-only. Public read routes remain on the pre-onboarding viewer model
 until the private frontend cutover.
 
-Tournament creation now issues a reusable invitation secret, but redemption,
-rotation, and recovery from a lost one-time response remain deferred. Creator
-email verification and request throttling are also required before public
+Tournament creation now issues a reusable invitation secret, and admins can
+rotate or revoke links, but recovery from a lost one-time plaintext response
+still requires rotation. Request throttling is required before public
 deployment. Course administration, the tournament management workspace,
-flights, offline scoring, and locked-round admin corrections remain deferred.
+flights, offline scoring, and locked-round score corrections remain deferred.
 Flights will be modelled explicitly rather than inferred from matching tee times
 or starting holes.
+
+Migration `0009` removes account email after deterministically deriving usernames
+for existing accounts. Back up production data and retain the generated username
+mapping before applying it; player-profile contact email is a separate optional
+field and is not used for authentication.
 
 `npm audit` currently reports two high-severity dependency records for one React Router advisory in its server/RSC action mode. This project uses only client-side routing and no React Server Components or router actions, so the affected path is not exposed; upgrade when the registry publishes a patched compatible version.

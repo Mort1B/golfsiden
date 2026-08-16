@@ -51,11 +51,11 @@ pub async fn register(
     .map_err(classify_database)?;
     let user_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO users (id, email, display_name, role, password_hash, player_id)
+        "INSERT INTO users (id, username, display_name, role, password_hash, player_id)
          VALUES ($1, $2, $3, 'player', $4, $5)",
     )
     .bind(user_id)
-    .bind(&params.registration.email)
+    .bind(&params.registration.username)
     .bind(&params.registration.display_name)
     .bind(params.password_hash)
     .bind(player_id)

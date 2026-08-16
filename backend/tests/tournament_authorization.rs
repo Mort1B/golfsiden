@@ -33,12 +33,12 @@ async fn seed(pool: &PgPool) {
         INSERT INTO players (id, display_name, current_handicap_index) VALUES
         ('82000000-0000-0000-0000-000000000005', 'Linked', 10.0),
         ('82000000-0000-0000-0000-000000000006', 'New entrant', 14.0);
-        INSERT INTO users (id, email, display_name, role, player_id) VALUES
-        ('82000000-0000-0000-0000-000000000011', 'admin-a@test', 'Admin A', 'admin', NULL),
-        ('82000000-0000-0000-0000-000000000012', 'admin-b@test', 'Admin B', 'viewer', NULL),
-        ('82000000-0000-0000-0000-000000000013', 'scorer-b@test', 'Scorer B', 'admin', NULL),
-        ('82000000-0000-0000-0000-000000000014', 'player-b@test', 'Player B', 'admin', '82000000-0000-0000-0000-000000000005'),
-        ('82000000-0000-0000-0000-000000000015', 'viewer-b@test', 'Viewer B', 'admin', NULL);
+        INSERT INTO users (id, username, display_name, role, player_id) VALUES
+        ('82000000-0000-0000-0000-000000000011', 'admin_a', 'Admin A', 'admin', NULL),
+        ('82000000-0000-0000-0000-000000000012', 'admin_b', 'Admin B', 'viewer', NULL),
+        ('82000000-0000-0000-0000-000000000013', 'scorer_b', 'Scorer B', 'admin', NULL),
+        ('82000000-0000-0000-0000-000000000014', 'player_b', 'Player B', 'admin', '82000000-0000-0000-0000-000000000005'),
+        ('82000000-0000-0000-0000-000000000015', 'viewer_b', 'Viewer B', 'admin', NULL);
         INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds) VALUES
         ('82000000-0000-0000-0000-000000000001', 'Alpha', '2026-01-01', '2026-01-02', 2),
         ('82000000-0000-0000-0000-000000000002', 'Beta', '2026-02-01', '2026-02-02', 2);
@@ -109,10 +109,10 @@ async fn cross_tournament_admin_is_denied_through_every_resource_shape(pool: PgP
         ),
         json_request(
             Request::post(format!(
-                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicaps"
+                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicap-corrections"
             )),
             "admin-a-token",
-            json!({"handicap_index": 5.0}),
+            json!({"handicap_index": 5.0, "reason": "review"}),
         ),
         json_request(
             Request::post(format!("/api/tournaments/{TOURNAMENT_B}/rounds")),
@@ -180,10 +180,10 @@ async fn tournament_roles_sessions_csrf_and_me_read_model_are_authoritative(pool
             .clone()
             .oneshot(json_request(
                 Request::post(format!(
-                    "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicaps"
+                    "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicap-corrections"
                 )),
                 token,
-                json!({"handicap_index": 5.0}),
+                json!({"handicap_index": 5.0, "reason": "review"}),
             ))
             .await
             .unwrap();
@@ -305,7 +305,7 @@ async fn tournament_roles_sessions_csrf_and_me_read_model_are_authoritative(pool
 }
 
 #[sqlx::test(migrations = "../migrations")]
-async fn tournament_handicap_change_is_audited_and_only_affects_future_rounds(pool: PgPool) {
+async fn tournament_handicap_correction_is_audited_then_locked_by_first_open(pool: PgPool) {
     seed(&pool).await;
     let future_round = uuid!("82000000-0000-0000-0000-000000000031");
     sqlx::raw_sql(
@@ -352,19 +352,43 @@ async fn tournament_handicap_change_is_audited_and_only_affects_future_rounds(po
     .execute(&pool)
     .await
     .unwrap();
-    round_lifecycle::open(&pool, ROUND_B).await.unwrap();
-
     let state = AppState::new(pool.clone());
     let mut events = state.live_events.subscribe();
     let app = api::router(state);
+    let editable_roster = app
+        .clone()
+        .oneshot(
+            Request::get(format!("/api/tournaments/{TOURNAMENT_B}/players"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(editable_roster.status(), StatusCode::OK);
+    let editable_roster = body(editable_roster).await;
+    assert_eq!(editable_roster["handicap_correction"]["state"], "editable");
+    assert_eq!(editable_roster["players"].as_array().unwrap().len(), 1);
+
+    let blank_reason = app
+        .clone()
+        .oneshot(json_request(
+            Request::post(format!(
+                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicap-corrections"
+            )),
+            "admin-b-token",
+            json!({"handicap_index": 3.5, "reason": "  "}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(blank_reason.status(), StatusCode::BAD_REQUEST);
     let spoof = app
         .clone()
         .oneshot(json_request(
             Request::post(format!(
-                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicaps"
+                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicap-corrections"
             )),
             "admin-b-token",
-            json!({"handicap_index": 3.5, "changed_by": ADMIN_A}),
+            json!({"handicap_index": 3.5, "reason": "trip review", "changed_by": ADMIN_A}),
         ))
         .await
         .unwrap();
@@ -372,9 +396,10 @@ async fn tournament_handicap_change_is_audited_and_only_affects_future_rounds(po
     assert_eq!(body(spoof).await["error"]["code"], "validation_error");
 
     let changed = app
+        .clone()
         .oneshot(json_request(
             Request::post(format!(
-                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicaps"
+                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicap-corrections"
             )),
             "admin-b-token",
             json!({"handicap_index": 3.5, "reason": "trip review"}),
@@ -383,9 +408,60 @@ async fn tournament_handicap_change_is_audited_and_only_affects_future_rounds(po
         .unwrap();
     assert_eq!(changed.status(), StatusCode::CREATED);
     let changed = body(changed).await;
-    assert_eq!(changed["handicap_index"], 3.5);
-    assert_eq!(changed["changed_by"], ADMIN_B.to_string());
+    assert_eq!(changed["player"]["tournament_handicap"], 3.5);
+    assert_eq!(changed["audit"]["handicap_index"], 3.5);
+    assert_eq!(changed["audit"]["changed_by"], ADMIN_B.to_string());
     assert_eq!(events.try_recv().unwrap().id, TOURNAMENT_B);
+
+    let unchanged = app
+        .clone()
+        .oneshot(json_request(
+            Request::post(format!(
+                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicap-corrections"
+            )),
+            "admin-b-token",
+            json!({"handicap_index": 3.5, "reason": "same value"}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(unchanged.status(), StatusCode::CONFLICT);
+    assert_eq!(
+        body(unchanged).await["error"]["code"],
+        "tournament_handicap_unchanged"
+    );
+    assert!(events.try_recv().is_err());
+
+    round_lifecycle::open(&pool, ROUND_B).await.unwrap();
+    let locked = app
+        .clone()
+        .oneshot(json_request(
+            Request::post(format!(
+                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicap-corrections"
+            )),
+            "admin-b-token",
+            json!({"handicap_index": 4.0, "reason": "too late"}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(locked.status(), StatusCode::CONFLICT);
+    assert_eq!(
+        body(locked).await["error"]["code"],
+        "tournament_handicap_locked"
+    );
+    assert!(events.try_recv().is_err());
+
+    let roster = app
+        .oneshot(
+            Request::get(format!("/api/tournaments/{TOURNAMENT_B}/players"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(roster.status(), StatusCode::OK);
+    let roster = body(roster).await;
+    assert_eq!(roster["handicap_correction"]["state"], "locked");
+    assert_eq!(roster["handicap_correction"]["reason"], "snapshot_captured");
 
     round_lifecycle::open(&pool, future_round).await.unwrap();
     let snapshots = sqlx::query_as::<_, (Uuid, f64)>(
@@ -397,7 +473,7 @@ async fn tournament_handicap_change_is_audited_and_only_affects_future_rounds(po
     .fetch_all(&pool)
     .await
     .unwrap();
-    assert_eq!(snapshots, vec![(ROUND_B, 7.0), (future_round, 3.5)]);
+    assert_eq!(snapshots, vec![(ROUND_B, 3.5), (future_round, 3.5)]);
     let profile_handicap = sqlx::query_scalar::<_, f64>(
         "SELECT current_handicap_index::float8 FROM players WHERE id = $1",
     )

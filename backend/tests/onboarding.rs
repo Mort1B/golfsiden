@@ -36,11 +36,11 @@ fn future_dates() -> (NaiveDate, NaiveDate) {
     (start, end)
 }
 
-fn valid_request(email: &str) -> Value {
+fn valid_request(username: &str) -> Value {
     let (start, end) = future_dates();
     json!({
         "creator": {
-            "account": {"email": email, "password": "a secure test password"},
+            "account": {"username": username, "password": "a secure test password"},
             "player": {"display_name": "Tournament Creator", "handicap_index": 12.3}
         },
         "tournament": {
@@ -66,11 +66,11 @@ fn valid_request(email: &str) -> Value {
     })
 }
 
-fn repository_input(email: &str, tournament_name: &str) -> ValidatedOnboarding {
+fn repository_input(username: &str, tournament_name: &str) -> ValidatedOnboarding {
     let (start_date, end_date) = future_dates();
     validate(
         OnboardingInput {
-            email: email.to_owned(),
+            username: username.to_owned(),
             password: "a secure test password".to_owned(),
             display_name: tournament_name.to_owned(),
             handicap_index: 12.3,
@@ -144,7 +144,7 @@ async fn onboarding_atomically_links_creator_rounds_invite_and_session(pool: PgP
 
     let response = post_json(
         app.clone(),
-        valid_request(" Creator@Example.Test "),
+        valid_request(" Creator_Account "),
         Some("golf_session=stale-token"),
     )
     .await;
@@ -159,6 +159,7 @@ async fn onboarding_atomically_links_creator_rounds_invite_and_session(pool: PgP
     assert_eq!(body["tournament"]["status"], "draft");
     assert_eq!(body["creator"]["tournament_role"], "admin");
     assert_eq!(body["session"]["role"], "player");
+    assert_eq!(body["session"]["username"], "creator_account");
     assert_eq!(body["rounds"][0]["round_number"], 1);
     assert_eq!(body["rounds"][1]["round_number"], 2);
     for round in body["rounds"].as_array().unwrap() {
@@ -179,13 +180,13 @@ async fn onboarding_atomically_links_creator_rounds_invite_and_session(pool: PgP
     assert_eq!(body["session"]["player_id"], player_id.to_string());
 
     let user = sqlx::query_as::<_, (String, String, String, Option<Uuid>)>(
-        "SELECT email, role::text, password_hash, player_id FROM users WHERE id = $1",
+        "SELECT username, role::text, password_hash, player_id FROM users WHERE id = $1",
     )
     .bind(user_id)
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(user.0, "creator@example.test");
+    assert_eq!(user.0, "creator_account");
     assert_eq!(user.1, "player");
     assert!(user.2.starts_with("$argon2"));
     assert_ne!(user.2, "a secure test password");
@@ -279,15 +280,15 @@ async fn invalid_unknown_and_oversized_requests_write_nothing(pool: PgPool) {
     let mut events = state.live_events.subscribe();
     let app = api::router(state);
 
-    let mut invalid = valid_request("invalid@example.test");
+    let mut invalid = valid_request("invalid_user");
     invalid["rounds"][1]["round_number"] = json!(3);
-    let mut unknown = valid_request("unknown@example.test");
+    let mut unknown = valid_request("unknown_user");
     unknown["creator"]["player"]["role"] = json!("admin");
-    let mut overlong_field = valid_request("field@example.test");
+    let mut overlong_field = valid_request("field_user");
     overlong_field["tournament"]["description"] = json!("x".repeat(2_001));
-    let mut unsupported_format = valid_request("format@example.test");
+    let mut unsupported_format = valid_request("format_user");
     unsupported_format["rounds"][0]["scoring_format"] = json!("stableford");
-    let mut oversized = valid_request("oversized@example.test");
+    let mut oversized = valid_request("oversized_user");
     oversized["tournament"]["description"] = json!("x".repeat(70_000));
 
     for input in [
@@ -319,10 +320,10 @@ async fn invalid_unknown_and_oversized_requests_write_nothing(pool: PgPool) {
 }
 
 #[sqlx::test(migrations = "../migrations")]
-async fn duplicate_email_is_stable_and_rolls_back_prior_player_insert(pool: PgPool) {
+async fn duplicate_username_is_stable_and_rolls_back_prior_player_insert(pool: PgPool) {
     sqlx::query(
-        "INSERT INTO users (id, email, display_name, role)
-         VALUES ($1, 'creator@example.test', 'Existing', 'viewer')",
+        "INSERT INTO users (id, username, display_name, role)
+         VALUES ($1, 'creator_account', 'Existing', 'viewer')",
     )
     .bind(Uuid::new_v4())
     .execute(&pool)
@@ -330,18 +331,13 @@ async fn duplicate_email_is_stable_and_rolls_back_prior_player_insert(pool: PgPo
     .unwrap();
     let state = AppState::new(pool.clone());
     let mut events = state.live_events.subscribe();
-    let response = post_json(
-        api::router(state),
-        valid_request(" CREATOR@EXAMPLE.TEST "),
-        None,
-    )
-    .await;
+    let response = post_json(api::router(state), valid_request(" CREATOR_ACCOUNT "), None).await;
     assert_eq!(response.status(), StatusCode::CONFLICT);
     assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
     assert!(!response.headers().contains_key(header::SET_COOKIE));
     assert_eq!(
         response_json(response).await["error"]["code"],
-        "email_already_registered"
+        "username_already_registered"
     );
     assert_eq!(
         sqlx::query_scalar::<_, i64>("SELECT count(*) FROM players")
@@ -361,16 +357,43 @@ async fn duplicate_email_is_stable_and_rolls_back_prior_player_insert(pool: PgPo
 }
 
 #[sqlx::test(migrations = "../migrations")]
+async fn concurrent_normalized_username_registration_commits_exactly_once(pool: PgPool) {
+    let app = api::router(AppState::new(pool.clone()));
+    let first = tokio::spawn(post_json(
+        app.clone(),
+        valid_request(" Race_Account "),
+        None,
+    ));
+    let second = tokio::spawn(post_json(app, valid_request("race_account"), None));
+    let (first, second) = tokio::join!(first, second);
+    let statuses = [first.unwrap().status(), second.unwrap().status()];
+    assert!(statuses.contains(&StatusCode::CREATED));
+    assert!(statuses.contains(&StatusCode::CONFLICT));
+    assert_eq!(
+        sqlx::query_as::<_, (i64, i64, i64)>(
+            "SELECT
+               (SELECT count(*) FROM users WHERE username = 'race_account'),
+               (SELECT count(*) FROM players),
+               (SELECT count(*) FROM tournaments)",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap(),
+        (1, 1, 1)
+    );
+}
+
+#[sqlx::test(migrations = "../migrations")]
 async fn valid_authenticated_call_is_rejected_without_a_second_event(pool: PgPool) {
     let state = AppState::new(pool.clone());
     let mut events = state.live_events.subscribe();
     let app = api::router(state);
-    let first = post_json(app.clone(), valid_request("first@example.test"), None).await;
+    let first = post_json(app.clone(), valid_request("first_user"), None).await;
     let cookie = cookie_from(&first);
     assert_eq!(first.status(), StatusCode::CREATED);
     let _ = events.try_recv().unwrap();
 
-    let second = post_json(app, valid_request("second@example.test"), Some(&cookie)).await;
+    let second = post_json(app, valid_request("second_user"), Some(&cookie)).await;
     assert_eq!(second.status(), StatusCode::CONFLICT);
     assert_eq!(second.headers()[header::CACHE_CONTROL], "no-store");
     assert!(!second.headers().contains_key(header::SET_COOKIE));
@@ -390,8 +413,8 @@ async fn valid_authenticated_call_is_rejected_without_a_second_event(pool: PgPoo
 
 #[sqlx::test(migrations = "../migrations")]
 async fn late_session_hash_collision_rolls_back_every_second_onboarding_row(pool: PgPool) {
-    let first_input = repository_input("first-repository@example.test", "First repository trip");
-    let second_input = repository_input("second-repository@example.test", "Second repository trip");
+    let first_input = repository_input("first_repository", "First repository trip");
+    let second_input = repository_input("second_repository", "Second repository trip");
     let password_hash = hash_password(b"a secure test password").unwrap();
     let shared_session_hash = [7_u8; 32];
     let first_invitation_hash = [8_u8; 32];
@@ -436,7 +459,7 @@ async fn late_session_hash_collision_rolls_back_every_second_onboarding_row(pool
     assert_eq!(onboarding_table_counts(&pool).await, before);
     assert_eq!(
         sqlx::query_scalar::<_, i64>(
-            "SELECT count(*) FROM users WHERE email = 'second-repository@example.test'",
+            "SELECT count(*) FROM users WHERE username = 'second_repository'",
         )
         .fetch_one(&pool)
         .await

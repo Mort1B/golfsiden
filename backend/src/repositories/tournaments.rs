@@ -1,3 +1,7 @@
+mod handicaps;
+
+pub use handicaps::{change_player_handicap_authorized, list_players};
+
 use chrono::NaiveDate;
 use sqlx::{FromRow, PgPool, Postgres, Transaction};
 use thiserror::Error;
@@ -5,8 +9,7 @@ use uuid::Uuid;
 
 use crate::{
     domain::models::{
-        MyTournament, ScoringMode, Tournament, TournamentHandicapHistoryEntry, TournamentPlayer,
-        TournamentRole, TournamentStatus,
+        MyTournament, ScoringMode, Tournament, TournamentPlayer, TournamentRole, TournamentStatus,
     },
     repositories::tournament_authorization::{self, AuthorizationError},
 };
@@ -17,6 +20,10 @@ const COLUMNS: &str = "id, name, description, start_date, end_date, number_of_ro
 pub enum TournamentMutationError {
     #[error("resource not found")]
     NotFound,
+    #[error("tournament handicap is locked")]
+    HandicapLocked,
+    #[error("tournament handicap is unchanged")]
+    HandicapUnchanged,
     #[error(transparent)]
     Authorization(#[from] AuthorizationError),
     #[error("database operation failed")]
@@ -130,14 +137,6 @@ pub async fn list_for_user(pool: &PgPool, user_id: Uuid) -> Result<Vec<MyTournam
     Ok(rows.into_iter().map(MyTournamentRow::into_model).collect())
 }
 
-pub async fn list_players(
-    pool: &PgPool,
-    tournament_id: Uuid,
-) -> Result<Vec<TournamentPlayer>, sqlx::Error> {
-    sqlx::query_as::<_, TournamentPlayer>("SELECT tp.tournament_id, tp.player_id, p.display_name, tp.tournament_handicap::float8 AS tournament_handicap, tp.seed, tp.status, tp.created_at, tp.updated_at FROM tournament_players tp JOIN players p ON p.id = tp.player_id WHERE tp.tournament_id = $1 ORDER BY tp.seed NULLS LAST, p.display_name")
-        .bind(tournament_id).fetch_all(pool).await
-}
-
 pub async fn add_player(
     pool: &PgPool,
     tournament_id: Uuid,
@@ -177,53 +176,6 @@ pub async fn add_player_authorized(
     .await?;
     transaction.commit().await?;
     Ok(player)
-}
-
-pub async fn change_player_handicap_authorized(
-    pool: &PgPool,
-    session_id: Uuid,
-    tournament_id: Uuid,
-    player_id: Uuid,
-    handicap: f64,
-    reason: Option<&str>,
-) -> Result<TournamentHandicapHistoryEntry, TournamentMutationError> {
-    let mut transaction = pool.begin().await?;
-    let actor = tournament_authorization::require_tournament_admin(
-        &mut transaction,
-        session_id,
-        tournament_id,
-    )
-    .await?;
-    let updated = sqlx::query(
-        "UPDATE tournament_players SET tournament_handicap = $3
-         WHERE tournament_id = $1 AND player_id = $2",
-    )
-    .bind(tournament_id)
-    .bind(player_id)
-    .bind(handicap)
-    .execute(&mut *transaction)
-    .await?;
-    if updated.rows_affected() != 1 {
-        return Err(TournamentMutationError::NotFound);
-    }
-    let entry = sqlx::query_as::<_, TournamentHandicapHistoryEntry>(
-        "INSERT INTO tournament_handicap_history
-           (id, tournament_id, player_id, handicap_index, changed_by, reason)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id, tournament_id, player_id,
-                   handicap_index::float8 AS handicap_index, effective_from,
-                   changed_by, reason, created_at",
-    )
-    .bind(Uuid::new_v4())
-    .bind(tournament_id)
-    .bind(player_id)
-    .bind(handicap)
-    .bind(actor)
-    .bind(reason.map(str::trim))
-    .fetch_one(&mut *transaction)
-    .await?;
-    transaction.commit().await?;
-    Ok(entry)
 }
 
 #[allow(clippy::too_many_arguments)]

@@ -36,6 +36,33 @@ export interface TournamentPlayer {
   tournament_handicap: number
   seed: number | null
   status: ParticipantStatus
+  created_at: string
+  updated_at: string
+}
+
+export type TournamentHandicapCorrectionState =
+  | { state: 'editable' }
+  | { state: 'locked'; reason: 'round_opened' | 'snapshot_captured' }
+
+export interface TournamentPlayerRoster {
+  handicap_correction: TournamentHandicapCorrectionState
+  players: TournamentPlayer[]
+}
+
+export interface TournamentHandicapAudit {
+  id: string
+  tournament_id: string
+  player_id: string
+  handicap_index: number
+  effective_from: string
+  changed_by: string | null
+  reason: string | null
+  created_at: string
+}
+
+export interface TournamentHandicapCorrection {
+  player: TournamentPlayer
+  audit: TournamentHandicapAudit
 }
 
 export interface Round {

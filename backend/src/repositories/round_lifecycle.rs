@@ -6,13 +6,12 @@ use uuid::Uuid;
 
 use crate::{
     domain::{
+        handicap::{calculate, effective_index_tenths},
         models::{
             OpenRoundResult, PairingValidation, ParticipantStatus, Round, RoundHandicapSnapshot,
             RoundStatus, ScoringFormat, TournamentStatus,
         },
-        round_lifecycle::{
-            ConfigurationFact, EntrantFact, ReadinessFacts, TeamFact, calculate_handicap, validate,
-        },
+        round_lifecycle::{ConfigurationFact, EntrantFact, ReadinessFacts, TeamFact, validate},
     },
     repositories::tournament_authorization::{self, AuthorizationError},
 };
@@ -141,8 +140,10 @@ async fn open_in_transaction(
     for entrant in loaded.facts.entrants.iter().filter(|entrant| {
         entrant.participant_status == ParticipantStatus::Active && entrant.player_active
     }) {
-        let handicap = calculate_handicap(
-            entrant.handicap_index_tenths,
+        let effective_index_tenths =
+            effective_index_tenths(loaded.facts.scoring_format, entrant.handicap_index_tenths);
+        let handicap = calculate(
+            effective_index_tenths,
             slope_rating,
             course_rating_tenths,
             loaded.course_par,
@@ -154,7 +155,7 @@ async fn open_in_transaction(
             .bind(round_id)
             .bind(loaded.tournament_id)
             .bind(entrant.player_id)
-            .bind(entrant.handicap_index_tenths)
+            .bind(effective_index_tenths)
             .bind(handicap.course_handicap)
             .bind(handicap.playing_handicap)
             .execute(&mut **transaction)

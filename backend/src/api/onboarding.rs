@@ -58,7 +58,7 @@ struct CreatorRequest {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct AccountRequest {
-    email: String,
+    username: String,
     password: String,
 }
 
@@ -192,9 +192,9 @@ async fn active_session_exists(state: &AppState, jar: &CookieJar) -> ApiResult<b
 
 fn map_repository_error(error: OnboardingRepositoryError) -> ApiError {
     match error {
-        OnboardingRepositoryError::DuplicateEmail => ApiError::DomainConflict {
-            code: "email_already_registered",
-            message: "an account with this email already exists",
+        OnboardingRepositoryError::DuplicateUsername => ApiError::DomainConflict {
+            code: "username_already_registered",
+            message: "an account with this username already exists",
         },
         OnboardingRepositoryError::Database(error) => ApiError::Database(error),
     }
@@ -210,7 +210,7 @@ async fn no_store(mut response: Response) -> Response {
 impl CreateOnboardingRequest {
     fn into_domain(self) -> OnboardingInput {
         OnboardingInput {
-            email: self.creator.account.email,
+            username: self.creator.account.username,
             password: self.creator.account.password,
             display_name: self.creator.player.display_name,
             handicap_index: self.creator.player.handicap_index,

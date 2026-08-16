@@ -12,17 +12,21 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
 ## Domain decisions
 
 - Team membership is round-specific. `team_memberships` includes `round_id`, with a unique constraint on `(round_id, player_id)`.
-- `tournament_players.tournament_handicap` is the current competition handicap
-  for one trip. Its append-only history retains tournament changes, while
-  `round_handicap_snapshots` preserves the exact handicap, course handicap, and
-  playing handicap used in each opened round.
+- `tournament_players.tournament_handicap` is the fixed competition handicap for
+  one trip. A tournament admin may use the explicit correction workflow only
+  before any round has opened or snapshot has existed. Append-only history and a
+  durable tournament lock marker preserve that decision even if round data is
+  later deleted. `round_handicap_snapshots` preserves the exact effective index,
+  course handicap, and playing handicap used in each opened round.
 - Round opening locks the round and tournament, repeats readiness validation, and captures one immutable snapshot for each active entrant before changing status. A transaction-local opening context prevents direct status or snapshot bypasses.
-- Course handicap uses exact tenths and rational arithmetic for `index * slope / 113 + rating - par`. Individual allowance is applied to the unrounded result before final rounding; scramble member snapshots retain rounded course handicaps for the later team formula.
+- Course handicap uses exact tenths and rational arithmetic for `index * slope / 113 + rating - par`. Individual allowance is applied to the unrounded result before final rounding. Scramble caps each registered index at `36.0` before tee conversion; its member snapshots retain that effective index and rounded course handicap for the later team formula.
 - Team, membership, tee, and hole mutation guards serialize through the parent-round lock. Once open, scoring configuration and pairings cannot drift.
 - A score has exactly one owner through an exclusive player/team check constraint.
-- Session tokens are opaque 256-bit values stored only as SHA-256 hashes.
-  Nullable unique `users.player_id` links an account to a golf identity without
-  email inference. Global roles remain temporarily for platform compatibility;
+- Accounts use a canonical lowercase username matching `[a-z0-9_-]{3,32}` and a
+  password. Usernames are case-insensitively unique; account email is not stored
+  or accepted. Session tokens are opaque 256-bit values stored only as SHA-256
+  hashes. Nullable unique `users.player_id` links an account to a golf identity
+  without profile-email inference. Global roles remain temporarily for platform compatibility;
   `tournament_memberships` is authoritative for trip administration and scoring.
 - First-time creator onboarding is one transaction across the player, account,
   both initial handicap histories, tournament, admin membership, entrant,
@@ -111,8 +115,8 @@ Implemented resources:
 | `GET`, `POST` | `/api/players/{player_id}/handicaps` | Handicap history and changes |
 | `GET`, `POST` | `/api/tournaments` | List and create tournaments |
 | `GET` | `/api/tournaments/{tournament_id}` | Retrieve a tournament |
-| `GET`, `POST` | `/api/tournaments/{tournament_id}/players` | List and register entrants |
-| `POST` | `/api/tournaments/{tournament_id}/players/{player_id}/handicaps` | Change a tournament entrant's current handicap |
+| `GET`, `POST` | `/api/tournaments/{tournament_id}/players` | List the roster and correction state, or register entrants |
+| `POST` | `/api/tournaments/{tournament_id}/players/{player_id}/handicap-corrections` | Audit a pre-opening tournament handicap correction |
 | `GET`, `POST` | `/api/tournaments/{tournament_id}/rounds` | List and create rounds |
 | `GET` | `/api/rounds/{round_id}` | Retrieve a round |
 | `GET` | `/api/rounds/{round_id}/pairing-validation` | Validate assignments and course readiness |
@@ -149,8 +153,8 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 
 ## Deferred decisions
 
-- Creator email verification, private-read cutover, and production signup/login
-  and invitation-registration rate limiting.
+- Private-read cutover and production signup/login and invitation-registration
+  rate limiting.
 - Normalized round flights and flight-wide score permissions.
 - Separate migration and runtime database roles plus production privilege policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.

@@ -35,12 +35,12 @@ async fn seed(pool: &PgPool, max_uses: Option<i32>) -> Seed {
         r#"
         INSERT INTO players (id, display_name, current_handicap_index)
         VALUES ('93000000-0000-0000-0000-000000000020', 'Linked player', 9.4);
-        INSERT INTO users (id, email, display_name, role, player_id) VALUES
-        ('93000000-0000-0000-0000-000000000010', 'admin@invite.test', 'Admin', 'viewer', NULL),
-        ('93000000-0000-0000-0000-000000000011', 'outsider@invite.test', 'Outsider', 'viewer', NULL),
-        ('93000000-0000-0000-0000-000000000012', 'linked@invite.test', 'Linked', 'player',
+        INSERT INTO users (id, username, display_name, role, player_id) VALUES
+        ('93000000-0000-0000-0000-000000000010', 'invite_admin', 'Admin', 'viewer', NULL),
+        ('93000000-0000-0000-0000-000000000011', 'invite_outsider', 'Outsider', 'viewer', NULL),
+        ('93000000-0000-0000-0000-000000000012', 'invite_linked', 'Linked', 'player',
          '93000000-0000-0000-0000-000000000020'),
-        ('93000000-0000-0000-0000-000000000013', 'unlinked@invite.test', 'Unlinked', 'viewer', NULL);
+        ('93000000-0000-0000-0000-000000000013', 'invite_unlinked', 'Unlinked', 'viewer', NULL);
         INSERT INTO tournaments
           (id, name, start_date, end_date, number_of_rounds, status) VALUES
         ('93000000-0000-0000-0000-000000000001', 'Invitation trip', '2026-09-01', '2026-09-03', 1, 'draft'),
@@ -306,7 +306,7 @@ async fn registration_is_atomic_sets_session_and_rejects_identity_conflicts(pool
     let app = api::router(AppState::new(pool.clone()));
     let request = json!({
         "token": seed.invitation_token,
-        "account": {"email": " New@Example.Test ", "password": "a secure test password"},
+        "account": {"username": " New_Player ", "password": "a secure test password"},
         "player": {"display_name": " New player ", "handicap_index": 12.3}
     });
     let wrong_token = generate_invitation_token().unwrap();
@@ -358,7 +358,7 @@ async fn registration_is_atomic_sets_session_and_rejects_identity_conflicts(pool
     let player_id = Uuid::parse_str(response_body["player_id"].as_str().unwrap()).unwrap();
     let facts = sqlx::query_as::<_, (i64, i64, i64, i64, i64, i64)>(
         "SELECT
-           (SELECT count(*) FROM users WHERE id = $1 AND player_id = $2 AND email = 'new@example.test'),
+           (SELECT count(*) FROM users WHERE id = $1 AND player_id = $2 AND username = 'new_player'),
            (SELECT count(*) FROM handicap_history WHERE player_id = $2 AND changed_by = $1),
            (SELECT count(*) FROM tournament_memberships WHERE tournament_id = $3 AND user_id = $1 AND role = 'player'),
            (SELECT count(*) FROM tournament_players WHERE tournament_id = $3 AND player_id = $2 AND status = 'active'),
@@ -390,7 +390,7 @@ async fn registration_is_atomic_sets_session_and_rejects_identity_conflicts(pool
     assert_eq!(duplicate.status(), StatusCode::CONFLICT);
     assert_eq!(
         body(duplicate).await["error"]["code"],
-        "email_already_registered"
+        "username_already_registered"
     );
     assert_eq!(
         sqlx::query_as::<_, (i64, i64)>(
@@ -410,7 +410,7 @@ async fn registration_is_atomic_sets_session_and_rejects_identity_conflicts(pool
                 .header(header::COOKIE, "golf_session=player-invitation-session"),
             json!({
                 "token": wrong,
-                "account": {"email": "other@test", "password": "a secure test password"},
+                "account": {"username": "other_player", "password": "a secure test password"},
                 "player": {"display_name": "Other", "handicap_index": 4.0}
             }),
         ))
@@ -424,7 +424,7 @@ async fn registration_is_atomic_sets_session_and_rejects_identity_conflicts(pool
                 .header(header::COOKIE, "golf_session=player-invitation-session"),
             json!({
                 "token": seed.invitation_token,
-                "account": {"email": "other@test", "password": "a secure test password"},
+                "account": {"username": "other_player", "password": "a secure test password"},
                 "player": {"display_name": "Other", "handicap_index": 4.0}
             }),
         ))

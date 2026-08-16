@@ -10,9 +10,12 @@ pub struct LoginUser {
     pub password_hash: Option<String>,
 }
 
-pub async fn find_login_user(pool: &PgPool, email: &str) -> Result<Option<LoginUser>, sqlx::Error> {
-    sqlx::query_as("SELECT id, password_hash FROM users WHERE lower(email) = lower($1)")
-        .bind(email.trim())
+pub async fn find_login_user(
+    pool: &PgPool,
+    username: &str,
+) -> Result<Option<LoginUser>, sqlx::Error> {
+    sqlx::query_as("SELECT id, password_hash FROM users WHERE username = $1")
+        .bind(username)
         .fetch_optional(pool)
         .await
 }
@@ -30,7 +33,7 @@ pub async fn create_session(
             VALUES ($1, $2, $3, $4)
             RETURNING id, user_id, expires_at
          )
-         SELECT inserted.id AS session_id, u.id AS user_id, u.display_name,
+         SELECT inserted.id AS session_id, u.id AS user_id, u.username, u.display_name,
                 u.role, u.player_id, inserted.expires_at
          FROM inserted JOIN users u ON u.id = inserted.user_id",
     )
@@ -55,7 +58,7 @@ pub async fn create_session_in_transaction(
             VALUES ($1, $2, $3, $4)
             RETURNING id, user_id, expires_at
          )
-         SELECT inserted.id AS session_id, u.id AS user_id, u.display_name,
+         SELECT inserted.id AS session_id, u.id AS user_id, u.username, u.display_name,
                 u.role, u.player_id, inserted.expires_at
          FROM inserted JOIN users u ON u.id = inserted.user_id",
     )
@@ -72,7 +75,7 @@ pub async fn find_active_session(
     token_hash: &[u8],
 ) -> Result<Option<SessionPrincipal>, sqlx::Error> {
     sqlx::query_as(
-        "SELECT s.id AS session_id, u.id AS user_id, u.display_name, u.role,
+        "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,
                 u.player_id, s.expires_at
          FROM user_sessions s
          JOIN users u ON u.id = s.user_id
@@ -88,7 +91,7 @@ pub async fn lock_active_session(
     session_id: Uuid,
 ) -> Result<Option<SessionPrincipal>, sqlx::Error> {
     sqlx::query_as(
-        "SELECT s.id AS session_id, u.id AS user_id, u.display_name, u.role,
+        "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,
                 u.player_id, s.expires_at
          FROM user_sessions s
          JOIN users u ON u.id = s.user_id
@@ -105,7 +108,7 @@ pub async fn lock_active_session_exclusive(
     session_id: Uuid,
 ) -> Result<Option<SessionPrincipal>, sqlx::Error> {
     sqlx::query_as(
-        "SELECT s.id AS session_id, u.id AS user_id, u.display_name, u.role,
+        "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,
                 u.player_id, s.expires_at
          FROM user_sessions s
          JOIN users u ON u.id = s.user_id

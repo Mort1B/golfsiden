@@ -35,8 +35,8 @@ async fn seed_user(pool: &PgPool) {
     .await
     .unwrap();
     sqlx::query(
-        "INSERT INTO users (id, email, display_name, password_hash, role, player_id)
-         VALUES ($1, 'player@example.test', 'Session Player', $2, 'player', $3)",
+        "INSERT INTO users (id, username, display_name, password_hash, role, player_id)
+         VALUES ($1, 'session_player', 'Session Player', $2, 'player', $3)",
     )
     .bind(USER_ID)
     .bind(password_hash)
@@ -57,7 +57,7 @@ async fn login_session_csrf_and_logout_follow_the_cookie_contract(pool: PgPool) 
             Request::post("/api/auth/login")
                 .header(header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
-                    json!({"email": "player@example.test", "password": "wrong"}).to_string(),
+                    json!({"username": "session_player", "password": "wrong"}).to_string(),
                 ))
                 .unwrap(),
         )
@@ -72,7 +72,7 @@ async fn login_session_csrf_and_logout_follow_the_cookie_contract(pool: PgPool) 
             Request::post("/api/auth/login")
                 .header(header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
-                    json!({"email": "missing@example.test", "password": "wrong"}).to_string(),
+                    json!({"username": "missing_player", "password": "wrong"}).to_string(),
                 ))
                 .unwrap(),
         )
@@ -87,7 +87,7 @@ async fn login_session_csrf_and_logout_follow_the_cookie_contract(pool: PgPool) 
             Request::post("/api/auth/login")
                 .header(header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
-                    json!({"email": " PLAYER@EXAMPLE.TEST ", "password": "test-password"})
+                    json!({"username": " SESSION_PLAYER ", "password": "test-password"})
                         .to_string(),
                 ))
                 .unwrap(),
@@ -108,6 +108,7 @@ async fn login_session_csrf_and_logout_follow_the_cookie_contract(pool: PgPool) 
     let body = response_json(login).await;
     let csrf = body["csrf_token"].as_str().unwrap();
     assert_eq!(body["role"], "player");
+    assert_eq!(body["username"], "session_player");
     assert_eq!(body["player_id"], PLAYER_ID.to_string());
 
     let stored_hash =
@@ -176,11 +177,11 @@ async fn login_session_csrf_and_logout_follow_the_cookie_contract(pool: PgPool) 
 }
 
 #[sqlx::test(migrations = "../migrations")]
-async fn email_identity_is_case_insensitively_unique(pool: PgPool) {
+async fn username_identity_is_case_insensitively_unique(pool: PgPool) {
     seed_user(&pool).await;
     let duplicate = sqlx::query(
-        "INSERT INTO users (id, email, display_name, role)
-         VALUES ($1, 'PLAYER@example.test', 'Duplicate', 'viewer')",
+        "INSERT INTO users (id, username, display_name, role)
+         VALUES ($1, 'session_player', 'Duplicate', 'viewer')",
     )
     .bind(Uuid::new_v4())
     .execute(&pool)

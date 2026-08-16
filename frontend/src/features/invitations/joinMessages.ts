@@ -20,8 +20,8 @@ export function previewFailure(error: unknown): PreviewFailure {
 
 export function joinErrorMessage(error: unknown): string {
   if (error instanceof ApiHttpError) {
-    if (error.code === 'email_already_registered') {
-      return 'E-postadressen er allerede registrert. Logg inn med den eksisterende kontoen.'
+    if (error.code === 'username_already_registered') {
+      return 'Brukernavnet er allerede tatt. Velg et annet brukernavn eller logg inn.'
     }
     if (error.code === 'already_authenticated') {
       return 'Du er allerede logget inn. Bruk den eksisterende kontoen for å bli med.'

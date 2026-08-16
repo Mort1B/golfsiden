@@ -19,7 +19,7 @@ pub enum ApiError {
         code: &'static str,
         message: &'static str,
     },
-    #[error("invalid email or password")]
+    #[error("invalid username or password")]
     InvalidCredentials,
     #[error("authentication required")]
     Unauthenticated,

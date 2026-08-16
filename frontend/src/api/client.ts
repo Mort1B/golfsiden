@@ -11,15 +11,15 @@ import {
   ownerTypeForFormat,
   type ScoreOwner,
 } from './scorecards'
-import type { LeaderboardMetric, Player, ScoringFormat, Team, TournamentPlayer } from './types'
+import type { LeaderboardMetric, Player, ScoringFormat, Team } from './types'
 
 async function get<T>(path: string): Promise<T> {
   return requestUnchecked<T>(path)
 }
 
 export const api = {
-  login: (email: string, password: string) => requestDecoded('/api/auth/login', decodeAuthSession,
-    jsonRequest('POST', { email, password })),
+  login: (username: string, password: string) => requestDecoded('/api/auth/login', decodeAuthSession,
+    jsonRequest('POST', { username, password })),
   session: async () => {
     try {
       return await requestDecoded('/api/auth/session', decodeAuthSession)
@@ -36,7 +36,8 @@ export const api = {
     decodeArray(value, 'tournaments', decodeTournament, 'turneringsdata')),
   myTournaments: tournamentApi.mine,
   tournament: tournamentApi.detail,
-  tournamentPlayers: (id: string) => get<TournamentPlayer[]>(`/api/tournaments/${id}/players`),
+  tournamentPlayers: tournamentApi.players,
+  correctTournamentHandicap: tournamentApi.correctHandicap,
   rounds: tournamentApi.rounds,
   round: (id: string) => requestDecoded(`/api/rounds/${id}`, (value) => decodeRound(value)),
   teams: (id: string) => get<Team[]>(`/api/rounds/${id}/teams`),

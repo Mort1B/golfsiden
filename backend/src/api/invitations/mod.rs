@@ -109,10 +109,10 @@ impl IntoResponse for InvitationApiError {
                 "tournament_not_joinable",
                 "tournament is not accepting players",
             ),
-            InvitationError::DuplicateEmail => (
+            InvitationError::DuplicateUsername => (
                 StatusCode::CONFLICT,
-                "email_already_registered",
-                "an account with this email already exists",
+                "username_already_registered",
+                "an account with this username already exists",
             ),
             InvitationError::Unauthenticated => (
                 StatusCode::UNAUTHORIZED,

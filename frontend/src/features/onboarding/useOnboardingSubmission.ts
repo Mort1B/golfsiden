@@ -21,8 +21,8 @@ type SubmissionState =
 
 function userMessage(error: unknown): string {
   if (error instanceof ApiHttpError) {
-    if (error.code === 'email_already_registered') {
-      return 'E-postadressen er allerede registrert. Logg inn med den eksisterende kontoen.'
+    if (error.code === 'username_already_registered') {
+      return 'Brukernavnet er allerede tatt. Velg et annet brukernavn eller logg inn.'
     }
     if (error.code === 'already_authenticated') {
       return 'Du er allerede logget inn. Gå til turneringene dine eller logg ut før du oppretter en ny konto.'

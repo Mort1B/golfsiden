@@ -38,11 +38,11 @@ async fn seed_with_expiry(
         INSERT INTO players (id, display_name, current_handicap_index) VALUES
         ('94000000-0000-0000-0000-000000000021', 'Player A', 8.0),
         ('94000000-0000-0000-0000-000000000022', 'Player B', 9.0);
-        INSERT INTO users (id, email, display_name, role, player_id) VALUES
-        ('94000000-0000-0000-0000-000000000010', 'admin@race.test', 'Admin', 'viewer', NULL),
-        ('94000000-0000-0000-0000-000000000011', 'a@race.test', 'A', 'player',
+        INSERT INTO users (id, username, display_name, role, player_id) VALUES
+        ('94000000-0000-0000-0000-000000000010', 'race_admin', 'Admin', 'viewer', NULL),
+        ('94000000-0000-0000-0000-000000000011', 'race_player_a', 'A', 'player',
          '94000000-0000-0000-0000-000000000021'),
-        ('94000000-0000-0000-0000-000000000012', 'b@race.test', 'B', 'player',
+        ('94000000-0000-0000-0000-000000000012', 'race_player_b', 'B', 'player',
          '94000000-0000-0000-0000-000000000022');
         INSERT INTO tournaments
           (id, name, start_date, end_date, number_of_rounds, status)
@@ -366,7 +366,7 @@ async fn registration_rechecks_database_time_after_waiting_past_expiry(pool: PgP
         Request::post(format!("/api/invitations/{INVITATION_ID}/register")),
         json!({
             "token": token,
-            "account": {"email": "wait-register@test", "password": "a secure test password"},
+            "account": {"username": "wait_register", "password": "a secure test password"},
             "player": {"display_name": "Wait register", "handicap_index": 10.0}
         }),
     );
@@ -379,7 +379,7 @@ async fn registration_rechecks_database_time_after_waiting_past_expiry(pool: PgP
     assert_eq!(
         sqlx::query_as::<_, (i64, i64, i64)>(
             "SELECT
-               (SELECT count(*) FROM users WHERE email = 'wait-register@test'),
+               (SELECT count(*) FROM users WHERE username = 'wait_register'),
                (SELECT count(*) FROM players WHERE display_name = 'Wait register'),
                (SELECT count(*) FROM invitation_redemptions)",
         )

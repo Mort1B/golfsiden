@@ -8,7 +8,7 @@ export function SignInPage() {
   const auth = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -21,7 +21,7 @@ export function SignInPage() {
     setSubmitting(true)
     setError(null)
     try {
-      await auth.signIn(email, password)
+      await auth.signIn(username, password)
       navigate(returnTo, { replace: true })
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Innlogging mislyktes')
@@ -36,7 +36,10 @@ export function SignInPage() {
         <p className="brand">Guttas Golf</p>
         <h1 id="sign-in-heading">Logg inn for scoring</h1>
         <form onSubmit={(event) => void submit(event)}>
-          <label><span>E-post</span><input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+          <label>
+            <span>Brukernavn</span>
+            <input autoComplete="username" minLength={3} maxLength={32} pattern="[A-Za-z0-9_-]{3,32}" required value={username} onChange={(event) => setUsername(event.target.value)} />
+          </label>
           <label><span>Passord</span><input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
           {error && <p className="sign-in-error" role="alert">{error}</p>}
           <button type="submit" disabled={submitting}>

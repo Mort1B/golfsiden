@@ -1,5 +1,6 @@
 import type { OnboardingRequest } from '../../api/onboarding'
 import type { ScoringFormat } from '../../api/types'
+import { parseHandicap } from '../handicap/format'
 
 export interface TournamentDraft {
   name: string
@@ -17,7 +18,7 @@ export interface RoundDraft {
 
 export interface CreatorDraft {
   displayName: string
-  email: string
+  username: string
   password: string
   handicap: string
 }
@@ -40,7 +41,7 @@ export function createInitialDraft(today = localDateString()): WizardDraft {
   return {
     tournament: { name: '', description: '', startDate: today, endDate: today },
     rounds: [{ key: 'round-1', name: 'Runde 1', date: today, scoringFormat: 'individual_stroke_play' }],
-    creator: { displayName: '', email: '', password: '', handicap: '' },
+    creator: { displayName: '', username: '', password: '', handicap: '' },
     nextRoundKey: 2,
   }
 }
@@ -80,8 +81,11 @@ export function updateRound(
 export function toOnboardingRequest(draft: WizardDraft): OnboardingRequest {
   return {
     creator: {
-      account: { email: draft.creator.email.trim().toLowerCase(), password: draft.creator.password },
-      player: { display_name: draft.creator.displayName.trim(), handicap_index: Number(draft.creator.handicap) },
+      account: { username: draft.creator.username.trim().toLowerCase(), password: draft.creator.password },
+      player: {
+        display_name: draft.creator.displayName.trim(),
+        handicap_index: parseHandicapOrThrow(draft.creator.handicap),
+      },
     },
     tournament: {
       name: draft.tournament.name.trim(),
@@ -96,4 +100,10 @@ export function toOnboardingRequest(draft: WizardDraft): OnboardingRequest {
       scoring_format: round.scoringFormat,
     })),
   }
+}
+
+function parseHandicapOrThrow(value: string): number {
+  const result = parseHandicap(value)
+  if (!result.ok) throw new Error(result.message)
+  return result.value
 }

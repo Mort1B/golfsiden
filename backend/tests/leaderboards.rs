@@ -37,8 +37,8 @@ const HOLE_TWO: Uuid = uuid!("50000000-0000-0000-0000-000000000042");
 const USER: Uuid = uuid!("50000000-0000-0000-0000-000000000051");
 
 const FIXTURE: &str = r#"
-INSERT INTO users (id, email, display_name, role) VALUES
-('50000000-0000-0000-0000-000000000051', 'leaderboard@example.test', 'Scorer', 'scorer');
+INSERT INTO users (id, username, display_name, role) VALUES
+('50000000-0000-0000-0000-000000000051', 'leaderboard_scorer', 'Scorer', 'scorer');
 INSERT INTO players (id, display_name, current_handicap_index) VALUES
 ('50000000-0000-0000-0000-000000000021', 'Ada', 8.0),
 ('50000000-0000-0000-0000-000000000022', 'Bob', 20.0),

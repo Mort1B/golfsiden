@@ -19,6 +19,9 @@ initial invitation, and session through one mobile onboarding flow.
 Shared invitation links now support minimal preview, atomic new-player
 registration, exact linked-player acceptance, and tournament-admin issue,
 rotation, and revocation from mobile-first React views.
+Accounts now use username and password only. Tournament admins can correct a
+registered handicap with an audit reason until the first round opens; the
+handicap is permanently fixed for that tournament afterward.
 
 ## Repository structure
 
@@ -38,16 +41,17 @@ rotation, and revocation from mobile-first React views.
 
 - Tournament players retain identity and accumulated results across changing
   round teams.
-- Opening a round captures the tournament entrant's current handicap and the
-  calculated course and playing handicaps. Tournament handicap changes are
-  audited and affect only rounds opened afterward; existing snapshots never
-  change.
+- Opening a round captures the tournament entrant's fixed handicap and the
+  calculated course and playing handicaps. A tournament admin may make audited
+  corrections before the first opening, but no correction is possible after any
+  round has opened or snapshot has existed.
 - Team membership is unique per player and round.
 - Scores have exclusive player/team ownership.
 - Locked-round score mutations require an explicit admin correction setting.
 - Score mutations are auditable in PostgreSQL.
 - The initial two-player scramble formula is isolated in the domain layer and
-  uses 35% of the lower plus 15% of the higher course handicap.
+  uses 35% of the lower plus 15% of the higher course handicap. Each registered
+  index is capped at `36.0` before conversion for scramble only.
 - SSE messages invalidate client queries; clients refetch authoritative data.
 
 ## Round opening
@@ -110,6 +114,12 @@ server result and never reproduces role or membership policy.
 
 ## Authentication and scoring access
 
+Accounts authenticate with a canonical lowercase username and password. A
+username contains 3-32 ASCII lowercase letters, digits, underscores, or hyphens;
+the API trims and lowercases accepted input. Account email is neither required
+nor stored. The optional `players.email` field remains profile contact data and
+does not participate in authentication or identity linking.
+
 Login creates a revocable server session and returns an opaque token only in an
 `HttpOnly`, `SameSite=Lax` cookie. PostgreSQL stores only the token's SHA-256
 hash. Auth responses are not cacheable, Argon2 password verification runs off
@@ -136,7 +146,7 @@ returns only the active user's tournament roles and linked entrant identities.
 `POST /api/onboarding/tournaments` accepts nested creator account/player data,
 tournament dates, and one to thirty contiguous round definitions. It rejects
 unknown privileged fields, already-authenticated callers, duplicate normalized
-emails, invalid date ranges, unsupported formats, oversized bodies, and bounded
+usernames, invalid date ranges, unsupported formats, oversized bodies, and bounded
 field violations before running Argon2.
 
 One transaction creates the linked player and global `player` account, both
@@ -193,6 +203,23 @@ through rotation rather than recovered from storage.
 Flights are not represented yet. A future normalized round-flight model will
 extend the same score-access resolver so a player may receive both team owners
 in their flight. Equal starting holes or tee times are not treated as flights.
+
+## Fixed tournament handicaps
+
+`GET /api/tournaments/{tournament_id}/players` returns both the roster and an
+authoritative correction state. Tournament admins may call
+`POST /api/tournaments/{tournament_id}/players/{player_id}/handicap-corrections`
+with a numeric `handicap_index` and nonblank audit `reason` only while that state
+is editable. The repository revalidates tournament-admin membership and uses the
+same deterministic round-before-tournament lock order as opening a round.
+
+PostgreSQL rejects direct tournament-handicap updates without explicit
+correction context, appends immutable history for each changed value, and records
+a permanent lock marker at the first round opening or snapshot. A global player
+handicap change therefore affects future registrations only. The React roster
+uses the server state as authority, handles an opening race as a permanent lock,
+and accepts either comma or point input while displaying Norwegian decimal
+commas.
 
 ## Round completion and locking
 
@@ -266,9 +293,8 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 - Public read routes still expose the pre-onboarding viewer model. They will
   become membership-scoped during the frontend cutover; later public access will
   use explicit share tokens.
-- Creator email ownership and request throttling are not implemented, so the
-  public onboarding and registration endpoints are not ready for an
-  internet-facing deployment.
+- Request throttling is not implemented, so the public onboarding and
+  registration endpoints are not ready for an internet-facing deployment.
 - No tournament management workspace beyond the creation flow.
 - Course and tee administration are not implemented.
 - No flight model, offline score queue, or public leaderboard link.

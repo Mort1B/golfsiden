@@ -44,6 +44,7 @@ pub enum UserRole {
 pub struct SessionPrincipal {
     pub session_id: Uuid,
     pub user_id: Uuid,
+    pub username: String,
     pub display_name: String,
     pub role: UserRole,
     pub player_id: Option<Uuid>,
@@ -53,6 +54,7 @@ pub struct SessionPrincipal {
 #[derive(Debug, Clone, Serialize)]
 pub struct SessionResponse {
     pub user_id: Uuid,
+    pub username: String,
     pub display_name: String,
     pub role: UserRole,
     pub player_id: Option<Uuid>,
@@ -64,6 +66,7 @@ impl SessionPrincipal {
     pub fn response(&self, csrf_token: String) -> SessionResponse {
         SessionResponse {
             user_id: self.user_id,
+            username: self.username.clone(),
             display_name: self.display_name.clone(),
             role: self.role,
             player_id: self.player_id,

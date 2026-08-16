@@ -39,19 +39,19 @@ const HOLE_1: Uuid = uuid!("30000000-0000-0000-0000-000000000021");
 const HOLE_2: Uuid = uuid!("30000000-0000-0000-0000-000000000022");
 
 const FIXTURE: &str = r#"
-INSERT INTO users (id, email, display_name, role) VALUES
-('30000000-0000-0000-0000-000000000013', 'admin-a@example.test', 'Admin A', 'admin'),
-('30000000-0000-0000-0000-000000000014', 'scorer-b@example.test', 'Scorer B', 'scorer'),
-('30000000-0000-0000-0000-000000000019', 'viewer@example.test', 'Viewer', 'viewer'),
-('30000000-0000-0000-0000-000000000020', 'unlinked@example.test', 'Unlinked', 'player');
+INSERT INTO users (id, username, display_name, role) VALUES
+('30000000-0000-0000-0000-000000000013', 'admin_a', 'Admin A', 'admin'),
+('30000000-0000-0000-0000-000000000014', 'scorer_b', 'Scorer B', 'scorer'),
+('30000000-0000-0000-0000-000000000019', 'viewer', 'Viewer', 'viewer'),
+('30000000-0000-0000-0000-000000000020', 'unlinked', 'Unlinked', 'player');
 INSERT INTO players (id, display_name, current_handicap_index) VALUES
 ('30000000-0000-0000-0000-000000000011', 'Ada', 2.0),
 ('30000000-0000-0000-0000-000000000012', 'Bjorn', 6.0),
 ('30000000-0000-0000-0000-000000000017', 'Carla', 12.0);
-INSERT INTO users (id, email, display_name, role, player_id) VALUES
-('30000000-0000-0000-0000-000000000015', 'ada@example.test', 'Ada', 'player', '30000000-0000-0000-0000-000000000011'),
-('30000000-0000-0000-0000-000000000016', 'bjorn@example.test', 'Bjorn', 'player', '30000000-0000-0000-0000-000000000012'),
-('30000000-0000-0000-0000-000000000018', 'carla@example.test', 'Carla', 'player', '30000000-0000-0000-0000-000000000017');
+INSERT INTO users (id, username, display_name, role, player_id) VALUES
+('30000000-0000-0000-0000-000000000015', 'ada_player', 'Ada', 'player', '30000000-0000-0000-0000-000000000011'),
+('30000000-0000-0000-0000-000000000016', 'bjorn_player', 'Bjorn', 'player', '30000000-0000-0000-0000-000000000012'),
+('30000000-0000-0000-0000-000000000018', 'carla_player', 'Carla', 'player', '30000000-0000-0000-0000-000000000017');
 INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds, status)
 VALUES ('30000000-0000-0000-0000-000000000001', 'Score Cup', '2026-08-01', '2026-08-03', 3, 'active');
 INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap) VALUES

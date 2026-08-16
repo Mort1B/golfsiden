@@ -6,6 +6,7 @@ import { ErrorState, LoadingState } from '../ui/AsyncState'
 import { StatusBadge } from '../ui/StatusBadge'
 import { tournamentKeys } from '../api/tournaments'
 import { useAuth } from '../features/auth/authContext'
+import { TournamentPlayerSection } from '../features/tournaments/TournamentPlayerSection'
 
 export function TournamentPage() {
   const { tournamentId = '' } = useParams()
@@ -30,7 +31,7 @@ export function TournamentPage() {
       {isTournamentAdmin && <div className="tournament-admin-actions"><Link to={`/tournaments/${tournamentId}/invitations`}><Link2 aria-hidden="true" />Administrer invitasjoner</Link></div>}
       <div className="summary-strip">
         <div><Flag /><strong>{tournament.data.number_of_rounds}</strong><span>Runder</span></div>
-        <div><Users /><strong>{players.data?.length ?? '–'}</strong><span>Spillere</span></div>
+        <div><Users /><strong>{players.data?.players.length ?? '–'}</strong><span>Spillere</span></div>
       </div>
       <div className="section-heading"><h2>Runder</h2><span>{rounds.data?.length ?? 0} av {tournament.data.number_of_rounds}</span></div>
       {rounds.error && <ErrorState error={rounds.error} />}
@@ -43,10 +44,16 @@ export function TournamentPage() {
           </Link>
         ))}
       </div>
-      <div className="section-heading"><h2>Spillere</h2><span>{players.data?.length ?? 0}</span></div>
-      <div className="compact-player-grid">
-        {players.data?.map((player) => <div key={player.player_id}><span>{player.display_name}</span><strong>{player.tournament_handicap.toFixed(1)}</strong></div>)}
-      </div>
+      <TournamentPlayerSection
+        tournamentId={tournamentId}
+        isAdmin={isTournamentAdmin}
+        roster={players.data}
+        pending={players.isPending}
+        error={players.error}
+        onRetry={() => void players.refetch()}
+        adminAccessPending={userId.length > 0 && memberships.isPending}
+        adminAccessError={userId.length > 0 ? memberships.error : null}
+      />
     </section>
   )
 }

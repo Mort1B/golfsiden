@@ -47,12 +47,6 @@ pub struct ReadinessFacts {
     pub configuration: ConfigurationFact,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct CalculatedHandicap {
-    pub course_handicap: i16,
-    pub playing_handicap: i16,
-}
-
 pub fn validate(facts: &ReadinessFacts) -> PairingValidation {
     let eligible: HashMap<Uuid, &EntrantFact> = facts
         .entrants
@@ -248,48 +242,6 @@ fn push_if(
     }
 }
 
-pub fn calculate_handicap(
-    handicap_index_tenths: i32,
-    slope_rating: i16,
-    course_rating_tenths: i32,
-    course_par: i16,
-    allowance_percent: i16,
-    handicap_enabled: bool,
-    scoring_format: ScoringFormat,
-) -> CalculatedHandicap {
-    if !handicap_enabled {
-        return CalculatedHandicap {
-            course_handicap: 0,
-            playing_handicap: 0,
-        };
-    }
-
-    let numerator = i64::from(handicap_index_tenths) * i64::from(slope_rating)
-        + i64::from(course_rating_tenths - i32::from(course_par) * 10) * 113;
-    let denominator = 1_130;
-    let course_handicap = round_ratio_half_away_from_zero(numerator, denominator);
-    let playing_handicap = match scoring_format {
-        ScoringFormat::IndividualStrokePlay => round_ratio_half_away_from_zero(
-            numerator * i64::from(allowance_percent),
-            denominator * 100,
-        ),
-        ScoringFormat::TeamScramble => course_handicap,
-    };
-
-    CalculatedHandicap {
-        course_handicap: course_handicap as i16,
-        playing_handicap: playing_handicap as i16,
-    }
-}
-
-fn round_ratio_half_away_from_zero(numerator: i64, denominator: i64) -> i64 {
-    let sign = numerator.signum();
-    let absolute = numerator.abs();
-    let quotient = absolute / denominator;
-    let remainder = absolute % denominator;
-    sign * (quotient + i64::from(remainder * 2 >= denominator))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -412,62 +364,5 @@ mod tests {
         assert!(codes.contains(&ReadinessIssueCode::MissingTee));
         assert!(codes.contains(&ReadinessIssueCode::MissingHandicapRatings));
         assert!(codes.contains(&ReadinessIssueCode::InvalidHoleCount));
-    }
-
-    #[test]
-    fn handicap_rounding_is_half_away_from_zero() {
-        let positive = calculate_handicap(
-            0,
-            113,
-            725,
-            72,
-            100,
-            true,
-            ScoringFormat::IndividualStrokePlay,
-        );
-        let negative = calculate_handicap(
-            0,
-            113,
-            715,
-            72,
-            100,
-            true,
-            ScoringFormat::IndividualStrokePlay,
-        );
-        assert_eq!(positive.course_handicap, 1);
-        assert_eq!(negative.course_handicap, -1);
-    }
-
-    #[test]
-    fn individual_allowance_uses_unrounded_course_value() {
-        let handicap = calculate_handicap(
-            96,
-            113,
-            720,
-            72,
-            95,
-            true,
-            ScoringFormat::IndividualStrokePlay,
-        );
-        assert_eq!(handicap.course_handicap, 10);
-        assert_eq!(handicap.playing_handicap, 9);
-    }
-
-    #[test]
-    fn scramble_and_disabled_round_snapshot_rules_are_explicit() {
-        let scramble = calculate_handicap(96, 113, 720, 72, 95, true, ScoringFormat::TeamScramble);
-        let disabled = calculate_handicap(
-            540,
-            155,
-            800,
-            72,
-            50,
-            false,
-            ScoringFormat::IndividualStrokePlay,
-        );
-        assert_eq!(scramble.course_handicap, 10);
-        assert_eq!(scramble.playing_handicap, 10);
-        assert_eq!(disabled.course_handicap, 0);
-        assert_eq!(disabled.playing_handicap, 0);
     }
 }

@@ -1,7 +1,7 @@
 BEGIN;
 
-INSERT INTO users (id, email, display_name, role)
-VALUES ('00000000-0000-0000-0000-000000000001', 'admin@guttas.golf', 'Golf Admin', 'admin')
+INSERT INTO users (id, username, display_name, role)
+VALUES ('00000000-0000-0000-0000-000000000001', 'admin', 'Golf Admin', 'admin')
 ON CONFLICT (id) DO UPDATE SET display_name = EXCLUDED.display_name, role = EXCLUDED.role;
 
 INSERT INTO players (id, display_name, current_handicap_index, email) VALUES
@@ -15,13 +15,13 @@ INSERT INTO players (id, display_name, current_handicap_index, email) VALUES
 ('00000000-0000-0000-0000-000000001008', 'Henrik', 28.6, 'henrik@example.test')
 ON CONFLICT (id) DO UPDATE SET display_name = EXCLUDED.display_name, current_handicap_index = EXCLUDED.current_handicap_index, email = EXCLUDED.email;
 
-INSERT INTO users (id, email, display_name, role, player_id)
-SELECT id, email, display_name, 'player', id
+INSERT INTO users (id, username, display_name, role, player_id)
+SELECT id, lower(display_name), display_name, 'player', id
 FROM players
 WHERE id BETWEEN '00000000-0000-0000-0000-000000001001'
              AND '00000000-0000-0000-0000-000000001008'
 ON CONFLICT (id) DO UPDATE SET
-    email = EXCLUDED.email,
+    username = EXCLUDED.username,
     display_name = EXCLUDED.display_name,
     role = EXCLUDED.role,
     player_id = EXCLUDED.player_id;

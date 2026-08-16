@@ -17,8 +17,8 @@ const ROUND_COLUMNS: &str = "id, tournament_id, round_number, name, round_date, 
 
 #[derive(Debug, Error)]
 pub enum OnboardingRepositoryError {
-    #[error("email is already registered")]
-    DuplicateEmail,
+    #[error("username is already registered")]
+    DuplicateUsername,
     #[error("database operation failed")]
     Database(#[source] sqlx::Error),
 }
@@ -61,11 +61,11 @@ pub async fn create(
 
     let user_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO users (id, email, display_name, role, password_hash, player_id)
+        "INSERT INTO users (id, username, display_name, role, password_hash, player_id)
          VALUES ($1, $2, $3, 'player', $4, $5)",
     )
     .bind(user_id)
-    .bind(&input.email)
+    .bind(&input.username)
     .bind(&input.display_name)
     .bind(params.password_hash)
     .bind(player_id)
@@ -203,12 +203,9 @@ pub async fn create(
 fn classify_error(error: sqlx::Error) -> OnboardingRepositoryError {
     if let sqlx::Error::Database(database) = &error
         && database.is_unique_violation()
-        && matches!(
-            database.constraint(),
-            Some("users_email_normalized_idx" | "users_email_key")
-        )
+        && matches!(database.constraint(), Some("users_username_normalized_idx"))
     {
-        return OnboardingRepositoryError::DuplicateEmail;
+        return OnboardingRepositoryError::DuplicateUsername;
     }
     OnboardingRepositoryError::Database(error)
 }

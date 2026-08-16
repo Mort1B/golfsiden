@@ -37,8 +37,8 @@ pub enum InvitationError {
     Exhausted,
     #[error("tournament is not accepting players")]
     TournamentNotJoinable,
-    #[error("email is already registered")]
-    DuplicateEmail,
+    #[error("username is already registered")]
+    DuplicateUsername,
     #[error("authentication required")]
     Unauthenticated,
     #[error("request is not permitted")]
@@ -256,12 +256,9 @@ fn classify_database(error: sqlx::Error) -> InvitationError {
             _ => {}
         }
         if database.is_unique_violation()
-            && matches!(
-                database.constraint(),
-                Some("users_email_normalized_idx" | "users_email_key")
-            )
+            && matches!(database.constraint(), Some("users_username_normalized_idx"))
         {
-            return InvitationError::DuplicateEmail;
+            return InvitationError::DuplicateUsername;
         }
         if database.is_unique_violation()
             && database.constraint() == Some("tournament_invitations_one_successor_idx")

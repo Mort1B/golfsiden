@@ -5,7 +5,7 @@ export interface AuthContextValue {
   session: AuthSession | null
   loading: boolean
   error: Error | null
-  signIn: (email: string, password: string) => Promise<AuthSession>
+  signIn: (username: string, password: string) => Promise<AuthSession>
   establishSession: (session: AuthSession) => void
   signOut: () => Promise<void>
   retry: () => Promise<void>

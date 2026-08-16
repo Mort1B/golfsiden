@@ -3,6 +3,7 @@ import {
   decodeBoolean,
   decodeDate,
   decodeInteger,
+  decodeNumber,
   decodeObject,
   decodeString,
   decodeTimestamp,
@@ -10,6 +11,7 @@ import {
   invalidData,
 } from './decoder'
 import { requestDecoded } from './http'
+import { jsonRequest } from './http'
 import type {
   Round,
   RoundStatus,
@@ -17,6 +19,10 @@ import type {
   ScoringMode,
   Tournament,
   TournamentStatus,
+  TournamentHandicapCorrection,
+  TournamentHandicapCorrectionState,
+  TournamentPlayer,
+  TournamentPlayerRoster,
 } from './types'
 
 export type TournamentRole = 'admin' | 'scorer' | 'player' | 'viewer'
@@ -50,6 +56,60 @@ function scoringFormat(value: unknown, path: string): ScoringFormat {
 function tournamentRole(value: unknown, path: string): TournamentRole {
   if (value === 'admin' || value === 'scorer' || value === 'player' || value === 'viewer') return value
   return invalidData('turneringsmedlemskap', path)
+}
+
+function participantStatus(value: unknown, path: string): TournamentPlayer['status'] {
+  if (value === 'active' || value === 'withdrawn') return value
+  return invalidData('turneringsspillerdata', path)
+}
+
+export function decodeTournamentPlayer(value: unknown, path = 'player'): TournamentPlayer {
+  const data = decodeObject(value, path, 'turneringsspillerdata')
+  return {
+    tournament_id: decodeUuid(data.tournament_id, `${path}.tournament_id`, 'turneringsspillerdata'),
+    player_id: decodeUuid(data.player_id, `${path}.player_id`, 'turneringsspillerdata'),
+    display_name: decodeString(data.display_name, `${path}.display_name`, 'turneringsspillerdata'),
+    tournament_handicap: decodeNumber(data.tournament_handicap, `${path}.tournament_handicap`, -10, 54, 'turneringsspillerdata'),
+    seed: data.seed === null ? null : decodeInteger(data.seed, `${path}.seed`, undefined, undefined, 'turneringsspillerdata'),
+    status: participantStatus(data.status, `${path}.status`),
+    created_at: decodeTimestamp(data.created_at, `${path}.created_at`, 'turneringsspillerdata'),
+    updated_at: decodeTimestamp(data.updated_at, `${path}.updated_at`, 'turneringsspillerdata'),
+  }
+}
+
+function decodeHandicapCorrectionState(value: unknown): TournamentHandicapCorrectionState {
+  const data = decodeObject(value, 'roster.handicap_correction', 'turneringsspillerdata')
+  if (data.state === 'editable') return { state: 'editable' }
+  if (data.state === 'locked' && (data.reason === 'round_opened' || data.reason === 'snapshot_captured')) {
+    return { state: 'locked', reason: data.reason }
+  }
+  return invalidData('turneringsspillerdata', 'roster.handicap_correction')
+}
+
+export function decodeTournamentPlayerRoster(value: unknown): TournamentPlayerRoster {
+  const data = decodeObject(value, 'roster', 'turneringsspillerdata')
+  return {
+    handicap_correction: decodeHandicapCorrectionState(data.handicap_correction),
+    players: decodeArray(data.players, 'roster.players', decodeTournamentPlayer, 'turneringsspillerdata'),
+  }
+}
+
+export function decodeTournamentHandicapCorrection(value: unknown): TournamentHandicapCorrection {
+  const data = decodeObject(value, 'correction', 'turneringsspillerdata')
+  const audit = decodeObject(data.audit, 'correction.audit', 'turneringsspillerdata')
+  return {
+    player: decodeTournamentPlayer(data.player, 'correction.player'),
+    audit: {
+      id: decodeUuid(audit.id, 'correction.audit.id', 'turneringsspillerdata'),
+      tournament_id: decodeUuid(audit.tournament_id, 'correction.audit.tournament_id', 'turneringsspillerdata'),
+      player_id: decodeUuid(audit.player_id, 'correction.audit.player_id', 'turneringsspillerdata'),
+      handicap_index: decodeNumber(audit.handicap_index, 'correction.audit.handicap_index', -10, 54, 'turneringsspillerdata'),
+      effective_from: decodeTimestamp(audit.effective_from, 'correction.audit.effective_from', 'turneringsspillerdata'),
+      changed_by: audit.changed_by === null ? null : decodeUuid(audit.changed_by, 'correction.audit.changed_by', 'turneringsspillerdata'),
+      reason: audit.reason === null ? null : decodeString(audit.reason, 'correction.audit.reason', 'turneringsspillerdata'),
+      created_at: decodeTimestamp(audit.created_at, 'correction.audit.created_at', 'turneringsspillerdata'),
+    },
+  }
 }
 
 export function decodeTournament(value: unknown, path = 'tournament'): Tournament {
@@ -122,4 +182,15 @@ export const tournamentApi = {
   detail: (id: string) => requestDecoded(`/api/tournaments/${id}`, (value) => decodeTournament(value)),
   rounds: (id: string) => requestDecoded(`/api/tournaments/${id}/rounds`, (value) =>
     decodeArray(value, 'rounds', decodeRound, 'rundedata')),
+  players: (id: string) => requestDecoded(`/api/tournaments/${id}/players`, decodeTournamentPlayerRoster),
+  correctHandicap: (
+    tournamentId: string,
+    playerId: string,
+    input: { handicap_index: number; reason: string },
+    csrfToken: string,
+  ) => requestDecoded(
+    `/api/tournaments/${tournamentId}/players/${playerId}/handicap-corrections`,
+    decodeTournamentHandicapCorrection,
+    jsonRequest('POST', input, csrfToken),
+  ),
 }

@@ -1,4 +1,5 @@
 import type { CreatorDraft, RoundDraft, TournamentDraft, WizardDraft } from './wizardState'
+import { parseHandicap } from '../handicap/format'
 
 export type FieldErrors = Record<string, string>
 
@@ -13,19 +14,6 @@ function validateName(value: string, label: string): string | null {
   if (value.includes('\0')) return `${label} inneholder ugyldige tegn.`
   if (byteLength(value) > 120) return `${label} kan være maks 120 byte.`
   return null
-}
-
-function basicEmailValid(value: string): boolean {
-  const email = value.trim()
-  const hasWhitespaceOrControl = Array.from(email).some((character) => {
-    const codePoint = character.codePointAt(0) ?? 0
-    return character.trim() === '' || codePoint < 32 || codePoint === 127
-  })
-  if (!email || byteLength(email) > 254 || hasWhitespaceOrControl) return false
-  const separator = email.indexOf('@')
-  if (separator <= 0 || separator !== email.lastIndexOf('@')) return false
-  const domain = email.slice(separator + 1)
-  return Boolean(domain) && !domain.startsWith('.') && !domain.endsWith('.')
 }
 
 export function validateTournament(tournament: TournamentDraft, today: string): FieldErrors {
@@ -68,15 +56,15 @@ export function validateCreator(creator: CreatorDraft): FieldErrors {
   const errors: FieldErrors = {}
   const nameError = validateName(creator.displayName, 'Visningsnavn')
   if (nameError) errors['creator.displayName'] = nameError
-  if (!basicEmailValid(creator.email)) errors['creator.email'] = 'Skriv inn en gyldig e-postadresse.'
+  if (!/^[A-Za-z0-9_-]{3,32}$/.test(creator.username.trim())) {
+    errors['creator.username'] = 'Bruk 3–32 bokstaver, tall, bindestrek eller understrek.'
+  }
   const passwordBytes = byteLength(creator.password)
   if (passwordBytes < 12 || passwordBytes > 128) {
     errors['creator.password'] = 'Passordet må være mellom 12 og 128 byte.'
   }
-  const handicap = Number(creator.handicap)
-  if (!creator.handicap.trim() || !Number.isFinite(handicap) || handicap < -10 || handicap > 54) {
-    errors['creator.handicap'] = 'Handicap må være et tall mellom −10,0 og 54,0.'
-  }
+  const handicap = parseHandicap(creator.handicap)
+  if (!handicap.ok) errors['creator.handicap'] = handicap.message
   return errors
 }
 

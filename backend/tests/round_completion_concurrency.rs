@@ -27,8 +27,8 @@ const HOLE_ID: Uuid = uuid!("70000000-0000-0000-0000-000000000004");
 const SESSION_TOKEN: &str = "round-completion-concurrency-token";
 
 const FIXTURE: &str = r#"
-INSERT INTO users (id, email, display_name, role)
-VALUES ('70000000-0000-0000-0000-000000000001', 'race@example.test', 'Admin', 'admin');
+INSERT INTO users (id, username, display_name, role)
+VALUES ('70000000-0000-0000-0000-000000000001', 'race_admin', 'Admin', 'admin');
 INSERT INTO players (id, display_name, current_handicap_index)
 VALUES ('70000000-0000-0000-0000-000000000003', 'Player', 8.0);
 INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds, status)

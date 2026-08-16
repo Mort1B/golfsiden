@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest'
-import { decodeMyTournaments, tournamentKeys, withCreatedTournament } from './tournaments'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  decodeMyTournaments,
+  decodeTournamentHandicapCorrection,
+  decodeTournamentPlayerRoster,
+  tournamentApi,
+  tournamentKeys,
+  withCreatedTournament,
+} from './tournaments'
 import type { Tournament } from './types'
 
 const tournament: Tournament = {
@@ -14,6 +21,19 @@ const tournament: Tournament = {
   created_at: '2026-08-16T12:00:00Z',
   updated_at: '2026-08-16T12:00:00Z',
 }
+
+const player = {
+  tournament_id: tournament.id,
+  player_id: '00000000-0000-0000-0000-000000000002',
+  display_name: 'Morten',
+  tournament_handicap: 14.4,
+  seed: null,
+  status: 'active',
+  created_at: '2026-08-16T12:00:00Z',
+  updated_at: '2026-08-16T12:00:00Z',
+}
+
+afterEach(() => vi.unstubAllGlobals())
 
 describe('tournament memberships', () => {
   it('decodes contextual role and linked player identity', () => {
@@ -37,5 +57,48 @@ describe('tournament memberships', () => {
   it('adds a created tournament without retaining a duplicate', () => {
     const created = { ...tournament, name: 'Ny tur' }
     expect(withCreatedTournament([tournament], created)).toEqual([created])
+  })
+
+  it('decodes editable and locked tournament handicap states', () => {
+    expect(decodeTournamentPlayerRoster({ handicap_correction: { state: 'editable' }, players: [player] }))
+      .toEqual({ handicap_correction: { state: 'editable' }, players: [player] })
+    expect(decodeTournamentPlayerRoster({ handicap_correction: { state: 'locked', reason: 'round_opened' }, players: [] }))
+      .toEqual({ handicap_correction: { state: 'locked', reason: 'round_opened' }, players: [] })
+    expect(() => decodeTournamentPlayerRoster({ handicap_correction: { state: 'locked', reason: 'round_completed' }, players: [] }))
+      .toThrow('handicap_correction')
+  })
+
+  it('posts an audited correction and validates its response', async () => {
+    const correction = {
+      player: { ...player, tournament_handicap: 13.8 },
+      audit: {
+        id: '00000000-0000-0000-0000-000000000003',
+        tournament_id: tournament.id,
+        player_id: player.player_id,
+        handicap_index: 13.8,
+        effective_from: '2026-08-16T13:00:00Z',
+        changed_by: '00000000-0000-0000-0000-000000000004',
+        reason: 'Feil ved påmelding',
+        created_at: '2026-08-16T13:00:00Z',
+      },
+    }
+    expect(decodeTournamentHandicapCorrection(correction)).toEqual(correction)
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(correction), { status: 201 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await tournamentApi.correctHandicap(tournament.id, player.player_id, {
+      handicap_index: 13.8,
+      reason: 'Feil ved påmelding',
+    }, 'csrf-token')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/tournaments/${tournament.id}/players/${player.player_id}/handicap-corrections`,
+      {
+        credentials: 'include',
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-csrf-token': 'csrf-token' },
+        body: JSON.stringify({ handicap_index: 13.8, reason: 'Feil ved påmelding' }),
+      },
+    )
   })
 })

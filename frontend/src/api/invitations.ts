@@ -23,7 +23,7 @@ export interface InvitationPreview {
 }
 
 export interface InvitationRegistrationInput {
-  account: { email: string; password: string }
+  account: { username: string; password: string }
   player: { display_name: string; handicap_index: number }
 }
 

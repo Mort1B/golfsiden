@@ -18,8 +18,8 @@ use crate::{
         authorization::map_authorization_error,
     },
     domain::models::{
-        MyTournament, ScoringMode, Tournament, TournamentHandicapHistoryEntry, TournamentPlayer,
-        TournamentStatus,
+        MyTournament, ScoringMode, Tournament, TournamentHandicapCorrection,
+        TournamentPlayerRoster, TournamentStatus,
     },
     error::{ApiError, ApiResult, require_non_empty},
     repositories::tournaments::{self, TournamentMutationError},
@@ -35,7 +35,7 @@ pub fn routes() -> Router<Arc<AppState>> {
             get(list_players).post(add_player),
         )
         .route(
-            "/api/tournaments/{tournament_id}/players/{player_id}/handicaps",
+            "/api/tournaments/{tournament_id}/players/{player_id}/handicap-corrections",
             axum::routing::post(change_player_handicap),
         )
 }
@@ -67,7 +67,7 @@ struct AddTournamentPlayer {
 #[serde(deny_unknown_fields)]
 struct ChangeTournamentHandicap {
     handicap_index: f64,
-    reason: Option<String>,
+    reason: String,
 }
 
 fn default_status() -> TournamentStatus {
@@ -137,7 +137,7 @@ async fn list_mine(
 async fn list_players(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
-) -> ApiResult<Json<Vec<TournamentPlayer>>> {
+) -> ApiResult<Json<TournamentPlayerRoster>> {
     if tournaments::get(&state.pool, id).await?.is_none() {
         return Err(ApiError::NotFound);
     }
@@ -185,23 +185,37 @@ async fn change_player_handicap(
             "handicap must be between -10.0 and 54.0".to_owned(),
         ));
     }
-    let entry: TournamentHandicapHistoryEntry = tournaments::change_player_handicap_authorized(
+    let reason = input.reason.trim();
+    if reason.is_empty() || reason.len() > 500 {
+        return Err(ApiError::BadRequest(
+            "reason must contain between 1 and 500 bytes".to_owned(),
+        ));
+    }
+    let correction: TournamentHandicapCorrection = tournaments::change_player_handicap_authorized(
         &state.pool,
         authenticated.principal.session_id,
         tournament_id,
         player_id,
         input.handicap_index,
-        input.reason.as_deref(),
+        reason,
     )
     .await
     .map_err(map_mutation_error)?;
     state.notify("tournament", tournament_id);
-    Ok((StatusCode::CREATED, Json(entry)))
+    Ok((StatusCode::CREATED, Json(correction)))
 }
 
 fn map_mutation_error(error: TournamentMutationError) -> ApiError {
     match error {
         TournamentMutationError::NotFound => ApiError::NotFound,
+        TournamentMutationError::HandicapLocked => ApiError::DomainConflict {
+            code: "tournament_handicap_locked",
+            message: "tournament handicap is locked after round opening",
+        },
+        TournamentMutationError::HandicapUnchanged => ApiError::DomainConflict {
+            code: "tournament_handicap_unchanged",
+            message: "tournament handicap is unchanged",
+        },
         TournamentMutationError::Authorization(error) => map_authorization_error(error),
         TournamentMutationError::Database(error) => ApiError::Database(error),
     }

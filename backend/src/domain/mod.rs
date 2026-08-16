@@ -1,3 +1,5 @@
+pub mod accounts;
+pub mod handicap;
 pub mod invitations;
 pub mod leaderboards;
 pub mod models;

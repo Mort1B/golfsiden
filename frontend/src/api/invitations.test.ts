@@ -45,6 +45,7 @@ const preview = {
 
 const session = {
   user_id: userId,
+  username: 'morten',
   display_name: 'Morten',
   role: 'player',
   player_id: playerId,
@@ -101,7 +102,7 @@ describe('invitation request secrecy', () => {
       .mockResolvedValueOnce(new Response(JSON.stringify(acceptance), { status: 201 }))
     vi.stubGlobal('fetch', fetchMock)
     const input = {
-      account: { email: 'morten@example.no', password: 'tolv tegn eller mer' },
+      account: { username: 'morten', password: 'tolv tegn eller mer' },
       player: { display_name: 'Morten', handicap_index: 12.3 },
     }
 

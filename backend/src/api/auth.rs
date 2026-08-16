@@ -17,6 +17,7 @@ use crate::{
         SESSION_COOKIE_NAME, SessionPrincipal, derive_csrf_token, generate_session_token,
         hash_session_token, verify_derived_csrf, verify_password,
     },
+    domain::accounts::normalize_and_validate_username,
     error::{ApiError, ApiResult},
     repositories::auth,
 };
@@ -105,7 +106,7 @@ impl FromRequestParts<Arc<AppState>> for PlatformAdminSession {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct LoginRequest {
-    email: String,
+    username: String,
     password: String,
 }
 
@@ -114,9 +115,11 @@ async fn login(
     jar: CookieJar,
     input: Result<Json<LoginRequest>, JsonRejection>,
 ) -> ApiResult<impl IntoResponse> {
-    let Json(input) = input
-        .map_err(|_| ApiError::BadRequest("request must contain email and password".to_owned()))?;
-    let user = auth::find_login_user(&state.pool, &input.email).await?;
+    let Json(input) = input.map_err(|_| {
+        ApiError::BadRequest("request must contain username and password".to_owned())
+    })?;
+    let username = normalize_and_validate_username(&input.username).unwrap_or_default();
+    let user = auth::find_login_user(&state.pool, &username).await?;
     let encoded_hash = user
         .as_ref()
         .and_then(|user| user.password_hash.clone())

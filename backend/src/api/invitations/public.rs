@@ -46,7 +46,7 @@ pub(super) struct RegisterRequest {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct AccountRequest {
-    email: String,
+    username: String,
     password: String,
 }
 
@@ -103,7 +103,7 @@ pub(super) async fn register(
         .into());
     }
     let mut registration = validate_registration(RegistrationInput {
-        email: input.account.email,
+        username: input.account.username,
         password: input.account.password,
         display_name: input.player.display_name,
         handicap_index: input.player.handicap_index,

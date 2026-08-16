@@ -126,6 +126,38 @@ pub struct TournamentHandicapHistoryEntry {
     pub created_at: DateTime<Utc>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, sqlx::Type)]
+#[sqlx(
+    type_name = "tournament_handicap_lock_reason",
+    rename_all = "snake_case"
+)]
+#[serde(rename_all = "snake_case")]
+pub enum TournamentHandicapLockReason {
+    RoundOpened,
+    SnapshotCaptured,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "state", rename_all = "snake_case")]
+pub enum TournamentHandicapCorrectionState {
+    Editable,
+    Locked {
+        reason: TournamentHandicapLockReason,
+    },
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct TournamentPlayerRoster {
+    pub handicap_correction: TournamentHandicapCorrectionState,
+    pub players: Vec<TournamentPlayer>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct TournamentHandicapCorrection {
+    pub player: TournamentPlayer,
+    pub audit: TournamentHandicapHistoryEntry,
+}
+
 #[derive(Debug, Clone, Serialize, FromRow)]
 pub struct Round {
     pub id: Uuid,

@@ -22,4 +22,10 @@ describe('invitation error presentation', () => {
     expect(joinErrorMessage(new ApiHttpError(409, 'account_player_required', 'server message')))
       .toContain('ikke koblet til en spillerprofil')
   })
+
+  it('explains a duplicate username without mentioning email', () => {
+    const message = joinErrorMessage(new ApiHttpError(409, 'username_already_registered', 'server message'))
+    expect(message).toContain('Brukernavnet')
+    expect(message).not.toContain('E-post')
+  })
 })

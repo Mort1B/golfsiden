@@ -38,6 +38,7 @@ const response = {
   }],
   session: {
     user_id: userId,
+    username: 'morten',
     display_name: 'Morten',
     role: 'player',
     player_id: playerId,
@@ -113,7 +114,7 @@ describe('creator onboarding API', () => {
     vi.stubGlobal('fetch', fetchMock)
     const input: OnboardingRequest = {
       creator: {
-        account: { email: 'morten@example.no', password: 'et langt passord' },
+        account: { username: 'morten', password: 'et langt passord' },
         player: { display_name: 'Morten', handicap_index: 12.3 },
       },
       tournament: { name: 'Høsttur', description: '', start_date: '2026-09-01', end_date: '2026-09-03' },

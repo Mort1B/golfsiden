@@ -32,8 +32,8 @@ const HOLE_2: Uuid = uuid!("40000000-0000-0000-0000-000000000032");
 const SESSION_TOKEN: &str = "round-completion-admin-token";
 
 const FIXTURE: &str = r#"
-INSERT INTO users (id, email, display_name, role)
-VALUES ('40000000-0000-0000-0000-000000000001', 'completion@example.test', 'Admin', 'admin');
+INSERT INTO users (id, username, display_name, role)
+VALUES ('40000000-0000-0000-0000-000000000001', 'completion_admin', 'Admin', 'admin');
 INSERT INTO players (id, display_name, current_handicap_index) VALUES
 ('40000000-0000-0000-0000-000000000011', 'Ada', 4.0),
 ('40000000-0000-0000-0000-000000000012', 'Bea', 12.0);

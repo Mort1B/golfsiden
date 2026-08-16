@@ -6,14 +6,8 @@ instead of accumulating a historical log here.
 
 ## Planning status
 
-Phase 3 reusable invitations is complete. The product requirements below are
-accepted into the roadmap, but no implementation step is currently approved.
-The recommended next step is Phase 4A.
-
-## Active step
-
-No active implementation step. A direct approval is required before Phase 4A or
-another bounded step begins.
+Phase 4A username accounts and fixed tournament handicaps is complete. No active
+implementation step is approved. Phase 4B is the recommended next step.
 
 ## Product decisions
 
@@ -59,9 +53,6 @@ another bounded step begins.
 
 ## Decision gates
 
-- Approve username syntax and legacy backfill. Recommended: 3-32 ASCII letters,
-  digits, `_`, and `-`, compared case-insensitively, with collision-safe suffixes
-  for migrated users. Keep display names separate and Unicode-friendly.
 - The designated flight scorekeeper must have an active account linked to a
   player in that flight. Decide later whether a backup scorekeeper is useful;
   do not grant every flight member write access implicitly.
@@ -74,33 +65,6 @@ another bounded step begins.
   Stableford, and match play require distinct aggregation or scoring contracts.
 
 ## Upcoming work
-
-### Phase 4A: Username accounts and fixed tournament handicaps
-
-- **Goal:** align account creation/login and handicap preservation before adding
-  more tournament management surfaces.
-- **Files/modules:** a forward migration; backend auth, onboarding, invitation,
-  tournament-player, round-opening, handicap/scoring services, seed and tests;
-  frontend auth/onboarding/join APIs, forms, handicap utilities and tests.
-- **Change:** add normalized usernames and migrate existing users without
-  collisions; replace email registration/login in every flow with username and
-  password; remove account email from active contracts; replace the ordinary
-  tournament-handicap mutation path with an audited tournament-admin correction
-  that locks permanently when the first round opens; apply the scramble index cap
-  before tee conversion in the handicap domain service; centralize comma parsing
-  and Norwegian display formatting.
-- **Validation:** clean/upgrade migration tests, normalized-username concurrency,
-  auth timing/error behavior, onboarding/invitation browser flows, immutable
-  tournament handicap correction/locking tests, scramble cap and tee-conversion
-  boundaries, round snapshot history, Rust/PostgreSQL/frontend ladders, and
-  mobile/desktop browser checks.
-- **Invariants:** authorization continues to use user/player UUIDs; email never
-  links identities; a global handicap change cannot alter an existing tournament;
-  completed history remains unchanged; formulas stay outside handlers.
-- **Stop condition:** all account flows use username, all tournament handicap
-  paths preserve one registered value after the first round opens, pre-start
-  corrections are audited, locale behavior is consistent, the cap is proven at
-  its boundary, and existing databases migrate safely.
 
 ### Phase 4B: Private workspace and provider-backed courses
 

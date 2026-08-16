@@ -23,9 +23,10 @@ export function CreatorStep({ value, errors, onChange, onBack, onNext, headingRe
           <FieldError id="creator-name-error">{errors['creator.displayName']}</FieldError>
         </label>
         <label>
-          <span>E-post</span>
-          <input type="email" inputMode="email" autoComplete="username" required value={value.email} aria-invalid={Boolean(errors['creator.email'])} aria-describedby="creator-email-error" onChange={(event) => onChange({ ...value, email: event.target.value })} />
-          <FieldError id="creator-email-error">{errors['creator.email']}</FieldError>
+          <span>Brukernavn</span>
+          <input autoComplete="username" minLength={3} maxLength={32} pattern="[A-Za-z0-9_-]{3,32}" required value={value.username} aria-invalid={Boolean(errors['creator.username'])} aria-describedby="creator-username-help creator-username-error" onChange={(event) => onChange({ ...value, username: event.target.value })} />
+          <small id="creator-username-help" className="field-help">3–32 bokstaver, tall, bindestrek eller understrek.</small>
+          <FieldError id="creator-username-error">{errors['creator.username']}</FieldError>
         </label>
         <label>
           <span>Passord</span>
@@ -35,7 +36,8 @@ export function CreatorStep({ value, errors, onChange, onBack, onNext, headingRe
         </label>
         <label>
           <span>Handicapindeks</span>
-          <input type="number" inputMode="decimal" step="0.1" min="-10" max="54" required value={value.handicap} aria-invalid={Boolean(errors['creator.handicap'])} aria-describedby="creator-handicap-error" onChange={(event) => onChange({ ...value, handicap: event.target.value })} />
+          <input type="text" inputMode="decimal" required value={value.handicap} aria-invalid={Boolean(errors['creator.handicap'])} aria-describedby="creator-handicap-help creator-handicap-error" onChange={(event) => onChange({ ...value, handicap: event.target.value })} />
+          <small id="creator-handicap-help" className="field-help">Bruk komma eller punktum, for eksempel 14,4.</small>
           <FieldError id="creator-handicap-error">{errors['creator.handicap']}</FieldError>
         </label>
       </div>

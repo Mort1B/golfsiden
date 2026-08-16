@@ -4,8 +4,8 @@ use golf_api::repositories::round_completion;
 use sqlx::{PgPool, Row};
 
 const BASE_DATA: &str = r#"
-INSERT INTO users (id, email, display_name, role)
-VALUES ('10000000-0000-0000-0000-000000000001', 'test@example.test', 'Test Admin', 'admin');
+INSERT INTO users (id, username, display_name, role)
+VALUES ('10000000-0000-0000-0000-000000000001', 'test_admin', 'Test Admin', 'admin');
 INSERT INTO players (id, display_name, current_handicap_index)
 VALUES ('10000000-0000-0000-0000-000000000002', 'Test Player', 12.0);
 INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds)

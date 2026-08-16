@@ -1,52 +1,48 @@
 # Latest explanation
 
-## Reusable invitation onboarding
+## Username accounts and fixed tournament handicaps
 
-A tournament invitation is now a reusable, rotatable capability rather than a
-recoverable plaintext secret. The URL carries a public UUID plus a 256-bit token
-in its fragment; only the token hash reaches PostgreSQL. Preview and registration
-authenticate that token before revealing lifecycle or account-specific errors.
-New registration creates the linked account, player, handicap histories,
-tournament membership, entrant, redemption, and session in one transaction.
-Existing-account acceptance uses only the session's exact linked player.
+Account identity now uses a normalized username and password in login, creator
+onboarding, and invitation registration. The forward migration derives stable,
+collision-safe usernames from existing account emails, preserves every user ID,
+password hash, session, and foreign key, then removes account email. Optional
+player-profile email remains separate and has no authentication meaning.
 
-Rotation creates a successor that retains the original series root, expiry, and
-maximum uses. Application transactions and a database insert guard use one lock
-order across identity, membership, invitation, series root, and entrant rows.
-That prevents final-slot over-redemption and direct-SQL bypasses without adding a
-second source of identity truth. Redemptions remain append-only, and legacy
-revoked links explicitly report that their actor is unknown.
+A tournament's registered handicap can now change only through an explicit,
+audited admin correction before the first round opens. The repository locks
+rounds and authorization state in deterministic order; PostgreSQL independently
+requires correction context, verifies the tournament admin, writes append-only
+history, and records a durable lock marker when opening or snapshot capture first
+occurs. Deleting later round data cannot reopen the correction window.
 
-The React join page keeps the fragment through retry and reload recovery, sends
-it only in JSON bodies, and clears it after success. TanStack keys and mutation
-variables never contain the token. Tournament admins can issue, copy once,
-rotate, and revoke links; plaintext exists only in current component state.
+Handicap calculation remains a pure domain concern. Individual stroke play keeps
+the full registered index. Team scramble caps each member at `36.0` before the
+selected tee's slope/rating conversion, and the resulting snapshot records that
+effective input. The React client accepts Norwegian comma or point input, always
+displays one decimal with a comma, and refetches authoritative roster state after
+correction or an opening race.
 
 ## Compact example
 
-Series capacity is checked while the stable root is locked:
+The format policy is applied before course-handicap conversion:
 
-```sql
-SELECT count(*)
-FROM invitation_redemptions
-WHERE tournament_id = target_invitation.tournament_id
-  AND series_id = target_invitation.series_id;
+```rust
+let effective_index = effective_index_tenths(scoring_format, registered_index);
+let handicap = calculate(effective_index, slope, rating, par, allowance, true, scoring_format);
 ```
 
 ## Invariants
 
-- Tournament player identity remains independent of round teams and flights.
-- Handicap snapshots and histories remain authoritative after joining.
-- A user and linked player can redeem only once per tournament.
-- Revoked, expired, closed, and exhausted links cannot create new redemptions.
-- Complete active participation returns `already_joined` without consuming use.
-- Raw invitation tokens never enter PostgreSQL, storage, logs, or request URLs.
+- User and player UUIDs remain the authorization and identity links.
+- Tournament handicap history and round snapshots remain immutable.
+- No correction can change an opened or historical round.
+- Scramble's cap does not alter the registered tournament value or individual play.
+- Tournament players remain independent of changing round teams.
 
 ## Validation
 
-- Rust formatting, check, strict Clippy, and 39 unit tests pass.
-- The complete PostgreSQL suite passes 111 integration tests.
-- Frontend tests pass: 70 Vitest tests plus strict typecheck, lint, and build.
-- Real Chrome flows pass at 320 px, 390 px, and desktop for join and admin
-  workflows with no overflow, sub-44 px controls, console failures, storage
-  leakage, or token-bearing request URLs.
+- Rust formatting, check, strict Clippy, and 41 unit tests pass.
+- The complete PostgreSQL-enabled suite passes 120 tests in total.
+- Frontend validation passes 90 Vitest tests, strict typecheck, lint, and build.
+- Headless Chrome passes the authenticated correction flow at 320, 390, and
+  1280 px with comma input, an audited receipt, no overflow, and 44 px controls.

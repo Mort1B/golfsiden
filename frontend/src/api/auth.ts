@@ -4,6 +4,7 @@ export type UserRole = 'admin' | 'scorer' | 'player' | 'viewer'
 
 export interface AuthSession {
   user_id: string
+  username: string
   display_name: string
   role: UserRole
   player_id: string | null
@@ -20,6 +21,7 @@ export function decodeAuthSession(value: unknown): AuthSession {
   const data = decodeObject(value, 'session', 'sesjonsdata')
   return {
     user_id: decodeUuid(data.user_id, 'session.user_id', 'sesjonsdata'),
+    username: decodeString(data.username, 'session.username', 'sesjonsdata'),
     display_name: decodeString(data.display_name, 'session.display_name', 'sesjonsdata'),
     role: role(data.role),
     player_id: data.player_id === null

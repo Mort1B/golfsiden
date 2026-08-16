@@ -61,8 +61,8 @@ INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id, displ
 async fn seed_ready(pool: &PgPool) {
     sqlx::raw_sql(READY_FIXTURE).execute(pool).await.unwrap();
     sqlx::query(
-        "INSERT INTO users (id, email, display_name, role)
-         VALUES ($1, 'lifecycle-admin@example.test', 'Lifecycle Admin', 'admin')
+        "INSERT INTO users (id, username, display_name, role)
+         VALUES ($1, 'lifecycle_admin', 'Lifecycle Admin', 'admin')
          ON CONFLICT (id) DO NOTHING",
     )
     .bind(ADMIN_ID)

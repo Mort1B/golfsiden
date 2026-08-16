@@ -6,7 +6,7 @@ import type { Round, ScoringFormat, Tournament } from './types'
 
 export interface OnboardingRequest {
   creator: {
-    account: { email: string; password: string }
+    account: { username: string; password: string }
     player: { display_name: string; handicap_index: number }
   }
   tournament: {

@@ -17,11 +17,11 @@ async fn seed(pool: &PgPool, user_count: usize, maximum: Option<i32>) -> GuardSe
     let invitation_id = Uuid::new_v4();
     let admin_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO users (id, email, display_name, role)
+        "INSERT INTO users (id, username, display_name, role)
          VALUES ($1, $2, 'Guard admin', 'viewer')",
     )
     .bind(admin_id)
-    .bind(format!("{admin_id}@guard.test"))
+    .bind(admin_id.simple().to_string())
     .execute(pool)
     .await
     .unwrap();
@@ -57,11 +57,11 @@ async fn seed(pool: &PgPool, user_count: usize, maximum: Option<i32>) -> GuardSe
         .await
         .unwrap();
         sqlx::query(
-            "INSERT INTO users (id, email, display_name, role, player_id)
+            "INSERT INTO users (id, username, display_name, role, player_id)
              VALUES ($1, $2, $3, 'player', $4)",
         )
         .bind(user_id)
-        .bind(format!("{user_id}@guard.test"))
+        .bind(user_id.simple().to_string())
         .bind(format!("Guard {index}"))
         .bind(player_id)
         .execute(pool)

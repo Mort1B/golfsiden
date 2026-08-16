@@ -30,11 +30,11 @@ async fn seed_base(pool: &PgPool, max_uses: Option<i32>) -> Base {
     let invitation_id = Uuid::new_v4();
     let admin_id = Uuid::new_v4();
     sqlx::query(
-        "INSERT INTO users (id, email, display_name, role)
+        "INSERT INTO users (id, username, display_name, role)
          VALUES ($1, $2, 'Invitation admin', 'viewer')",
     )
     .bind(admin_id)
-    .bind(format!("{admin_id}@state.test"))
+    .bind(admin_id.simple().to_string())
     .execute(pool)
     .await
     .unwrap();
@@ -113,11 +113,11 @@ async fn seed_linked_user(
     .await
     .unwrap();
     sqlx::query(
-        "INSERT INTO users (id, email, display_name, role, player_id)
+        "INSERT INTO users (id, username, display_name, role, player_id)
          VALUES ($1, $2, $3, 'player', $4)",
     )
     .bind(user_id)
-    .bind(format!("{label}@state.test"))
+    .bind(user_id.simple().to_string())
     .bind(label)
     .bind(player_id)
     .execute(pool)

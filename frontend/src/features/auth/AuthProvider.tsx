@@ -34,8 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session: sessionQuery.data ?? null,
       loading: sessionQuery.isPending,
       error: sessionQuery.error,
-      signIn: async (email, password) => {
-        const session = await api.login(email, password)
+      signIn: async (username, password) => {
+        const session = await api.login(username, password)
         queryClient.removeQueries({ queryKey: tournamentKeys.mineRoot })
         queryClient.setQueryData(authKeys.session, session)
         return session

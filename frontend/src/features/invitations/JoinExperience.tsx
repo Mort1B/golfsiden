@@ -120,11 +120,11 @@ export function JoinExperience({ invitationId }: JoinExperienceProps) {
     }
   }
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (username: string, password: string) => {
     setLoginPending(true)
     setLoginError(null)
     try {
-      await auth.signIn(email, password)
+      await auth.signIn(username, password)
       registration.reset()
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : 'Innlogging mislyktes. Prøv igjen.')
