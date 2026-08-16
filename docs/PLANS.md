@@ -52,8 +52,10 @@ another bounded step begins.
 - Players can view live gross/net standings for the current round and live
   tournament-wide standings that include the active round. While the final round
   is open, holes 10-18 are excluded from every non-admin leaderboard projection;
-  only that tournament's admins see full live standings. Completing the final
-  round reveals the final results to all authorized tournament viewers.
+  only that tournament's admins see full live standings. When every required
+  final-round scorecard is complete and confirmed, a 24-hour embargo starts from
+  trusted database time. Completion or locking does not reveal the hidden final
+  scores early; they become visible automatically when the embargo expires.
 
 ## Decision gates
 
@@ -165,10 +167,16 @@ another bounded step begins.
   progress is not presented as final. Re-evaluate the provisional best N whenever
   an authoritative score change is received.
 - Apply a role-aware visibility policy in the backend domain/repository boundary.
-  For non-admins, remove holes 10-18 of the open final round before gross, net,
-  position, tie, and tournament aggregate calculations. Tournament admins receive
-  the complete projection. SSE remains payload-free invalidation and cannot leak
+  For non-admins, remove holes 10-18 of the final round before gross, net,
+  position, tie, and tournament aggregate calculations while that round is open
+  and throughout its 24-hour final-score embargo. Tournament admins receive the
+  complete projection. SSE remains payload-free invalidation and cannot leak
   hidden strokes.
+- Persist `final_scores_hidden_until` from database time when all required final-
+  round scorecards first become complete and confirmed. A correction that removes
+  confirmation before expiry clears the deadline; after every corrected card is
+  complete and reconfirmed, start a new 24-hour embargo. Round completion and
+  locking must preserve, not shorten, the current deadline.
 - Mark role-dependent leaderboard and scorecard responses private/non-cacheable;
   include session identity in client query ownership and clear privileged cached
   projections when the session changes.
@@ -180,12 +188,16 @@ another bounded step begins.
   scorekeeper's writable flight cards so those scores can be entered and corrected.
 - Test tournament-admin versus scorer/player/viewer projections, both metrics,
   round and tournament APIs, direct scorecard reads, cache/session changes,
-  completion reveal, and attempts to infer hidden totals from response fields.
+  completion and locking without reveal, correction/reconfirmation clock reset,
+  exact before/at/after deadline behavior with controlled time, and attempts to
+  infer hidden totals from response fields. Return the visibility deadline so the
+  client can show availability and schedule an authoritative refetch at expiry
+  without a background reveal job.
 - **Stop condition:** mixed individual/team rounds select the correct best N per
   metric, live totals include the active round, incomplete competitors cannot gain
   an advantage, final-round back-nine strokes are absent from every non-admin read
-  projection until completion, and each visible contribution deep-links to its
-  preserved gross/net card.
+  projection until 24 hours after the latest complete-and-confirmed final result,
+  and each visible contribution deep-links to its preserved gross/net card.
 
 ### Later product work
 
