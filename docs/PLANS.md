@@ -11,10 +11,11 @@ read-only tournament-management workspace, backend course-provider boundary,
 curated eight-course local catalog, and the Phase 4B immutable local course-
 revision persistence boundary, and the admin-only atomic draft-round course-
 configuration API, mobile course/tee picker, and manual-entry fallback are
-complete, as is the normalized PostgreSQL flight persistence boundary. No active
-implementation step is approved. The admin flight/team roster API and exact
-legacy-grouping conversion policy are next; readiness, score authority, seed,
-and UI remain later bounded steps.
+complete, as is the corrected normalized PostgreSQL flight persistence boundary
+with membership-wide future score authority. No active implementation step is
+approved. The admin flight/team roster API and exact legacy-grouping conversion
+policy are next; readiness, runtime score authority, seed, and UI remain later
+bounded steps.
 
 ## Product decisions
 
@@ -43,9 +44,9 @@ and UI remain later bounded steps.
   each hole's yard distance is optional. Manual and provider imports create the same
   immutable local revision before the round can open.
 - Flights are explicit, round-specific groups independent of teams, tee times,
-  and starting holes. An admin assigns players, teams, and one designated
-  scorekeeper for each flight. That scorekeeper may write every eligible
-  scorecard in the flight; tournament admins/scorers retain their override.
+  and starting holes. Every authenticated player linked to an exact flight member
+  may write every eligible scorecard in that flight; tournament admins/scorers
+  retain their override.
 - A tournament stores one `counted_rounds` value from 1 through its configured
   round count. Each leaderboard selects a player's best N completed results for
   its own metric, so gross and net may count different rounds.
@@ -65,9 +66,6 @@ and UI remain later bounded steps.
 
 ## Decision gates
 
-- The designated flight scorekeeper must have an active account linked to a
-  player in that flight. Decide later whether a backup scorekeeper is useful;
-  do not grant every flight member write access implicitly.
 - Best-N provisional standings rank players with more counted results first until
   they reach N. Final eligibility requires N completed attributed results unless
   an explicit withdrawal policy is added.
@@ -89,12 +87,13 @@ and UI remain later bounded steps.
   team membership, flight placement, starting hole, and tee time. Use accessible
   move/add/remove controls rather than drag-only behavior.
 - Validate missing/duplicate players, unexpected team sizes, split teams across
-  flights, missing scorekeepers, and incomplete assignments. Freeze teams,
-  flights, and scorekeeper authority when the round opens.
+  flights, and incomplete assignments. Freeze teams, flights, and membership-
+  derived score authority when the round opens.
 - Extend both score-access listing and transactional mutation authorization so
-  the designated scorekeeper receives every score owner in their flight.
+  every authenticated exact flight member receives every eligible score owner in
+  their flight.
 - **Stop condition:** admins can configure and validate round-specific teams and
-  flights, and tests prove one flight scorekeeper can score both teams without
+  flights, and tests prove each flight member can score both teams without
   granting cross-flight or cross-tournament access.
 
 ### Phase 6: Foursomes and format-aware live scoring
@@ -105,7 +104,7 @@ and UI remain later bounded steps.
 - Implement two-player foursomes as the next team-owned format after its handicap
   formula is approved. Update onboarding, round configuration, readiness,
   snapshots, score access, completion, leaderboards, seed data, and UI together.
-- Optimize the phone score selector for a flight scorekeeper moving quickly among
+- Optimize the phone score selector for a flight member moving quickly among
   all cards in the flight while preserving immediate save, sync, correction,
   audit, confirmation, SSE invalidation, and locked-round behavior.
 - **Stop condition:** foursomes works end to end and every supported format has
@@ -142,7 +141,7 @@ and UI remain later bounded steps.
   visibly distinguish counted from discarded rounds. Read DTOs must omit score
   mutation actor identifiers that viewers do not need. Non-admin read-only cards
   obey the same final-nine redaction; authorized scoring views still show the
-  scorekeeper's writable flight cards so those scores can be entered and corrected.
+  flight member's writable cards so those scores can be entered and corrected.
 - Test tournament-admin versus scorer/player/viewer projections, both metrics,
   round and tournament APIs, direct scorecard reads, cache/session changes,
   completion and locking without reveal, correction/reconfirmation clock reset,
@@ -161,6 +160,6 @@ and UI remain later bounded steps.
 - Add four-ball/best ball only after deciding whether every individual ball is
   stored; then consider Stableford and match play as separate milestones.
 - Add partner-repeat-aware team generation, handicap balancing, flight progress
-  and missing-score alerts, optional backup scorekeepers, configurable tie-breaks,
+  and missing-score alerts, configurable tie-breaks,
   share links, offline scoring, account recovery, rate limiting, deployment,
   backups, and production database roles.

@@ -16,6 +16,7 @@ const MIGRATIONS_1_TO_10: [&str; 10] = [
     include_str!("../../migrations/0010_course_revisions.sql"),
 ];
 const MIGRATION_11: &str = include_str!("../../migrations/0011_round_flights.sql");
+const MIGRATION_12: &str = include_str!("../../migrations/0012_remove_flight_scorekeepers.sql");
 
 const TOURNAMENT_1: &str = "a1000000-0000-0000-0000-000000000001";
 const TOURNAMENT_2: &str = "a1000000-0000-0000-0000-000000000002";
@@ -115,7 +116,68 @@ async fn open_first_round(pool: &PgPool) {
 }
 
 #[sqlx::test(migrations = false)]
-async fn v10_upgrade_preserves_legacy_teams_exactly_and_adds_empty_flights(pool: PgPool) {
+async fn v11_upgrade_discards_only_designations_and_preserves_flights_exactly(pool: PgPool) {
+    for migration in MIGRATIONS_1_TO_10 {
+        sqlx::raw_sql(migration).execute(&pool).await.unwrap();
+    }
+    sqlx::raw_sql(MIGRATION_11).execute(&pool).await.unwrap();
+    insert_clean_fixture(&pool).await;
+    sqlx::query(&format!(
+        "INSERT INTO flight_scorekeepers
+           (flight_id, round_id, tournament_id, player_id, created_at)
+         VALUES ('{FLIGHT_1}', '{ROUND_1}', '{TOURNAMENT_1}', '{PLAYER_1}',
+                 '2026-01-01T09:00:00.123456Z')"
+    ))
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let before = sqlx::query_scalar::<_, String>(
+        "SELECT jsonb_build_object(
+           'flights', (SELECT jsonb_agg(to_jsonb(f) ORDER BY f.id) FROM flights f),
+           'memberships', (
+             SELECT jsonb_agg(to_jsonb(fm) ORDER BY fm.flight_id, fm.player_id)
+             FROM flight_memberships fm
+           )
+         )::text",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM flight_scorekeepers")
+            .fetch_one(&pool)
+            .await
+            .unwrap(),
+        1
+    );
+    sqlx::raw_sql(MIGRATION_12).execute(&pool).await.unwrap();
+
+    let after = sqlx::query_scalar::<_, String>(
+        "SELECT jsonb_build_object(
+           'flights', (SELECT jsonb_agg(to_jsonb(f) ORDER BY f.id) FROM flights f),
+           'memberships', (
+             SELECT jsonb_agg(to_jsonb(fm) ORDER BY fm.flight_id, fm.player_id)
+             FROM flight_memberships fm
+           )
+         )::text",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(after, before);
+    assert_eq!(
+        sqlx::query_scalar::<_, Option<String>>("SELECT to_regclass('flight_scorekeepers')::text")
+            .fetch_one(&pool)
+            .await
+            .unwrap(),
+        None
+    );
+}
+
+#[sqlx::test(migrations = false)]
+async fn v10_upgrade_preserves_legacy_teams_without_inferring_flights(pool: PgPool) {
     for migration in MIGRATIONS_1_TO_10 {
         sqlx::raw_sql(migration).execute(&pool).await.unwrap();
     }
@@ -168,6 +230,7 @@ async fn v10_upgrade_preserves_legacy_teams_exactly_and_adds_empty_flights(pool:
     .unwrap();
 
     sqlx::raw_sql(MIGRATION_11).execute(&pool).await.unwrap();
+    sqlx::raw_sql(MIGRATION_12).execute(&pool).await.unwrap();
 
     let after = sqlx::query_scalar::<_, String>(
         "SELECT jsonb_build_object(
@@ -180,23 +243,37 @@ async fn v10_upgrade_preserves_legacy_teams_exactly_and_adds_empty_flights(pool:
     .unwrap();
     assert_eq!(after, before);
     assert_eq!(
-        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM flights")
+        sqlx::query_as::<_, (i64, i64)>(
+            "SELECT (SELECT count(*) FROM flights),
+                    (SELECT count(*) FROM flight_memberships)",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap(),
+        (0, 0)
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, Option<String>>("SELECT to_regclass('flight_scorekeepers')::text")
             .fetch_one(&pool)
             .await
             .unwrap(),
-        0
+        None
     );
 }
 
 #[sqlx::test(migrations = "../migrations")]
-async fn clean_schema_enforces_identity_uniqueness_and_designation(pool: PgPool) {
+async fn clean_schema_has_only_integrity_constrained_flights_and_memberships(pool: PgPool) {
     insert_clean_fixture(&pool).await;
     assert_eq!(
-        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM flight_scorekeepers")
-            .fetch_one(&pool)
-            .await
-            .unwrap(),
-        0
+        sqlx::query_scalar::<_, String>(
+            "SELECT table_name FROM information_schema.tables
+             WHERE table_schema = 'public' AND table_name LIKE 'flight%'
+             ORDER BY table_name",
+        )
+        .fetch_all(&pool)
+        .await
+        .unwrap(),
+        vec!["flight_memberships".to_owned(), "flights".to_owned()]
     );
 
     for (statement, expected_constraint) in [
@@ -246,54 +323,10 @@ async fn clean_schema_enforces_identity_uniqueness_and_designation(pool: PgPool)
             ),
             "flights_round_name_unique",
         ),
-        (
-            format!(
-                "INSERT INTO flight_scorekeepers
-                   (flight_id, round_id, tournament_id, player_id)
-                 VALUES ('{FLIGHT_2}', '{ROUND_1}', '{TOURNAMENT_1}', '{PLAYER_1}')"
-            ),
-            "flight_scorekeepers_exact_membership_fkey",
-        ),
-        (
-            format!(
-                "INSERT INTO flight_scorekeepers
-                   (flight_id, round_id, tournament_id, player_id)
-                 VALUES ('{FLIGHT_1}', '{ROUND_1}', '{TOURNAMENT_1}', '{PLAYER_2}')"
-            ),
-            "flight_scorekeepers_linked_user_fkey",
-        ),
     ] {
         let error = sqlx::query(&statement).execute(&pool).await.unwrap_err();
         assert_eq!(constraint(&error), Some(expected_constraint));
     }
-
-    sqlx::query(&format!(
-        "INSERT INTO flight_scorekeepers
-           (flight_id, round_id, tournament_id, player_id)
-         VALUES ('{FLIGHT_1}', '{ROUND_1}', '{TOURNAMENT_1}', '{PLAYER_1}')"
-    ))
-    .execute(&pool)
-    .await
-    .unwrap();
-    for statement in [
-        format!("UPDATE users SET player_id = NULL WHERE player_id = '{PLAYER_1}'"),
-        format!("DELETE FROM users WHERE player_id = '{PLAYER_1}'"),
-    ] {
-        let error = sqlx::query(&statement).execute(&pool).await.unwrap_err();
-        assert_eq!(
-            constraint(&error),
-            Some("flight_scorekeepers_linked_user_fkey")
-        );
-    }
-    let second = sqlx::query(&format!(
-        "INSERT INTO flight_scorekeepers
-           (flight_id, round_id, tournament_id, player_id)
-         VALUES ('{FLIGHT_1}', '{ROUND_1}', '{TOURNAMENT_1}', '{PLAYER_3}')"
-    ))
-    .execute(&pool)
-    .await
-    .unwrap_err();
-    assert!(second.as_database_error().unwrap().is_unique_violation());
 
     let untrimmed = sqlx::query(&format!(
         "INSERT INTO flights (id, round_id, tournament_id, name)
@@ -335,16 +368,8 @@ async fn clean_schema_enforces_identity_uniqueness_and_designation(pool: PgPool)
 }
 
 #[sqlx::test(migrations = "../migrations")]
-async fn membership_flight_and_round_deletes_cascade_designations(pool: PgPool) {
+async fn flight_round_and_tournament_deletes_cascade_memberships(pool: PgPool) {
     insert_clean_fixture(&pool).await;
-    sqlx::query(&format!(
-        "INSERT INTO flight_scorekeepers
-           (flight_id, round_id, tournament_id, player_id)
-         VALUES ('{FLIGHT_1}', '{ROUND_1}', '{TOURNAMENT_1}', '{PLAYER_1}')"
-    ))
-    .execute(&pool)
-    .await
-    .unwrap();
     sqlx::query(&format!(
         "DELETE FROM flight_memberships
          WHERE flight_id = '{FLIGHT_1}' AND player_id = '{PLAYER_1}'"
@@ -353,21 +378,16 @@ async fn membership_flight_and_round_deletes_cascade_designations(pool: PgPool) 
     .await
     .unwrap();
     assert_eq!(
-        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM flight_scorekeepers")
-            .fetch_one(&pool)
-            .await
-            .unwrap(),
+        sqlx::query_scalar::<_, i64>(&format!(
+            "SELECT count(*) FROM flight_memberships
+             WHERE flight_id = '{FLIGHT_1}' AND player_id = '{PLAYER_1}'"
+        ))
+        .fetch_one(&pool)
+        .await
+        .unwrap(),
         0
     );
 
-    sqlx::query(&format!(
-        "INSERT INTO flight_scorekeepers
-           (flight_id, round_id, tournament_id, player_id)
-         VALUES ('{FLIGHT_2}', '{ROUND_1}', '{TOURNAMENT_1}', '{PLAYER_3}')"
-    ))
-    .execute(&pool)
-    .await
-    .unwrap();
     sqlx::query(&format!("DELETE FROM flights WHERE id = '{FLIGHT_2}'"))
         .execute(&pool)
         .await
@@ -382,13 +402,10 @@ async fn membership_flight_and_round_deletes_cascade_designations(pool: PgPool) 
         0
     );
 
-    sqlx::raw_sql(&format!(
+    sqlx::query(&format!(
         "INSERT INTO flight_memberships
            (flight_id, round_id, tournament_id, player_id)
-         VALUES ('{FLIGHT_1}', '{ROUND_1}', '{TOURNAMENT_1}', '{PLAYER_1}');
-         INSERT INTO flight_scorekeepers
-           (flight_id, round_id, tournament_id, player_id)
-         VALUES ('{FLIGHT_1}', '{ROUND_1}', '{TOURNAMENT_1}', '{PLAYER_1}');"
+         VALUES ('{FLIGHT_1}', '{ROUND_1}', '{TOURNAMENT_1}', '{PLAYER_1}')"
     ))
     .execute(&pool)
     .await
@@ -411,21 +428,11 @@ async fn membership_flight_and_round_deletes_cascade_designations(pool: PgPool) 
             .unwrap(),
         0
     );
-    assert_eq!(
-        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM flight_scorekeepers")
-            .fetch_one(&pool)
-            .await
-            .unwrap(),
-        0
-    );
 
     sqlx::raw_sql(&format!(
         "INSERT INTO flights (id, round_id, tournament_id, name)
          VALUES ('{FLIGHT_1}', '{ROUND_2}', '{TOURNAMENT_1}', 'Tournament cascade');
          INSERT INTO flight_memberships
-           (flight_id, round_id, tournament_id, player_id)
-         VALUES ('{FLIGHT_1}', '{ROUND_2}', '{TOURNAMENT_1}', '{PLAYER_1}');
-         INSERT INTO flight_scorekeepers
            (flight_id, round_id, tournament_id, player_id)
          VALUES ('{FLIGHT_1}', '{ROUND_2}', '{TOURNAMENT_1}', '{PLAYER_1}');"
     ))
@@ -438,7 +445,7 @@ async fn membership_flight_and_round_deletes_cascade_designations(pool: PgPool) 
     .execute(&pool)
     .await
     .unwrap();
-    for table in ["flights", "flight_memberships", "flight_scorekeepers"] {
+    for table in ["flights", "flight_memberships"] {
         let remaining = sqlx::query_scalar::<_, i64>(&format!("SELECT count(*) FROM {table}"))
             .fetch_one(&pool)
             .await
@@ -527,14 +534,6 @@ async fn opening_first_makes_waiting_flight_mutation_recheck_frozen_state(pool: 
 #[sqlx::test(migrations = "../migrations")]
 async fn every_direct_flight_mutation_is_rejected_after_round_opens(pool: PgPool) {
     insert_clean_fixture(&pool).await;
-    sqlx::query(&format!(
-        "INSERT INTO flight_scorekeepers
-           (flight_id, round_id, tournament_id, player_id)
-         VALUES ('{FLIGHT_1}', '{ROUND_1}', '{TOURNAMENT_1}', '{PLAYER_1}')"
-    ))
-    .execute(&pool)
-    .await
-    .unwrap();
     open_first_round(&pool).await;
 
     for statement in [
@@ -557,16 +556,6 @@ async fn every_direct_flight_mutation_is_rejected_after_round_opens(pool: PgPool
             "DELETE FROM flight_memberships
              WHERE flight_id = '{FLIGHT_1}' AND player_id = '{PLAYER_2}'"
         ),
-        format!(
-            "INSERT INTO flight_scorekeepers
-               (flight_id, round_id, tournament_id, player_id)
-             VALUES ('{FLIGHT_2}', '{ROUND_1}', '{TOURNAMENT_1}', '{PLAYER_3}')"
-        ),
-        format!(
-            "UPDATE flight_scorekeepers SET created_at = now()
-             WHERE flight_id = '{FLIGHT_1}'"
-        ),
-        format!("DELETE FROM flight_scorekeepers WHERE flight_id = '{FLIGHT_1}'"),
     ] {
         let error = sqlx::query(&statement).execute(&pool).await.unwrap_err();
         assert_eq!(constraint(&error), Some("round_pairing_frozen"));
@@ -576,7 +565,7 @@ async fn every_direct_flight_mutation_is_rejected_after_round_opens(pool: PgPool
         .execute(&pool)
         .await
         .unwrap();
-    for table in ["flights", "flight_memberships", "flight_scorekeepers"] {
+    for table in ["flights", "flight_memberships"] {
         let remaining = sqlx::query_scalar::<_, i64>(&format!("SELECT count(*) FROM {table}"))
             .fetch_one(&pool)
             .await

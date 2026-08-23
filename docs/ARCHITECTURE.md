@@ -20,14 +20,14 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   course handicap, and playing handicap used in each opened round.
 - Round opening locks the round and tournament, repeats readiness validation, and captures one immutable snapshot for each active entrant before changing status. A transaction-local opening context prevents direct status or snapshot bypasses.
 - Course handicap uses exact tenths and rational arithmetic for `index * slope / 113 + rating - par`. Individual allowance is applied to the unrounded result before final rounding. Scramble caps each registered index at `36.0` before tee conversion; its member snapshots retain that effective index and rounded course handicap for the later team formula.
-- Team, flight, membership, scorekeeper-designation, tee, and hole mutation
-  guards serialize through the parent-round lock. Once open, scoring
-  configuration and pairings cannot drift.
+- Team, flight, membership, tee, and hole mutation guards serialize through the
+  parent-round lock. Once open, scoring configuration and pairings cannot drift.
 - Flights are normalized round/tournament-scoped groupings independent of teams.
-  A player can belong to at most one flight per round. A separate zero-or-one
-  scorekeeper designation must reference an exact member of that flight and a
-  linked user account; missing designation remains representable while draft.
-  Existing team data is not inferred or migrated into flights.
+  A player can belong to at most one flight per round. Score authority will be
+  derived at runtime from an authenticated player's exact stored flight
+  membership, so the persistence model has no designated-scorekeeper relation
+  or account-link requirement. Existing team data is not inferred or migrated
+  into flights.
 - A score has exactly one owner through an exclusive player/team check constraint.
 - Accounts use a canonical lowercase username matching `[a-z0-9_-]{3,32}` and a
   password. Usernames are case-insensitively unique; account email is not stored
@@ -106,8 +106,9 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   under session and membership locks in the score transaction.
 - The normalized flight relation is not yet part of score authorization. A later
   shared policy can extend the resolver to return every eligible owner in the
-  designated scorekeeper's exact flight. Starting-hole and tee-time coincidences
-  carry no authorization meaning.
+  authenticated player's exact flight. Starting-hole and tee-time coincidences
+  carry no authorization meaning, and tournament admin/scorer overrides remain
+  separate from flight membership.
 - Team results can be attributed back to every round member when tournament standings are calculated. There is no permanent tournament team.
 - Locked-round score protection lives in PostgreSQL as well as the domain service. A future correction transaction must explicitly set `app.admin_correction = 'true'`.
 - Score changes are audited by a database trigger.

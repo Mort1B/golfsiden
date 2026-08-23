@@ -1,87 +1,74 @@
 # Latest explanation
 
-## Normalized round-flight persistence
+## Membership-wide flight score authority
 
-Phase 5 now has a database foundation for explicit flights without changing any
-current API, readiness, scoring, seed, or frontend behavior. Migration 0011 is
-additive: it creates no flight rows and leaves every existing team and team
-membership unchanged. This is intentional because names, member order, starting
-holes, and tee times do not prove a truthful flight or scorekeeper assignment.
+Every authenticated player who is linked to an exact flight member will be able
+to keep score for every eligible card in that flight. A special designated
+scorekeeper is unnecessary and would incorrectly prevent the other flight
+members from helping with scoring.
 
-Three focused relations keep the responsibilities explicit:
+Migration 0011 had already been published with an unused
+`flight_scorekeepers` table, so it remains unchanged. Forward migration 0012
+drops that table. No production API, repository, seed, or frontend code used it,
+and migration 0011 created no designation rows automatically. An upgrade may
+discard manually inserted designation rows because they no longer represent a
+product fact; all `flights` and `flight_memberships` rows are preserved exactly.
 
-- `flights` owns one named round/tournament grouping plus optional starting hole
-  and tee time.
-- `flight_memberships` joins exact tournament entrants to a flight and enforces
-  at most one flight per player in a round.
-- `flight_scorekeepers` stores zero or one designation per flight. Its composite
-  foreign key proves the designated player is an exact member of that flight,
-  while its player foreign key requires a linked user account.
+The durable flight model now has two responsibilities:
 
-The designation is separate rather than a nullable column on `flights`. That
-avoids a circular flight-to-membership dependency and gives membership deletion
-a simple, intentional cascade. Zero scorekeepers must remain representable while
-a draft is incomplete; a later readiness boundary will require exactly one
-eligible scorekeeper before opening.
+- `flights` owns the exact round/tournament grouping, name, optional starting
+  hole, and optional tee time.
+- `flight_memberships` assigns a tournament entrant to at most one flight in a
+  round.
+
+Account linkage does not belong in this persistence boundary. When runtime score
+authorization is added, it will revalidate the active session and linked player,
+then derive the writable score owners from that player's exact stored flight
+membership. Tournament admin/scorer overrides remain separate. A shared starting
+hole, tee time, flight name, or client-supplied identity never grants authority.
 
 ## Compact example
 
-The database rejects a designation unless all four identity columns match one
-membership:
+The correction is deliberately a forward migration rather than a rewrite of
+published history:
 
 ```sql
-INSERT INTO flight_scorekeepers
-  (flight_id, round_id, tournament_id, player_id)
-VALUES ($1, $2, $3, $4);
+DROP TABLE flight_scorekeepers;
 ```
 
-That row also requires `player_id` to exist in the unique linked-player column on
-`users`. It does not yet grant score permission; runtime authorization remains a
-separate future change.
+## Preserved integrity
 
-## Integrity and concurrency
-
-Composite foreign keys prevent cross-round, cross-tournament, non-entrant, and
-nonmember assignments. Round/name and round/player uniqueness prevent duplicate
-flight identities. Deleting a membership, flight, round, or tournament removes
-only the dependent flight hierarchy through declared cascades. A linked account
-cannot be unlinked or deleted while it is the designated scorekeeper.
-
-All three relations reuse the existing `protect_round_pairing()` trigger. Every
-insert, update, or delete locks affected parent rounds in UUID order and rejects
-a non-draft round. Tests cover both concurrency directions: a flight mutation
-that owns the lock completes before opening and is observed by it; opening that
-owns the lock first causes the waiting flight mutation to recheck and fail with
-`round_pairing_frozen`.
-
-## Preserved invariants
-
-- Tournament-player identity remains independent of both teams and flights.
-- Teams remain the current round-specific score owners for shared results;
-  flights never own scores.
-- Missing designation is draft configuration state, not inferred authority.
-- Legacy teams, score attribution, handicap snapshots, lifecycle readiness,
-  score access, standings, and SSE behavior are unchanged.
+- A flight still belongs to one exact round and tournament.
+- A tournament entrant still belongs to at most one flight per round.
+- Flights remain independent of teams and never own scores.
+- Flight and membership mutations still lock the parent round and fail after it
+  opens, including both mutation/opening race orders.
+- Deleting a flight, round, or tournament keeps its explicit membership cascade.
+- Existing teams, team memberships, scores, handicap snapshots, standings, and
+  legacy grouping data remain unchanged.
 
 ## Validation
 
-- Focused PostgreSQL migration coverage passed 6/6, including a version-10
-  upgrade that compares legacy team and membership JSON byte-for-byte.
-- Standard workspace tests passed 62/62; the full database-enabled workspace
-  passed 172 tests.
-- Formatting, all-target/all-feature checking, Clippy with warnings denied, and
-  `git diff --check` passed.
-- A fresh-target migration binary applied versions 1–11 to an isolated
-  PostgreSQL 17 database. Catalog inspection confirmed the three flight tables,
-  14 expected constraints, and four expected triggers.
-- A previously cached migration binary still embedded versions 1–10 and first
-  reported the isolated database as current. Rebuilding with a fresh Cargo target
-  embedded migration 11 correctly; clean-build migration evidence is therefore
-  the authoritative result.
+The focused PostgreSQL migration suite passed 7/7 tests. It includes a populated
+version-11 upgrade that proves the obsolete designation disappears while every
+flight and membership field remains identical, and a version-10 upgrade that
+proves migrations 11 and 12 do not infer flights or change legacy teams. Clean-
+schema integrity, cascades, draft-only mutation, and both round-opening lock
+orders remain covered.
+
+The standard workspace passed 62 tests, and the full PostgreSQL-enabled workspace
+passed 173 tests. Formatting, all-target/all-feature checking, Clippy with
+warnings denied, and `git diff --check` passed. A clean migration build applied
+versions 1–12 to an isolated PostgreSQL 17 database; the catalog contained
+exactly `flights` and `flight_memberships` among the flight tables and no
+`flight_scorekeepers` relation. One unrelated round-configuration concurrency
+test returned its alternate conflict result on the first full run, then passed
+both alone and in the complete rerun.
 
 ## Next boundary
 
-Define one transactional admin roster API and consolidated pairing read model,
-including an explicit policy for any legacy individual-round grouping teams.
-Opening readiness, seed assignments, flight-wide scorekeeper authorization, and
-the mobile editor remain separate reviewable steps.
+Add one transactional tournament-admin roster API and consolidated pairing read
+model, with an explicit legacy individual-team conversion policy. That API must
+not expose a scorekeeper selector. Opening readiness, seed assignments,
+membership-wide score authorization, and the mobile roster editor remain later
+bounded steps.
