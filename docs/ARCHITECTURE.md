@@ -100,6 +100,15 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   order matches lifecycle mutations. Only a successful commit publishes one
   payload-free round invalidation; every conflict or failure rolls back the new
   hierarchy.
+- Round pairings use one aggregate read/write boundary. The member-readable GET
+  authorizes and assembles entrants, teams, flights, and legacy individual
+  groups in one repeatable-read transaction. The admin-only PUT locks the exact
+  round, reauthorizes session and membership, checks the optimistic timestamp,
+  and replaces the requested partial draft roster atomically. Individual legacy
+  grouping teams convert only through an exact mapping that preserves schedule,
+  membership order, and timestamps. Scramble teams remain durable score-owner
+  identities; old team schedule moves only to an explicitly named flight with
+  identical members and facts. One round event follows commit.
 - The score authorization resolver returns tagged round owners. Tournament
   admins/scorers receive all eligible owners; tournament players receive their
   exact individual or round-team owner. Save and confirm recheck this policy
@@ -169,6 +178,7 @@ Implemented resources:
 | `GET`, `POST` | `/api/tournaments/{tournament_id}/rounds` | List and create rounds |
 | `GET` | `/api/rounds/{round_id}` | Retrieve a round |
 | `PUT` | `/api/rounds/{round_id}/course-configuration` | Atomically configure one draft round from manual or curated provider facts |
+| `GET`, `PUT` | `/api/rounds/{round_id}/pairings` | Read or atomically replace the private draft team/flight roster |
 | `GET` | `/api/rounds/{round_id}/pairing-validation` | Validate assignments and course readiness |
 | `POST` | `/api/rounds/{round_id}/open` | Atomically open a ready draft round |
 | `GET` | `/api/rounds/{round_id}/completion-validation` | Inspect per-owner completion and lock readiness |
@@ -180,9 +190,7 @@ Implemented resources:
 | `PUT` | `/api/rounds/{round_id}/scores` | Save or correct one hole score |
 | `GET` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}` | Retrieve a gross/net scorecard summary |
 | `POST` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/confirm` | Confirm a complete scorecard |
-| `GET`, `POST` | `/api/rounds/{round_id}/teams` | List and create round teams |
-| `POST` | `/api/teams/{team_id}/members` | Assign a tournament player |
-| `DELETE` | `/api/teams/{team_id}/members/{player_id}` | Remove an assignment |
+| `GET` | `/api/rounds/{round_id}/teams` | Compatibility read for round teams |
 | `GET` | `/api/tournaments/{tournament_id}/leaderboards/gross` | Retrieve individual tournament gross standings |
 | `GET` | `/api/tournaments/{tournament_id}/leaderboards/net` | Retrieve individual tournament net standings |
 | `GET` | `/api/live` | SSE invalidation events |
@@ -207,8 +215,8 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 
 - Global player, scorecard, and live-event read visibility; production signup,
   login, and invitation-registration rate limiting.
-- Flight CRUD/readiness APIs, legacy grouping conversion, and flight-wide score
-  permissions.
+- Flight-aware readiness, membership-wide score authority, seed assignments, and
+  the mobile pairing editor.
 - Separate migration and runtime database roles plus production privilege policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.
 - Scramble formulas beyond the initial configurable 35%/15% implementation.

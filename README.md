@@ -2,8 +2,9 @@
 
 Mobile-first tournament software for a private annual golf trip. The current
 milestone includes atomic self-service tournament creation, revocable sessions,
-round-specific teams, audited individual/scramble scorecards, deterministic
-round lifecycle operations, and live gross/net leaderboards.
+round-specific teams and flights, transactional draft pairing rosters, audited
+individual/scramble scorecards, deterministic round lifecycle operations, and
+live gross/net leaderboards.
 
 ## Prerequisites
 
@@ -154,10 +155,11 @@ until the private frontend cutover.
 Tournament creation now issues a reusable invitation secret, and admins can
 rotate or revoke links, but recovery from a lost one-time plaintext response
 still requires rotation. Request throttling is required before public
-deployment. The remaining tournament settings, pairing, and lifecycle editors,
-flights, offline scoring, and locked-round score corrections remain deferred.
-Flights will be modelled explicitly rather than inferred from matching tee times
-or starting holes.
+deployment. The backend now exposes a private consolidated team/flight roster and
+an atomic admin replacement endpoint for draft rounds. The remaining tournament
+settings, pairing UI, flight-aware readiness, flight-member score authority,
+offline scoring, and locked-round score corrections remain deferred. Flights are
+explicit and are never inferred from matching tee times or starting holes.
 
 Migration `0009` removes account email after deterministically deriving usernames
 for existing accounts. Back up production data and retain the generated username

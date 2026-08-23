@@ -180,18 +180,23 @@ async fn api_opens_once_with_exact_snapshots_and_emits_only_after_success(pool: 
     let frozen_pairing = app
         .clone()
         .oneshot(
-            authorize(Request::delete(format!(
-                "/api/teams/{TEAM_ID}/members/{PLAYER_A}"
-            )))
-            .body(Body::empty())
-            .unwrap(),
+            authorize(Request::put(format!("/api/rounds/{ROUND_ID}/pairings")))
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    serde_json::json!({
+                        "expected_round_updated_at":"2000-01-01T00:00:00Z",
+                        "teams":[], "flights":[], "legacy_conversions":[]
+                    })
+                    .to_string(),
+                ))
+                .unwrap(),
         )
         .await
         .unwrap();
     assert_eq!(frozen_pairing.status(), StatusCode::CONFLICT);
     assert_eq!(
-        response_json(frozen_pairing).await,
-        serde_json::json!({"error": {"code": "constraint_violation", "message": "round pairings are frozen after draft"}})
+        response_json(frozen_pairing).await["error"]["code"],
+        "round_not_draft"
     );
 
     let snapshots = sqlx::query(

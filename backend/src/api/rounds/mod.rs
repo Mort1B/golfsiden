@@ -1,6 +1,7 @@
 mod completion;
 mod configuration;
 mod lifecycle;
+mod pairings;
 
 use std::sync::Arc;
 
@@ -13,6 +14,7 @@ use axum::{
 };
 
 const MAX_ROUND_CONFIGURATION_BODY_BYTES: usize = 32 * 1024;
+const MAX_ROUND_PAIRINGS_BODY_BYTES: usize = 256 * 1024;
 use chrono::NaiveDate;
 use serde::Deserialize;
 use uuid::Uuid;
@@ -38,6 +40,13 @@ pub fn routes() -> Router<Arc<AppState>> {
             get(list).post(create),
         )
         .route("/api/rounds/{round_id}", get(get_one))
+        .route(
+            "/api/rounds/{round_id}/pairings",
+            get(pairings::get)
+                .put(pairings::put)
+                .layer(DefaultBodyLimit::max(MAX_ROUND_PAIRINGS_BODY_BYTES))
+                .layer(axum::middleware::map_response(pairings::private_no_store)),
+        )
         .route(
             "/api/rounds/{round_id}/course-configuration",
             axum::routing::put(configuration::put)

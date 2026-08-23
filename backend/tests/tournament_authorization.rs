@@ -18,7 +18,6 @@ use uuid::{Uuid, uuid};
 
 const TOURNAMENT_B: Uuid = uuid!("82000000-0000-0000-0000-000000000002");
 const ROUND_B: Uuid = uuid!("82000000-0000-0000-0000-000000000003");
-const TEAM_B: Uuid = uuid!("82000000-0000-0000-0000-000000000004");
 const PLAYER_LINKED: Uuid = uuid!("82000000-0000-0000-0000-000000000005");
 const PLAYER_NEW: Uuid = uuid!("82000000-0000-0000-0000-000000000006");
 const ADMIN_A: Uuid = uuid!("82000000-0000-0000-0000-000000000011");
@@ -120,21 +119,10 @@ async fn cross_tournament_admin_is_denied_through_every_resource_shape(pool: PgP
             json!({"round_number":2,"name":"Second","round_date":"2026-02-02","course_name":"TBD","tee_name":"TBD","scoring_format":"individual_stroke_play"}),
         ),
         json_request(
-            Request::post(format!("/api/rounds/{ROUND_B}/teams")),
+            Request::put(format!("/api/rounds/{ROUND_B}/pairings")),
             "admin-a-token",
-            json!({"name":"Other"}),
+            json!({"expected_round_updated_at":"2000-01-01T00:00:00Z","teams":[],"flights":[],"legacy_conversions":[]}),
         ),
-        json_request(
-            Request::post(format!("/api/teams/{TEAM_B}/members")),
-            "admin-a-token",
-            json!({"player_id": PLAYER_NEW}),
-        ),
-        authorized(
-            Request::delete(format!("/api/teams/{TEAM_B}/members/{PLAYER_LINKED}")),
-            "admin-a-token",
-        )
-        .body(Body::empty())
-        .unwrap(),
         authorized(
             Request::post(format!("/api/rounds/{ROUND_B}/open")),
             "admin-a-token",

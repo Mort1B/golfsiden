@@ -12,10 +12,11 @@ curated eight-course local catalog, and the Phase 4B immutable local course-
 revision persistence boundary, and the admin-only atomic draft-round course-
 configuration API, mobile course/tee picker, and manual-entry fallback are
 complete, as is the corrected normalized PostgreSQL flight persistence boundary
-with membership-wide future score authority. No active implementation step is
-approved. The admin flight/team roster API and exact legacy-grouping conversion
-policy are next; readiness, runtime score authority, seed, and UI remain later
-bounded steps.
+with membership-wide future score authority, and the transactional pairing-roster
+API plus explicit legacy individual-group conversion are complete. No active
+implementation step is approved. Flight-aware opening readiness is next; runtime
+score authority, seed assignments, and the mobile editor remain later bounded
+steps.
 
 ## Product decisions
 
@@ -78,17 +79,13 @@ bounded steps.
 
 ### Phase 5: Teams, flights, and pairing validation
 
-- Add one transactional tournament-admin flight/team roster API and consolidated
-  round-pairing read model. Choose and test the exact legacy individual-team
-  conversion before moving starting-hole or tee-time ownership.
-- Reserve teams for formats with a shared team result. Convert any grouping-only
-  individual-round teams to flights rather than preserving two pairing models.
+- Split the near-limit lifecycle domain and repository modules, then make pairing
+  validation and opening require every eligible entrant in exactly one flight,
+  no remaining legacy individual groups, valid shared-result team sizes, and no
+  team split across flights. Keep schedule equality non-authoritative.
 - Build one mobile roster editor for unassigned players, round teams, flights,
   team membership, flight placement, starting hole, and tee time. Use accessible
   move/add/remove controls rather than drag-only behavior.
-- Validate missing/duplicate players, unexpected team sizes, split teams across
-  flights, and incomplete assignments. Freeze teams, flights, and membership-
-  derived score authority when the round opens.
 - Extend both score-access listing and transactional mutation authorization so
   every authenticated exact flight member receives every eligible score owner in
   their flight.

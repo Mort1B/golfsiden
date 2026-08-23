@@ -353,9 +353,43 @@ created the normalized hierarchy; forward migration 0012 removes its unused
 single-scorekeeper table. The upgrade intentionally discards only obsolete
 designation metadata and preserves flights and memberships exactly. Legacy team
 data is unchanged: equal starting holes, tee times, order, or team membership
-never infer a flight. CRUD APIs, opening readiness, seed assignments, legacy
-grouping conversion, frontend editing, and membership-wide scoring authority
-remain separate follow-up work.
+never infer a flight.
+
+`GET /api/rounds/{round_id}/pairings` gives any exact tournament member one
+private, non-cacheable, deterministically ordered view of the round version,
+effectively active and inactive entrants, shared-result teams, flights, and
+legacy individual groups. Its repeatable-read transaction holds membership
+authorization through response assembly. `players.active` and tournament-entry
+status jointly determine eligibility.
+
+`PUT /api/rounds/{round_id}/pairings` is the only supported pairing mutation.
+It requires CSRF, exact tournament-admin membership, `application/json`, a
+256 KiB body limit, the visible `expected_round_updated_at`, and complete arrays
+describing the desired current teams, flights, members, and explicit legacy
+conversions. Empty and partial draft rosters are valid; later readiness owns
+missing-assignment policy. Submitted members must be eligible entrants, UUIDs and
+names cannot conflict within or across rounds, and array order determines new
+membership display order.
+
+The final transaction locks the round, reauthorizes the active session and admin
+membership, repeats draft/version checks, validates identities and references,
+then replaces the roster and advances the round timestamp atomically. Only a
+successful commit emits one payload-free round event. Errors, including
+malformed, oversized, stale, opened, identity-conflict, conversion, and
+referenced-team failures, are private/non-cacheable and leave no partial rows or
+event.
+
+For an individual round, every existing grouping-only team must be acknowledged
+exactly once and mapped to a requested flight that has the identical name,
+schedule, ordered members, nullable display orders, and timestamps. Conversion
+then removes the obsolete team. Scramble teams are never converted because they
+remain score-owner/history identities. A scheduled retained scramble team clears
+its schedule only when all its members are explicitly placed in one requested
+flight carrying the same starting hole and tee time; equal facts never infer the
+relationship. The old granular team-create/member routes are retired, while the
+member-readable team GET remains for compatibility. Opening readiness, seed
+assignments, frontend editing, and membership-wide scoring authority remain
+separate follow-up work.
 
 ## Fixed tournament handicaps
 
@@ -453,6 +487,7 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 - Tournament settings, pairing, and lifecycle editors are not implemented. The
   Courses section supports draft-round configuration; non-draft rounds are
   deliberately read-only.
-- Flight persistence exists, but flight CRUD/readiness, seed assignments,
-  frontend editing, and membership-wide scoring authority are not implemented. There
+- Pairing roster reads and atomic admin replacement exist, but flight-aware
+  readiness, seed assignments, frontend editing, and membership-wide scoring
+  authority are not implemented. There
   is also no offline score queue or public leaderboard link.

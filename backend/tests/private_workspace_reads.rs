@@ -116,6 +116,7 @@ fn scoped_paths(tournament_id: Uuid, round_id: Uuid) -> Vec<String> {
         format!("/api/rounds/{round_id}/pairing-validation"),
         format!("/api/rounds/{round_id}/completion-validation"),
         format!("/api/rounds/{round_id}/teams"),
+        format!("/api/rounds/{round_id}/pairings"),
         format!("/api/rounds/{round_id}/leaderboards/gross"),
         format!("/api/rounds/{round_id}/leaderboards/net"),
         format!("/api/tournaments/{tournament_id}/leaderboards/gross"),
