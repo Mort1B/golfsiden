@@ -228,10 +228,38 @@ read and invitation mutation remains protected by backend membership policy.
 The workspace provides semantic anchors for settings, entrants, invitations,
 rounds, courses, pairings, and lifecycle. It reports only facts already preserved
 by the existing private APIs and links to the existing invitation and round
-surfaces. It does not issue provider requests, infer course revisions, load teams
-per round, or expose unsupported mutation controls. Returning from invitation
+surfaces. It does not infer course revisions, load teams per round, or expose
+unsupported mutation controls. Returning from invitation
 administration replaces that history entry, restores the Invitations section,
 and moves focus to its labelled region without creating a browser-Back loop.
+
+Tournament admins can search the external course catalog through the
+[official GolfCourseAPI contract](https://api.golfcourseapi.com/docs/api/) at
+`GET /api/tournaments/{tournament_id}/course-provider/search?q=...&fuzzy_match=...`
+and retrieve one course through
+`GET /api/tournaments/{tournament_id}/course-provider/courses/{provider_course_id}`.
+The backend checks the exact tournament-admin membership and commits that read
+before consulting its cache or provider. Search terms are trimmed and bounded to
+2–80 bytes, results are capped at 20, and provider IDs use the official opaque,
+case-insensitive eight-character alphabet.
+
+Responses expose a stable local discovery contract: provider and course ID,
+club/course names, optional scorecard URL, location, tee counts for search, and
+category-labelled tees with rating, slope, length, par, and ordered holes for
+detail. Hole numbers are derived from provider order and the provider stroke
+index is named explicitly; no upstream tee ID is invented. This step does not
+persist provider facts or configure a round.
+
+`GOLF_COURSE_API_KEY` is optional and backend-only. When configured it is sent
+in a sensitive Bearer header and never returned or logged. Uncached calls are
+bounded to two concurrent requests, a two-second connect timeout, five seconds
+total, and a 1 MiB response. A 256-entry in-process cache retains searches for
+10 minutes and details for 24 hours. `GOLF_COURSE_API_DAILY_LIMIT` defaults to
+50 uncached requests per UTC day per backend process; a provider `429` exhausts
+that local day immediately. Multi-instance deployments need a shared quota to
+enforce an account-wide ceiling. Successful reads and provider errors are
+private/non-cacheable; unavailable, busy, timeout, exhausted, malformed,
+upstream-failure, and missing-course states use the standard error envelope.
 
 Flights are not represented yet. A future normalized round-flight model will
 extend the same score-access resolver so a player may receive both team owners

@@ -6,10 +6,10 @@ instead of accumulating a historical log here.
 
 ## Planning status
 
-Phase 4A, the first Phase 4B private-workspace step, and the sign-in username
-constraint repairs and the initial read-only tournament-management workspace are
-complete. No active implementation step is approved. The backend-only provider
-client and normalized course search/detail contract are the next Phase 4B step.
+Phase 4A, the private-workspace reads, username constraint repairs, initial
+read-only tournament-management workspace, and backend course-provider search
+and detail boundary are complete. No active implementation step is approved.
+Immutable local course/tee/hole revisions are the next Phase 4B step.
 
 ## Product decisions
 
@@ -70,12 +70,6 @@ client and normalized course search/detail contract are the next Phase 4B step.
 
 ### Phase 4B: Private workspace and provider-backed courses
 
-- Add `/manage/tournaments/:tournamentId` with admin-only sections for settings,
-  entrants, invitations, rounds, courses, pairings, and lifecycle.
-- Add a backend-only GolfCourseAPI client and normalized search/detail endpoints;
-  keep its API key out of the browser and logs. Follow the official OpenAPI at
-  `https://api.golfcourseapi.com/docs/api/`; respect provider rate limits with
-  bounded search, caching, timeouts, and deliberate unavailable/exhausted states.
 - Store provider name, opaque course ID, tee category/name, import timestamp, and
   immutable local course/tee/hole revisions. Do not invent an upstream tee ID.
   Validate exactly ordered holes, unique stroke indexes, par, rating, slope, and

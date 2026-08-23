@@ -1,4 +1,4 @@
-use sqlx::{Postgres, Transaction};
+use sqlx::{PgPool, Postgres, Transaction};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -30,6 +30,36 @@ pub async fn require_tournament_member_read(
         return Err(AuthorizationError::NotFound);
     }
     require_membership_read(transaction, user_id, tournament_id).await
+}
+
+pub async fn require_tournament_admin_read(
+    pool: &PgPool,
+    user_id: Uuid,
+    tournament_id: Uuid,
+) -> Result<(), AuthorizationError> {
+    let mut transaction = pool.begin().await?;
+    let exists =
+        sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM tournaments WHERE id = $1)")
+            .bind(tournament_id)
+            .fetch_one(&mut *transaction)
+            .await?;
+    if !exists {
+        return Err(AuthorizationError::NotFound);
+    }
+    let role = sqlx::query_scalar::<_, TournamentRole>(
+        "SELECT role FROM tournament_memberships
+         WHERE tournament_id = $1 AND user_id = $2
+         FOR SHARE",
+    )
+    .bind(tournament_id)
+    .bind(user_id)
+    .fetch_optional(&mut *transaction)
+    .await?;
+    if role != Some(TournamentRole::Admin) {
+        return Err(AuthorizationError::Forbidden);
+    }
+    transaction.commit().await?;
+    Ok(())
 }
 
 pub async fn require_round_member_read(

@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use golf_api::{AppState, api, config::Config};
+use golf_api::{AppState, api, config::Config, course_provider::CourseProviderClient};
 use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
 use tracing::info;
@@ -30,9 +30,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = TcpListener::bind(address).await?;
     info!(%address, "golf API listening");
 
+    let course_provider = match config.course_provider.api_key {
+        Some(api_key) => CourseProviderClient::configured_with_daily_limit(
+            api_key,
+            config.course_provider.daily_limit,
+        )?,
+        None => CourseProviderClient::disabled(),
+    };
     axum::serve(
         listener,
-        api::router(AppState::with_auth(pool, config.auth)),
+        api::router(AppState::with_auth_and_course_provider(
+            pool,
+            config.auth,
+            course_provider,
+        )),
     )
     .with_graceful_shutdown(shutdown_signal())
     .await?;

@@ -63,6 +63,14 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   through response assembly; tournament collections join memberships directly.
   Successful private responses are `private, no-store`, and global roles are no
   cross-tournament read bypass.
+- External course discovery is a backend adapter, not a persistence model. Its
+  tournament-scoped GET handlers require the exact admin membership in a short
+  transaction that commits before cache or network work. The adapter owns the
+  sensitive Bearer credential, time/concurrency/body/result bounds, finite TTL
+  cache, and per-process UTC quota. It converts the provider's search/detail
+  shapes into stable local DTOs, preserves opaque course IDs, derives ordered
+  hole numbers, and never invents a tee ID. Provider facts remain untrusted until
+  normalized; no course, tee, hole, or round row changes in this boundary.
 - The score authorization resolver returns tagged round owners. Tournament
   admins/scorers receive all eligible owners; tournament players receive their
   exact individual or round-team owner. Save and confirm recheck this policy
@@ -151,6 +159,8 @@ Implemented resources:
 | `GET` | `/api/auth/session` | Retrieve the current session and CSRF value |
 | `POST` | `/api/auth/logout` | Revoke and clear the current session |
 | `GET` | `/api/me/tournaments` | List the session user's tournament memberships and player links |
+| `GET` | `/api/tournaments/{tournament_id}/course-provider/search` | Search normalized provider courses as a tournament admin |
+| `GET` | `/api/tournaments/{tournament_id}/course-provider/courses/{provider_course_id}` | Retrieve normalized provider tee and hole detail as a tournament admin |
 | `POST` | `/api/onboarding/tournaments` | Atomically create a first-time creator, draft tournament plan, invitation, and session |
 | `POST` | `/api/invitations/{invitation_id}/preview` | Preview minimal tournament data for an authenticated invitation token |
 | `POST` | `/api/invitations/{invitation_id}/register` | Atomically register and join a new player account |

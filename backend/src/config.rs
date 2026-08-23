@@ -5,6 +5,22 @@ use thiserror::Error;
 
 use crate::auth::AuthConfig;
 
+#[derive(Clone)]
+pub struct CourseProviderConfig {
+    pub api_key: Option<String>,
+    pub daily_limit: u32,
+}
+
+impl std::fmt::Debug for CourseProviderConfig {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("CourseProviderConfig")
+            .field("api_key", &self.api_key.as_ref().map(|_| "[redacted]"))
+            .field("daily_limit", &self.daily_limit)
+            .finish()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Config {
     pub database_url: String,
@@ -12,6 +28,7 @@ pub struct Config {
     pub port: u16,
     pub run_migrations: bool,
     pub auth: AuthConfig,
+    pub course_provider: CourseProviderConfig,
 }
 
 #[derive(Debug, Error)]
@@ -43,8 +60,30 @@ impl Config {
                 session_ttl_hours,
                 cors_allowed_origin,
             },
+            course_provider: CourseProviderConfig {
+                api_key: optional_secret("GOLF_COURSE_API_KEY"),
+                daily_limit: parse_bounded_daily_limit()?,
+            },
         })
     }
+}
+
+fn parse_bounded_daily_limit() -> Result<u32, ConfigError> {
+    let value = parse_env("GOLF_COURSE_API_DAILY_LIMIT", 50_u32)?;
+    if !(1..=1_000_000).contains(&value) {
+        return Err(ConfigError::Invalid {
+            name: "GOLF_COURSE_API_DAILY_LIMIT",
+            value: value.to_string(),
+        });
+    }
+    Ok(value)
+}
+
+fn optional_secret(name: &'static str) -> Option<String> {
+    env::var(name)
+        .ok()
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty())
 }
 
 fn optional_header(name: &'static str) -> Result<Option<HeaderValue>, ConfigError> {
