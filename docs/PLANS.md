@@ -10,8 +10,9 @@ Phase 4A, the private-workspace reads, username constraint repairs, initial
 read-only tournament-management workspace, backend course-provider boundary,
 curated eight-course local catalog, and the Phase 4B immutable local course-
 revision persistence boundary, and the admin-only atomic draft-round course-
-configuration API are complete. No active implementation step is approved. The
-mobile course/tee picker and manual-entry form are next.
+configuration API, mobile course/tee picker, and manual-entry fallback are
+complete. No active implementation step is approved. Phase 5 normalized flights
+and pairing validation are next.
 
 ## Product decisions
 
@@ -37,7 +38,7 @@ mobile course/tee picker and manual-entry form are next.
 - If no usable provider course exists, a tournament admin manually defines the
   course and selected tee. Tee name/category, course rating, slope, ordered hole
   pars, and a unique `1..=hole_count` stroke-index permutation are required;
-  each hole's distance is optional. Manual and provider imports create the same
+  each hole's yard distance is optional. Manual and provider imports create the same
   immutable local revision before the round can open.
 - Flights are explicit, round-specific groups independent of teams, tee times,
   and starting holes. An admin assigns players, teams, and one designated
@@ -74,17 +75,6 @@ mobile course/tee picker and manual-entry form are next.
   Stableford, and match play require distinct aggregation or scoring contracts.
 
 ## Upcoming work
-
-### Phase 4B: Private workspace and provider-backed courses
-
-- Build the mobile course then tee picker plus manual-course fallback. Show
-  rating, slope, optional length, hole completeness, loading, empty, error,
-  retry, stale-result, and conflict states. Manual entry must make required
-  fields and duplicate/missing stroke indexes clear before save.
-- **Stop condition:** an authorized admin can configure every draft round with a
-  locally preserved provider or manual course/tee snapshot; missing provider
-  courses remain configurable without requiring hole distance, and opened rounds
-  never drift when provider or manually entered source data later changes.
 
 ### Phase 5: Teams, flights, and pairing validation
 

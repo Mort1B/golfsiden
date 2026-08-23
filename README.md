@@ -87,14 +87,17 @@ GolfCourseAPI later using a Pro plan. Until a provider course has complete tee
 and hole data, the planned round-configuration flow must also support manual
 entry by the tournament admin. The admin chooses or names the tee and supplies
 its course rating and slope, then enters each hole's par and unique stroke index.
-Hole distance is optional. The backend now has one validated transactional
+Hole distance in yards is optional. The backend now has one validated transactional
 storage boundary for either source. It records the selected tee and complete
 hole facts as an immutable local course/tee/hole revision so later round
 configuration cannot drift when the provider is edited or unavailable.
 
-The backend configuration endpoint is implemented. The management workspace is
-still read-only for this feature until the course picker and manual-entry form
-are added.
+The management workspace now exposes one mobile-first editor at a time for each
+draft round. Admins can search the local catalog and, once an entry is verified
+as usable, select a provider tee; every currently unavailable catalog entry
+shows its reason and points to the manual fallback. Manual entry validates the
+tee facts and complete hole/stroke-index permutation before saving. Open,
+completed, and locked rounds remain read-only.
 
 ## Verification
 
@@ -151,9 +154,8 @@ until the private frontend cutover.
 Tournament creation now issues a reusable invitation secret, and admins can
 rotate or revoke links, but recovery from a lost one-time plaintext response
 still requires rotation. Request throttling is required before public
-deployment. The course-configuration UI, the remaining tournament management
-workspace, flights, offline scoring, and locked-round score corrections remain
-deferred.
+deployment. The remaining tournament settings, pairing, and lifecycle editors,
+flights, offline scoring, and locked-round score corrections remain deferred.
 Flights will be modelled explicitly rather than inferred from matching tee times
 or starting holes.
 

@@ -1,87 +1,96 @@
 # Latest explanation
 
-## Atomic draft-round course configuration
+## Mobile draft-round course configuration
 
-Tournament administrators can now configure a draft round through
-`PUT /api/rounds/{round_id}/course-configuration`. Both manual entry and a
-curated GolfCourseAPI selection end in the same immutable local course, selected
-tee, and ordered hole revision.
+Tournament administrators can now configure course facts directly from the
+Courses section of the management workspace. Every round keeps a compact summary;
+only draft rounds expose an editor, and only one editor is expanded at a time.
+Non-draft rounds remain visibly locked.
 
-Every request echoes the round's current `updated_at`. The backend first checks
-the authenticated user's exact tournament-admin membership and confirms that
-the round is still draft. It then decodes the strict JSON selection. Manual
-requests provide the complete facts directly. Provider requests provide only a
-curated course ID and tee category/name; the backend refreshes all other facts,
-requires one exact trimmed tee match, and passes them through the shared
-validator. No database transaction remains open during that provider request.
+The provider path searches the local tournament-scoped catalog before any
+external request. Search keys include the authenticated user, tournament, and
+normalized query. A previous result may remain visible while a new query loads,
+but it is labelled stale and cannot be selected. Missing and incomplete entries
+show their catalog reason and lead naturally to manual entry. A future usable
+entry loads its complete tees and displays rating, slope, optional length, par,
+and hole completeness; the save still sends only the provider ID and exact tee
+category/name, leaving provider facts under backend ownership.
 
-The final transaction locks the round, revalidates the active session and admin
-membership, and repeats both draft-state and timestamp checks. It then creates
-the finalized immutable revision and attaches the course/tee IDs, copied names,
-and hole count to the round. Commit happens before the single payload-free round
-event. A stale or losing request therefore cannot leave an orphan revision.
-
-Requests must use `application/json` and are limited to 32 KiB. Success and
-endpoint-shaped errors are `private, no-store`; authentication rejections retain
-the shared `no-store` policy. Stable conflicts distinguish a changed round,
-non-draft lifecycle state, incomplete catalog row, and a provider tee that
-disappeared after selection.
+The manual path accepts 1–36 holes and preserves inactive row values while the
+admin changes that count. Course and tee names, tee category, course rating,
+slope, every par, and a complete unique stroke-index permutation are required.
+Location and distance in yards are optional. Norwegian comma and dot ratings are
+normalized to one JSON number, while UTF-8 byte limits and backend ranges are
+checked before mutation. Errors are attached only to the affected field and
+focus moves to the first invalid control.
 
 ## Compact example
 
-The manual payload uses array order as the hole number and keeps distance
-optional:
+The frontend sends blank optional distances as `null` and uses array order as
+the hole number:
 
-```json
-{
-  "expected_round_updated_at": "2026-08-23T10:15:30.123456Z",
-  "selection": {
-    "source": "manual",
-    "course_name": "Example Golf",
-    "location": "Oslo, Norway",
-    "tee": {
-      "category": "male",
-      "name": "White",
-      "course_rating": 72.4,
-      "slope_rating": 128,
-      "holes": [
-        { "par": 4, "stroke_index": 1, "distance": null }
-      ]
-    }
-  }
-}
+```ts
+await courseApi.configure(round.id, round.updated_at, {
+  source: 'manual',
+  course_name: 'Drøbak GK',
+  location: null,
+  tee: {
+    category: 'male',
+    name: 'Gul',
+    course_rating: 71.2,
+    slope_rating: 125,
+    holes: [{ par: 4, stroke_index: 1, distance: null }],
+  },
+}, csrfToken)
 ```
+
+## Coordination and failure behavior
+
+The save coordinator prevents duplicate submissions and always uses the visible
+round `updated_at`. Success updates both precise round caches, refetches their
+authoritative values, collapses the editor, restores keyboard focus to its
+toggle, and announces the preserved course/tee. Stale-round and non-draft
+conflicts refresh the round without overwriting entered values. A stale provider
+tee refreshes detail, clears only the rejected tee, and preserves the selected
+course. Changing a choice clears obsolete mutation messages.
+
+Course catalog and provider-detail queries are private and rooted by user ID.
+They are excluded from generic payload-free SSE invalidation, preventing score or
+round events from repeatedly consuming provider quota. The authoritative round
+queries still refresh after a configuration event.
 
 ## Invariants
 
-- Only an active admin membership for the round's tournament may configure it.
-- Only draft rounds accept configuration, and optimistic concurrency prevents
-  silent replacement by a simultaneous save.
-- Provider facts are server-fetched; no provider tee ID is invented.
-- Manual and provider paths create the same complete immutable revision graph.
-- No database transaction spans provider I/O.
-- Failed authorization, validation, provider work, attachment, or lifecycle
-  races create no orphan revision and publish no configuration event.
-- Handicap snapshots, score ownership, teams, lifecycle transitions, and
-  leaderboard behavior are unchanged.
+- Backend membership and CSRF checks remain authoritative; UI gating is only
+  presentation.
+- Only draft rounds mutate, and optimistic conflicts never auto-overwrite.
+- Provider facts stay server-owned; manual and provider paths converge on the
+  existing immutable revision transaction.
+- Missing yard distance remains `null` and is never synthesized.
+- Course configuration does not alter players, teams, handicap snapshots, score
+  ownership, lifecycle transitions, or standings.
 
 ## Validation
 
-- Provider adapter tests cover exact/ambiguous tee selection, normalized mapping,
-  and fail-closed numeric conversion.
-- Ten PostgreSQL tests cover manual and provider-seam facts, nullable distance,
-  authentication/CSRF/scope, authorization loss, strict JSON and size bounds,
-  catalog gating, stale saves, rollback, simultaneous saves, both configuration/
-  opening lock orders, exact SSE counts, and private caching.
-- `cargo fmt --all -- --check` and Clippy with warnings denied passed.
-- The standard workspace suite passed 62 tests; the database-enabled workspace
-  suite passed 166 tests, including all 10 round-configuration cases.
-- `git diff --check` passed. Frontend, browser, migration, seed, and API smoke
-  checks were not required for this backend-only, migration-free step.
+- Focused frontend tests passed 18/18; the full suite passed 128/128 across 22
+  files.
+- Strict TypeScript, ESLint, the Vite production build, and `git diff --check`
+  passed. The build processed 1,807 modules.
+- PostgreSQL provider and round-configuration regressions passed 1/1 and 10/10.
+- Chrome 151 passed at 375x812 and 1440x900. The consolidated run covered manual
+  validation and focus, duplicate stroke indexes, a real one-request manual save
+  with 18 null distances, success receipt/collapse, long-content layout,
+  provider loading/detail/facts, stale/tee-stale/non-draft conflicts, catalog
+  error/retry/empty, SSE exclusion, and keyboard-visible focus. There was no
+  horizontal overflow, runtime exception, unexpected failed request, or console
+  error; intercepted 409 and 503 responses were the deliberate conflict/error
+  cases.
+- Browser validation initially exposed a stale local PostgreSQL schema. Applying
+  the repository migrations restored the expected revision columns; the same
+  real manual save then returned 200 and the consolidated acceptance run passed.
 
 ## Next boundary
 
-Build the mobile course and tee picker with the manual-entry fallback on the
-tournament management workspace. A full provider-success HTTP test remains
-queued until a genuinely complete catalog row is reverified as `usable`; the
-production gate is not weakened for test convenience.
+Phase 5 begins with normalized round flights, one designated scorekeeper per
+flight, and draft-only pairing integrity. It must preserve the distinction
+between tournament players, round-specific teams, and flight membership.

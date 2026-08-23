@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { AuthSession } from '../../api/auth'
 import { authKeys } from '../../api/auth'
 import { tournamentKeys } from '../../api/tournaments'
+import { courseKeys } from '../../api/courses'
 import { invalidateLiveQueries } from '../../api/liveInvalidation'
 import { privateWorkspaceKeys } from '../../api/privateWorkspace'
 import { publishSessionTransition, resolveSessionTransition } from './sessionTransition'
@@ -89,6 +90,19 @@ describe('AuthProvider private cache transitions', () => {
     expect(protectedFetches).toBe(1)
     unsubscribeAuth()
     unsubscribe()
+  })
+
+  it('excludes private course catalog and provider detail from payload-free SSE invalidation', async () => {
+    const queryClient = new QueryClient()
+    const catalogKey = courseKeys.catalog('same-user', 'tour', '')
+    const providerKey = courseKeys.provider('same-user', 'tour', 'provider-id')
+    queryClient.setQueryData(catalogKey, [{ display_name: 'Catalog course' }])
+    queryClient.setQueryData(providerKey, { course_name: 'Provider course' })
+
+    await invalidateLiveQueries(queryClient)
+
+    expect(queryClient.getQueryState(catalogKey)?.isInvalidated).toBe(false)
+    expect(queryClient.getQueryState(providerKey)?.isInvalidated).toBe(false)
   })
 
   it('clears private data before publishing a null session', () => {

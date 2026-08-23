@@ -216,7 +216,7 @@ through rotation rather than recovered from storage.
 
 ## Tournament management workspace
 
-Authenticated tournament administrators enter the read-only management index at
+Authenticated tournament administrators enter the management workspace at
 `/manage/tournaments/{tournament_id}`. The route confirms both the canonical
 tournament detail and the current user's tournament-specific `admin` membership
 before enabling roster or round reads. Signed-out visitors retain the complete
@@ -226,10 +226,11 @@ have distinct states. Client gating controls presentation only; every private
 read and invitation mutation remains protected by backend membership policy.
 
 The workspace provides semantic anchors for settings, entrants, invitations,
-rounds, courses, pairings, and lifecycle. It reports only facts already preserved
-by the existing private APIs and links to the existing invitation and round
-surfaces. It does not infer course revisions, load teams per round, or expose
-unsupported mutation controls. Returning from invitation
+rounds, courses, pairings, and lifecycle. Most sections report only facts already
+preserved by the existing private APIs and link to the invitation and round
+surfaces. The Courses section is writable for draft rounds through the existing
+atomic course-configuration API. It does not infer revisions, load teams per
+round, or expose unsupported mutation controls. Returning from invitation
 administration replaces that history entry, restores the Invitations section,
 and moves focus to its labelled region without creating a browser-Back loop.
 
@@ -282,7 +283,7 @@ and empty tees or missing/duplicate stroke indexes fail closed.
 The approved configuration fallback for a missing or incomplete provider course
 is manual tournament-admin entry. The admin chooses or names one tee and must
 provide its category, course rating, slope, plus every ordered hole's par and
-complete unique stroke-index permutation. Hole distance is optional.
+complete unique stroke-index permutation. Hole distance in yards is optional.
 
 The backend persistence boundary for that flow is implemented. Both manual and
 provider-tagged commands pass through the same pure validation and caller-owned
@@ -316,11 +317,26 @@ provider tee uses `course_provider_tee_stale`. Invalid, stale, unauthorized,
 provider-failed, or attachment-failed requests create no revision and emit no
 event. Requests must be JSON and are capped at 32 KiB.
 
-The current management workspace remains read-only for course configuration;
-the mobile picker and manual-entry form are the next frontend step. Because no
-bundled catalog row is presently verified as usable, provider success is tested
-through the normalized adapter and identical final repository transaction. The
-production HTTP path continues to fail closed until a real row is reverified.
+The Courses section shows every round's preserved course/tee summary and allows
+only one draft-round editor to be expanded. Its private catalog search accepts
+the backend's UTF-8 byte limits, retains but disables previous results while a
+new query loads, and shows each unavailable row's reason. A usable row loads
+complete tee facts—category, rating, slope, optional length, par, and hole
+completeness—before the admin sends only its provider ID plus exact tee selector.
+No bundled row is presently verified as usable, so the production UI points all
+eight entries to manual entry while remaining ready for a future verified row.
+
+The manual form accepts 1–36 ordered holes, Norwegian comma or dot course
+ratings, required tee/category/rating/slope/par/stroke-index facts, and optional
+location and yard distances. It identifies errors on the exact field, requires
+a complete unique stroke-index permutation, preserves entered rows while the
+hole count changes, prevents duplicate saves, and restores focus after success.
+Successful saves replace and refetch the precise round queries, collapse the
+editor, and announce the preserved course/tee. Stale, opened-round, provider-
+tee-stale, loading, empty, retry, and retained-result states preserve safe input
+without silently overwriting a newer round. Catalog/provider queries are
+excluded from generic SSE invalidation so score events cannot consume provider
+quota; authoritative round events still refresh the round summaries.
 
 Flights are not represented yet. A future normalized round-flight model will
 extend the same score-access resolver so a player may receive both team owners
@@ -419,6 +435,7 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
   leaderboard access will use explicit share tokens.
 - Request throttling is not implemented, so the public onboarding and
   registration endpoints are not ready for an internet-facing deployment.
-- The tournament management workspace is read-only. Provider-backed course/tee
-  administration and settings, pairing, and lifecycle editors are not implemented.
+- Tournament settings, pairing, and lifecycle editors are not implemented. The
+  Courses section supports draft-round configuration; non-draft rounds are
+  deliberately read-only.
 - No flight model, offline score queue, or public leaderboard link.

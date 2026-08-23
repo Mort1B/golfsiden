@@ -1,8 +1,9 @@
-import { ArrowRight, CalendarDays, MapPin } from 'lucide-react'
+import { ArrowRight, CalendarDays } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Round, Tournament, TournamentPlayerRoster } from '../../api/types'
 import { EmptyState, ErrorState, LoadingState } from '../../ui/AsyncState'
 import { StatusBadge } from '../../ui/StatusBadge'
+import { CourseConfigurationSection } from './CourseConfigurationSection'
 
 interface ReadState<T> {
   data: T | undefined
@@ -96,11 +97,7 @@ export function TournamentManagementSections({ tournament, roster, rounds }: Pro
       <section id="courses" className="management-section" aria-labelledby="courses-heading" tabIndex={-1}>
         <header><p className="eyebrow">Lagrede rundefakta</p><h2 id="courses-heading">Baner</h2></header>
         <RoundState state={rounds}>{(items) => (
-          <ul className="management-detail-list">
-            {items.map((round) => (
-              <li key={round.id}><MapPin aria-hidden="true" /><span><strong>{formatName(round)}</strong>{round.course_id && round.tee_id ? `${round.course_name} · ${round.tee_name}` : 'Bane og utslagssted er ikke konfigurert'}</span></li>
-            ))}
-          </ul>
+          <CourseConfigurationSection tournamentId={tournament.id} rounds={items} />
         )}</RoundState>
       </section>
 
