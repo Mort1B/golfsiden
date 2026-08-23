@@ -1,70 +1,74 @@
 # Latest explanation
 
-## Backend course-provider discovery boundary
+## Curated local course catalog
 
-Tournament administrators can now search GolfCourseAPI and retrieve one
-course's tee and hole detail without exposing the provider credential to the
-browser. Both GET routes are scoped by tournament ID. The backend first confirms
-the authenticated user's exact tournament `admin` membership in a short
-transaction, commits it, and only then consults the in-memory cache or performs
-external I/O. A global administrator receives no cross-tournament bypass.
+Tournament administrators now search a bundled eight-course shortlist instead
+of spending GolfCourseAPI requests on free-text search. The catalog contains
+Hacienda del Álamo, Saurines de la Torre, Mar Menor, Oppegård, Drøbak,
+Miklagard, Oslo, and Haga. Its optional query matches display names and internal
+common or accentless aliases case-insensitively; an omitted or blank query lists
+all eight in deterministic file order.
 
-The adapter follows the provider's official opaque course-ID and Bearer-auth
-contracts but returns a deliberately smaller local shape. Search results include
-stable provider identity, names, location, and female/male tee counts. Detail
-flattens the provider's tee groups into category-labelled tees, derives one-based
-hole numbers from provider order, and names `handicap` as `stroke_index`. It does
-not invent a tee ID, persist a revision, or configure a round.
+Every catalog result reports a nullable verified provider course ID and an
+explicit readiness state. Live bounded verification found Oslo (`dcm3cn0g`) and
+Haga (`kcmzs8qz`), but their holes omit stroke indexes. Miklagard (`0zm1pe1a`)
+has no provider tees. The remaining five returned no verified provider match.
+Those facts are recorded as `incomplete` or `missing`; no ID or scorecard fact is
+guessed, and none of the eight is currently presented as import-ready.
 
-External work is bounded: search text is 2–80 bytes, results stop at 20, only two
-cache misses may run concurrently, connections time out after two seconds,
-requests after five seconds, and responses above 1 MiB fail closed. An aggregate
-256-entry cache keeps searches for 10 minutes and details for 24 hours. Uncached
-calls consume a per-process UTC daily allowance, default 50; an upstream `429`
-exhausts that local day so later misses do not keep contacting the provider.
+The old runtime provider-search route and search cache are gone. Catalog reads
+work without an API key and perform zero external I/O. Provider detail remains a
+separate future-ready boundary: only an entry marked `usable` may reach it.
+Known incomplete IDs return a stable conflict and unknown IDs return not found
+before touching quota or network.
+
+Live verification also exposed that provider detail uses a
+`{ "course": {...} }` envelope. The client now decodes that real shape while
+continuing to reject empty tees, incomplete holes, invalid or duplicate stroke
+indexes, and other unusable scorecard facts.
 
 ## Compact example
 
-Authorization and provider I/O are intentionally separated:
+Catalog readiness is checked before the provider client is called:
 
 ```rust
-require_tournament_admin_read(&state.pool, user_id, tournament_id).await?;
-let courses = state.course_provider.search(query, fuzzy_match).await?;
+match provider_course_readiness(&provider_course_id)? {
+    ProviderCourseReadiness::Usable => {}
+    ProviderCourseReadiness::Incomplete => return Err(CatalogIncomplete),
+    ProviderCourseReadiness::Unknown => return Err(CatalogUnknown),
+}
 ```
-
-The authorization helper commits before returning, so the second line never
-runs while its PostgreSQL transaction or membership lock is held.
 
 ## Invariants
 
-- `GOLF_COURSE_API_KEY` remains optional, backend-only, and redacted from debug
-  output; the request header is marked sensitive.
-- Provider IDs remain opaque and provider success payloads are validated before
-  caching or returning normalized data.
-- Missing configuration, saturation, timeout, exhaustion, malformed data,
-  upstream failure, and missing courses use stable non-secret error envelopes.
-- No migration, course persistence, round mutation, SSE event, or frontend
-  behavior was added. Tournament players, round teams, handicap snapshots,
-  score ownership, auditability, and locked-round protection are unchanged.
-- The cache and UTC quota are per process. Multi-instance deployment requires a
-  shared quota before it can enforce the provider account's global ceiling.
+- The real API key remains only in ignored backend environment state and is
+  never serialized or logged.
+- Local catalog search consumes no provider quota and aliases are not exposed.
+- Bundled JSON rejects unknown fields, duplicate names/aliases/IDs, invalid IDs,
+  and inconsistent readiness states.
+- Incomplete provider data cannot cross the detail or later import boundary.
+- Provider course IDs remain opaque and no upstream tee ID is invented.
+- No migration, local course revision, round mutation, SSE event, frontend
+  behavior, or tournament/scoring invariant changed in this step.
 
 ## Validation
 
-- Seven focused provider tests pass against local mock HTTP servers, covering
-  exact Bearer/query behavior, normalized detail, validation, caching, result
-  bounds, timeout, saturation, response size, malformed JSON, status mapping,
-  and daily exhaustion without any live provider key or quota use.
-- The focused PostgreSQL route test passes and proves signed-out and unauthorized
-  requests cause no provider I/O, validation uses the standard error envelope,
-  successful data is private/non-cacheable, provider error bodies stay hidden,
-  and `404`/`429` mappings remain stable.
-- The backend suite passes 48 tests without database features and 132 tests with
-  all features: 48 unit tests plus 84 PostgreSQL integration tests.
-- Rust formatting, Clippy across all targets/features with warnings denied, and
+- Six catalog unit tests cover all eight entries, stable order, aliases including
+  the supplied `Hacienda del Alamos` spelling, diacritics/case, blank/list-all,
+  query bounds, duplicate aliases, readiness consistency, and unknown JSON
+  fields.
+- Nine provider-detail tests cover the live envelope, sensitive Bearer header,
+  caching, quota, timeout, saturation, response bounds, status mapping, opaque
+  IDs, and rejection of missing stroke indexes or empty tees.
+- The PostgreSQL API test proves signed-out and cross-tournament rejection,
+  private/non-cacheable catalog reads, local filtering without a key, removal of
+  provider search, and zero provider calls for incomplete or unknown details.
+- The complete backend suite passes 56 tests without database features and 140
+  with all features: 56 unit tests plus 84 PostgreSQL integration tests. Rust
+  formatting, all-target/all-feature Clippy with warnings denied, and
   `git diff --check` pass.
-- Independent review found three provider-boundary gaps: repeated calls after
-  `429`, framework query-rejection bodies, and missing route-level error tests.
-  All three were fixed and the follow-up review found no remaining findings.
-- Frontend and browser checks were not run because this step adds no browser
-  route, UI, or frontend contract.
+- Independent review found and verified fixes for strict bundled-JSON fields,
+  stale response documentation, exact all-eight metadata coverage, and the
+  complete `1..=hole_count` stroke-index permutation; no findings remain.
+- Frontend and browser checks are not applicable because this step adds no UI or
+  frontend API consumer.

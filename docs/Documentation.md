@@ -233,33 +233,51 @@ unsupported mutation controls. Returning from invitation
 administration replaces that history entry, restores the Invitations section,
 and moves focus to its labelled region without creating a browser-Back loop.
 
-Tournament admins can search the external course catalog through the
-[official GolfCourseAPI contract](https://api.golfcourseapi.com/docs/api/) at
-`GET /api/tournaments/{tournament_id}/course-provider/search?q=...&fuzzy_match=...`
-and retrieve one course through
+Tournament admins search the bundled shortlist through
+`GET /api/tournaments/{tournament_id}/course-catalog?q=...`. Omitting `q` or
+passing a blank value lists all eight entries in deterministic catalog order;
+otherwise matching is case-insensitive across the display name and internal
+aliases. Search performs no external request and works without a provider key.
+It currently includes Hacienda del Álamo, Saurines de la Torre, Mar Menor,
+Oppegård, Drøbak, Miklagard, Oslo, and Haga.
+
+Each result reports the display name, country, provider, nullable verified
+provider course ID, and an explicit `usable`, `incomplete`, or `missing` status
+with a short reason. Aliases remain server-internal. Live verification found
+Oslo and Haga but their provider holes omit stroke indexes; Miklagard has no
+provider tees; the other five returned no verified match. All eight therefore
+remain deliberately unavailable for scorecard import rather than receiving
+guessed IDs or incomplete hole facts.
+
+For a future catalog entry verified as usable, the backend retrieves detail
+through the [official GolfCourseAPI contract](https://api.golfcourseapi.com/docs/api/)
+at
 `GET /api/tournaments/{tournament_id}/course-provider/courses/{provider_course_id}`.
-The backend checks the exact tournament-admin membership and commits that read
-before consulting its cache or provider. Search terms are trimmed and bounded to
-2–80 bytes, results are capped at 20, and provider IDs use the official opaque,
-case-insensitive eight-character alphabet.
+The backend checks the exact tournament-admin membership and catalog readiness,
+then commits before consulting its cache or provider. Unknown IDs return `404`;
+known incomplete IDs return `409`, both before provider I/O. Provider IDs use
+the official opaque, case-insensitive eight-character alphabet.
 
-Responses expose a stable local discovery contract: provider and course ID,
-club/course names, optional scorecard URL, location, tee counts for search, and
-category-labelled tees with rating, slope, length, par, and ordered holes for
-detail. Hole numbers are derived from provider order and the provider stroke
-index is named explicitly; no upstream tee ID is invented. This step does not
-persist provider facts or configure a round.
+The catalog and detail responses are deliberately separate contracts. Catalog
+rows expose only curated identity and readiness. A usable detail response adds
+provider club/course names, optional scorecard URL, location, and category-
+labelled tees with rating, slope, length, par, and ordered holes. Hole numbers
+are derived from provider order and provider `handicap` is named explicitly as
+`stroke_index`; no upstream tee ID is invented. This step does not persist
+provider facts or configure a round.
 
-`GOLF_COURSE_API_KEY` is optional and backend-only. When configured it is sent
-in a sensitive Bearer header and never returned or logged. Uncached calls are
+`GOLF_COURSE_API_KEY` is optional and backend-only. For usable detail reads it is
+sent in a sensitive Bearer header and never returned or logged. Uncached calls are
 bounded to two concurrent requests, a two-second connect timeout, five seconds
-total, and a 1 MiB response. A 256-entry in-process cache retains searches for
-10 minutes and details for 24 hours. `GOLF_COURSE_API_DAILY_LIMIT` defaults to
+total, and a 1 MiB response. A 256-entry in-process cache retains details for 24
+hours. `GOLF_COURSE_API_DAILY_LIMIT` defaults to
 50 uncached requests per UTC day per backend process; a provider `429` exhausts
 that local day immediately. Multi-instance deployments need a shared quota to
 enforce an account-wide ceiling. Successful reads and provider errors are
 private/non-cacheable; unavailable, busy, timeout, exhausted, malformed,
-upstream-failure, and missing-course states use the standard error envelope.
+upstream-failure, incomplete-catalog, and missing-course states use the standard
+error envelope. The provider's live `{ "course": ... }` envelope is decoded,
+and empty tees or missing/duplicate stroke indexes fail closed.
 
 Flights are not represented yet. A future normalized round-flight model will
 extend the same score-access resolver so a player may receive both team owners

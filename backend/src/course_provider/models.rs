@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -6,17 +6,6 @@ use serde::{Deserialize, Serialize};
 use super::{CourseProviderError, normalize_course_id};
 
 const PROVIDER: &str = "golf_course_api";
-
-#[derive(Clone, Debug, Serialize)]
-pub struct CourseSearchResult {
-    pub provider: &'static str,
-    pub provider_course_id: String,
-    pub club_name: String,
-    pub course_name: String,
-    pub scorecard_url: Option<String>,
-    pub location: CourseLocation,
-    pub tee_counts: TeeCounts,
-}
 
 #[derive(Clone, Debug, Serialize)]
 pub struct CourseDetail {
@@ -35,12 +24,6 @@ pub struct CourseLocation {
     pub city: Option<String>,
     pub state: Option<String>,
     pub country: Option<String>,
-}
-
-#[derive(Clone, Debug, Serialize)]
-pub struct TeeCounts {
-    pub female: u32,
-    pub male: u32,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -72,44 +55,8 @@ pub struct Hole {
 }
 
 #[derive(Deserialize)]
-pub(super) struct SearchEnvelope {
-    pub courses: Vec<ProviderCourseSummary>,
-}
-
-#[derive(Deserialize)]
-pub(super) struct ProviderCourseSummary {
-    id: String,
-    club_name: String,
-    course_name: String,
-    scorecard_url: Option<String>,
-    #[serde(default)]
-    location: CourseLocation,
-    #[serde(default)]
-    tees: HashMap<String, u32>,
-}
-
-impl ProviderCourseSummary {
-    pub(super) fn normalize(self) -> Result<CourseSearchResult, CourseProviderError> {
-        validate_text(&self.club_name, 300)?;
-        validate_text(&self.course_name, 300)?;
-        validate_url(self.scorecard_url.as_deref())?;
-        self.location.validate()?;
-        let female = self.tees.get("female").copied().unwrap_or_default();
-        let male = self.tees.get("male").copied().unwrap_or_default();
-        if female > 100 || male > 100 {
-            return Err(CourseProviderError::InvalidResponse);
-        }
-        Ok(CourseSearchResult {
-            provider: PROVIDER,
-            provider_course_id: normalize_course_id(&self.id)
-                .map_err(|_| CourseProviderError::InvalidResponse)?,
-            club_name: self.club_name,
-            course_name: self.course_name,
-            scorecard_url: self.scorecard_url,
-            location: self.location,
-            tee_counts: TeeCounts { female, male },
-        })
-    }
+pub(super) struct CourseEnvelope {
+    pub course: ProviderCourse,
 }
 
 #[derive(Deserialize)]
@@ -163,10 +110,11 @@ impl ProviderCourse {
         validate_text(&self.course_name, 300)?;
         validate_url(self.scorecard_url.as_deref())?;
         self.location.validate()?;
-        if self.tees.female.len() + self.tees.male.len() > 100 {
+        let tee_count = self.tees.female.len() + self.tees.male.len();
+        if tee_count == 0 || tee_count > 100 {
             return Err(CourseProviderError::InvalidResponse);
         }
-        let mut tees = Vec::with_capacity(self.tees.female.len() + self.tees.male.len());
+        let mut tees = Vec::with_capacity(tee_count);
         for tee in self.tees.female {
             tees.push(tee.normalize(TeeCategory::Female)?);
         }
@@ -204,7 +152,7 @@ impl ProviderTee {
         for (index, hole) in self.holes.into_iter().enumerate() {
             if !(2..=7).contains(&hole.par)
                 || !(1..=2_000).contains(&hole.yardage)
-                || !(1..=36).contains(&hole.handicap)
+                || !(1..=self.number_of_holes).contains(&hole.handicap)
                 || !stroke_indexes.insert(hole.handicap)
             {
                 return Err(CourseProviderError::InvalidResponse);

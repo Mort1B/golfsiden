@@ -8,18 +8,17 @@ use std::{
 
 use axum::{
     Json, Router,
-    extract::{Path, Query},
+    extract::Path,
     http::{HeaderMap, StatusCode},
     routing::get,
 };
-use serde::Deserialize;
 use serde_json::{Value, json};
-use tokio::net::TcpListener;
-use tokio::sync::{Notify, mpsc};
-
-use super::{
-    CourseProviderClient, CourseProviderError, normalize_course_id, validate_search_query,
+use tokio::{
+    net::TcpListener,
+    sync::{Notify, mpsc},
 };
+
+use super::{CourseProviderClient, CourseProviderError, normalize_course_id};
 
 async fn serve(router: Router) -> String {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -30,95 +29,125 @@ async fn serve(router: Router) -> String {
     format!("http://{address}/")
 }
 
-#[derive(Deserialize)]
-struct SearchInput {
-    search_query: String,
-    fuzzy_match: bool,
+fn valid_course(id: &str) -> Value {
+    json!({"course": {
+        "id": id,
+        "club_name": "Murray Golf Club",
+        "course_name": "Course No. 1",
+        "location": {"city": "Murray", "country": "United States"},
+        "tees": {"female": [], "male": [{
+            "tee_name": "Blue",
+            "course_rating": 75.7,
+            "slope_rating": 132,
+            "total_yards": 484,
+            "total_meters": 443,
+            "number_of_holes": 1,
+            "par_total": 4,
+            "holes": [{"par": 4, "yardage": 484, "handicap": 1}]
+        }]}
+    }})
 }
 
 #[tokio::test]
-async fn search_uses_bearer_auth_bounds_results_and_caches() {
+async fn detail_uses_bearer_auth_parses_envelope_and_caches() {
     let calls = Arc::new(AtomicUsize::new(0));
     let handler_calls = calls.clone();
     let base_url = serve(Router::new().route(
-        "/v1/search",
-        get(
-            move |headers: HeaderMap, Query(input): Query<SearchInput>| {
-                let calls = handler_calls.clone();
-                async move {
-                    assert_eq!(headers.get("authorization").unwrap(), "Bearer secret-key");
-                    assert_eq!(input.search_query, "Oslo golf");
-                    let call_index = calls.fetch_add(1, Ordering::SeqCst);
-                    assert_eq!(input.fuzzy_match, call_index == 0);
-                    let courses = (0..25)
-                        .map(|index| {
-                            json!({
-                                "id": format!("abcde{index:03}"),
-                                "club_name": format!("Club {index}"),
-                                "course_name": format!("Course {index}"),
-                                "location": {"country": "Norway"},
-                                "tees": {"female": 2, "male": 3}
-                            })
-                        })
-                        .collect::<Vec<_>>();
-                    Json(json!({"courses": courses}))
-                }
-            },
-        ),
+        "/v1/courses/{id}",
+        get(move |headers: HeaderMap, Path(id): Path<String>| {
+            let calls = handler_calls.clone();
+            async move {
+                assert_eq!(headers.get("authorization").unwrap(), "Bearer secret-key");
+                calls.fetch_add(1, Ordering::SeqCst);
+                Json(valid_course(&id))
+            }
+        }),
     ))
     .await;
     let client =
         CourseProviderClient::configured_with_base_url("secret-key".into(), &base_url).unwrap();
 
-    let first = client.search("Oslo golf", true).await.unwrap();
-    let second = client.search("Oslo golf", true).await.unwrap();
-    let exact = client.search("Oslo golf", false).await.unwrap();
+    let first = client.course("7k2m9qb4").await.unwrap();
+    let second = client.course("7k2m9qb4").await.unwrap();
 
-    assert_eq!(first.len(), 20);
-    assert_eq!(second.len(), 20);
-    assert_eq!(exact.len(), 20);
-    assert_eq!(first[0].tee_counts.female, 2);
-    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert_eq!(first.tees.len(), 1);
+    assert_eq!(first.tees[0].name, "Blue");
+    assert_eq!(first.tees[0].holes[0].number, 1);
+    assert_eq!(first.tees[0].holes[0].stroke_index, 1);
+    assert_eq!(second.provider_course_id, "7k2m9qb4");
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    let serialized = serde_json::to_value(first).unwrap();
+    assert!(serialized["tees"][0].get("id").is_none());
 }
 
 #[tokio::test]
-async fn detail_normalizes_groups_without_inventing_a_tee_id() {
+async fn detail_rejects_missing_stroke_index_and_wrong_envelope() {
+    let missing_handicap = serve(Router::new().route(
+        "/v1/courses/{id}",
+        get(|Path(id): Path<String>| async move {
+            let mut value = valid_course(&id);
+            value["course"]["tees"]["male"][0]["holes"][0]
+                .as_object_mut()
+                .unwrap()
+                .remove("handicap");
+            Json(value)
+        }),
+    ))
+    .await;
+    let client =
+        CourseProviderClient::configured_with_base_url("key".into(), &missing_handicap).unwrap();
+    assert_eq!(
+        client.course("7k2m9qb4").await.unwrap_err(),
+        CourseProviderError::InvalidResponse
+    );
+
+    let wrong_envelope = serve(Router::new().route(
+        "/v1/courses/{id}",
+        get(|Path(id): Path<String>| async move { Json(valid_course(&id)["course"].clone()) }),
+    ))
+    .await;
+    let client =
+        CourseProviderClient::configured_with_base_url("key".into(), &wrong_envelope).unwrap();
+    assert_eq!(
+        client.course("7k2m9qb4").await.unwrap_err(),
+        CourseProviderError::InvalidResponse
+    );
+}
+
+#[tokio::test]
+async fn detail_rejects_courses_without_tees() {
     let base_url = serve(Router::new().route(
         "/v1/courses/{id}",
         get(|Path(id): Path<String>| async move {
-            assert_eq!(id, "7k2m9qb4");
-            Json(json!({
-                "id": id,
-                "club_name": "Murray Golf Club",
-                "course_name": "Course No. 1",
-                "location": {"city": "Murray", "country": "United States"},
-                "tees": {
-                    "female": [],
-                    "male": [{
-                        "tee_name": "Blue",
-                        "course_rating": 75.7,
-                        "slope_rating": 132,
-                        "total_yards": 6348,
-                        "total_meters": 5805,
-                        "number_of_holes": 1,
-                        "par_total": 4,
-                        "holes": [{"par": 4, "yardage": 484, "handicap": 9}]
-                    }]
-                }
-            }))
+            let mut value = valid_course(&id);
+            value["course"]["tees"] = json!({"female": [], "male": []});
+            Json(value)
         }),
     ))
     .await;
     let client = CourseProviderClient::configured_with_base_url("key".into(), &base_url).unwrap();
+    assert_eq!(
+        client.course("7k2m9qb4").await.unwrap_err(),
+        CourseProviderError::InvalidResponse
+    );
+}
 
-    let course = client.course("7k2m9qb4").await.unwrap();
-
-    assert_eq!(course.tees.len(), 1);
-    assert_eq!(course.tees[0].name, "Blue");
-    assert_eq!(course.tees[0].holes[0].number, 1);
-    assert_eq!(course.tees[0].holes[0].stroke_index, 9);
-    let serialized = serde_json::to_value(course).unwrap();
-    assert!(serialized["tees"][0].get("id").is_none());
+#[tokio::test]
+async fn detail_rejects_stroke_indexes_outside_the_hole_count_permutation() {
+    let base_url = serve(Router::new().route(
+        "/v1/courses/{id}",
+        get(|Path(id): Path<String>| async move {
+            let mut value = valid_course(&id);
+            value["course"]["tees"]["male"][0]["holes"][0]["handicap"] = json!(2);
+            Json(value)
+        }),
+    ))
+    .await;
+    let client = CourseProviderClient::configured_with_base_url("key".into(), &base_url).unwrap();
+    assert_eq!(
+        client.course("7k2m9qb4").await.unwrap_err(),
+        CourseProviderError::InvalidResponse
+    );
 }
 
 #[tokio::test]
@@ -161,7 +190,7 @@ async fn upstream_statuses_are_mapped_without_reading_error_bodies() {
 async fn oversized_and_invalid_json_responses_fail_closed() {
     let oversized = "x".repeat(super::MAX_RESPONSE_BYTES + 1);
     let base_url = serve(Router::new().route(
-        "/v1/search",
+        "/v1/courses/{id}",
         get(move || {
             let oversized = oversized.clone();
             async move { oversized }
@@ -170,19 +199,19 @@ async fn oversized_and_invalid_json_responses_fail_closed() {
     .await;
     let client = CourseProviderClient::configured_with_base_url("key".into(), &base_url).unwrap();
     assert_eq!(
-        client.search("valid", true).await.unwrap_err(),
+        client.course("abcde123").await.unwrap_err(),
         CourseProviderError::InvalidResponse
     );
 
     let invalid_base = serve(Router::new().route(
-        "/v1/search",
+        "/v1/courses/{id}",
         get(|| async { Json(Value::String("wrong shape".to_owned())) }),
     ))
     .await;
     let invalid =
         CourseProviderClient::configured_with_base_url("key".into(), &invalid_base).unwrap();
     assert_eq!(
-        invalid.search("valid", true).await.unwrap_err(),
+        invalid.course("abcde123").await.unwrap_err(),
         CourseProviderError::InvalidResponse
     );
 }
@@ -190,10 +219,10 @@ async fn oversized_and_invalid_json_responses_fail_closed() {
 #[tokio::test]
 async fn timeout_and_saturation_are_deliberate_errors() {
     let timeout_base = serve(Router::new().route(
-        "/v1/search",
-        get(|| async {
+        "/v1/courses/{id}",
+        get(|Path(id): Path<String>| async move {
             tokio::time::sleep(Duration::from_millis(100)).await;
-            Json(json!({"courses": []}))
+            Json(valid_course(&id))
         }),
     ))
     .await;
@@ -205,7 +234,7 @@ async fn timeout_and_saturation_are_deliberate_errors() {
     )
     .unwrap();
     assert_eq!(
-        timeout_client.search("timeout", true).await.unwrap_err(),
+        timeout_client.course("abcde123").await.unwrap_err(),
         CourseProviderError::Timeout
     );
 
@@ -213,14 +242,14 @@ async fn timeout_and_saturation_are_deliberate_errors() {
     let release = Arc::new(Notify::new());
     let handler_release = release.clone();
     let saturation_base = serve(Router::new().route(
-        "/v1/search",
-        get(move || {
+        "/v1/courses/{id}",
+        get(move |Path(id): Path<String>| {
             let started_tx = started_tx.clone();
             let release = handler_release.clone();
             async move {
                 started_tx.send(()).await.unwrap();
                 release.notified().await;
-                Json(json!({"courses": []}))
+                Json(valid_course(&id))
             }
         }),
     ))
@@ -233,10 +262,10 @@ async fn timeout_and_saturation_are_deliberate_errors() {
     )
     .unwrap();
     let first_client = saturation_client.clone();
-    let first = tokio::spawn(async move { first_client.search("first", true).await });
+    let first = tokio::spawn(async move { first_client.course("abcde123").await });
     started_rx.recv().await.unwrap();
     assert_eq!(
-        saturation_client.search("second", true).await.unwrap_err(),
+        saturation_client.course("abcde124").await.unwrap_err(),
         CourseProviderError::Saturated
     );
     release.notify_one();
@@ -245,26 +274,24 @@ async fn timeout_and_saturation_are_deliberate_errors() {
 
 #[tokio::test]
 async fn local_daily_quota_is_checked_after_cache_and_before_upstream() {
-    let base_url =
-        serve(Router::new().route("/v1/search", get(|| async { Json(json!({"courses": []})) })))
-            .await;
+    let base_url = serve(Router::new().route(
+        "/v1/courses/{id}",
+        get(|Path(id): Path<String>| async move { Json(valid_course(&id)) }),
+    ))
+    .await;
     let client =
         CourseProviderClient::build("key".into(), &base_url, 1, Duration::from_secs(1), 1).unwrap();
 
-    assert!(client.search("cached", true).await.is_ok());
-    assert!(client.search("cached", true).await.is_ok());
+    assert!(client.course("abcde123").await.is_ok());
+    assert!(client.course("abcde123").await.is_ok());
     assert_eq!(
-        client.search("uncached", true).await.unwrap_err(),
+        client.course("abcde124").await.unwrap_err(),
         CourseProviderError::Exhausted
     );
 }
 
 #[test]
-fn boundary_validation_is_bounded_and_course_ids_remain_opaque() {
-    assert_eq!(validate_search_query("  Oslo  ").unwrap(), "Oslo");
-    assert!(validate_search_query("x").is_err());
-    assert!(validate_search_query(&"x".repeat(81)).is_err());
-    assert!(validate_search_query("two\nlines").is_err());
+fn course_ids_remain_opaque_and_bounded() {
     assert_eq!(normalize_course_id("7K2M9QB4").unwrap(), "7k2m9qb4");
     assert!(normalize_course_id("12345678").is_err());
     assert!(normalize_course_id("with_i00").is_err());

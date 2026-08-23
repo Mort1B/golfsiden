@@ -7,9 +7,10 @@ instead of accumulating a historical log here.
 ## Planning status
 
 Phase 4A, the private-workspace reads, username constraint repairs, initial
-read-only tournament-management workspace, and backend course-provider search
-and detail boundary are complete. No active implementation step is approved.
-Immutable local course/tee/hole revisions are the next Phase 4B step.
+read-only tournament-management workspace, backend course-provider boundary,
+and curated eight-course local catalog are complete. No active implementation
+step is approved. Resolving complete course facts and storing immutable local
+course/tee/hole revisions is the next Phase 4B step.
 
 ## Product decisions
 

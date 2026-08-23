@@ -63,14 +63,17 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   through response assembly; tournament collections join memberships directly.
   Successful private responses are `private, no-store`, and global roles are no
   cross-tournament read bypass.
-- External course discovery is a backend adapter, not a persistence model. Its
-  tournament-scoped GET handlers require the exact admin membership in a short
-  transaction that commits before cache or network work. The adapter owns the
-  sensitive Bearer credential, time/concurrency/body/result bounds, finite TTL
-  cache, and per-process UTC quota. It converts the provider's search/detail
-  shapes into stable local DTOs, preserves opaque course IDs, derives ordered
-  hole numbers, and never invents a tee ID. Provider facts remain untrusted until
-  normalized; no course, tee, hole, or round row changes in this boundary.
+- Course discovery is a bundled JSON catalog, not provider free-text search or a
+  persistence model. Its tournament-scoped GET handler requires exact admin
+  membership, searches names and internal aliases locally, preserves file order,
+  and reports nullable verified provider IDs plus explicit readiness. Missing or
+  incomplete entries cannot cross the detail boundary. Future usable detail
+  reads commit authorization before cache/network work; the adapter owns the
+  sensitive Bearer credential, time/concurrency/body bounds, finite TTL cache,
+  and per-process UTC quota. It decodes the provider's wrapped detail shape into
+  stable local DTOs, derives ordered hole numbers, and never invents a tee ID.
+  Provider facts remain untrusted until normalized; no course, tee, hole, or
+  round row changes in this boundary.
 - The score authorization resolver returns tagged round owners. Tournament
   admins/scorers receive all eligible owners; tournament players receive their
   exact individual or round-team owner. Save and confirm recheck this policy
@@ -159,7 +162,7 @@ Implemented resources:
 | `GET` | `/api/auth/session` | Retrieve the current session and CSRF value |
 | `POST` | `/api/auth/logout` | Revoke and clear the current session |
 | `GET` | `/api/me/tournaments` | List the session user's tournament memberships and player links |
-| `GET` | `/api/tournaments/{tournament_id}/course-provider/search` | Search normalized provider courses as a tournament admin |
+| `GET` | `/api/tournaments/{tournament_id}/course-catalog` | Search the bundled curated course shortlist as a tournament admin |
 | `GET` | `/api/tournaments/{tournament_id}/course-provider/courses/{provider_course_id}` | Retrieve normalized provider tee and hole detail as a tournament admin |
 | `POST` | `/api/onboarding/tournaments` | Atomically create a first-time creator, draft tournament plan, invitation, and session |
 | `POST` | `/api/invitations/{invitation_id}/preview` | Preview minimal tournament data for an authenticated invitation token |

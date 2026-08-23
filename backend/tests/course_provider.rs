@@ -8,9 +8,8 @@ use std::sync::{
 use axum::{
     Json, Router,
     body::Body,
-    extract::{Path, Query},
+    extract::Path,
     http::{Request, StatusCode, header},
-    response::IntoResponse,
     routing::get,
 };
 use chrono::{Duration, Utc};
@@ -19,7 +18,6 @@ use golf_api::{
     repositories::auth,
 };
 use http_body_util::BodyExt;
-use serde::Deserialize;
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use tokio::net::TcpListener;
@@ -37,7 +35,7 @@ async fn seed(pool: &PgPool) {
         ('8c000000-0000-0000-0000-000000000002', 'course_admin', 'Course admin', 'viewer'),
         ('8c000000-0000-0000-0000-000000000003', 'course_outsider', 'Course outsider', 'admin');
         INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds)
-        VALUES ('8c000000-0000-0000-0000-000000000001', 'Provider trip', '2026-08-01', '2026-08-02', 2);
+        VALUES ('8c000000-0000-0000-0000-000000000001', 'Catalog trip', '2026-08-01', '2026-08-02', 2);
         INSERT INTO tournament_memberships (tournament_id, user_id, role)
         VALUES ('8c000000-0000-0000-0000-000000000001', '8c000000-0000-0000-0000-000000000002', 'admin');
         "#,
@@ -70,70 +68,22 @@ async fn body(response: axum::response::Response) -> Value {
     serde_json::from_slice(&bytes).unwrap()
 }
 
-#[derive(Deserialize)]
-struct ProviderSearchQuery {
-    search_query: String,
-}
-
 async fn mock_provider(calls: Arc<AtomicUsize>) -> String {
-    let app = Router::new()
-        .route(
-            "/v1/search",
-            get({
-                let calls = calls.clone();
-                move |Query(query): Query<ProviderSearchQuery>| {
-                    let calls = calls.clone();
-                    async move {
-                        calls.fetch_add(1, Ordering::SeqCst);
-                        if query.search_query == "limited" {
-                            return (
-                                StatusCode::TOO_MANY_REQUESTS,
-                                Json(json!({"error": "secret upstream limit detail"})),
-                            )
-                                .into_response();
-                        }
-                        Json(json!({"courses": [{
-                            "id": "7k2m9qb4",
-                            "club_name": "Murray Golf Club",
-                            "course_name": "Course No. 1",
-                            "location": {"country": "United States"},
-                            "tees": {"female": 1, "male": 1}
-                        }]}))
-                        .into_response()
-                    }
-                }
-            }),
-        )
-        .route(
-            "/v1/courses/{id}",
-            get(move |Path(id): Path<String>| {
-                let calls = calls.clone();
-                async move {
-                    calls.fetch_add(1, Ordering::SeqCst);
-                    if id != "7k2m9qb4" {
-                        return (
-                            StatusCode::NOT_FOUND,
-                            Json(json!({"error": "secret missing detail"})),
-                        )
-                            .into_response();
-                    }
-                    Json(json!({
-                        "id": "7k2m9qb4",
-                        "club_name": "Murray Golf Club",
-                        "course_name": "Course No. 1",
-                        "location": {"country": "United States"},
-                        "tees": {"female": [], "male": [{
-                            "tee_name": "Blue", "course_rating": 72.0,
-                            "slope_rating": 120, "total_yards": 400,
-                            "total_meters": 366, "number_of_holes": 1,
-                            "par_total": 4,
-                            "holes": [{"par": 4, "yardage": 400, "handicap": 1}]
-                        }]}
-                    }))
-                    .into_response()
-                }
-            }),
-        );
+    let app = Router::new().route(
+        "/v1/courses/{id}",
+        get(move |Path(id): Path<String>| {
+            let calls = calls.clone();
+            async move {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Json(json!({"course": {
+                    "id": id,
+                    "club_name": "Unexpected upstream call",
+                    "course_name": "Unexpected upstream call",
+                    "tees": {"female": [], "male": []}
+                }}))
+            }
+        }),
+    );
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let address = listener.local_addr().unwrap();
     tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
@@ -141,7 +91,7 @@ async fn mock_provider(calls: Arc<AtomicUsize>) -> String {
 }
 
 #[sqlx::test(migrations = "../migrations")]
-async fn admin_authorization_finishes_before_bounded_provider_reads(pool: PgPool) {
+async fn local_catalog_is_admin_scoped_searchable_and_gates_provider_detail(pool: PgPool) {
     seed(&pool).await;
     let calls = Arc::new(AtomicUsize::new(0));
     let base_url = mock_provider(calls.clone()).await;
@@ -152,86 +102,116 @@ async fn admin_authorization_finishes_before_bounded_provider_reads(pool: PgPool
         golf_api::auth::AuthConfig::local(),
         provider,
     ));
-    let search_path = format!(
-        "/api/tournaments/{TOURNAMENT_ID}/course-provider/search?q=Murray&fuzzy_match=false"
-    );
+    let catalog_path = format!("/api/tournaments/{TOURNAMENT_ID}/course-catalog");
 
     let unauthenticated = app
         .clone()
-        .oneshot(request(&search_path, None))
+        .oneshot(request(&catalog_path, None))
         .await
         .unwrap();
     assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(
+        body(unauthenticated).await["error"]["code"],
+        "unauthenticated"
+    );
+
     let forbidden = app
         .clone()
-        .oneshot(request(&search_path, Some("course-outsider")))
+        .oneshot(request(&catalog_path, Some("course-outsider")))
         .await
         .unwrap();
     assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
-    let invalid = app
+    assert_eq!(body(forbidden).await["error"]["code"], "forbidden");
+
+    let all = app
+        .clone()
+        .oneshot(request(&catalog_path, Some("course-admin")))
+        .await
+        .unwrap();
+    assert_eq!(all.status(), StatusCode::OK);
+    assert_eq!(all.headers()[header::CACHE_CONTROL], "private, no-store");
+    let all_body = body(all).await;
+    assert_eq!(all_body["courses"].as_array().unwrap().len(), 8);
+    assert_eq!(all_body["courses"][0]["display_name"], "Hacienda del Álamo");
+    assert_eq!(all_body["courses"][0]["provider_course_id"], Value::Null);
+    assert_eq!(all_body["courses"][0]["provider_status"], "missing");
+    assert_eq!(all_body["courses"][5]["display_name"], "Miklagard GK");
+    assert_eq!(all_body["courses"][5]["provider_course_id"], "0zm1pe1a");
+    assert_eq!(all_body["courses"][5]["provider_status"], "incomplete");
+    assert_eq!(all_body["courses"][7]["display_name"], "Haga GK");
+    assert_eq!(all_body["courses"][0]["provider"], "golf_course_api");
+    assert!(all_body["courses"][0].get("aliases").is_none());
+
+    for (query, expected) in [
+        ("Hacienda%20del%20Alamos", "Hacienda del Álamo"),
+        ("OPPEGARD", "Oppegård GK"),
+        ("dr%C3%B8bak", "Drøbak GK"),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(request(
+                &format!("{catalog_path}?q={query}"),
+                Some("course-admin"),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let response_body = body(response).await;
+        assert_eq!(response_body["courses"].as_array().unwrap().len(), 1);
+        assert_eq!(response_body["courses"][0]["display_name"], expected);
+    }
+
+    for suffix in ["?q=%20%20", "?q=x", "?q=two%0Alines", "?fuzzy_match=true"] {
+        let response = app
+            .clone()
+            .oneshot(request(
+                &format!("{catalog_path}{suffix}"),
+                Some("course-admin"),
+            ))
+            .await
+            .unwrap();
+        if suffix == "?q=%20%20" {
+            assert_eq!(response.status(), StatusCode::OK);
+            assert_eq!(body(response).await["courses"].as_array().unwrap().len(), 8);
+        } else {
+            assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+            assert_eq!(body(response).await["error"]["code"], "validation_error");
+        }
+    }
+    let oversized = format!("{catalog_path}?q={}", "x".repeat(81));
+    let response = app
+        .clone()
+        .oneshot(request(&oversized, Some("course-admin")))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(body(response).await["error"]["code"], "validation_error");
+
+    let removed_search = app
         .clone()
         .oneshot(request(
-            &format!("/api/tournaments/{TOURNAMENT_ID}/course-provider/search?q=x"),
+            &format!("/api/tournaments/{TOURNAMENT_ID}/course-provider/search?q=Oslo"),
             Some("course-admin"),
         ))
         .await
         .unwrap();
-    assert_eq!(invalid.status(), StatusCode::BAD_REQUEST);
-    assert_eq!(body(invalid).await["error"]["code"], "validation_error");
-    let missing_q = app
+    assert_eq!(removed_search.status(), StatusCode::NOT_FOUND);
+
+    let incomplete = app
         .clone()
         .oneshot(request(
-            &format!("/api/tournaments/{TOURNAMENT_ID}/course-provider/search"),
+            &format!("/api/tournaments/{TOURNAMENT_ID}/course-provider/courses/DCM3CN0G"),
             Some("course-admin"),
         ))
         .await
         .unwrap();
-    assert_eq!(missing_q.status(), StatusCode::BAD_REQUEST);
-    assert_eq!(body(missing_q).await["error"]["code"], "validation_error");
-    let malformed_fuzzy = app
-        .clone()
-        .oneshot(request(
-            &format!(
-                "/api/tournaments/{TOURNAMENT_ID}/course-provider/search?q=Murray&fuzzy_match=maybe"
-            ),
-            Some("course-admin"),
-        ))
-        .await
-        .unwrap();
-    assert_eq!(malformed_fuzzy.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(incomplete.status(), StatusCode::CONFLICT);
     assert_eq!(
-        body(malformed_fuzzy).await["error"]["code"],
-        "validation_error"
+        body(incomplete).await["error"]["code"],
+        "course_catalog_incomplete"
     );
-    assert_eq!(calls.load(Ordering::SeqCst), 0);
 
-    let search = app
-        .clone()
-        .oneshot(request(&search_path, Some("course-admin")))
-        .await
-        .unwrap();
-    assert_eq!(search.status(), StatusCode::OK);
-    assert_eq!(search.headers()[header::CACHE_CONTROL], "private, no-store");
-    let search_body = body(search).await;
-    assert_eq!(search_body["courses"][0]["provider"], "golf_course_api");
-    assert_eq!(search_body["courses"][0]["provider_course_id"], "7k2m9qb4");
-
-    let detail = app
-        .clone()
-        .oneshot(request(
-            &format!("/api/tournaments/{TOURNAMENT_ID}/course-provider/courses/7K2M9QB4"),
-            Some("course-admin"),
-        ))
-        .await
-        .unwrap();
-    assert_eq!(detail.status(), StatusCode::OK);
-    let detail_body = body(detail).await;
-    assert_eq!(detail_body["tees"][0]["holes"][0]["number"], 1);
-    assert_eq!(detail_body["tees"][0]["holes"][0]["stroke_index"], 1);
-    assert!(detail_body["tees"][0].get("id").is_none());
-    assert_eq!(calls.load(Ordering::SeqCst), 2);
-
-    let missing_detail = app
+    let unknown = app
         .clone()
         .oneshot(request(
             &format!("/api/tournaments/{TOURNAMENT_ID}/course-provider/courses/abcde123"),
@@ -239,55 +219,24 @@ async fn admin_authorization_finishes_before_bounded_provider_reads(pool: PgPool
         ))
         .await
         .unwrap();
-    assert_eq!(missing_detail.status(), StatusCode::NOT_FOUND);
+    assert_eq!(unknown.status(), StatusCode::NOT_FOUND);
     assert_eq!(
-        missing_detail.headers()[header::CACHE_CONTROL],
-        "private, no-store"
+        body(unknown).await["error"]["code"],
+        "course_catalog_not_found"
     );
-    let missing_body = body(missing_detail).await;
-    assert_eq!(missing_body["error"]["code"], "course_provider_not_found");
-    assert!(!missing_body.to_string().contains("secret"));
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
 
-    let limited_path = format!(
-        "/api/tournaments/{TOURNAMENT_ID}/course-provider/search?q=limited&fuzzy_match=true"
-    );
-    let limited = app
-        .clone()
-        .oneshot(request(&limited_path, Some("course-admin")))
-        .await
-        .unwrap();
-    assert_eq!(limited.status(), StatusCode::SERVICE_UNAVAILABLE);
-    assert_eq!(
-        limited.headers()[header::CACHE_CONTROL],
-        "private, no-store"
-    );
-    let limited_body = body(limited).await;
-    assert_eq!(limited_body["error"]["code"], "course_provider_exhausted");
-    assert!(!limited_body.to_string().contains("secret"));
-    assert_eq!(calls.load(Ordering::SeqCst), 4);
-
-    let after_limit = app
-        .clone()
+    let app_without_key = api::router(AppState::new(pool));
+    let local_without_key = app_without_key
         .oneshot(request(
-            &format!("/api/tournaments/{TOURNAMENT_ID}/course-provider/search?q=after-limit"),
+            &format!("{catalog_path}?q=Oslo"),
             Some("course-admin"),
         ))
         .await
         .unwrap();
-    assert_eq!(after_limit.status(), StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(local_without_key.status(), StatusCode::OK);
     assert_eq!(
-        body(after_limit).await["error"]["code"],
-        "course_provider_exhausted"
-    );
-    assert_eq!(calls.load(Ordering::SeqCst), 4);
-
-    let unavailable = api::router(AppState::new(pool))
-        .oneshot(request(&search_path, Some("course-admin")))
-        .await
-        .unwrap();
-    assert_eq!(unavailable.status(), StatusCode::SERVICE_UNAVAILABLE);
-    assert_eq!(
-        body(unavailable).await["error"]["code"],
-        "course_provider_unavailable"
+        body(local_without_key).await["courses"][0]["display_name"],
+        "Oslo GK"
     );
 }

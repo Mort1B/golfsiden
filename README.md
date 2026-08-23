@@ -70,10 +70,11 @@ rounds one and two. Development credentials are:
 The local `.env.example` explicitly disables the cookie `Secure` flag for HTTP
 development. Keep `SESSION_COOKIE_SECURE=true` in HTTPS environments.
 
-Tournament-admin course search and detail proxying is enabled by setting the
-optional backend-only `GOLF_COURSE_API_KEY`. When it is absent, those endpoints
-return a deliberate unavailable response. Never place this key in frontend
-environment variables or browser requests.
+Tournament-admin course search uses the bundled local shortlist and consumes no
+provider requests. Provider detail for catalog entries verified as usable is
+enabled by setting the optional backend-only `GOLF_COURSE_API_KEY`; when absent,
+that detail endpoint returns a deliberate unavailable response. Never place this
+key in frontend environment variables or browser requests.
 `GOLF_COURSE_API_DAILY_LIMIT` defaults to 50 and caps uncached provider calls
 per UTC day in each backend process; use the provider plan's limit when changing
 it. Multi-instance deployments require a shared quota before relying on this as

@@ -1,6 +1,7 @@
 pub mod api;
 pub mod auth;
 pub mod config;
+pub mod course_catalog;
 pub mod course_provider;
 pub mod domain;
 pub mod error;

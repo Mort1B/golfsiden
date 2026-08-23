@@ -1,0 +1,66 @@
+[
+  {
+    "display_name": "Hacienda del Álamo",
+    "country": "Spain",
+    "aliases": ["Hacienda del Alamo", "Hacienda del Alamos", "Hacienda del Alamo Golf Resort"],
+    "provider_course_id": null,
+    "provider_status": "missing",
+    "provider_status_detail": "No verified GolfCourseAPI match is available."
+  },
+  {
+    "display_name": "Saurines de la Torre",
+    "country": "Spain",
+    "aliases": ["Saurines", "Saurines Golf", "Saurines de la Torre Golf"],
+    "provider_course_id": null,
+    "provider_status": "missing",
+    "provider_status_detail": "No verified GolfCourseAPI match is available."
+  },
+  {
+    "display_name": "Mar Menor",
+    "country": "Spain",
+    "aliases": ["Mar Menor Golf", "Mar Menor Golf Resort"],
+    "provider_course_id": null,
+    "provider_status": "missing",
+    "provider_status_detail": "No verified GolfCourseAPI match is available."
+  },
+  {
+    "display_name": "Oppegård GK",
+    "country": "Norway",
+    "aliases": ["Oppegard GK", "Oppegård Golfklubb", "Oppegard Golfklubb"],
+    "provider_course_id": null,
+    "provider_status": "missing",
+    "provider_status_detail": "No verified GolfCourseAPI match is available."
+  },
+  {
+    "display_name": "Drøbak GK",
+    "country": "Norway",
+    "aliases": ["Drobak GK", "Drøbak Golfklubb", "Drobak Golfklubb"],
+    "provider_course_id": null,
+    "provider_status": "missing",
+    "provider_status_detail": "No verified GolfCourseAPI match is available."
+  },
+  {
+    "display_name": "Miklagard GK",
+    "country": "Norway",
+    "aliases": ["Miklagard Golf", "Miklagard Golfklubb"],
+    "provider_course_id": "0zm1pe1a",
+    "provider_status": "incomplete",
+    "provider_status_detail": "The verified provider course currently has no tees."
+  },
+  {
+    "display_name": "Oslo GK",
+    "country": "Norway",
+    "aliases": ["Oslo Golf", "Oslo Golfklubb"],
+    "provider_course_id": "dcm3cn0g",
+    "provider_status": "incomplete",
+    "provider_status_detail": "The verified provider tees are missing hole stroke indexes."
+  },
+  {
+    "display_name": "Haga GK",
+    "country": "Norway",
+    "aliases": ["Haga Golf", "Haga Golfklubb"],
+    "provider_course_id": "kcmzs8qz",
+    "provider_status": "incomplete",
+    "provider_status_detail": "The verified provider tees are missing hole stroke indexes."
+  }
+]

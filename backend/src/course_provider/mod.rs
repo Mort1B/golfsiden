@@ -16,15 +16,12 @@ use thiserror::Error;
 use tokio::sync::{Mutex, Semaphore};
 
 use self::cache::Cache;
-pub use models::{
-    CourseDetail, CourseLocation, CourseSearchResult, Hole, Tee, TeeCategory, TeeCounts,
-};
-use models::{ProviderCourse, SearchEnvelope};
+use models::CourseEnvelope;
+pub use models::{CourseDetail, CourseLocation, Hole, Tee, TeeCategory};
 
 const OFFICIAL_BASE_URL: &str = "https://api.golfcourseapi.com/";
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
 const MAX_RESPONSE_BYTES: usize = 1024 * 1024;
-const MAX_SEARCH_RESULTS: usize = 20;
 const MAX_CONCURRENT_REQUESTS: usize = 2;
 const DEFAULT_DAILY_LIMIT: u32 = 50;
 
@@ -157,39 +154,6 @@ impl CourseProviderClient {
         Self::build(api_key, base_url, 100, timeout, concurrency)
     }
 
-    pub async fn search(
-        &self,
-        query: &str,
-        fuzzy_match: bool,
-    ) -> Result<Vec<CourseSearchResult>, CourseProviderError> {
-        let client = self.require_configured()?;
-        let cache_key = format!("{fuzzy_match}:{}", query.to_lowercase());
-        if let Some(cached) = client.cached_search(&cache_key).await {
-            return Ok(cached);
-        }
-        let url = client
-            .base_url
-            .join("v1/search")
-            .map_err(|_| CourseProviderError::Unavailable)?;
-        let envelope: SearchEnvelope = client
-            .get_json(
-                client.http.get(url).query(&[
-                    ("search_query", query),
-                    ("fuzzy_match", &fuzzy_match.to_string()),
-                ]),
-                false,
-            )
-            .await?;
-        let results = envelope
-            .courses
-            .into_iter()
-            .take(MAX_SEARCH_RESULTS)
-            .map(|course| course.normalize())
-            .collect::<Result<Vec<_>, _>>()?;
-        client.cache_search(cache_key, results.clone()).await;
-        Ok(results)
-    }
-
     pub async fn course(&self, id: &str) -> Result<CourseDetail, CourseProviderError> {
         let client = self.require_configured()?;
         if let Some(cached) = client.cached_course(id).await {
@@ -199,8 +163,8 @@ impl CourseProviderClient {
             .base_url
             .join(&format!("v1/courses/{id}"))
             .map_err(|_| CourseProviderError::Unavailable)?;
-        let provider: ProviderCourse = client.get_json(client.http.get(url), true).await?;
-        let course = provider.normalize(id)?;
+        let envelope: CourseEnvelope = client.get_json(client.http.get(url), true).await?;
+        let course = envelope.course.normalize(id)?;
         client.cache_course(id.to_owned(), course.clone()).await;
         Ok(course)
     }
@@ -257,19 +221,9 @@ impl ConfiguredClient {
         serde_json::from_slice(&body).map_err(|_| CourseProviderError::InvalidResponse)
     }
 
-    async fn cached_search(&self, key: &str) -> Option<Vec<CourseSearchResult>> {
-        let mut cache = self.cache.lock().await;
-        cache.search(key)
-    }
-
     async fn cached_course(&self, key: &str) -> Option<CourseDetail> {
         let mut cache = self.cache.lock().await;
         cache.course(key)
-    }
-
-    async fn cache_search(&self, key: String, value: Vec<CourseSearchResult>) {
-        let mut cache = self.cache.lock().await;
-        cache.insert_search(key, value);
     }
 
     async fn cache_course(&self, key: String, value: CourseDetail) {
@@ -304,14 +258,6 @@ fn map_reqwest_error(error: reqwest::Error) -> CourseProviderError {
     } else {
         CourseProviderError::Upstream
     }
-}
-
-pub fn validate_search_query(value: &str) -> Result<&str, &'static str> {
-    let value = value.trim();
-    if !(2..=80).contains(&value.len()) || value.chars().any(char::is_control) {
-        return Err("q must contain between 2 and 80 bytes without control characters");
-    }
-    Ok(value)
 }
 
 pub fn normalize_course_id(value: &str) -> Result<String, &'static str> {
