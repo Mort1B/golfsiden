@@ -7,9 +7,8 @@ instead of accumulating a historical log here.
 ## Planning status
 
 Phase 4A, the first Phase 4B private-workspace step, and the sign-in username
-constraint repair are complete. No active implementation step is approved. The
-remaining username-input validation repair below is the smallest recommended
-next step before continuing provider-backed course work.
+constraint repairs are complete. No active implementation step is approved.
+Provider-backed private tournament workspace work is the next bounded phase.
 
 ## Product decisions
 
@@ -67,13 +66,6 @@ next step before continuing provider-backed course work.
   Stableford, and match play require distinct aggregation or scoring contracts.
 
 ## Upcoming work
-
-### Validation follow-up: remaining username inputs
-
-- Apply the HTML `/v`-compatible username constraint to invitation registration,
-  invitation sign-in, and onboarding account creation. Introduce one shared
-  frontend constraint only if that broader step makes the duplication real and
-  testable without weakening the existing grammar.
 
 ### Phase 4B: Private workspace and provider-backed courses
 

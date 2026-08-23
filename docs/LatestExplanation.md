@@ -1,45 +1,51 @@
 # Latest explanation
 
-## Browser-compatible sign-in username validation
+## One browser-compatible username constraint
 
-The sign-in username field now uses a character class that is valid under the
-HTML `pattern` attribute's `/v` regular-expression semantics. The hyphen is
-escaped explicitly, removing Chrome's pattern-compilation diagnostic while
-preserving the existing browser boundary: 3-32 ASCII letters, digits,
-underscores, or hyphens.
+Every username input now uses one shared HTML `pattern` value. The sign-in page,
+invitation registration, invitation sign-in, and onboarding account creation all
+emit the `/v`-compatible pattern `[A-Za-z0-9_\-]{3,32}`. Centralizing the value
+prevents one account surface from reintroducing Chrome's character-class
+compilation error while another remains valid.
 
-Backend account normalization and validation are unchanged. Login still trims
-and lowercases ASCII usernames before applying its authoritative grammar, and
-invalid syntax still follows the same credential-failure path. No API, session,
-database, tournament, handicap, team, score, locking, or standings behavior was
-modified.
+The shared constant is deliberately limited to the browser constraint. Backend
+normalization and validation remain authoritative, and onboarding's imperative
+validation still trims user input before checking the same visible grammar.
+Required fields, length attributes, submissions, error states, invitation
+handling, tournament creation, authentication, and sessions are unchanged.
 
 ## Compact example
 
-The JSX expression makes the intended DOM backslash unambiguous:
+All four inputs import the same escaped value:
 
 ```tsx
-<input pattern={'[A-Za-z0-9_\\-]{3,32}'} minLength={3} maxLength={32} required />
+export const USERNAME_HTML_PATTERN = '[A-Za-z0-9_\\-]{3,32}'
+
+<input pattern={USERNAME_HTML_PATTERN} minLength={3} maxLength={32} required />
 ```
 
 ## Invariants
 
-- Uppercase ASCII remains usable at sign-in because the backend normalizes it.
-- Username length boundaries remain 3 and 32 characters.
-- Dot, spaces, non-ASCII letters, and other punctuation remain invalid in the
-  browser constraint.
-- Authentication response behavior and session ownership are unchanged.
-- All golf-domain invariants are unaffected.
+- Username inputs accept 3-32 ASCII letters, digits, underscores, or hyphens.
+- Uppercase ASCII remains usable because the backend normalizes case.
+- Dot, spaces, non-ASCII letters, other punctuation, and out-of-range lengths
+  remain invalid at the browser boundary.
+- Backend credential behavior, session ownership, invitation semantics, and
+  onboarding payloads are unchanged.
+- Tournament, round-team, handicap snapshot, score ownership, locking, audit,
+  and gross/net standings invariants are unaffected.
 
 ## Validation
 
-- Frontend Vitest passes 98 tests across 18 files.
-- Frontend strict typecheck, lint, and production build pass; the build
-  transforms 1,795 modules.
-- Google Chrome 151.0.7922.173 passes at 375x812 and 1440x900 with no pattern
-  diagnostic, runtime exception, failed request, unexpected error response, or
-  horizontal overflow. The unauthenticated session request was deliberately
-  fulfilled with the expected `401` response.
-- Both viewports expose the exact DOM pattern `[A-Za-z0-9_\\-]{3,32}`. Chrome
-  accepts `abc`, `Player_1`, `abc-def`, and the 32-character boundary; it rejects
-  two characters, 33 characters, dot, a Norwegian letter, and whitespace.
+- Focused `/v` compilation and grammar coverage passes 10 tests.
+- The complete frontend suite passes 108 tests across 19 files.
+- Strict typecheck, lint, and production build pass; Vite 7.3.6 transforms 1,796
+  modules.
+- Google Chrome 151.0.7922.173 passes onboarding and both invitation account
+  forms at 375x812 and 1440x900. All three fields expose the exact shared DOM
+  pattern and pass the accepted/rejected boundary matrix.
+- Chrome reports no pattern diagnostic, runtime exception, failed request,
+  unexpected error response, or horizontal overflow. The unauthenticated session
+  check returns its expected `401` response.
+- Independent review found no correctness, security, accessibility, structural,
+  or regression issue.

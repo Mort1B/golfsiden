@@ -2,6 +2,7 @@ import type { FieldErrors } from './validation'
 import type { CreatorDraft } from './wizardState'
 import { FieldError, WizardControls } from './WizardControls'
 import type { RefObject } from 'react'
+import { USERNAME_HTML_PATTERN } from '../auth/username'
 
 interface CreatorStepProps {
   value: CreatorDraft
@@ -24,7 +25,7 @@ export function CreatorStep({ value, errors, onChange, onBack, onNext, headingRe
         </label>
         <label>
           <span>Brukernavn</span>
-          <input autoComplete="username" minLength={3} maxLength={32} pattern="[A-Za-z0-9_-]{3,32}" required value={value.username} aria-invalid={Boolean(errors['creator.username'])} aria-describedby="creator-username-help creator-username-error" onChange={(event) => onChange({ ...value, username: event.target.value })} />
+          <input autoComplete="username" minLength={3} maxLength={32} pattern={USERNAME_HTML_PATTERN} required value={value.username} aria-invalid={Boolean(errors['creator.username'])} aria-describedby="creator-username-help creator-username-error" onChange={(event) => onChange({ ...value, username: event.target.value })} />
           <small id="creator-username-help" className="field-help">3–32 bokstaver, tall, bindestrek eller understrek.</small>
           <FieldError id="creator-username-error">{errors['creator.username']}</FieldError>
         </label>

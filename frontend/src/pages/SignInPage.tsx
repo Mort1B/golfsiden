@@ -3,6 +3,7 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { LogIn } from 'lucide-react'
 import { useAuth } from '../features/auth/authContext'
 import { safeReturnTo } from '../features/auth/navigation'
+import { USERNAME_HTML_PATTERN } from '../features/auth/username'
 
 export function SignInPage() {
   const auth = useAuth()
@@ -38,7 +39,7 @@ export function SignInPage() {
         <form onSubmit={(event) => void submit(event)}>
           <label>
             <span>Brukernavn</span>
-            <input autoComplete="username" minLength={3} maxLength={32} pattern={'[A-Za-z0-9_\\-]{3,32}'} required value={username} onChange={(event) => setUsername(event.target.value)} />
+            <input autoComplete="username" minLength={3} maxLength={32} pattern={USERNAME_HTML_PATTERN} required value={username} onChange={(event) => setUsername(event.target.value)} />
           </label>
           <label><span>Passord</span><input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
           {error && <p className="sign-in-error" role="alert">{error}</p>}
