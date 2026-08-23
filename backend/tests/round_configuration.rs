@@ -91,11 +91,11 @@ async fn make_draft_round_openable(pool: &PgPool) {
              tee_id = '84000000-0000-0000-0000-000000000013',
              tee_name = 'Existing Tee', number_of_holes = 1
          WHERE id = '84000000-0000-0000-0000-000000000004';
-         INSERT INTO teams (id, round_id, tournament_id, name)
+         INSERT INTO flights (id, round_id, tournament_id, name)
          VALUES ('84000000-0000-0000-0000-000000000015',
                  '84000000-0000-0000-0000-000000000004',
-                 '84000000-0000-0000-0000-000000000003', 'Race Group');
-         INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id)
+                 '84000000-0000-0000-0000-000000000003', 'Race Flight');
+         INSERT INTO flight_memberships (flight_id, round_id, tournament_id, player_id)
          VALUES ('84000000-0000-0000-0000-000000000015',
                  '84000000-0000-0000-0000-000000000004',
                  '84000000-0000-0000-0000-000000000003',

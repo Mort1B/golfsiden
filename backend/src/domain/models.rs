@@ -214,6 +214,11 @@ pub enum ReadinessIssueCode {
     IneligibleTeamAssignment,
     EmptyTeam,
     InvalidScrambleTeamSize,
+    MissingFlightAssignment,
+    IneligibleFlightAssignment,
+    EmptyFlight,
+    LegacyIndividualGroupsPresent,
+    TeamSplitAcrossFlights,
     MissingCourse,
     MissingTee,
     MismatchedCourseTee,
@@ -243,6 +248,13 @@ pub struct ReadinessTeamSize {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ReadinessFlightSize {
+    pub flight_id: Uuid,
+    pub flight_name: String,
+    pub player_count: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct PairingValidation {
     pub round_id: Uuid,
     pub ready: bool,
@@ -250,6 +262,11 @@ pub struct PairingValidation {
     pub missing_players: Vec<ReadinessPlayer>,
     pub ineligible_players: Vec<ReadinessPlayer>,
     pub team_sizes: Vec<ReadinessTeamSize>,
+    pub missing_flight_players: Vec<ReadinessPlayer>,
+    pub ineligible_flight_players: Vec<ReadinessPlayer>,
+    pub flight_sizes: Vec<ReadinessFlightSize>,
+    pub legacy_individual_groups: Vec<ReadinessTeamSize>,
+    pub split_teams: Vec<ReadinessTeamSize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, FromRow)]

@@ -45,9 +45,9 @@ async fn seed(pool: &PgPool) {
         VALUES ('82000000-0000-0000-0000-000000000002', '82000000-0000-0000-0000-000000000005', 7.0);
         INSERT INTO rounds (id, tournament_id, round_number, name, round_date, course_name, tee_name, scoring_format)
         VALUES ('82000000-0000-0000-0000-000000000003', '82000000-0000-0000-0000-000000000002', 1, 'Beta round', '2026-02-01', 'TBD', 'TBD', 'team_scramble');
-        INSERT INTO teams (id, round_id, tournament_id, name)
-        VALUES ('82000000-0000-0000-0000-000000000004', '82000000-0000-0000-0000-000000000003', '82000000-0000-0000-0000-000000000002', 'Beta team');
-        INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id)
+        INSERT INTO flights (id, round_id, tournament_id, name)
+        VALUES ('82000000-0000-0000-0000-000000000004', '82000000-0000-0000-0000-000000000003', '82000000-0000-0000-0000-000000000002', 'Beta flight');
+        INSERT INTO flight_memberships (flight_id, round_id, tournament_id, player_id)
         VALUES ('82000000-0000-0000-0000-000000000004', '82000000-0000-0000-0000-000000000003', '82000000-0000-0000-0000-000000000002', '82000000-0000-0000-0000-000000000005');
         INSERT INTO tournament_memberships (tournament_id, user_id, role) VALUES
         ('82000000-0000-0000-0000-000000000001', '82000000-0000-0000-0000-000000000011', 'admin'),
@@ -326,12 +326,12 @@ async fn tournament_handicap_correction_is_audited_then_locked_by_first_open(poo
            '2026-02-02', '82000000-0000-0000-0000-000000000021',
            'Snapshot Course', '82000000-0000-0000-0000-000000000022',
            'Test', 1, 'individual_stroke_play');
-        INSERT INTO teams (id, round_id, tournament_id, name)
+        INSERT INTO flights (id, round_id, tournament_id, name)
         VALUES ('82000000-0000-0000-0000-000000000032',
                 '82000000-0000-0000-0000-000000000031',
-                '82000000-0000-0000-0000-000000000002', 'Future group');
-        INSERT INTO team_memberships
-          (team_id, round_id, tournament_id, player_id)
+                '82000000-0000-0000-0000-000000000002', 'Future flight');
+        INSERT INTO flight_memberships
+          (flight_id, round_id, tournament_id, player_id)
         VALUES ('82000000-0000-0000-0000-000000000032',
                 '82000000-0000-0000-0000-000000000031',
                 '82000000-0000-0000-0000-000000000002',

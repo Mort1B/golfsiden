@@ -34,6 +34,7 @@ const TEAM_TWO_A: Uuid = uuid!("50000000-0000-0000-0000-000000000032");
 const TEAM_TWO_B: Uuid = uuid!("50000000-0000-0000-0000-000000000033");
 const CURRENT_A: Uuid = uuid!("50000000-0000-0000-0000-000000000034");
 const LATEST_TEAM: Uuid = uuid!("50000000-0000-0000-0000-000000000036");
+const LATEST_TEAM_TWO: Uuid = uuid!("50000000-0000-0000-0000-000000000037");
 const HOLE_ONE: Uuid = uuid!("50000000-0000-0000-0000-000000000041");
 const HOLE_TWO: Uuid = uuid!("50000000-0000-0000-0000-000000000042");
 const USER: Uuid = uuid!("50000000-0000-0000-0000-000000000051");
@@ -66,19 +67,14 @@ INSERT INTO holes (id, tee_id, hole_number, par, stroke_index) VALUES
 INSERT INTO rounds (id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, scoring_format) VALUES
 ('50000000-0000-0000-0000-000000000011', '50000000-0000-0000-0000-000000000001', 1, 'Individual', '2026-08-01', '50000000-0000-0000-0000-000000000002', 'Leaderboard Course', '50000000-0000-0000-0000-000000000003', 'Test', 2, 'individual_stroke_play'),
 ('50000000-0000-0000-0000-000000000012', '50000000-0000-0000-0000-000000000001', 2, 'Scramble', '2026-08-02', '50000000-0000-0000-0000-000000000002', 'Leaderboard Course', '50000000-0000-0000-0000-000000000003', 'Test', 2, 'team_scramble'),
-('50000000-0000-0000-0000-000000000013', '50000000-0000-0000-0000-000000000001', 3, 'Current', '2026-08-03', '50000000-0000-0000-0000-000000000002', 'Leaderboard Course', '50000000-0000-0000-0000-000000000003', 'Test', 2, 'individual_stroke_play'),
-('50000000-0000-0000-0000-000000000014', '50000000-0000-0000-0000-000000000001', 4, 'Draft', '2026-08-04', '50000000-0000-0000-0000-000000000002', 'Leaderboard Course', '50000000-0000-0000-0000-000000000003', 'Test', 2, 'individual_stroke_play');
+('50000000-0000-0000-0000-000000000013', '50000000-0000-0000-0000-000000000001', 3, 'Current', '2026-08-03', '50000000-0000-0000-0000-000000000002', 'Leaderboard Course', '50000000-0000-0000-0000-000000000003', 'Test', 2, 'team_scramble'),
+('50000000-0000-0000-0000-000000000014', '50000000-0000-0000-0000-000000000001', 4, 'Draft', '2026-08-04', '50000000-0000-0000-0000-000000000002', 'Leaderboard Course', '50000000-0000-0000-0000-000000000003', 'Test', 2, 'team_scramble');
 INSERT INTO teams (id, round_id, tournament_id, name) VALUES
-('50000000-0000-0000-0000-000000000031', '50000000-0000-0000-0000-000000000011', '50000000-0000-0000-0000-000000000001', 'All players'),
 ('50000000-0000-0000-0000-000000000032', '50000000-0000-0000-0000-000000000012', '50000000-0000-0000-0000-000000000001', 'Low pair'),
 ('50000000-0000-0000-0000-000000000033', '50000000-0000-0000-0000-000000000012', '50000000-0000-0000-0000-000000000001', 'Mixed pair'),
 ('50000000-0000-0000-0000-000000000034', '50000000-0000-0000-0000-000000000013', '50000000-0000-0000-0000-000000000001', 'Current A'),
 ('50000000-0000-0000-0000-000000000035', '50000000-0000-0000-0000-000000000013', '50000000-0000-0000-0000-000000000001', 'Current B');
 INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id, display_order) VALUES
-('50000000-0000-0000-0000-000000000031', '50000000-0000-0000-0000-000000000011', '50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000021', 1),
-('50000000-0000-0000-0000-000000000031', '50000000-0000-0000-0000-000000000011', '50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000022', 2),
-('50000000-0000-0000-0000-000000000031', '50000000-0000-0000-0000-000000000011', '50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000023', 3),
-('50000000-0000-0000-0000-000000000031', '50000000-0000-0000-0000-000000000011', '50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000024', 4),
 ('50000000-0000-0000-0000-000000000032', '50000000-0000-0000-0000-000000000012', '50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000021', 2),
 ('50000000-0000-0000-0000-000000000032', '50000000-0000-0000-0000-000000000012', '50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000022', 1),
 ('50000000-0000-0000-0000-000000000033', '50000000-0000-0000-0000-000000000012', '50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000023', NULL),
@@ -87,6 +83,25 @@ INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id, displ
 ('50000000-0000-0000-0000-000000000034', '50000000-0000-0000-0000-000000000013', '50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000023', 2),
 ('50000000-0000-0000-0000-000000000035', '50000000-0000-0000-0000-000000000013', '50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000022', 1),
 ('50000000-0000-0000-0000-000000000035', '50000000-0000-0000-0000-000000000013', '50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000024', 2);
+INSERT INTO flights (id, round_id, tournament_id, name) VALUES
+('50000000-0000-0000-0000-000000000061', '50000000-0000-0000-0000-000000000011', '50000000-0000-0000-0000-000000000001', 'Round 1 flight'),
+('50000000-0000-0000-0000-000000000062', '50000000-0000-0000-0000-000000000012', '50000000-0000-0000-0000-000000000001', 'Round 2 flight'),
+('50000000-0000-0000-0000-000000000063', '50000000-0000-0000-0000-000000000013', '50000000-0000-0000-0000-000000000001', 'Round 3 flight'),
+('50000000-0000-0000-0000-000000000064', '50000000-0000-0000-0000-000000000014', '50000000-0000-0000-0000-000000000001', 'Round 4 flight');
+INSERT INTO flight_memberships (flight_id, round_id, tournament_id, player_id, display_order)
+SELECT f.id, f.round_id, f.tournament_id, p.player_id, p.display_order
+FROM (VALUES
+    ('50000000-0000-0000-0000-000000000061'::uuid, '50000000-0000-0000-0000-000000000011'::uuid, '50000000-0000-0000-0000-000000000001'::uuid),
+    ('50000000-0000-0000-0000-000000000062'::uuid, '50000000-0000-0000-0000-000000000012'::uuid, '50000000-0000-0000-0000-000000000001'::uuid),
+    ('50000000-0000-0000-0000-000000000063'::uuid, '50000000-0000-0000-0000-000000000013'::uuid, '50000000-0000-0000-0000-000000000001'::uuid),
+    ('50000000-0000-0000-0000-000000000064'::uuid, '50000000-0000-0000-0000-000000000014'::uuid, '50000000-0000-0000-0000-000000000001'::uuid)
+) AS f(id, round_id, tournament_id)
+CROSS JOIN (VALUES
+    ('50000000-0000-0000-0000-000000000021'::uuid, 1),
+    ('50000000-0000-0000-0000-000000000022'::uuid, 2),
+    ('50000000-0000-0000-0000-000000000023'::uuid, 3),
+    ('50000000-0000-0000-0000-000000000024'::uuid, 4)
+) AS p(player_id, display_order);
 "#;
 
 async fn seed(pool: &PgPool) {
@@ -148,26 +163,35 @@ async fn save(pool: &PgPool, round_id: Uuid, hole_id: Uuid, owner: ScoreOwner, g
 }
 
 async fn open_latest_round(pool: &PgPool) {
-    sqlx::query("INSERT INTO teams (id, round_id, tournament_id, name) VALUES ($1, $2, $3, 'Latest current')")
-        .bind(LATEST_TEAM)
+    for (team_id, name, members) in [
+        (LATEST_TEAM, "Latest current", [PLAYER_A, PLAYER_B]),
+        (
+            LATEST_TEAM_TWO,
+            "Latest current two",
+            [PLAYER_PLUS, PLAYER_D],
+        ),
+    ] {
+        sqlx::query(
+            "INSERT INTO teams (id, round_id, tournament_id, name) VALUES ($1, $2, $3, $4)",
+        )
+        .bind(team_id)
         .bind(ROUND_DRAFT)
         .bind(TOURNAMENT)
+        .bind(name)
         .execute(pool)
         .await
         .unwrap();
-    for (order, player_id) in [PLAYER_A, PLAYER_B, PLAYER_PLUS, PLAYER_D]
-        .into_iter()
-        .enumerate()
-    {
-        sqlx::query("INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id, display_order) VALUES ($1, $2, $3, $4, $5)")
-            .bind(LATEST_TEAM)
-            .bind(ROUND_DRAFT)
-            .bind(TOURNAMENT)
-            .bind(player_id)
-            .bind((order + 1) as i16)
-            .execute(pool)
-            .await
-            .unwrap();
+        for (order, player_id) in members.into_iter().enumerate() {
+            sqlx::query("INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id, display_order) VALUES ($1, $2, $3, $4, $5)")
+                .bind(team_id)
+                .bind(ROUND_DRAFT)
+                .bind(TOURNAMENT)
+                .bind(player_id)
+                .bind((order + 1) as i16)
+                .execute(pool)
+                .await
+                .unwrap();
+        }
     }
     open(pool, ROUND_DRAFT).await;
 }
@@ -348,8 +372,8 @@ async fn tournament_api_aggregates_completed_rounds_and_keeps_current_teams(pool
             "entries": [
                 {"position": 1, "tied": false, "player_id": PLAYER_B, "display_name": "Bob", "status": "active", "completed_rounds": 2, "gross_total": 18, "net_total": -8, "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM, "team_name": "Latest current"}},
                 {"position": 2, "tied": false, "player_id": PLAYER_A, "display_name": "Ada", "status": "active", "completed_rounds": 2, "gross_total": 18, "net_total": 4, "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM, "team_name": "Latest current"}},
-                {"position": 3, "tied": false, "player_id": PLAYER_D, "display_name": "Zed", "status": "withdrawn", "completed_rounds": 2, "gross_total": 20, "net_total": 15, "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM, "team_name": "Latest current"}},
-                {"position": 4, "tied": false, "player_id": PLAYER_PLUS, "display_name": "Plus", "status": "active", "completed_rounds": 2, "gross_total": 18, "net_total": 19, "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM, "team_name": "Latest current"}},
+                {"position": 3, "tied": false, "player_id": PLAYER_D, "display_name": "Zed", "status": "withdrawn", "completed_rounds": 2, "gross_total": 20, "net_total": 15, "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM_TWO, "team_name": "Latest current two"}},
+                {"position": 4, "tied": false, "player_id": PLAYER_PLUS, "display_name": "Plus", "status": "active", "completed_rounds": 2, "gross_total": 18, "net_total": 19, "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM_TWO, "team_name": "Latest current two"}},
                 {"position": null, "tied": false, "player_id": PLAYER_ZERO, "display_name": "Withdrawn zero", "status": "withdrawn", "completed_rounds": 0, "gross_total": 0, "net_total": 0, "current_team": null}
             ]
         })
@@ -369,9 +393,61 @@ async fn tournament_api_aggregates_completed_rounds_and_keeps_current_teams(pool
 }
 
 #[sqlx::test(migrations = "../migrations")]
+async fn current_team_lookup_supports_already_open_legacy_individual_rounds(pool: PgPool) {
+    seed(&pool).await;
+    open_latest_round(&pool).await;
+    sqlx::query("ALTER TABLE rounds DISABLE TRIGGER USER")
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE rounds SET scoring_format = 'individual_stroke_play' WHERE id = $1")
+        .bind(ROUND_DRAFT)
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("ALTER TABLE rounds ENABLE TRIGGER USER")
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    let app = api::router(AppState::new(pool));
+    let (status, response) = get(
+        &app,
+        format!("/api/tournaments/{TOURNAMENT}/leaderboards/net"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(response["current_round_id"], ROUND_DRAFT.to_string());
+    let entries = response["entries"].as_array().unwrap();
+    let ada = entries
+        .iter()
+        .find(|entry| entry["player_id"] == PLAYER_A.to_string())
+        .unwrap();
+    assert_eq!(ada["current_team"]["team_id"], LATEST_TEAM.to_string());
+    let plus = entries
+        .iter()
+        .find(|entry| entry["player_id"] == PLAYER_PLUS.to_string())
+        .unwrap();
+    assert_eq!(plus["current_team"]["team_id"], LATEST_TEAM_TWO.to_string());
+}
+
+#[sqlx::test(migrations = "../migrations")]
 async fn invalid_stored_owner_returns_internal_error(pool: PgPool) {
     seed(&pool).await;
     open(&pool, ROUND_ONE).await;
+    sqlx::query("ALTER TABLE teams DISABLE TRIGGER USER")
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO teams (id, round_id, tournament_id, name) VALUES ($1, $2, $3, 'Invalid owner')",
+    )
+    .bind(TEAM_ONE)
+    .bind(ROUND_ONE)
+    .bind(TOURNAMENT)
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query("ALTER TABLE scores DISABLE TRIGGER USER")
         .execute(&pool)
         .await

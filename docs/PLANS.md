@@ -13,10 +13,10 @@ revision persistence boundary, and the admin-only atomic draft-round course-
 configuration API, mobile course/tee picker, and manual-entry fallback are
 complete, as is the corrected normalized PostgreSQL flight persistence boundary
 with membership-wide future score authority, and the transactional pairing-roster
-API plus explicit legacy individual-group conversion are complete. No active
-implementation step is approved. Flight-aware opening readiness is next; runtime
-score authority, seed assignments, and the mobile editor remain later bounded
-steps.
+API plus explicit legacy individual-group conversion and flight-aware pairing
+validation/opening are complete. No active implementation step is approved.
+Representative seed assignments are next; runtime score authority and the mobile
+editor remain later bounded steps.
 
 ## Product decisions
 
@@ -79,10 +79,8 @@ steps.
 
 ### Phase 5: Teams, flights, and pairing validation
 
-- Split the near-limit lifecycle domain and repository modules, then make pairing
-  validation and opening require every eligible entrant in exactly one flight,
-  no remaining legacy individual groups, valid shared-result team sizes, and no
-  team split across flights. Keep schedule equality non-authoritative.
+- Populate deterministic representative seed flights for every round, preserving
+  scramble score-owner teams and using flights alone for individual grouping.
 - Build one mobile roster editor for unassigned players, round teams, flights,
   team membership, flight placement, starting hole, and tee time. Use accessible
   move/add/remove controls rather than drag-only behavior.

@@ -59,17 +59,31 @@ handicap is permanently fixed for that tournament afterward.
 ## Round opening
 
 `GET /api/rounds/{round_id}/pairing-validation` reports stable readiness issue
-codes, missing or ineligible entrants, and deterministic team sizes. A round
-requires a configured course and tee, complete hole/stroke-index ranges, complete
-active-player assignments, and valid group sizes. Scramble groups require exactly
-two active players.
+codes plus deterministic team, flight, legacy-group, and split-team details. An
+eligible entrant has both an active tournament entry and an active player record.
+Every eligible entrant must belong to exactly one nonempty flight, and ineligible
+entrants cannot remain assigned. Individual rounds require no teams and reject
+all remaining legacy grouping teams. Scramble rounds additionally require every
+eligible entrant in exactly one two-player team, with both members contained in
+one flight; one flight may contain multiple complete teams. Flight tee time and
+starting hole are optional metadata and never prove grouping or readiness.
 
-`POST /api/rounds/{round_id}/open` repeats validation while holding the round and
-tournament transaction locks. It captures exact decimal handicap inputs, inserts
-one immutable snapshot per active entrant, changes `draft` to `open`, commits, and
-only then publishes an SSE invalidation. Concurrent opens cannot duplicate
-snapshots. Database triggers freeze pairings and scoring configuration after draft
-and require all status/snapshot changes to use the lifecycle transaction.
+The response preserves `missing_players`, `ineligible_players`, and `team_sizes`;
+team assignment details apply to scramble, while legacy individual team sizes
+remain visible for compatibility. It adds `missing_flight_players`,
+`ineligible_flight_players`, `flight_sizes`, `legacy_individual_groups`, and
+`split_teams`, plus stable issue codes for each new invalid state. Course, tee,
+rating, complete hole-number, and stroke-index rules remain unchanged.
+
+`POST /api/rounds/{round_id}/open` uses the same fact loader and pure validator
+while holding the round and tournament transaction locks plus entrant share
+locks. Team and flight mutations serialize through the parent round lock. A
+failed validation writes no snapshots and emits no event. Success captures exact
+decimal handicap inputs, inserts one immutable snapshot per eligible entrant,
+changes `draft` to `open`, commits, and only then publishes one SSE invalidation.
+Concurrent opens cannot duplicate snapshots. Database triggers freeze pairings
+and scoring configuration after draft and require all status/snapshot changes to
+use the lifecycle transaction.
 
 ## Live scorecards
 
@@ -487,7 +501,7 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 - Tournament settings, pairing, and lifecycle editors are not implemented. The
   Courses section supports draft-round configuration; non-draft rounds are
   deliberately read-only.
-- Pairing roster reads and atomic admin replacement exist, but flight-aware
-  readiness, seed assignments, frontend editing, and membership-wide scoring
-  authority are not implemented. There
-  is also no offline score queue or public leaderboard link.
+- Pairing roster reads, atomic admin replacement, and flight-aware opening
+  readiness exist, but seed assignments, frontend editing, and membership-wide
+  scoring authority are not implemented. There is also no offline score queue or
+  public leaderboard link.

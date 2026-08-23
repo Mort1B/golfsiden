@@ -54,11 +54,11 @@ async fn seed(pool: &PgPool) -> Uuid {
                 '2026-09-01', '98000000-0000-0000-0000-000000000006',
                 'Course', '98000000-0000-0000-0000-000000000007', 'Tee', 1,
                 'individual_stroke_play');
-        INSERT INTO teams (id, round_id, tournament_id, name)
+        INSERT INTO flights (id, round_id, tournament_id, name)
         VALUES ('98000000-0000-0000-0000-000000000009',
                 '98000000-0000-0000-0000-000000000002',
-                '98000000-0000-0000-0000-000000000001', 'Group');
-        INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id)
+                '98000000-0000-0000-0000-000000000001', 'Flight');
+        INSERT INTO flight_memberships (flight_id, round_id, tournament_id, player_id)
         VALUES ('98000000-0000-0000-0000-000000000009',
                 '98000000-0000-0000-0000-000000000002',
                 '98000000-0000-0000-0000-000000000001',
@@ -355,6 +355,16 @@ async fn scramble_snapshots_store_the_capped_effective_index_before_tee_conversi
          '98100000-0000-0000-0000-000000000010', '98100000-0000-0000-0000-000000000003'),
         ('98100000-0000-0000-0000-000000000015', '98100000-0000-0000-0000-000000000013',
          '98100000-0000-0000-0000-000000000010', '98100000-0000-0000-0000-000000000004');
+        INSERT INTO flights (id, round_id, tournament_id, name)
+        VALUES ('98100000-0000-0000-0000-000000000016',
+                '98100000-0000-0000-0000-000000000013',
+                '98100000-0000-0000-0000-000000000010', 'Shared flight');
+        INSERT INTO flight_memberships (flight_id, round_id, tournament_id, player_id)
+        SELECT '98100000-0000-0000-0000-000000000016',
+               '98100000-0000-0000-0000-000000000013',
+               '98100000-0000-0000-0000-000000000010', player_id
+        FROM tournament_players
+        WHERE tournament_id = '98100000-0000-0000-0000-000000000010';
         "#,
     )
     .execute(&pool)

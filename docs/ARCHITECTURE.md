@@ -109,6 +109,14 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   membership order, and timestamps. Scramble teams remain durable score-owner
   identities; old team schedule moves only to an explicitly named flight with
   identical members and facts. One round event follows commit.
+- Lifecycle readiness is one pure decision shared by the private validation read
+  and locked opening transaction. Every effectively active entrant must be in a
+  nonempty flight. Individual rounds reject legacy teams; scramble rounds retain
+  exact two-player score-owner teams and require each team to be wholly contained
+  in one flight, while allowing several teams per flight. Schedule metadata is
+  deliberately absent from readiness facts. Opening reads pairings only after
+  locking the round/tournament and entrant rows; pairing triggers use that same
+  round lock, so validation and mutation cannot cross unnoticed.
 - The score authorization resolver returns tagged round owners. Tournament
   admins/scorers receive all eligible owners; tournament players receive their
   exact individual or round-team owner. Save and confirm recheck this policy

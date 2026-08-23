@@ -43,9 +43,9 @@ INSERT INTO holes (id, tee_id, hole_number, par, stroke_index)
 VALUES ('70000000-0000-0000-0000-000000000004', '70000000-0000-0000-0000-000000000012', 1, 4, 1);
 INSERT INTO rounds (id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, scoring_format)
 VALUES ('70000000-0000-0000-0000-000000000002', '70000000-0000-0000-0000-000000000010', 1, 'Round', '2026-01-01', '70000000-0000-0000-0000-000000000011', 'Course', '70000000-0000-0000-0000-000000000012', 'Tee', 1, 'individual_stroke_play');
-INSERT INTO teams (id, round_id, tournament_id, name)
-VALUES ('70000000-0000-0000-0000-000000000013', '70000000-0000-0000-0000-000000000002', '70000000-0000-0000-0000-000000000010', 'Group');
-INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id)
+INSERT INTO flights (id, round_id, tournament_id, name)
+VALUES ('70000000-0000-0000-0000-000000000013', '70000000-0000-0000-0000-000000000002', '70000000-0000-0000-0000-000000000010', 'Flight');
+INSERT INTO flight_memberships (flight_id, round_id, tournament_id, player_id)
 VALUES ('70000000-0000-0000-0000-000000000013', '70000000-0000-0000-0000-000000000002', '70000000-0000-0000-0000-000000000010', '70000000-0000-0000-0000-000000000003');
 "#;
 
