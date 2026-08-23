@@ -92,8 +92,9 @@ storage boundary for either source. It records the selected tee and complete
 hole facts as an immutable local course/tee/hole revision so later round
 configuration cannot drift when the provider is edited or unavailable.
 
-The admin-facing save/configuration endpoint and manual-entry form are not yet
-implemented in the current read-only management workspace.
+The backend configuration endpoint is implemented. The management workspace is
+still read-only for this feature until the course picker and manual-entry form
+are added.
 
 ## Verification
 
@@ -150,7 +151,7 @@ until the private frontend cutover.
 Tournament creation now issues a reusable invitation secret, and admins can
 rotate or revoke links, but recovery from a lost one-time plaintext response
 still requires rotation. Request throttling is required before public
-deployment. Course configuration mutations, the remaining tournament management
+deployment. The course-configuration UI, the remaining tournament management
 workspace, flights, offline scoring, and locked-round score corrections remain
 deferred.
 Flights will be modelled explicitly rather than inferred from matching tee times

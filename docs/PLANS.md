@@ -9,8 +9,9 @@ instead of accumulating a historical log here.
 Phase 4A, the private-workspace reads, username constraint repairs, initial
 read-only tournament-management workspace, backend course-provider boundary,
 curated eight-course local catalog, and the Phase 4B immutable local course-
-revision persistence boundary are complete. No active implementation step is
-approved. The admin-only atomic draft-round configuration API is next.
+revision persistence boundary, and the admin-only atomic draft-round course-
+configuration API are complete. No active implementation step is approved. The
+mobile course/tee picker and manual-entry form are next.
 
 ## Product decisions
 
@@ -76,12 +77,6 @@ approved. The admin-only atomic draft-round configuration API is next.
 
 ### Phase 4B: Private workspace and provider-backed courses
 
-- Add an admin-only atomic draft-round configuration endpoint. It must lock and
-  recheck the round, accept either validated manual facts or fetch one usable
-  catalog/provider course and selected tee, insert the immutable local revision,
-  attach its existing course/tee IDs, and commit before publishing invalidation.
-  Provider failure or invalid manual data must leave neither a partial revision
-  nor a changed round.
 - Build the mobile course then tee picker plus manual-course fallback. Show
   rating, slope, optional length, hole completeness, loading, empty, error,
   retry, stale-result, and conflict states. Manual entry must make required

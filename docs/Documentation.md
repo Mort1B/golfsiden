@@ -295,10 +295,32 @@ Concurrent child writes serialize on the ancestor course row. Rows predating the
 revision migration remain explicitly legacy with null provenance rather than
 being mislabeled.
 
-No public mutation invokes this boundary yet. The next backend step must combine
-tournament-admin authorization, draft-round locking, revision insertion, and
-round attachment in one transaction; the current management workspace therefore
-remains read-only for course configuration.
+`PUT /api/rounds/{round_id}/course-configuration` invokes this boundary for an
+exact tournament admin. The JSON body includes the current round's
+`expected_round_updated_at` and one tagged selection. A `manual` selection sends
+course name, optional location, one tee category/name/rating/slope, and ordered
+hole par/stroke-index facts with optional positive `distance`. A
+`golf_course_api` selection sends only a curated provider course ID and one tee
+category/name; names, ratings, slope, location, and holes are always refreshed
+server-side.
+
+The endpoint checks session, CSRF, exact membership, draft state, and the
+optimistic timestamp before provider quota can be spent. It never holds a
+database transaction across provider I/O. Its final transaction locks and
+reauthorizes the round, repeats the draft/version checks, inserts the immutable
+revision, and attaches its course/tee IDs, copied names, and hole count. It
+returns the updated private/non-cacheable round and publishes one round
+invalidation only after commit. Concurrent saves use
+`round_configuration_stale`; opened rounds use `round_not_draft`; a disappeared
+provider tee uses `course_provider_tee_stale`. Invalid, stale, unauthorized,
+provider-failed, or attachment-failed requests create no revision and emit no
+event. Requests must be JSON and are capped at 32 KiB.
+
+The current management workspace remains read-only for course configuration;
+the mobile picker and manual-entry form are the next frontend step. Because no
+bundled catalog row is presently verified as usable, provider success is tested
+through the normalized adapter and identical final repository transaction. The
+production HTTP path continues to fail closed until a real row is reverified.
 
 Flights are not represented yet. A future normalized round-flight model will
 extend the same score-access resolver so a player may receive both team owners

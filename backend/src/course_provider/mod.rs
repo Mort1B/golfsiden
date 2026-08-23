@@ -1,5 +1,6 @@
 mod cache;
 mod models;
+pub mod revision_adapter;
 #[cfg(test)]
 mod tests;
 

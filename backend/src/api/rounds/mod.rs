@@ -1,15 +1,18 @@
 mod completion;
+mod configuration;
 mod lifecycle;
 
 use std::sync::Arc;
 
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{DefaultBodyLimit, Path, State},
     http::{StatusCode, header::CACHE_CONTROL},
     response::IntoResponse,
     routing::get,
 };
+
+const MAX_ROUND_CONFIGURATION_BODY_BYTES: usize = 32 * 1024;
 use chrono::NaiveDate;
 use serde::Deserialize;
 use uuid::Uuid;
@@ -35,6 +38,11 @@ pub fn routes() -> Router<Arc<AppState>> {
             get(list).post(create),
         )
         .route("/api/rounds/{round_id}", get(get_one))
+        .route(
+            "/api/rounds/{round_id}/course-configuration",
+            axum::routing::put(configuration::put)
+                .layer(DefaultBodyLimit::max(MAX_ROUND_CONFIGURATION_BODY_BYTES)),
+        )
         .route(
             "/api/rounds/{round_id}/pairing-validation",
             get(lifecycle::pairing_validation),

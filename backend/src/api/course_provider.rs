@@ -32,7 +32,15 @@ async fn course(
     authenticated: AuthenticatedSession,
 ) -> Result<impl IntoResponse, CourseProviderApiError> {
     authorize(&state, &authenticated, tournament_id).await?;
-    let provider_course_id = normalize_course_id(&provider_course_id)
+    let course = fetch_course(&state, &provider_course_id).await?;
+    Ok(([(CACHE_CONTROL, "private, no-store")], Json(course)))
+}
+
+pub(crate) async fn fetch_course(
+    state: &AppState,
+    provider_course_id: &str,
+) -> Result<CourseDetail, CourseProviderApiError> {
+    let provider_course_id = normalize_course_id(provider_course_id)
         .map_err(|message| CourseProviderApiError::Api(ApiError::BadRequest(message.to_owned())))?;
     match provider_course_readiness(&provider_course_id)? {
         ProviderCourseReadiness::Usable => {}
@@ -41,8 +49,11 @@ async fn course(
         }
         ProviderCourseReadiness::Unknown => return Err(CourseProviderApiError::CatalogUnknown),
     }
-    let course: CourseDetail = state.course_provider.course(&provider_course_id).await?;
-    Ok(([(CACHE_CONTROL, "private, no-store")], Json(course)))
+    state
+        .course_provider
+        .course(&provider_course_id)
+        .await
+        .map_err(CourseProviderApiError::Provider)
 }
 
 async fn authorize(
@@ -60,7 +71,7 @@ async fn authorize(
     Ok(())
 }
 
-enum CourseProviderApiError {
+pub(crate) enum CourseProviderApiError {
     Api(ApiError),
     CatalogIncomplete,
     CatalogUnknown,
@@ -88,7 +99,7 @@ impl From<CourseCatalogError> for CourseProviderApiError {
 impl IntoResponse for CourseProviderApiError {
     fn into_response(self) -> Response {
         let response = match self {
-            Self::Api(error) => return error.into_response(),
+            Self::Api(error) => error.into_response(),
             Self::CatalogIncomplete => (
                 StatusCode::CONFLICT,
                 Json(json!({"error": {

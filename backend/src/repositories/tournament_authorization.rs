@@ -62,6 +62,26 @@ pub async fn require_tournament_admin_read(
     Ok(())
 }
 
+pub async fn require_tournament_admin_read_in_transaction(
+    transaction: &mut Transaction<'_, Postgres>,
+    user_id: Uuid,
+    tournament_id: Uuid,
+) -> Result<(), AuthorizationError> {
+    let role = sqlx::query_scalar::<_, TournamentRole>(
+        "SELECT role FROM tournament_memberships
+         WHERE tournament_id = $1 AND user_id = $2
+         FOR SHARE",
+    )
+    .bind(tournament_id)
+    .bind(user_id)
+    .fetch_optional(&mut **transaction)
+    .await?;
+    if role != Some(TournamentRole::Admin) {
+        return Err(AuthorizationError::Forbidden);
+    }
+    Ok(())
+}
+
 pub async fn require_round_member_read(
     transaction: &mut Transaction<'_, Postgres>,
     user_id: Uuid,

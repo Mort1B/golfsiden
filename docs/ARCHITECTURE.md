@@ -82,9 +82,17 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   Deferred PostgreSQL validation prevents incomplete finalization, and locked
   ancestor reads serialize finalization with child writes. Finalized hierarchies
   are append-only. Pre-migration rows keep null revision metadata instead of
-  receiving invented provenance. The future round-configuration transaction can
-  therefore insert and attach the same UUID graph atomically without a parallel
-  persistence model or an upstream tee ID.
+  receiving invented provenance.
+- Draft-round course configuration is a conditional `PUT` with the current
+  round `updated_at` as a required optimistic token. A short repeatable-read
+  preflight proves exact tournament-admin scope and draft state before request
+  decoding or provider quota use. Provider detail is fetched with no database
+  transaction open. The final transaction locks the round, reauthorizes the
+  active session and membership, rechecks status and version, inserts the
+  immutable revision, and attaches its UUIDs before commit. This round-first lock
+  order matches lifecycle mutations. Only a successful commit publishes one
+  payload-free round invalidation; every conflict or failure rolls back the new
+  hierarchy.
 - The score authorization resolver returns tagged round owners. Tournament
   admins/scorers receive all eligible owners; tournament players receive their
   exact individual or round-team owner. Save and confirm recheck this policy
@@ -151,6 +159,7 @@ Implemented resources:
 | `POST` | `/api/tournaments/{tournament_id}/players/{player_id}/handicap-corrections` | Audit a pre-opening tournament handicap correction |
 | `GET`, `POST` | `/api/tournaments/{tournament_id}/rounds` | List and create rounds |
 | `GET` | `/api/rounds/{round_id}` | Retrieve a round |
+| `PUT` | `/api/rounds/{round_id}/course-configuration` | Atomically configure one draft round from manual or curated provider facts |
 | `GET` | `/api/rounds/{round_id}/pairing-validation` | Validate assignments and course readiness |
 | `POST` | `/api/rounds/{round_id}/open` | Atomically open a ready draft round |
 | `GET` | `/api/rounds/{round_id}/completion-validation` | Inspect per-owner completion and lock readiness |

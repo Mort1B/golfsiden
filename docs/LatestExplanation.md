@@ -1,76 +1,87 @@
 # Latest explanation
 
-## Immutable local course revisions
+## Atomic draft-round course configuration
 
-Manual course entry and GolfCourseAPI imports now share one persistence model.
-The existing `courses`, `tees`, and `holes` UUID hierarchy remains authoritative,
-so rounds, scorecards, lifecycle validation, and leaderboards will not need a
-second set of revision identifiers.
+Tournament administrators can now configure a draft round through
+`PUT /api/rounds/{round_id}/course-configuration`. Both manual entry and a
+curated GolfCourseAPI selection end in the same immutable local course, selected
+tee, and ordered hole revision.
 
-A pure domain validator accepts source provenance, one course and selected tee,
-rating and slope, plus 1-36 ordered holes. Every hole requires par and a unique
-stroke index forming the complete `1..=hole_count` permutation; distance is
-optional but must be positive when supplied. Provider revisions require an
-opaque provider course ID, manual revisions forbid one, and no provider tee ID
-is invented.
+Every request echoes the round's current `updated_at`. The backend first checks
+the authenticated user's exact tournament-admin membership and confirms that
+the round is still draft. It then decodes the strict JSON selection. Manual
+requests provide the complete facts directly. Provider requests provide only a
+curated course ID and tee category/name; the backend refreshes all other facts,
+requires one exact trimmed tee match, and passes them through the shared
+validator. No database transaction remains open during that provider request.
 
-Persistence is deliberately transaction-composable. The repository inserts the
-course, its one selected tee, and every hole into a transaction owned by its
-caller, then finalizes the course with database time. The next round-
-configuration workflow can therefore authorize, lock a draft round, create the
-revision, and attach it without committing an orphan on failure.
+The final transaction locks the round, revalidates the active session and admin
+membership, and repeats both draft-state and timestamp checks. It then creates
+the finalized immutable revision and attaches the course/tee IDs, copied names,
+and hole count to the round. Commit happens before the single payload-free round
+event. A stale or losing request therefore cannot leave an orphan revision.
 
-PostgreSQL treats non-null source provenance as finalization. A deferred trigger
-requires exactly one complete tee and exact hole/stroke-index ranges before the
-transaction can commit. Finalized course, tee, and hole rows reject inserts,
-updates, and deletes. Child writes lock ancestor course rows in UUID order, so a
-concurrent change either completes before finalization and is validated, or
-waits and is rejected afterward. Pre-migration rows retain null metadata as
-explicit legacy data rather than receiving guessed provenance.
+Requests must use `application/json` and are limited to 32 KiB. Success and
+endpoint-shaped errors are `private, no-store`; authentication rejections retain
+the shared `no-store` policy. Stable conflicts distinguish a changed round,
+non-draft lifecycle state, incomplete catalog row, and a provider tee that
+disappeared after selection.
 
 ## Compact example
 
-The repository leaves commit ownership with the future round transaction:
+The manual payload uses array order as the hole number and keeps distance
+optional:
 
-```rust
-let revision = course_revisions::validate(command)?;
-let stored = course_revisions::insert_in_transaction(&mut transaction, &revision).await?;
-// The caller may now attach stored.course_id and stored.tee.tee_id before commit.
+```json
+{
+  "expected_round_updated_at": "2026-08-23T10:15:30.123456Z",
+  "selection": {
+    "source": "manual",
+    "course_name": "Example Golf",
+    "location": "Oslo, Norway",
+    "tee": {
+      "category": "male",
+      "name": "White",
+      "course_rating": 72.4,
+      "slope_rating": 128,
+      "holes": [
+        { "par": 4, "stroke_index": 1, "distance": null }
+      ]
+    }
+  }
+}
 ```
 
 ## Invariants
 
-- Provider and manual facts use the same durable UUID graph.
-- A finalized revision contains exactly one selected tee and complete ordered
-  hole facts.
-- Hole distance remains nullable; rating, slope, par, and stroke index do not.
-- Finalized facts cannot drift, including under concurrent child writes.
-- Legacy rows remain readable and retain null provenance.
-- No HTTP route, provider request, round mutation, SSE event, frontend behavior,
-  handicap snapshot, score ownership, or lifecycle transition changed.
+- Only an active admin membership for the round's tournament may configure it.
+- Only draft rounds accept configuration, and optimistic concurrency prevents
+  silent replacement by a simultaneous save.
+- Provider facts are server-fetched; no provider tee ID is invented.
+- Manual and provider paths create the same complete immutable revision graph.
+- No database transaction spans provider I/O.
+- Failed authorization, validation, provider work, attachment, or lifecycle
+  races create no orphan revision and publish no configuration event.
+- Handicap snapshots, score ownership, teams, lifecycle transitions, and
+  leaderboard behavior are unchanged.
 
 ## Validation
 
-- Pure tests cover both provenance paths, normalization, invalid text/rating,
-  duplicate stroke indexes, and invalid optional distance.
-- Ten PostgreSQL tests cover exact provider/manual readback, nullable distance,
-  rollback on child failure, incomplete and invalid provenance rejection,
-  finalized hierarchy immutability, both finalization/mutation race orderings,
-  legacy migration behavior, and clean plus upgraded idempotent seed behavior.
-- The standard workspace suite passes 59 tests. The all-feature PostgreSQL suite
-  passes 153 tests: 59 unit tests and 94 integration tests, including all ten
-  focused course-revision cases.
-- Formatting and all-target/all-feature Clippy with warnings denied pass.
-- A fresh isolated PostgreSQL database migrated twice and seeded twice. It
-  retained exactly one finalized manual course, one complete tee, 18 distinct
-  hole numbers and stroke indexes, and five configured rounds; the disposable
-  database was then removed.
-- `git diff --check` passes. Frontend and browser checks are not applicable to
-  this backend-only persistence step.
+- Provider adapter tests cover exact/ambiguous tee selection, normalized mapping,
+  and fail-closed numeric conversion.
+- Ten PostgreSQL tests cover manual and provider-seam facts, nullable distance,
+  authentication/CSRF/scope, authorization loss, strict JSON and size bounds,
+  catalog gating, stale saves, rollback, simultaneous saves, both configuration/
+  opening lock orders, exact SSE counts, and private caching.
+- `cargo fmt --all -- --check` and Clippy with warnings denied passed.
+- The standard workspace suite passed 62 tests; the database-enabled workspace
+  suite passed 166 tests, including all 10 round-configuration cases.
+- `git diff --check` passed. Frontend, browser, migration, seed, and API smoke
+  checks were not required for this backend-only, migration-free step.
 
 ## Next boundary
 
-Add the admin-only atomic draft-round configuration endpoint. It will choose
-manual facts or one usable provider tee, validate and persist the revision in the
-same locked transaction that attaches it to the draft round, then publish one
-post-commit invalidation.
+Build the mobile course and tee picker with the manual-entry fallback on the
+tournament management workspace. A full provider-success HTTP test remains
+queued until a genuinely complete catalog row is reverified as `usable`; the
+production gate is not weakened for test convenience.
