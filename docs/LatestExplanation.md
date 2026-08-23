@@ -1,56 +1,45 @@
 # Latest explanation
 
-## Membership-scoped private workspace reads
+## Browser-compatible sign-in username validation
 
-Tournament workspace reads now require both an active session and a membership
-in the target tournament. This covers tournament detail and roster, rounds,
-teams, readiness and completion validation, and round and tournament
-leaderboards. The tournament collection is selected through the caller's
-memberships rather than loaded globally. Missing sessions return `401`, existing
-cross-tournament resources return `403`, and missing resources return `404`.
-Successful private reads use `Cache-Control: private, no-store`.
+The sign-in username field now uses a character class that is valid under the
+HTML `pattern` attribute's `/v` regular-expression semantics. The hyphen is
+escaped explicitly, removing Chrome's pattern-compilation diagnostic while
+preserving the existing browser boundary: 3-32 ASCII letters, digits,
+underscores, or hyphens.
 
-Repository wrappers open one repeatable-read transaction, resolve round ownership
-from stored relations, and lock the membership row for shared access before
-loading the response. A concurrent membership removal therefore cannot commit
-between authorization and assembly of a multi-query private response. Scoring,
-handicap snapshots, round locking, response DTOs, and ordering are unchanged.
-
-React protects tournament, round, score, and leaderboard routes. Every private
-workspace query key starts with the session user ID. Initial session resolution
-and real identity changes clear the entire private workspace cache before the new
-identity becomes visible; same-user background refreshes retain it. SSE refreshes
-workspace data but explicitly excludes the authentication query, so live events
-cannot unmount an in-progress scoring screen.
+Backend account normalization and validation are unchanged. Login still trims
+and lowercases ASCII usernames before applying its authoritative grammar, and
+invalid syntax still follows the same credential-failure path. No API, session,
+database, tournament, handicap, team, score, locking, or standings behavior was
+modified.
 
 ## Compact example
 
-The repository holds membership authorization and data loading in one snapshot:
+The JSX expression makes the intended DOM backslash unambiguous:
 
-```rust
-let mut transaction = read_transaction(pool).await?;
-require_round_member_read(&mut transaction, user_id, round_id).await?;
-let result = load_private_round_data(&mut transaction, round_id).await?;
-transaction.commit().await?;
+```tsx
+<input pattern={'[A-Za-z0-9_\\-]{3,32}'} minLength={3} maxLength={32} required />
 ```
 
 ## Invariants
 
-- Global roles never bypass tournament membership for private reads.
-- Tournament players remain independent of changing round teams.
-- Handicap snapshots, score ownership, locking, audit history, and separate
-  gross/net calculations are unchanged.
-- Private browser data cannot survive a change of session identity.
-- Public invitation preview, global player reads, scorecard visibility, and live
-  event visibility remain separate policy decisions.
+- Uppercase ASCII remains usable at sign-in because the backend normalizes it.
+- Username length boundaries remain 3 and 32 characters.
+- Dot, spaces, non-ASCII letters, and other punctuation remain invalid in the
+  browser constraint.
+- Authentication response behavior and session ownership are unchanged.
+- All golf-domain invariants are unaffected.
 
 ## Validation
 
-- Rust formatting, strict Clippy, 41 unit tests, and 83 PostgreSQL integration
-  tests pass.
-- Frontend validation passes 98 Vitest tests, strict typecheck, lint, and build.
-- Browser behavior passes at 375 and 1440 px for protected redirects, populated
-  member pages, outsider denial, logout/login cache separation, and overflow.
-  Empty membership is covered by PostgreSQL/API tests because the safe shared seed
-  has no such account. Chrome also exposed a pre-existing invalid username input
-  `pattern`; its console-only repair is recorded as the next bounded plan item.
+- Frontend Vitest passes 98 tests across 18 files.
+- Frontend strict typecheck, lint, and production build pass; the build
+  transforms 1,795 modules.
+- Google Chrome 151.0.7922.173 passes at 375x812 and 1440x900 with no pattern
+  diagnostic, runtime exception, failed request, unexpected error response, or
+  horizontal overflow. The unauthenticated session request was deliberately
+  fulfilled with the expected `401` response.
+- Both viewports expose the exact DOM pattern `[A-Za-z0-9_\\-]{3,32}`. Chrome
+  accepts `abc`, `Player_1`, `abc-def`, and the 32-character boundary; it rejects
+  two characters, 33 characters, dot, a Norwegian letter, and whitespace.

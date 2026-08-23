@@ -6,9 +6,10 @@ instead of accumulating a historical log here.
 
 ## Planning status
 
-Phase 4A and the first Phase 4B private-workspace step are complete. No active
-implementation step is approved. The validation repair below is the smallest
-recommended next step before continuing provider-backed course work.
+Phase 4A, the first Phase 4B private-workspace step, and the sign-in username
+constraint repair are complete. No active implementation step is approved. The
+remaining username-input validation repair below is the smallest recommended
+next step before continuing provider-backed course work.
 
 ## Product decisions
 
@@ -67,14 +68,12 @@ recommended next step before continuing provider-backed course work.
 
 ## Upcoming work
 
-### Validation repair: HTML-compatible username constraint
+### Validation follow-up: remaining username inputs
 
-- Replace the sign-in username input's invalid browser `pattern` character class
-  with an HTML `/v`-compatible constraint while keeping the backend username
-  grammar unchanged. Add focused browser coverage with a clean console.
-- **Stop condition:** login renders without pattern-compilation console errors in
-  supported Chrome at phone and desktop widths, and accepted/rejected usernames
-  still match the backend contract.
+- Apply the HTML `/v`-compatible username constraint to invitation registration,
+  invitation sign-in, and onboarding account creation. Introduce one shared
+  frontend constraint only if that broader step makes the duplication real and
+  testable without weakening the existing grammar.
 
 ### Phase 4B: Private workspace and provider-backed courses
 

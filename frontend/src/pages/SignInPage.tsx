@@ -38,7 +38,7 @@ export function SignInPage() {
         <form onSubmit={(event) => void submit(event)}>
           <label>
             <span>Brukernavn</span>
-            <input autoComplete="username" minLength={3} maxLength={32} pattern="[A-Za-z0-9_-]{3,32}" required value={username} onChange={(event) => setUsername(event.target.value)} />
+            <input autoComplete="username" minLength={3} maxLength={32} pattern={'[A-Za-z0-9_\\-]{3,32}'} required value={username} onChange={(event) => setUsername(event.target.value)} />
           </label>
           <label><span>Passord</span><input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
           {error && <p className="sign-in-error" role="alert">{error}</p>}
