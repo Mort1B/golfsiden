@@ -338,9 +338,23 @@ without silently overwriting a newer round. Catalog/provider queries are
 excluded from generic SSE invalidation so score events cannot consume provider
 quota; authoritative round events still refresh the round summaries.
 
-Flights are not represented yet. A future normalized round-flight model will
-extend the same score-access resolver so a player may receive both team owners
-in their flight. Equal starting holes or tee times are not treated as flights.
+PostgreSQL now has an additive normalized flight persistence boundary. `flights`
+owns exact round/tournament identity, a trimmed round-unique name, nullable
+starting hole and tee time, and timestamps. `flight_memberships` proves the
+exact flight, round, tournament, and entrant relationship and permits at most
+one flight per player in a round. `flight_scorekeepers` stores zero or one
+designation per flight; composite foreign keys require that player to be an
+exact flight member and `users.player_id` requires a linked account.
+
+Deleting a membership or flight removes its dependent designation, and deleting
+the round or tournament cascades the complete flight hierarchy. Direct inserts,
+updates, and deletes on all three relations reuse the parent-round pairing lock
+and fail after draft, including when mutation races opening. Migration 0011
+creates no rows and leaves every legacy team and membership unchanged: equal
+starting holes, tee times, order, or team membership never infer a flight or
+scorekeeper. CRUD APIs, exactly-one opening readiness, seed assignments, legacy
+grouping conversion, frontend editing, and flight-wide scoring authority remain
+separate follow-up work.
 
 ## Fixed tournament handicaps
 
@@ -438,4 +452,6 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 - Tournament settings, pairing, and lifecycle editors are not implemented. The
   Courses section supports draft-round configuration; non-draft rounds are
   deliberately read-only.
-- No flight model, offline score queue, or public leaderboard link.
+- Flight persistence exists, but flight CRUD/readiness, seed assignments,
+  frontend editing, and scorekeeper scoring authority are not implemented. There
+  is also no offline score queue or public leaderboard link.

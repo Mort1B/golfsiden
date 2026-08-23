@@ -11,8 +11,10 @@ read-only tournament-management workspace, backend course-provider boundary,
 curated eight-course local catalog, and the Phase 4B immutable local course-
 revision persistence boundary, and the admin-only atomic draft-round course-
 configuration API, mobile course/tee picker, and manual-entry fallback are
-complete. No active implementation step is approved. Phase 5 normalized flights
-and pairing validation are next.
+complete, as is the normalized PostgreSQL flight persistence boundary. No active
+implementation step is approved. The admin flight/team roster API and exact
+legacy-grouping conversion policy are next; readiness, score authority, seed,
+and UI remain later bounded steps.
 
 ## Product decisions
 
@@ -78,8 +80,9 @@ and pairing validation are next.
 
 ### Phase 5: Teams, flights, and pairing validation
 
-- Add normalized round flights and flight-player membership with database
-  uniqueness, one designated scorekeeper, and draft-only mutation guards.
+- Add one transactional tournament-admin flight/team roster API and consolidated
+  round-pairing read model. Choose and test the exact legacy individual-team
+  conversion before moving starting-hole or tee-time ownership.
 - Reserve teams for formats with a shared team result. Convert any grouping-only
   individual-round teams to flights rather than preserving two pairing models.
 - Build one mobile roster editor for unassigned players, round teams, flights,
