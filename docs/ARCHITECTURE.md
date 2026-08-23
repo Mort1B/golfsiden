@@ -74,12 +74,17 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   stable local DTOs, derives ordered hole numbers, and never invents a tee ID.
   Provider facts remain untrusted until normalized; no course, tee, hole, or
   round row changes in this boundary.
-- Provider and manual course configuration converge on one future immutable
-  revision model. Manual revisions require a selected tee name/category, rating,
-  slope, ordered pars, and the complete unique stroke-index permutation; hole
-  distance is nullable. Source and nullable provider identity preserve provenance
-  without giving provider availability authority over whether a draft round can
-  be configured.
+- Provider and manual course facts converge on the existing `courses` → `tees` →
+  `holes` identity graph through one pure validator and caller-owned repository
+  transaction. A finalized revision records source, nullable opaque provider
+  course identity, database import time, one selected tee name/category, rating,
+  slope, and complete ordered par/stroke-index facts; hole distance is nullable.
+  Deferred PostgreSQL validation prevents incomplete finalization, and locked
+  ancestor reads serialize finalization with child writes. Finalized hierarchies
+  are append-only. Pre-migration rows keep null revision metadata instead of
+  receiving invented provenance. The future round-configuration transaction can
+  therefore insert and attach the same UUID graph atomically without a parallel
+  persistence model or an upstream tee ID.
 - The score authorization resolver returns tagged round owners. Tournament
   admins/scorers receive all eligible owners; tournament players receive their
   exact individual or round-team owner. Save and confirm recheck this policy

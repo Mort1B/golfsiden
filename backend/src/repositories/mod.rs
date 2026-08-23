@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod course_revisions;
 pub mod invitations;
 pub mod leaderboards;
 pub mod onboarding;

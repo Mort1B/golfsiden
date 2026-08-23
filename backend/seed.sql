@@ -68,9 +68,13 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO courses (id, name, location)
 VALUES ('00000000-0000-0000-0000-000000003001', 'Fjord Golfklubb', 'Vestlandet')
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
-INSERT INTO tees (id, course_id, name, slope_rating, course_rating)
-VALUES ('00000000-0000-0000-0000-000000003101', '00000000-0000-0000-0000-000000003001', 'Gul', 132, 71.8)
+ON CONFLICT (id) DO NOTHING;
+INSERT INTO tees (id, course_id, name, slope_rating, course_rating, category, number_of_holes)
+SELECT '00000000-0000-0000-0000-000000003101',
+       '00000000-0000-0000-0000-000000003001', 'Gul', 132, 71.8, 'male', 18
+WHERE NOT EXISTS (
+    SELECT 1 FROM tees WHERE id = '00000000-0000-0000-0000-000000003101'
+)
 ON CONFLICT (id) DO NOTHING;
 INSERT INTO holes (id, tee_id, hole_number, par, stroke_index, yardage)
 SELECT ('00000000-0000-0000-0000-' || lpad((3200 + hole_number)::text, 12, '0'))::uuid,
@@ -84,6 +88,48 @@ WHERE NOT EXISTS (
     WHERE existing.id = ('00000000-0000-0000-0000-' || lpad((3200 + hole_number)::text, 12, '0'))::uuid
 )
 ON CONFLICT (id) DO NOTHING;
+
+UPDATE tees
+SET category = 'male', number_of_holes = 18
+WHERE id = '00000000-0000-0000-0000-000000003101'
+  AND course_id = '00000000-0000-0000-0000-000000003001'
+  AND name = 'Gul' AND slope_rating = 132 AND course_rating = 71.8
+  AND category IS NULL AND number_of_holes IS NULL
+  AND EXISTS (
+      SELECT 1 FROM courses
+      WHERE id = '00000000-0000-0000-0000-000000003001'
+        AND name = 'Fjord Golfklubb' AND location = 'Vestlandet'
+        AND source IS NULL AND provider_course_id IS NULL AND imported_at IS NULL
+  )
+  AND (SELECT count(*) FROM holes
+       WHERE tee_id = '00000000-0000-0000-0000-000000003101') = 18
+  AND NOT EXISTS (
+      SELECT 1
+      FROM generate_series(1, 18) AS expected(hole_number)
+      LEFT JOIN holes actual
+        ON actual.tee_id = '00000000-0000-0000-0000-000000003101'
+       AND actual.hole_number = expected.hole_number
+      WHERE actual.id IS DISTINCT FROM
+              ('00000000-0000-0000-0000-' ||
+               lpad((3200 + expected.hole_number)::text, 12, '0'))::uuid
+         OR actual.par IS DISTINCT FROM CASE
+              WHEN expected.hole_number IN (3, 7, 12, 16) THEN 3
+              WHEN expected.hole_number IN (5, 9, 14, 18) THEN 5
+              ELSE 4
+            END
+         OR actual.stroke_index IS DISTINCT FROM expected.hole_number
+         OR actual.yardage IS DISTINCT FROM 120 + expected.hole_number * 15
+  );
+
+UPDATE courses
+SET source = 'manual', imported_at = clock_timestamp()
+WHERE id = '00000000-0000-0000-0000-000000003001'
+  AND source IS NULL
+  AND EXISTS (
+      SELECT 1 FROM tees
+      WHERE id = '00000000-0000-0000-0000-000000003101'
+        AND category = 'male' AND number_of_holes = 18
+  );
 
 INSERT INTO rounds (id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, scoring_format) VALUES
 ('00000000-0000-0000-0000-000000004001', '00000000-0000-0000-0000-000000002001', 1, 'Åpningsrunden', '2026-09-10', '00000000-0000-0000-0000-000000003001', 'Fjord Golfklubb', '00000000-0000-0000-0000-000000003101', 'Gul', 'team_scramble'),

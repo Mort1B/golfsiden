@@ -8,9 +8,9 @@ instead of accumulating a historical log here.
 
 Phase 4A, the private-workspace reads, username constraint repairs, initial
 read-only tournament-management workspace, backend course-provider boundary,
-and curated eight-course local catalog are complete. No active implementation
-step is approved. Resolving complete course facts and storing immutable local
-course/tee/hole revisions is the next Phase 4B step.
+curated eight-course local catalog, and the Phase 4B immutable local course-
+revision persistence boundary are complete. No active implementation step is
+approved. The admin-only atomic draft-round configuration API is next.
 
 ## Product decisions
 
@@ -76,16 +76,16 @@ course/tee/hole revisions is the next Phase 4B step.
 
 ### Phase 4B: Private workspace and provider-backed courses
 
-- Store source (`golf_course_api` or `manual`), nullable provider course ID, tee
-  category/name, import timestamp, and immutable local course/tee/hole revisions.
-  Do not invent an upstream tee ID. Validate exactly ordered holes, the complete
-  stroke-index permutation, par, rating, slope, and selected tee before a draft
-  round can open; allow each manual hole distance to remain null.
-- Add an atomic draft-only round configuration endpoint and a mobile course then
-  tee picker plus manual-course fallback. Show rating, slope, optional length,
-  hole completeness, loading, empty, error, retry, stale-result, and conflict
-  states. Manual entry must make required fields and duplicate/missing stroke
-  indexes clear before save.
+- Add an admin-only atomic draft-round configuration endpoint. It must lock and
+  recheck the round, accept either validated manual facts or fetch one usable
+  catalog/provider course and selected tee, insert the immutable local revision,
+  attach its existing course/tee IDs, and commit before publishing invalidation.
+  Provider failure or invalid manual data must leave neither a partial revision
+  nor a changed round.
+- Build the mobile course then tee picker plus manual-course fallback. Show
+  rating, slope, optional length, hole completeness, loading, empty, error,
+  retry, stale-result, and conflict states. Manual entry must make required
+  fields and duplicate/missing stroke indexes clear before save.
 - **Stop condition:** an authorized admin can configure every draft round with a
   locally preserved provider or manual course/tee snapshot; missing provider
   courses remain configurable without requiring hole distance, and opened rounds

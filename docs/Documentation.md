@@ -282,10 +282,23 @@ and empty tees or missing/duplicate stroke indexes fail closed.
 The approved configuration fallback for a missing or incomplete provider course
 is manual tournament-admin entry. The admin chooses or names one tee and must
 provide its category, course rating, slope, plus every ordered hole's par and
-complete unique stroke-index permutation. Hole distance is optional. Provider
-imports and manual entry will persist through the same immutable local revision
-boundary before a draft round can open. This fallback is planned but is not yet
-available in the current read-only management workspace.
+complete unique stroke-index permutation. Hole distance is optional.
+
+The backend persistence boundary for that flow is implemented. Both manual and
+provider-tagged commands pass through the same pure validation and caller-owned
+transaction into the existing course, tee, and hole tables. Source, nullable
+opaque provider course ID, database import time, selected tee category/name,
+rating, slope, and complete holes are stored together. PostgreSQL defers the
+completeness check until finalization so the hierarchy can be built atomically,
+then rejects inserts, updates, or deletes anywhere in the finalized revision.
+Concurrent child writes serialize on the ancestor course row. Rows predating the
+revision migration remain explicitly legacy with null provenance rather than
+being mislabeled.
+
+No public mutation invokes this boundary yet. The next backend step must combine
+tournament-admin authorization, draft-round locking, revision insertion, and
+round attachment in one transaction; the current management workspace therefore
+remains read-only for course configuration.
 
 Flights are not represented yet. A future normalized round-flight model will
 extend the same score-access resolver so a player may receive both team owners
