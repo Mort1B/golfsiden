@@ -119,7 +119,7 @@ export function InvitationAdminPage() {
   return (
     <section className="page invitation-admin-page">
       <header className="detail-header">
-        <Link to={`/tournaments/${tournamentId}`} className="back-button" aria-label="Tilbake til turneringen"><ChevronLeft /></Link>
+        <Link replace to={`/manage/tournaments/${tournamentId}#invitations`} className="back-button" aria-label="Tilbake til administrasjon"><ChevronLeft /></Link>
         <div><p className="brand">{membership.tournament.name}</p><h1>Invitasjoner</h1></div>
       </header>
       {revealed && <OneTimeInvitationLink key={revealedInvitationKey(revealed)} url={buildInvitationUrl(window.location.origin, revealed.invitationId, revealed.token)} onDismiss={() => setRevealed(null)} />}

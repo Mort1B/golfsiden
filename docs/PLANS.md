@@ -7,8 +7,9 @@ instead of accumulating a historical log here.
 ## Planning status
 
 Phase 4A, the first Phase 4B private-workspace step, and the sign-in username
-constraint repairs are complete. No active implementation step is approved.
-Provider-backed private tournament workspace work is the next bounded phase.
+constraint repairs and the initial read-only tournament-management workspace are
+complete. No active implementation step is approved. The backend-only provider
+client and normalized course search/detail contract are the next Phase 4B step.
 
 ## Product decisions
 

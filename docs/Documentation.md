@@ -214,6 +214,25 @@ keys, query parameters, storage, logs, or request URLs. The admin page shows
 newly issued plaintext links once in component state; lost links are replaced
 through rotation rather than recovered from storage.
 
+## Tournament management workspace
+
+Authenticated tournament administrators enter the read-only management index at
+`/manage/tournaments/{tournament_id}`. The route confirms both the canonical
+tournament detail and the current user's tournament-specific `admin` membership
+before enabling roster or round reads. Signed-out visitors retain the complete
+return URL through login. Invalid identifiers, missing tournaments, non-admin
+memberships, loading, retryable failures, empty collections, and populated data
+have distinct states. Client gating controls presentation only; every private
+read and invitation mutation remains protected by backend membership policy.
+
+The workspace provides semantic anchors for settings, entrants, invitations,
+rounds, courses, pairings, and lifecycle. It reports only facts already preserved
+by the existing private APIs and links to the existing invitation and round
+surfaces. It does not issue provider requests, infer course revisions, load teams
+per round, or expose unsupported mutation controls. Returning from invitation
+administration replaces that history entry, restores the Invitations section,
+and moves focus to its labelled region without creating a browser-Back loop.
+
 Flights are not represented yet. A future normalized round-flight model will
 extend the same score-access resolver so a player may receive both team owners
 in their flight. Equal starting holes or tee times are not treated as flights.
@@ -306,14 +325,11 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 
 ## Known limitations
 
-- The sign-in username input's HTML `pattern` character class is not compatible
-  with Chrome's `/v` pattern parsing and emits a console diagnostic; backend
-  validation remains authoritative. A focused repair is queued in `PLANS.md`.
 - Global player reads, scorecard read visibility, and SSE event visibility still
   need explicit private/public policy decisions. Later public tournament or
   leaderboard access will use explicit share tokens.
 - Request throttling is not implemented, so the public onboarding and
   registration endpoints are not ready for an internet-facing deployment.
-- No tournament management workspace beyond the creation flow.
-- Course and tee administration are not implemented.
+- The tournament management workspace is read-only. Provider-backed course/tee
+  administration and settings, pairing, and lifecycle editors are not implemented.
 - No flight model, offline score queue, or public leaderboard link.

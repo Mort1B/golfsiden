@@ -15,6 +15,7 @@ import './features/onboarding/onboarding-success.css'
 import './features/onboarding/home.css'
 import './features/invitations/invitations.css'
 import './features/tournaments/tournament-players.css'
+import './features/tournaments/tournament-management.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {

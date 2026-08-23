@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, Flag, Link2, MapPin, Users } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Flag, Settings, MapPin, Users } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { ErrorState, LoadingState } from '../ui/AsyncState'
@@ -28,7 +28,7 @@ export function TournamentPage() {
         <StatusBadge status={tournament.data.status} />
       </header>
       {tournament.data.description && <p className="description">{tournament.data.description}</p>}
-      {isTournamentAdmin && <div className="tournament-admin-actions"><Link to={`/tournaments/${tournamentId}/invitations`}><Link2 aria-hidden="true" />Administrer invitasjoner</Link></div>}
+      {isTournamentAdmin && <div className="tournament-admin-actions"><Link to={`/manage/tournaments/${tournamentId}`}><Settings aria-hidden="true" />Åpne administrasjon</Link></div>}
       <div className="summary-strip">
         <div><Flag /><strong>{tournament.data.number_of_rounds}</strong><span>Runder</span></div>
         <div><Users /><strong>{players.data?.players.length ?? '–'}</strong><span>Spillere</span></div>

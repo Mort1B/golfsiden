@@ -1,51 +1,60 @@
 # Latest explanation
 
-## One browser-compatible username constraint
+## Read-only tournament management workspace
 
-Every username input now uses one shared HTML `pattern` value. The sign-in page,
-invitation registration, invitation sign-in, and onboarding account creation all
-emit the `/v`-compatible pattern `[A-Za-z0-9_\-]{3,32}`. Centralizing the value
-prevents one account surface from reintroducing Chrome's character-class
-compilation error while another remains valid.
+Tournament administrators now have one private management index at
+`/manage/tournaments/:tournamentId`. It organizes the existing tournament,
+roster, round, course-presence, pairing-link, lifecycle, and invitation facts
+into seven semantic sections without pretending that future editors or provider
+integration already exist.
 
-The shared constant is deliberately limited to the browser constraint. Backend
-normalization and validation remain authoritative, and onboarding's imperative
-validation still trims user input before checking the same visible grammar.
-Required fields, length attributes, submissions, error states, invitation
-handling, tournament creation, authentication, and sessions are unchanged.
+The route validates the identifier, loads the session-owned membership list and
+private tournament detail, and enables roster and round reads only after both
+facts confirm the exact tournament and an `admin` membership. Invalid, missing,
+forbidden, loading, retryable-error, empty, and populated states remain distinct.
+This frontend gate improves presentation; existing backend authorization remains
+the security boundary.
+
+Invitation administration is linked from the workspace. Its labelled return
+replaces the invitation history entry, then the asynchronously mounted workspace
+validates the hash, scrolls to the Invitations section, and restores visible
+focus. Browser Back therefore does not reopen the invitation page.
 
 ## Compact example
 
-All four inputs import the same escaped value:
+Secondary private reads cannot start from membership data alone:
 
 ```tsx
-export const USERNAME_HTML_PATTERN = '[A-Za-z0-9_\\-]{3,32}'
+const access = resolveManagementAccess({ memberships, tournament, ...queryState })
+const enabled = access.state === 'ready'
 
-<input pattern={USERNAME_HTML_PATTERN} minLength={3} maxLength={32} required />
+useQuery({ queryKey: tournamentKeys.rounds(userId, tournamentId), enabled })
 ```
 
 ## Invariants
 
-- Username inputs accept 3-32 ASCII letters, digits, underscores, or hyphens.
-- Uppercase ASCII remains usable because the backend normalizes case.
-- Dot, spaces, non-ASCII letters, other punctuation, and out-of-range lengths
-  remain invalid at the browser boundary.
-- Backend credential behavior, session ownership, invitation semantics, and
-  onboarding payloads are unchanged.
-- Tournament, round-team, handicap snapshot, score ownership, locking, audit,
-  and gross/net standings invariants are unaffected.
+- Tournament-specific backend membership remains authoritative for every read
+  and mutation; global roles gain no bypass.
+- The workspace is read-only and introduces no provider request, fake mutation,
+  course-revision claim, or team-query fan-out.
+- Tournament players remain independent of round teams, and handicap snapshots,
+  score ownership, locked-round protection, audit history, and separate gross/net
+  standings are unchanged.
+- Private query keys remain session-owned and identity transitions still clear
+  the workspace cache.
 
 ## Validation
 
-- Focused `/v` compilation and grammar coverage passes 10 tests.
-- The complete frontend suite passes 108 tests across 19 files.
-- Strict typecheck, lint, and production build pass; Vite 7.3.6 transforms 1,796
+- Focused management access, section, and hash tests pass 6 tests.
+- The complete frontend suite passes 114 tests across 20 files.
+- Strict typecheck, lint, and production build pass; Vite 7.3.6 transforms 1,800
   modules.
-- Google Chrome 151.0.7922.173 passes onboarding and both invitation account
-  forms at 375x812 and 1440x900. All three fields expose the exact shared DOM
-  pattern and pass the accepted/rejected boundary matrix.
-- Chrome reports no pattern diagnostic, runtime exception, failed request,
-  unexpected error response, or horizontal overflow. The unauthenticated session
-  check returns its expected `401` response.
-- Independent review found no correctness, security, accessibility, structural,
-  or regression issue.
+- Google Chrome 151.0.7922.173 passes the populated admin workspace at 375x812
+  and 1440x900, plus phone-width empty, non-admin, signed-out, invalid-ID,
+  missing, retryable-error, and delayed-loading scenarios.
+- Chrome verifies all seven anchors and sections, 44-pixel navigation targets,
+  visible hash focus, invitation round-trip and browser-Back behavior, long
+  content, and no horizontal overflow, runtime exception, failed request, or
+  unexpected console/network error.
+- Independent review found and then verified fixes for invitation return/focus
+  history and mutually exclusive roster async states; no findings remain.
