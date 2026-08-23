@@ -279,6 +279,14 @@ upstream-failure, incomplete-catalog, and missing-course states use the standard
 error envelope. The provider's live `{ "course": ... }` envelope is decoded,
 and empty tees or missing/duplicate stroke indexes fail closed.
 
+The approved configuration fallback for a missing or incomplete provider course
+is manual tournament-admin entry. The admin chooses or names one tee and must
+provide its category, course rating, slope, plus every ordered hole's par and
+complete unique stroke-index permutation. Hole distance is optional. Provider
+imports and manual entry will persist through the same immutable local revision
+boundary before a draft round can open. This fallback is planned but is not yet
+available in the current read-only management workspace.
+
 Flights are not represented yet. A future normalized round-flight model will
 extend the same score-access resolver so a player may receive both team owners
 in their flight. Equal starting holes or tee times are not treated as flights.

@@ -33,6 +33,11 @@ course/tee/hole revisions is the next Phase 4B step.
 - Everyone in a round uses the same selected course and tee. Provider data is
   imported into local course/tee/hole revisions so slope, course rating, par,
   yardage, and hole stroke index remain reproducible after the provider changes.
+- If no usable provider course exists, a tournament admin manually defines the
+  course and selected tee. Tee name/category, course rating, slope, ordered hole
+  pars, and a unique `1..=hole_count` stroke-index permutation are required;
+  each hole's distance is optional. Manual and provider imports create the same
+  immutable local revision before the round can open.
 - Flights are explicit, round-specific groups independent of teams, tee times,
   and starting holes. An admin assigns players, teams, and one designated
   scorekeeper for each flight. That scorekeeper may write every eligible
@@ -71,16 +76,20 @@ course/tee/hole revisions is the next Phase 4B step.
 
 ### Phase 4B: Private workspace and provider-backed courses
 
-- Store provider name, opaque course ID, tee category/name, import timestamp, and
-  immutable local course/tee/hole revisions. Do not invent an upstream tee ID.
-  Validate exactly ordered holes, unique stroke indexes, par, rating, slope, and
-  selected tee before a draft round can open.
+- Store source (`golf_course_api` or `manual`), nullable provider course ID, tee
+  category/name, import timestamp, and immutable local course/tee/hole revisions.
+  Do not invent an upstream tee ID. Validate exactly ordered holes, the complete
+  stroke-index permutation, par, rating, slope, and selected tee before a draft
+  round can open; allow each manual hole distance to remain null.
 - Add an atomic draft-only round configuration endpoint and a mobile course then
-  tee picker showing rating, slope, length, hole completeness, loading, empty,
-  error, retry, stale-result, and conflict states.
+  tee picker plus manual-course fallback. Show rating, slope, optional length,
+  hole completeness, loading, empty, error, retry, stale-result, and conflict
+  states. Manual entry must make required fields and duplicate/missing stroke
+  indexes clear before save.
 - **Stop condition:** an authorized admin can configure every draft round with a
-  locally preserved provider course/tee snapshot; opened rounds never drift when
-  provider data changes or becomes unavailable.
+  locally preserved provider or manual course/tee snapshot; missing provider
+  courses remain configurable without requiring hole distance, and opened rounds
+  never drift when provider or manually entered source data later changes.
 
 ### Phase 5: Teams, flights, and pairing validation
 

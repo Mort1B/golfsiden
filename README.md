@@ -80,6 +80,20 @@ per UTC day in each backend process; use the provider plan's limit when changing
 it. Multi-instance deployments require a shared quota before relying on this as
 a global account-wide ceiling.
 
+### Course data note
+
+The missing shortlist courses are expected to be added directly to
+GolfCourseAPI later using a Pro plan. Until a provider course has complete tee
+and hole data, the planned round-configuration flow must also support manual
+entry by the tournament admin. The admin chooses or names the tee and supplies
+its course rating and slope, then enters each hole's par and unique stroke index.
+Hole distance is optional. Saving either provider or manual data creates the
+same immutable local course/tee/hole revision so an opened round never changes
+when the provider is edited or unavailable.
+
+Manual course entry is a recorded product requirement, not implemented by the
+current read-only management workspace or catalog endpoints yet.
+
 ## Verification
 
 Run Rust formatting, unit tests, and Clippy:
