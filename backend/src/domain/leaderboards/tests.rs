@@ -187,6 +187,31 @@ fn scramble_uses_frozen_members_and_formula() {
 }
 
 #[test]
+fn handicap_disabled_scramble_still_requires_exactly_two_frozen_members() {
+    let mut round = round_fact(300, 1, RoundStatus::Open, ScoringFormat::TeamScramble);
+    round.handicap_enabled = false;
+    let team_id = id(310);
+    let facts = RoundLeaderboardFacts {
+        holes: holes(round.round_id),
+        snapshots: vec![snapshot(round.round_id, 1, "Ada", 8, 8)],
+        teams: vec![TeamFact {
+            round_id: round.round_id,
+            team_id,
+            team_name: "Solo".to_owned(),
+        }],
+        memberships: vec![member(round.round_id, team_id, 1, "Ada")],
+        scores: Vec::new(),
+        confirmations: Vec::new(),
+        round,
+    };
+
+    assert_eq!(
+        build_round_leaderboard(&facts, LeaderboardMetric::Net),
+        Err(LeaderboardError::InvalidStoredData)
+    );
+}
+
+#[test]
 fn tournament_aggregates_changing_team_attribution_and_ranks_round_count_first() {
     let mut first = individual_round(200, 1, RoundStatus::Completed);
     first.scores = vec![

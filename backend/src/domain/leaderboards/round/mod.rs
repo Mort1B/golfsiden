@@ -1,11 +1,11 @@
+mod owners;
+
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 
-use crate::domain::{
-    models::{RoundStatus, ScoringFormat},
-    scoring::{hole_net_score, scramble_playing_handicap},
-};
+use crate::domain::{models::RoundStatus, scoring::hole_net_score};
 
+use self::owners::{OwnerSeed, build_owner_seeds};
 use super::{
     LeaderboardError, LeaderboardMember, LeaderboardMetric, LeaderboardOwner, RoundLeaderboard,
     RoundLeaderboardEntry, RoundLeaderboardFacts,
@@ -39,10 +39,8 @@ pub fn build_round_leaderboard(
 
     let holes = validated_holes(facts)?;
     let snapshots = validated_snapshots(facts)?;
-    let mut entries = match round.scoring_format {
-        ScoringFormat::IndividualStrokePlay => individual_entries(facts, &holes, &snapshots)?,
-        ScoringFormat::TeamScramble => team_entries(facts, &holes, &snapshots)?,
-    };
+    let owners = build_owner_seeds(facts, &snapshots)?;
+    let mut entries = assemble_entries(facts, &holes, owners)?;
     if entries.is_empty() {
         return Err(LeaderboardError::InvalidStoredData);
     }
@@ -103,100 +101,15 @@ fn validated_snapshots(
     Ok(snapshots)
 }
 
-fn individual_entries(
-    facts: &RoundLeaderboardFacts,
-    holes: &HashMap<uuid::Uuid, (i16, i16)>,
-    snapshots: &HashMap<uuid::Uuid, &super::SnapshotFact>,
-) -> Result<Vec<RoundLeaderboardEntry>, LeaderboardError> {
-    let owners = snapshots
-        .iter()
-        .map(|(id, snapshot)| {
-            (
-                LeaderboardOwner::Player { id: *id },
-                snapshot.display_name.as_str(),
-                if facts.round.handicap_enabled {
-                    i32::from(snapshot.playing_handicap)
-                } else {
-                    0
-                },
-                Vec::new(),
-            )
-        })
-        .collect::<Vec<_>>();
-    assemble_entries(facts, holes, owners)
-}
-
-fn team_entries(
-    facts: &RoundLeaderboardFacts,
-    holes: &HashMap<uuid::Uuid, (i16, i16)>,
-    snapshots: &HashMap<uuid::Uuid, &super::SnapshotFact>,
-) -> Result<Vec<RoundLeaderboardEntry>, LeaderboardError> {
-    let mut teams = HashMap::new();
-    for team in &facts.teams {
-        if team.round_id != facts.round.round_id
-            || teams
-                .insert(team.team_id, team.team_name.as_str())
-                .is_some()
-        {
-            return Err(LeaderboardError::InvalidStoredData);
-        }
-    }
-    let mut members: HashMap<uuid::Uuid, Vec<LeaderboardMember>> = HashMap::new();
-    let mut assigned = HashSet::new();
-    for member in &facts.memberships {
-        if member.round_id != facts.round.round_id
-            || !teams.contains_key(&member.team_id)
-            || !assigned.insert(member.player_id)
-            || !snapshots.contains_key(&member.player_id)
-        {
-            return Err(LeaderboardError::InvalidStoredData);
-        }
-        members
-            .entry(member.team_id)
-            .or_default()
-            .push(LeaderboardMember {
-                player_id: member.player_id,
-                display_name: member.display_name.clone(),
-                display_order: member.display_order,
-            });
-    }
-    if assigned.len() != snapshots.len() {
-        return Err(LeaderboardError::InvalidStoredData);
-    }
-
-    let mut owners = Vec::with_capacity(teams.len());
-    for (team_id, name) in teams {
-        let mut team_members = members.remove(&team_id).unwrap_or_default();
-        sort_members(&mut team_members);
-        let course_handicaps = team_members
-            .iter()
-            .filter_map(|member| snapshots.get(&member.player_id))
-            .map(|snapshot| i32::from(snapshot.course_handicap))
-            .collect::<Vec<_>>();
-        let calculated =
-            scramble_playing_handicap(&course_handicaps, facts.round.handicap_allowance_percent)
-                .map_err(|_| LeaderboardError::InvalidStoredData)?;
-        let playing_handicap = if facts.round.handicap_enabled {
-            calculated
-        } else {
-            0
-        };
-        owners.push((
-            LeaderboardOwner::Team { id: team_id },
-            name,
-            playing_handicap,
-            team_members,
-        ));
-    }
-    assemble_entries(facts, holes, owners)
-}
-
 fn assemble_entries(
     facts: &RoundLeaderboardFacts,
     holes: &HashMap<uuid::Uuid, (i16, i16)>,
-    owners: Vec<(LeaderboardOwner, &str, i32, Vec<LeaderboardMember>)>,
+    owners: Vec<OwnerSeed<'_>>,
 ) -> Result<Vec<RoundLeaderboardEntry>, LeaderboardError> {
-    let owner_set = owners.iter().map(|owner| owner.0).collect::<HashSet<_>>();
+    let owner_set = owners
+        .iter()
+        .map(|owner| owner.owner)
+        .collect::<HashSet<_>>();
     let mut scores: HashMap<LeaderboardOwner, Vec<&super::ScoreFact>> = HashMap::new();
     let mut score_keys = HashSet::new();
     for score in &facts.scores {
@@ -223,8 +136,8 @@ fn assemble_entries(
 
     owners
         .into_iter()
-        .map(|(owner, name, playing_handicap, members)| {
-            let owner_scores = scores.remove(&owner).unwrap_or_default();
+        .map(|owner_seed| {
+            let owner_scores = scores.remove(&owner_seed.owner).unwrap_or_default();
             let mut gross_total = 0;
             let mut net_total = 0;
             let mut par_played = 0;
@@ -235,7 +148,7 @@ fn assemble_entries(
                 gross_total += i32::from(score.gross_strokes);
                 net_total += hole_net_score(
                     i32::from(score.gross_strokes),
-                    playing_handicap,
+                    owner_seed.playing_handicap,
                     i32::from(*stroke_index),
                     i32::from(facts.round.number_of_holes),
                 )?;
@@ -243,20 +156,20 @@ fn assemble_entries(
             }
             let holes_scored = owner_scores.len();
             let complete = holes_scored == facts.round.number_of_holes as usize;
-            if confirmed.contains(&owner) && !complete {
+            if confirmed.contains(&owner_seed.owner) && !complete {
                 return Err(LeaderboardError::InvalidStoredData);
             }
             Ok(RoundLeaderboardEntry {
                 position: None,
                 tied: false,
-                owner,
-                owner_name: name.to_owned(),
-                members,
+                owner: owner_seed.owner,
+                owner_name: owner_seed.name.to_owned(),
+                members: owner_seed.members,
                 holes_scored,
                 number_of_holes: facts.round.number_of_holes as usize,
                 complete,
-                confirmed: complete && confirmed.contains(&owner),
-                playing_handicap,
+                confirmed: complete && confirmed.contains(&owner_seed.owner),
+                playing_handicap: owner_seed.playing_handicap,
                 gross_total,
                 net_total,
                 par_played,

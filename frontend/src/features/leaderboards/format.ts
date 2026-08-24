@@ -1,4 +1,13 @@
-import type { LeaderboardMetric } from '../../api/types'
+import type { LeaderboardMetric, ScoringFormat } from '../../api/types'
+
+const scoringFormatLabels = {
+  individual_stroke_play: 'Individuelt slagspill',
+  team_scramble: 'Lag-scramble',
+} satisfies Record<ScoringFormat, string>
+
+export function scoringFormatLabel(format: ScoringFormat): string {
+  return scoringFormatLabels[format]
+}
 
 export function metricLabel(metric: LeaderboardMetric): string {
   return metric === 'gross' ? 'Brutto' : 'Netto'

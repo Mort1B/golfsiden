@@ -1,84 +1,72 @@
 # Latest explanation
 
-## Runtime flight-member score authority
+## Exhaustive round-leaderboard format boundary
 
-Every authenticated tournament player linked to an exact round flight member can
-now score every eligible card in that flight. In individual stroke play those
-owners are the flight's snapshot-backed players. In scramble they are the exact-
-round two-player teams whose complete membership is contained in that flight, so
-one flight may expose several shared team cards to every member.
+The pure round leaderboard no longer mixes format selection with stored-fact
+validation, score assembly, totals, confirmation checks, and ranking. The former
+338-line builder is split into a 251-line format-neutral orchestrator and a
+focused owner-policy module.
 
-Flights grant write authority only. Player and team score ownership, preserved
-handicap snapshots, confirmation state, audit attribution, and locked-round rules
-are unchanged. Starting hole, tee time, display order, name, or one matching team
-member never implies access. A player without stored flight membership retains
-the pre-flight fallback to their own individual card or direct round team.
+This is a behavior-preserving preparation step. It does not add foursomes,
+change `ScoringFormat`, alter PostgreSQL, or change an API response. Its value is
+that a later team-owned format cannot silently inherit scramble semantics merely
+because it is not individual stroke play.
 
-## One policy for listing and mutation
+## Closed owner and handicap policy
 
-Score-access listing, hole saves/corrections, and card confirmation now call the
-same deterministic owner resolver. Tournament admins and scorers retain every
-eligible round owner. Player access still requires an exact tournament `player`
-membership and a currently linked player identity; viewers, unlinked accounts,
-non-members, and other-flight players receive no authority.
+One internal policy maps every current Rust format exhaustively:
 
-The resolver returns each tagged owner once, ordered by case-insensitive player
-or team name and then UUID. Scramble eligibility requires exactly two team
-members and two opening snapshots, and the flight branch rejects a team unless
-all of those members share the actor's exact stored flight. For example, a player
-in Team A can receive both complete teams in Flight 1 without receiving Team C in
-Flight 2:
-
-```json
-{
-  "round_id": "round-uuid",
-  "writable_owners": [
-    { "type": "team", "id": "team-b-uuid" },
-    { "type": "team", "id": "team-a-uuid" }
-  ]
+```rust
+match format {
+    ScoringFormat::IndividualStrokePlay => IndividualSnapshots,
+    ScoringFormat::TeamScramble => TwoPlayerTeam {
+        exact_team_size: 2,
+        handicap: Scramble35And15,
+    },
 }
 ```
 
-## Transaction and privacy boundary
+Individual entries still come from immutable round snapshots and use the stored
+playing handicap. Scramble entries still come from frozen exact-round teams and
+members, then apply the existing 35%/15% formula and configured allowance.
 
-`GET /api/rounds/{round_id}/score-access` re-locks the active session and user,
-then holds the exact tournament membership through owner assembly in a
-repeatable-read transaction. Successful responses are `Cache-Control: private,
-no-store`; the browser continues using its user-rooted private query key and
-unchanged tagged-owner decoder.
+Team identity, duplicate assignment, snapshot coverage, and exact team size are
+validated before handicap disabling can replace the calculated value with zero.
+Malformed stored ownership therefore remains an error even in a scratch round.
+No generic framework or unapproved future formula was introduced.
 
-Save and confirmation already lock the round before revalidating the session and
-tournament membership. They now check membership in the same resolved owner set
-inside that transaction. A successful peer write still records the authenticated
-account as `submitted_by` or `confirmed_by`; a valid owner in another flight is
-`403`, while an owner from another round remains the existing
-`409 score_owner_not_eligible` validation error.
+## Format-neutral assembly remains authoritative
+
+After owner seeds are built, the unchanged path validates holes, exclusive
+player/team score ownership, duplicate score keys, and confirmations. It then
+calculates gross and net totals, par played, completeness, score to par,
+deterministic name/UUID ordering, and competition ties. Tournament aggregation
+continues attributing a team result exactly once to each frozen round member and
+does not branch on scoring format.
+
+The frontend's visible labels are unchanged, but its prior binary fallback is
+now an exhaustive `Record<ScoringFormat, string>`. Adding a new typed format will
+therefore require an explicit Norwegian label instead of silently displaying it
+as individual stroke play. The runtime API decoder continues rejecting unknown
+format strings before caching.
 
 ## Validation
 
-The focused PostgreSQL suite covers peer individual cards, two teams in one
-scramble flight, a member of each team scoring the other team, stable ordering,
-duplicate prevention, direct legacy fallback, a snapshot-backed team split
-across flights, cross-flight save/confirm denial without mutation, cross-round
-rejection, privileged roles, viewer/unlinked denial, and session/membership/link
-revocation. Owner review found no correctness or security defect after those
-cases were added.
+Focused domain coverage includes both existing formats and a new regression that
+proves a one-member scramble team fails closed when handicaps are disabled.
+Owner-level review found no correctness, ordering, serialization, or abstraction
+issue. All 10 focused leaderboard domain tests and seven PostgreSQL leaderboard
+API tests passed. The complete ladder also passed: 65 standard backend tests,
+all 194 PostgreSQL-backed/unit checks, strict all-feature Clippy, Rust formatting,
+142 tests across 25 frontend files, strict TypeScript, ESLint, the production
+build, and `git diff --check`.
 
-All 193 PostgreSQL-backed tests passed, including the new authorization suite and
-the seven existing scorecard regressions. The 64 standard backend tests, strict
-all-feature Clippy, Rust formatting, 141 tests across 24 frontend files, strict
-TypeScript, ESLint, the production build, and `git diff --check` also passed.
-
-Real Chrome at 375x812 showed all four round cards while returning exactly the
-two same-flight teams as writable with `Cache-Control: private, no-store`.
-Anders switched to peer Lag 2, saved par, reached `Synkronisert`, received the
-authoritative card refetch, and revisited the persisted score. At 1440x900 a
-direct cross-flight Lag 3 card remained read-only with every score control
-disabled. Both layouts had no horizontal overflow, visual defects, unexpected
-request failures, console errors, or runtime exceptions.
+No browser run is required because the rendered labels, markup, styling, and
+interaction are unchanged.
 
 ## Next boundary
 
-Phase 6 begins with splitting format-sensitive lifecycle, scorecard, and
-leaderboard modules before adding two-player foursomes. Faster phone switching
-among several writable flight cards belongs to that format-aware scoring work.
+Continue the Phase 6 preparation by isolating the lifecycle, pairing, completion,
+authorization, and scorecard owner/handicap policies that still use scramble as
+a proxy for team ownership. The PostgreSQL enum and trigger branches remain
+unchanged until a complete foursomes implementation is approved.

@@ -147,6 +147,13 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   scored. Tournament leaderboards aggregate only completed or locked rounds and
   attribute scramble results through frozen membership for that round. Separate
   gross and net routes never use the other metric as a hidden tie-break.
+- Round-leaderboard owner construction is isolated from format-neutral stored-
+  fact validation, score/confirmation assembly, totals, and ranking. One closed,
+  exhaustive policy maps each current scoring format to snapshot-owned entries
+  or an exact-size team plus its approved handicap policy. Individual stroke play
+  uses the preserved snapshot playing handicap; two-player scramble alone selects
+  the existing 35%/15% calculation. No unrecognized format falls back to either
+  path, including in the frontend's typed format label mapping.
 - Leaderboard repositories bulk-load rounds, holes, snapshots, teams,
   memberships, scores, and confirmations inside one repeatable-read, read-only
   transaction. Pure domain assembly validates stored facts, calculates handicap

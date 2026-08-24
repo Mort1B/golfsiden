@@ -1,6 +1,6 @@
 import { CheckCircle2, Clock3, Users } from 'lucide-react'
 import type { LeaderboardMetric, RoundLeaderboard, RoundLeaderboardEntry } from '../../api/types'
-import { metricLabel, positionLabel, scoreToParLabel } from './format'
+import { metricLabel, positionLabel, scoreToParLabel, scoringFormatLabel } from './format'
 
 function progressLabel(entry: RoundLeaderboardEntry): string {
   if (entry.holes_scored === 0) return `Ikke startet · 0 av ${entry.number_of_holes} hull`
@@ -40,7 +40,7 @@ export function RoundStandings({ leaderboard }: { leaderboard: RoundLeaderboard 
     <div className="standings-section">
       <div className="standings-heading">
         <div>
-          <p>{leaderboard.scoring_format === 'team_scramble' ? 'Lag-scramble' : 'Individuelt slagspill'}</p>
+          <p>{scoringFormatLabel(leaderboard.scoring_format)}</p>
           <h2>{metricLabel(leaderboard.metric)} resultat</h2>
         </div>
         <span>{leaderboard.status === 'draft' ? 'Kladd' : leaderboard.status === 'open' ? 'Åpen' : leaderboard.status === 'locked' ? 'Låst' : 'Fullført'}</span>
