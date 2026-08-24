@@ -4,6 +4,7 @@ import type { Round, Tournament, TournamentPlayerRoster } from '../../api/types'
 import { EmptyState, ErrorState, LoadingState } from '../../ui/AsyncState'
 import { StatusBadge } from '../../ui/StatusBadge'
 import { CourseConfigurationSection } from './CourseConfigurationSection'
+import { PairingSection } from './pairings/PairingSection'
 
 interface ReadState<T> {
   data: T | undefined
@@ -103,11 +104,8 @@ export function TournamentManagementSections({ tournament, roster, rounds }: Pro
 
       <section id="pairings" className="management-section" aria-labelledby="pairings-heading" tabIndex={-1}>
         <header><p className="eyebrow">Rundespesifikt oppsett</p><h2 id="pairings-heading">Spillegrupper</h2></header>
-        <p>Lag og dagens rundeoppsett vises på hver rundeside.</p>
         <RoundState state={rounds}>{(items) => (
-          <ul className="management-links-list compact">
-            {items.map((round) => <li key={round.id}><Link to={`/rounds/${round.id}`}>{formatName(round)}<ArrowRight aria-hidden="true" /></Link></li>)}
-          </ul>
+          <PairingSection tournamentId={tournament.id} rounds={items} />
         )}</RoundState>
       </section>
 

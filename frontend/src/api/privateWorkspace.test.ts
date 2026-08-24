@@ -2,6 +2,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
 import { clearPrivateWorkspace, privateWorkspaceKeys } from './privateWorkspace'
 import { tournamentKeys } from './tournaments'
+import { pairingKeys } from './pairings'
 
 describe('private workspace cache', () => {
   it('uses one user-owned hierarchy for readiness and tournament reads', () => {
@@ -10,6 +11,9 @@ describe('private workspace cache', () => {
     ])
     expect(privateWorkspaceKeys.scoreAccess('user-one', 'round-one')).toEqual([
       'private-workspace', 'user-one', 'rounds', 'round-one', 'score-access',
+    ])
+    expect(pairingKeys.detail('user-one', 'round-one')).toEqual([
+      'private-workspace', 'user-one', 'rounds', 'round-one', 'pairings',
     ])
   })
 

@@ -162,10 +162,12 @@ deployment. The backend now exposes a private consolidated team/flight roster an
 an atomic admin replacement endpoint for draft rounds. Flight-aware validation
 and opening require complete assignments and keep scramble teams within one
 flight; the development seed supplies representative ready assignments for all
-five rounds. The remaining tournament settings, pairing UI, flight-member score
-authority, offline scoring, and locked-round score corrections remain deferred.
-Flights are explicit and are never inferred from matching tee times or starting
-holes.
+five rounds. Tournament admins can edit one draft round at a time with accessible
+add, move, remove, and ordering controls; saves replace the complete team/flight
+roster atomically and preserve dirty input on conflicts. The remaining
+tournament settings, flight-member score authority, offline scoring, and locked-
+round score corrections remain deferred. Flights are explicit and are never
+inferred from matching tee times or starting holes.
 
 Migration `0009` removes account email after deterministically deriving usernames
 for existing accounts. Back up production data and retain the generated username

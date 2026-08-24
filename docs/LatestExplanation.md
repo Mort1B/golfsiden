@@ -1,74 +1,84 @@
 # Latest explanation
 
-## Representative deterministic seed pairings
+## Mobile pairing roster editor
 
-The development tournament now demonstrates the complete flight-aware pairing
-model instead of stopping at course, entrant, and partial team data. All five
-rounds are ready under the same repository validation used by round opening.
+Tournament admins can now configure one round's complete pairing roster from the
+management workspace. Each round stays mounted so a collapsed draft is retained,
+but only the expanded round fetches its private aggregate. Draft rounds expose
+semantic add, remove, move, rename, and ordering controls; open, completed, and
+locked rounds show the same authoritative data read-only.
 
-Each round has two four-player flights. Flight 1 starts on hole 1 and Flight 2
-starts on hole 10, while player membership rotates between rounds. Scramble
-rounds one, two, and four each have four two-player score-owner teams, with two
-complete teams contained in each flight. Individual rounds three and five have
-no teams because their players own their scorecards directly; flights provide
-grouping only.
+Scramble teams remain round-specific shared-score owners. Flights independently
+own grouping, member order, starting hole, and tee time. Individual rounds expose
+no team editor. The form may save an incomplete roster, while clearly listing
+unassigned entrants and teams that do not yet contain exactly two players;
+backend opening readiness remains the authority.
 
-This preserves the central boundary: teams own shared scramble scores, while
-flights own scheduling and determine future membership-wide scoring access.
-This seed step does not grant that runtime score permission.
+## Full replacement without silent loss
 
-## Safe refresh behavior
+The typed API boundary strictly decodes IDs, finite statuses/formats, timestamps,
+nullable schedules, entrants, groups, and ordered members. A save sends complete
+desired arrays and the version read from the server:
 
-The seed remains one transaction and can be run repeatedly. Every pairing insert
-joins the exact seeded parent round while it is still draft before the statement
-reaches the database pairing triggers. A frozen round therefore produces no
-attempted pairing mutation, rather than relying on `ON CONFLICT` after a trigger
-has already rejected the statement.
-
-Missing deterministic rows are added only when they do not conflict with an
-existing player assignment. The previous development seed stored starting holes
-on its first eight teams. Those known values are cleared only when the round is
-draft and the exact team identity, two-player membership, matching four-player
-flight, and schedule all agree:
-
-```sql
-UPDATE teams seeded_team
-SET starting_hole = NULL
-FROM seeded_schedule schedule
-JOIN rounds seeded_round
-  ON seeded_round.id = schedule.round_id
- AND seeded_round.status = 'draft'
-JOIN flights seeded_flight
-  ON seeded_flight.id = schedule.flight_id
-WHERE seeded_team.id = schedule.team_id
-  AND seeded_team.starting_hole = schedule.starting_hole;
+```json
+{
+  "expected_round_updated_at": "2026-08-24T10:00:00Z",
+  "teams": [{ "id": "uuid", "name": "Lag 1", "members": [], "schedule_flight_id": null }],
+  "flights": [{ "id": "uuid", "name": "Flight 1", "starting_hole": 1, "tee_time": "08:30:00", "members": [] }],
+  "legacy_conversions": []
+}
 ```
 
-The production statement adds the exact tournament, name, tee-time, membership,
-and flight-size guards omitted from this compact example. That schedule
-conversion leaves edited or partially conflicting facts alone; the insert
-backfills neither delete nor overwrite rows, and no frozen-round trigger is
-bypassed.
+Existing identities and member order are retained, while new groups use browser-
+generated UUIDs. Duplicate submission is blocked. On success the returned
+aggregate becomes the exact pairing cache and the round detail/list timestamps
+are refetched. The local draft records a fingerprint of the complete aggregate,
+not only the round timestamp, so entrant-only changes are detected too. A newer
+aggregate replaces a clean draft, but a dirty draft is preserved behind an
+explicit discard-and-reload conflict state.
 
-## Coverage and validation
+Stored inactive members remain visible by name and offer removal-only cleanup;
+they cannot be reassigned. Exact server tee-time seconds and fractions survive
+unrelated edits even though the time input edits minute precision.
 
-The focused PostgreSQL seed test now proves exact rotations and stable totals of
-12 teams, 24 team memberships, 10 flights, and 40 flight memberships. It also
-checks that individual rounds remain team-free, every scramble team is exactly
-two players contained in one flight, and all five rounds pass shipped pairing
-readiness. The test recreates the old round-two draft seed before refreshing it,
-then opens round one and reruns the seed to prove frozen pairings remain
-unchanged.
+## Explicit legacy normalization
 
-Validation passed formatting, whitespace checks, Clippy with warnings denied,
-all 64 standard workspace tests, and all 191 PostgreSQL-enabled tests. The latter
-includes the focused seed test and all ten course-revision tests. The historical
-course-revision fixture still proves its version-10 upgrade behavior, then brings
-that test database through migrations 11 and 12 before executing the current
-flight-aware seed.
+Individual legacy grouping teams block ordinary editing until a separate first
+save copies every group exactly into a new flight and submits every required
+conversion mapping. For a retained scramble team with an old schedule, the admin
+must explicitly select a flight containing the exact same members. That action
+copies the team's exact starting hole and lossless tee time; equality never makes
+the association automatically.
+
+Changing or clearing a transfer restores the previous target flight's complete
+pre-transfer schedule before another target is updated. This prevents an
+abandoned selection from leaving an orphaned or duplicated schedule in the full-
+replacement request.
+
+## Validation
+
+Review found and resolved schedule-transfer mismatch, tee-time truncation,
+inactive-member cleanup, same-timestamp entrant refresh, duplicate heading IDs,
+and abandoned-transfer schedule retention. The final review was clean.
+
+All 141 tests across 24 frontend files passed, as did strict TypeScript, ESLint,
+the production build, and `git diff --check`. The PostgreSQL pairing API
+regression suite passed all 13 tests.
+
+Real Chrome at 375x812 exercised the seeded individual and scramble editors,
+independent team/flight assignment, add/remove/rename/reorder, optional schedule
+entry and clearing, double-submit prevention, a real successful PUT, authoritative
+refetch, and cleanup restoration. The double action emitted exactly one PUT and
+the UI returned to its synchronized state. Phone and 1440x900 desktop layouts had
+no page/editor overflow, measured action targets were at least 44px, and the final
+run had no unexpected HTTP failures, console errors, or uncaught exceptions.
+Programmatic focus could not conclusively trigger Chrome's `:focus-visible`
+heuristic; the controls remain semantic and their CSS defines a visible keyboard
+outline. Stale/non-draft, legacy, scheduled-transfer, and inactive fixtures were
+covered by frontend/PostgreSQL automation rather than separate browser fixtures.
 
 ## Next boundary
 
-Build the mobile roster editor for teams, flights, membership, starting holes,
-and tee times. Extending score-access listing and score mutations to every exact
-flight member remains the following separately approved step.
+Extend score-access listing and transactional score mutation authorization so
+every authenticated exact flight member receives every eligible score owner in
+that flight. This editor does not itself grant any scoring permission.

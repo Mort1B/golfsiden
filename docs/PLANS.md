@@ -15,9 +15,9 @@ complete, as is the corrected normalized PostgreSQL flight persistence boundary
 with membership-wide future score authority, and the transactional pairing-roster
 API plus explicit legacy individual-group conversion and flight-aware pairing
 validation/opening and deterministic representative seed assignments for all
-five rounds are complete. No active implementation step is approved. The mobile
-roster editor is next; runtime flight-member score authority remains the
-following bounded step.
+five rounds and the mobile draft-round pairing roster editor are complete. No
+active implementation step is approved. Runtime flight-member score authority
+is next.
 
 ## Product decisions
 
@@ -80,9 +80,6 @@ following bounded step.
 
 ### Phase 5: Teams, flights, and pairing validation
 
-- Build one mobile roster editor for unassigned players, round teams, flights,
-  team membership, flight placement, starting hole, and tee time. Use accessible
-  move/add/remove controls rather than drag-only behavior.
 - Extend both score-access listing and transactional mutation authorization so
   every authenticated exact flight member receives every eligible score owner in
   their flight.

@@ -401,8 +401,31 @@ remain score-owner/history identities. A scheduled retained scramble team clears
 its schedule only when all its members are explicitly placed in one requested
 flight carrying the same starting hole and tee time; equal facts never infer the
 relationship. The old granular team-create/member routes are retired, while the
-member-readable team GET remains for compatibility. Frontend editing and
-membership-wide scoring authority remain separate follow-up work.
+member-readable team GET remains for compatibility. Membership-wide scoring
+authority remains a separate follow-up work item.
+
+The tournament-admin workspace includes one mobile pairing editor for one
+expanded round at a time. It reads the private aggregate below the authenticated
+user's query root and uses labelled inputs, selects, and add/remove/move/order
+buttons rather than drag-only interaction. Scramble teams and flights are edited
+independently; individual rounds expose flights only. Existing group identities
+and exact member order are preserved, new groups receive browser-generated
+UUIDs, inactive stored members have removal-only cleanup, and non-draft rounds
+remain readable but disabled. Incomplete drafts may be saved while unresolved
+flight assignments and non-two-player scramble teams remain clearly labelled;
+opening readiness stays authoritative.
+
+Each save sends the entire desired roster with the aggregate `updated_at` token,
+CSRF, and exact schedule facts. The returned aggregate replaces the precise
+pairing cache and round timestamps are authoritatively refetched. Duplicate
+submission is blocked. A newer server aggregate—including an entrant-only change
+with the same timestamp—never overwrites a dirty local draft; the admin must
+explicitly discard and reload. Exact tee-time seconds/fractions survive unrelated
+edits. Legacy individual groups require a separate exact conversion save before
+ordinary editing, and an old scheduled scramble team requires an explicit flight
+selection that copies its schedule. Clearing or changing that selection restores
+the prior flight schedule, so no relationship is inferred and no orphan schedule
+is persisted.
 
 The idempotent development seed now demonstrates that model across all five
 draft rounds. Each round has two deterministic four-player flights scheduled on
@@ -510,7 +533,7 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 - Tournament settings, pairing, and lifecycle editors are not implemented. The
   Courses section supports draft-round configuration; non-draft rounds are
   deliberately read-only.
-- Pairing roster reads, atomic admin replacement, flight-aware opening readiness,
-  and representative ready seed assignments exist, but frontend editing and
-  membership-wide scoring authority are not implemented. There is also no
-  offline score queue or public leaderboard link.
+- Pairing roster reads, atomic admin replacement, the mobile draft editor,
+  flight-aware opening readiness, and representative ready seed assignments
+  exist, but membership-wide scoring authority is not implemented. There is also
+  no offline score queue or public leaderboard link.
