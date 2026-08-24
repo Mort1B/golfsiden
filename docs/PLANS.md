@@ -19,8 +19,9 @@ five rounds, the mobile draft-round pairing roster editor, and runtime exact-
 flight score authority and the exhaustive round-leaderboard format boundary are
 complete, as is the exhaustive lifecycle, pairing, completion, authorization,
 and scorecard format-policy boundary, and the complete two-player foursomes
-format with preserved WHS team handicaps. No active implementation step is
-approved; the phone score-selector optimization is next.
+format with preserved WHS team handicaps, and the phone-first writable-card
+selector optimization are complete. No active implementation step is approved;
+the bounded `counted_rounds` configuration boundary in Phase 7 is next.
 
 ## Product decisions
 
@@ -88,15 +89,6 @@ approved; the phone score-selector optimization is next.
   format begins before roadmap completion, optimization, and security review.
 
 ## Upcoming work
-
-### Phase 6: Foursomes and format-aware live scoring
-
-- Optimize the phone score selector for a flight member moving quickly among
-  all cards in the flight while preserving immediate save, sync, correction,
-  audit, confirmation, SSE invalidation, and locked-round behavior.
-- **Stop condition:** a flight member can switch rapidly among every writable
-  card on a phone without weakening save synchronization, correction, audit,
-  confirmation, invalidation, or locked-round behavior.
 
 ### Phase 7: Live best-N standings, final-nine blackout, and scorecards
 

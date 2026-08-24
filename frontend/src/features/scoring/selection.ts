@@ -3,7 +3,7 @@ import type { Round } from '../../api/types'
 import { ownerTypeForScoringFormat } from '../../api/scoringFormats'
 
 export type ScoreView = 'hole' | 'summary'
-export type ScoreHistoryAction = 'automatic' | 'previous' | 'next' | 'tournament' | 'round' | 'owner' | 'hole' | 'view'
+export type ScoreHistoryAction = 'automatic' | 'previous' | 'next' | 'quick-owner' | 'tournament' | 'round' | 'owner' | 'hole' | 'view'
 
 export interface ScoreSelection {
   tournamentId: string
@@ -37,6 +37,32 @@ export function selectedOwner(
     writable.type === item.owner.type && writable.id === item.owner.id)) ?? owners[0]
 }
 
+export function writableOwnerProgress(
+  owners: OwnerCompletionProgress[],
+  writableOwners: ScoreOwner[],
+): OwnerCompletionProgress[] {
+  return writableOwners.flatMap((writable) => {
+    const progress = owners.find((item) =>
+      item.owner.type === writable.type && item.owner.id === writable.id)
+    return progress ? [progress] : []
+  })
+}
+
+export function adjacentWritableOwners(
+  owners: OwnerCompletionProgress[],
+  selected: ScoreOwner,
+): ScoreOwner[] {
+  const selectedIndex = owners.findIndex((item) =>
+    item.owner.type === selected.type && item.owner.id === selected.id)
+  if (selectedIndex === -1) return []
+
+  const previous = owners[selectedIndex - 1]
+  const next = owners[selectedIndex + 1]
+  return [previous, next]
+    .filter((item): item is OwnerCompletionProgress => item !== undefined)
+    .map((item) => item.owner)
+}
+
 export function parseScoreView(value: string | null): ScoreView {
   return value === 'summary' ? 'summary' : 'hole'
 }
@@ -60,8 +86,15 @@ export function scoringSearch(selection: ScoreSelection): URLSearchParams {
   return params
 }
 
+export function quickOwnerSelection(
+  selection: ScoreSelection,
+  owner: ScoreOwner,
+): ScoreSelection {
+  return { ...selection, owner, view: 'hole' }
+}
+
 export function replaceScoreHistory(action: ScoreHistoryAction): boolean {
-  return action === 'automatic' || action === 'previous' || action === 'next'
+  return action === 'automatic' || action === 'previous' || action === 'next' || action === 'quick-owner'
 }
 
 export function expectedOwnerType(round: Round): ScoreOwnerType {

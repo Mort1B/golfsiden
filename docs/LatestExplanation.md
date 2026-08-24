@@ -1,77 +1,79 @@
 # Latest explanation
 
-## Two-player foursomes
+## Fast flight-card switching
 
-The application now supports `two_player_foursomes` end to end as an exact two-
-player, team-owned alternate-shot format. One team owns one shared hole score,
-and every authenticated member of its flight can keep score for every eligible
-card in that flight.
+The score page now gives a flight member a phone-first horizontal rail for every
+scorecard returned by the server's writable-owner list. Each semantic button
+shows the player or team name plus holes scored, readiness, or confirmation, and
+marks the selected card explicitly. The unchanged full owner selector remains
+available for eligible cards that are read-only for the current session.
 
-Onboarding, round persistence, pairings, opening readiness, score access,
-scorecards, confirmation, completion, round and tournament leaderboards, seed
-data, strict frontend decoders, and Norwegian labels all recognize the format.
-Individual stroke play and two-player scramble retain their existing behavior.
+A quick switch keeps the current hole, returns to hole entry from the summary,
+and replaces browser history. Repeated card changes therefore do not make the
+Back button traverse each scoring tap. Long names are ellipsized within 52px
+touch targets, the rail scrolls horizontally on narrow screens, and keyboard
+focus retains the existing high-contrast outline.
 
-## Preserved WHS handicap
-
-Foursomes requires a 50% allowance. Opening calculates each partner's unrounded
-Course Handicap from the fixed tournament index and immutable tee facts, sums
-the two values, applies 50% once, and rounds only the final team result. Exact
-half values follow WHS allowance rounding, including moving stored-negative plus
-handicaps toward zero.
-
-```rust
-let combined = first_unrounded.checked_add(second_unrounded)?;
-let allowed = combined.checked_mul(50)?;
-let playing_handicap = whs_allowance_round(allowed, 1_130 * 100)?;
+```ts
+export function quickOwnerSelection(
+  selection: ScoreSelection,
+  owner: ScoreOwner,
+): ScoreSelection {
+  return { ...selection, owner, view: 'hole' }
+}
 ```
 
-The result is inserted into `round_team_handicap_snapshots` in the same opening
-transaction as the member snapshots and before the round status changes. The
-table permits capture only through that exact foursomes opening context, requires
-two snapshotted members, and is immutable afterward. Scorecards and leaderboards
-read this preserved value rather than recalculating historical results.
+## Authoritative cache and navigation boundary
 
-## Database and format boundaries
+The route still owns canonical tournament, round, tagged owner, hole, and view
+parameters. Completion validation supplies owner names and progress; score
+access supplies the exact ordered writable set. Their tagged intersection is
+rendered without copying server state into a client store.
 
-Forward migration `0013` appends the enum value, enforces allowance 50, adds the
-team snapshot table, and replaces score, confirmation, completion, and lifecycle
-functions so foursomes is explicitly team-owned. Existing migrations are
-unchanged, and an upgrade regression starts from schema 0012 and exercises an
-existing scramble scorecard through the replaced functions.
+The selected card uses its existing TanStack Query key. After selection the
+route prefetches only the previous and next writable cards, while pointer or
+keyboard intent can warm the one card being approached. Prefetch therefore
+remains owner-scoped and bounded instead of eagerly loading an entire flight.
+SSE continues to carry invalidation only and authoritative refetches update both
+scorecards and completion progress.
 
-The closed Rust and TypeScript format policies map all three formats explicitly.
-Foursomes uses exact two-player teams wholly contained in one flight. Completion
-requires a complete, confirmed shared card; tournament standings attribute that
-round result to both preserved members. Gross and net keep independent
-competition-position ties with no hidden cross-metric tie-break.
-
-Scorecard handicap loading and pairing-draft validation/serialization were split
-into focused modules before adding the new behavior. Query-key ownership, SSE
-invalidation, mutation synchronization, locks, audit actors, and error precedence
-remain unchanged.
+The existing score coordinator remains the navigation authority. Saving,
+verification, a failed mutation awaiting Retry or Discard, and confirmation all
+disable both the full selectors and the new rail. Correction remains explicit,
+the first changed stroke removes confirmation, audit behavior is unchanged, and
+locked rounds retain their existing read-only edit boundary. No backend, API,
+query-key, ownership, handicap, or scoring-format contract changed.
 
 ## Review and validation
 
-Owner-level review found four low-severity test or robustness gaps. Checked
-handicap arithmetic, stable seed timestamps, separate scramble/foursomes parity
-coverage, and post-upgrade trigger coverage resolve them.
+Owner-level review found no correctness, locking, state-sync, accessibility,
+strict-TypeScript, SSE, query-key, or file-boundary defect. Its one low-severity
+test gap was resolved by extracting and testing the exact same-hole, tagged-owner
+route selection.
 
-The final ladder passed 75 standard Rust tests, strict all-feature Clippy and
-formatting, and 210 combined unit/PostgreSQL tests. A fresh database passed
-migrate, seed, a second idempotent seed, and migrate again. The frontend passed
-148 tests, strict TypeScript, ESLint, and the production build.
+The final frontend ladder passed 151 tests across 26 files, strict TypeScript,
+ESLint, the production build, diff checks, and production file-size checks.
 
-Real Chrome at 375px and 1440px validated onboarding, populated pairings,
-opening, four preserved team snapshots, flight-wide team selection, synchronized
-hole scoring, locked controls, and gross/net leaderboard labels. There were no
-failed requests, uncaught exceptions, unexpected console errors, focus failures,
-or layout overflow. Artificially forced generic error/empty states were skipped
-because those shared components and contracts were unchanged.
+Real Chrome used an isolated database and a flight member with four writable and
+four additional read-only cards. At 320px, 375px, 390px, and 1440px it preserved
+hole 9 across four rapid switches, kept history length unchanged, avoided a
+loading state, and fetched only the current/adjacent or explicitly focused
+owner. Semantic 52px buttons, visible keyboard focus, horizontal rail scrolling,
+long-name ellipsis, and absence of page overflow passed.
+
+Saving and deliberately forced offline failure disabled the rail and selectors;
+Retry synchronized and restored navigation. Confirmation disabled navigation,
+the rail showed confirmed state, explicit correction removed confirmation, and
+an external score mutation produced an SSE-driven completion refetch and updated
+progress. There were no unexpected failed requests, console errors, or browser
+exceptions. Locked-round rendering was fixture-limited because the isolated
+database had no completed-and-confirmed round safe to lock; the existing locked
+mutation/editability path was unchanged and had passed the preceding release's
+browser validation.
 
 ## Roadmap order
 
-The next implementation boundary is the phone score-selector optimization.
-Additional play modes such as four-ball, Stableford, and match play are explicitly
-deferred until the remaining roadmap, performance optimization, and a dedicated
-security review are complete.
+Phase 6 is complete. The next bounded roadmap item is `counted_rounds` and its
+draft-only configuration boundary in Phase 7. Additional play modes remain
+deferred until the remaining roadmap, optimization, and security review are
+finished.

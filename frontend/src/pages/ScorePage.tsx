@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate, useSearchParams } from 'react-router-dom'
-import type { ReactNode } from 'react'
+import { useCallback, useEffect, type ReactNode } from 'react'
 import { api } from '../api/client'
 import { ownerEquals, scoringKeys } from '../api/scorecards'
 import { tournamentKeys } from '../api/tournaments'
@@ -10,10 +10,13 @@ import {
   parseHoleNumber,
   parseScoreView,
   preferredScoreRound,
+  quickOwnerSelection,
   replaceScoreHistory,
   scoreableRounds,
   scoringSearch,
   selectedOwner,
+  adjacentWritableOwners,
+  writableOwnerProgress,
   type ScoreHistoryAction,
   type ScoreSelection,
   type ScoreView,
@@ -23,6 +26,7 @@ import { useAuth } from '../features/auth/authContext'
 
 export function ScorePage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const queryClient = useQueryClient()
   const auth = useAuth()
   const userId = auth.session?.user_id ?? ''
   const tournamentsQuery = useQuery({ queryKey: tournamentKeys.list(userId), queryFn: api.tournaments })
@@ -68,6 +72,25 @@ export function ScorePage() {
   const requestedHole = parseHoleNumber(searchParams.get('hole'))
   const hole = cardQuery.data?.holes.find((item) => item.hole_number === requestedHole)
     ?? cardQuery.data?.holes[0]
+
+  const prefetchOwner = useCallback((nextOwner: NonNullable<typeof owner>['owner']) => {
+    if (!round) return
+    void queryClient.prefetchQuery({
+      queryKey: scoringKeys.scorecard(round.id, nextOwner),
+      queryFn: () => api.scorecard(round.id, nextOwner),
+    })
+  }, [queryClient, round])
+
+  useEffect(() => {
+    if (!owner) return
+    const writableCards = writableOwnerProgress(
+      completionQuery.data?.owners ?? [],
+      accessQuery.data?.writable_owners ?? [],
+    )
+    for (const neighbor of adjacentWritableOwners(writableCards, owner.owner)) {
+      prefetchOwner(neighbor)
+    }
+  }, [accessQuery.data?.writable_owners, completionQuery.data?.owners, owner, prefetchOwner])
 
   const navigate = (selection: ScoreSelection, action: ScoreHistoryAction) => {
     setSearchParams(scoringSearch(selection), { replace: replaceScoreHistory(action) })
@@ -135,6 +158,7 @@ export function ScorePage() {
         rounds={eligibleRounds}
         round={{ ...round, status: completionQuery.data?.status ?? round.status }}
         owners={progressOwners}
+        writableOwners={writableOwners}
         selectedOwner={owner}
         card={cardQuery.data}
         hole={hole}
@@ -146,6 +170,8 @@ export function ScorePage() {
           const next = progressOwners.find((item) => item.owner.id === id)
           if (next) navigate({ tournamentId: tournament.id, roundId: round.id, owner: next.owner, holeNumber: 1, view: 'hole' }, 'owner')
         }}
+        onQuickOwner={(next) => navigate(quickOwnerSelection(base(), next), 'quick-owner')}
+        onPrefetchOwner={prefetchOwner}
         onHole={(number, adjacent) => navigate({ ...base('hole'), holeNumber: number }, adjacent ? (number < hole.hole_number ? 'previous' : 'next') : 'hole')}
         onView={(nextView) => navigate(base(nextView), 'view')}
       />

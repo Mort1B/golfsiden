@@ -3,10 +3,13 @@ import type { OwnerCompletionProgress } from '../../api/scorecards'
 import type { Round, RoundStatus, ScoringFormat } from '../../api/types'
 import {
   expectedOwnerType,
+  adjacentWritableOwners,
   preferredScoreRound,
+  quickOwnerSelection,
   replaceScoreHistory,
   scoreableRounds,
   selectedOwner,
+  writableOwnerProgress,
 } from './selection'
 
 function round(number: number, status: RoundStatus, format: ScoringFormat = 'individual_stroke_play'): Round {
@@ -67,10 +70,58 @@ describe('scoring selection', () => {
     expect(selectedOwner(owners, null, null, writable)?.owner.id).toBe('team-write')
   })
 
+  it('maps writable owners in access order and keeps exact tagged identities', () => {
+    const owners = [
+      owner('team', 'shared'),
+      owner('player', 'shared'),
+      owner('team', 'team-last'),
+    ]
+    const writable = [
+      { type: 'team' as const, id: 'team-last' },
+      { type: 'player' as const, id: 'shared' },
+      { type: 'team' as const, id: 'missing' },
+    ]
+
+    expect(writableOwnerProgress(owners, writable).map((item) => item.owner)).toEqual([
+      { type: 'team', id: 'team-last' },
+      { type: 'player', id: 'shared' },
+    ])
+  })
+
+  it('limits post-selection prefetch candidates to adjacent writable cards', () => {
+    const owners = [owner('team', 'team-a'), owner('team', 'team-b'), owner('team', 'team-c')]
+
+    expect(adjacentWritableOwners(owners, { type: 'team', id: 'team-b' })).toEqual([
+      { type: 'team', id: 'team-a' },
+      { type: 'team', id: 'team-c' },
+    ])
+    expect(adjacentWritableOwners(owners, { type: 'team', id: 'team-a' })).toEqual([
+      { type: 'team', id: 'team-b' },
+    ])
+    expect(adjacentWritableOwners(owners, { type: 'team', id: 'missing' })).toEqual([])
+  })
+
+  it('switches the tagged owner while preserving round and hole in hole view', () => {
+    expect(quickOwnerSelection({
+      tournamentId: 'tournament-1',
+      roundId: 'round-2',
+      owner: { type: 'team', id: 'team-a' },
+      holeNumber: 7,
+      view: 'summary',
+    }, { type: 'team', id: 'team-b' })).toEqual({
+      tournamentId: 'tournament-1',
+      roundId: 'round-2',
+      owner: { type: 'team', id: 'team-b' },
+      holeNumber: 7,
+      view: 'hole',
+    })
+  })
+
   it('replaces automatic and adjacent navigation but pushes explicit choices', () => {
     expect(replaceScoreHistory('automatic')).toBe(true)
     expect(replaceScoreHistory('previous')).toBe(true)
     expect(replaceScoreHistory('next')).toBe(true)
+    expect(replaceScoreHistory('quick-owner')).toBe(true)
     for (const action of ['tournament', 'round', 'owner', 'hole', 'view'] as const) {
       expect(replaceScoreHistory(action)).toBe(false)
     }

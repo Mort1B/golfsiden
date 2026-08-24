@@ -1,21 +1,23 @@
-import type { OwnerCompletionProgress, ScorecardHole, ScorecardSummary } from '../../api/scorecards'
+import type { OwnerCompletionProgress, ScoreOwner, ScorecardHole, ScorecardSummary } from '../../api/scorecards'
 import type { Round, Tournament } from '../../api/types'
 import { useAuth } from '../auth/authContext'
 import { useScoringGuard } from './scoringGuardContext'
 import { HoleEntry } from './HoleEntry'
 import { ScorecardSummaryView } from './ScorecardSummaryView'
 import { ScoreSelectors } from './ScoreSelectors'
-import type { ScoreView } from './selection'
+import { writableOwnerProgress, type ScoreView } from './selection'
 import { useHoleScoreSync } from './useHoleScoreSync'
 import { useScorecardConfirmation } from './useScorecardConfirmation'
 import { useEffect, useState } from 'react'
 import { useBlocker } from 'react-router-dom'
+import { WritableCardSwitcher } from './WritableCardSwitcher'
 
 interface ScoringExperienceProps {
   tournaments: Tournament[]
   rounds: Round[]
   round: Round
   owners: OwnerCompletionProgress[]
+  writableOwners: ScoreOwner[]
   selectedOwner: OwnerCompletionProgress
   card: ScorecardSummary
   hole: ScorecardHole
@@ -23,6 +25,8 @@ interface ScoringExperienceProps {
   onTournament: (id: string) => void
   onRound: (id: string) => void
   onOwner: (id: string) => void
+  onQuickOwner: (owner: ScoreOwner) => void
+  onPrefetchOwner: (owner: ScoreOwner) => void
   onHole: (number: number, adjacent?: boolean) => void
   onView: (view: ScoreView) => void
   canWrite: boolean
@@ -65,6 +69,7 @@ export function ScoringExperience(props: ScoringExperienceProps) {
     && csrfToken !== null
     && props.canWrite
     && (!props.card.confirmed || correctionMode)
+  const writableCards = writableOwnerProgress(props.owners, props.writableOwners)
 
   useEffect(() => {
     if (blocker.state !== 'blocked') return
@@ -106,6 +111,14 @@ export function ScoringExperience(props: ScoringExperienceProps) {
         onOwner={props.onOwner}
         onHole={(number) => props.onHole(number)}
         onView={props.onView}
+      />
+
+      <WritableCardSwitcher
+        owners={writableCards}
+        selectedOwner={props.selectedOwner.owner}
+        disabled={navigationLocked}
+        onSelect={props.onQuickOwner}
+        onPrefetch={props.onPrefetchOwner}
       />
 
       <header className="scorecard-owner">

@@ -190,6 +190,10 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
 - The score route likewise owns tournament, round, tagged owner, hole, and view
   selection in canonical URL parameters. Completion validation is its owner
   authority, and exact runtime decoders protect scorecard state before caching.
+  Its writable-card rail intersects completion progress with server-provided
+  score access, preserves the hole on quick switches, and replaces rapid switch
+  history. The route prefetches only adjacent writable owner keys; TanStack Query
+  remains the sole owner of authoritative scorecard reads.
 - Hole mutation intent stays outside TanStack Query in one round/owner/hole
   coordinator. It serializes writes, coalesces rapid input, and requires an
   authoritative refetch match before reporting synchronization. Route and unload

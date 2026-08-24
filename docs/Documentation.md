@@ -134,11 +134,20 @@ the corrected card must be confirmed again. Completed rounds remain correctable,
 while locked rounds are read-only.
 
 `GET /api/rounds/{round_id}/score-access` supplies the exact player or team owners
-the current session may write. The browser filters the scoring selector with this
-server result and never reproduces role or membership policy. The private,
-non-cacheable read revalidates and locks the active session/player link plus the
-exact tournament membership inside one repeatable-read transaction before it
-assembles the deterministic owner list.
+the current session may write. The phone-first card rail follows that
+deterministic server order, shows completion/confirmation progress, and preserves
+the current hole when its semantic buttons switch cards. Rapid card switches
+replace browser history. The full owner selector remains available for browsing
+eligible read-only cards.
+
+The selected card and at most its two writable neighbors use the existing
+owner-scoped TanStack Query cache. Focus or pointer intent may prefetch one
+additional chosen card; there is no eager all-flight fetch and no duplicate
+client score state. The same unresolved-save or confirmation navigation lock
+disables both selectors. The browser never reproduces role or membership policy.
+The private, non-cacheable access read revalidates and locks the active session/
+player link plus the exact tournament membership inside one repeatable-read
+transaction before it assembles the owner list.
 
 ## Authentication and scoring access
 
