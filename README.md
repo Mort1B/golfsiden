@@ -165,9 +165,11 @@ flight; the development seed supplies representative ready assignments for all
 five rounds. Tournament admins can edit one draft round at a time with accessible
 add, move, remove, and ordering controls; saves replace the complete team/flight
 roster atomically and preserve dirty input on conflicts. The remaining
-tournament settings, flight-member score authority, offline scoring, and locked-
-round score corrections remain deferred. Flights are explicit and are never
-inferred from matching tee times or starting holes.
+tournament settings, offline scoring, and locked-round score corrections remain
+deferred. Every linked tournament player can score all eligible individual or
+team cards in their exact round flight; admins and scorers retain their full-
+tournament override. Flights are explicit and are never inferred from matching
+tee times or starting holes.
 
 Migration `0009` removes account email after deterministically deriving usernames
 for existing accounts. Back up production data and retain the generated username

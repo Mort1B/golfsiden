@@ -4,6 +4,8 @@ use axum::{
     Json, Router,
     extract::rejection::JsonRejection,
     extract::{Path, State},
+    http::header::CACHE_CONTROL,
+    response::{IntoResponse, Response},
     routing::{get, post, put},
 };
 use serde::Deserialize;
@@ -91,15 +93,22 @@ async fn score_access(
     State(state): State<Arc<AppState>>,
     authenticated: AuthenticatedSession,
     Path(round_id): Path<Uuid>,
-) -> ApiResult<Json<ScoreAccessResponse>> {
-    let writable_owners =
-        score_authorization::writable_owners(&state.pool, &authenticated.principal, round_id)
-            .await
-            .map_err(map_authorization_error)?;
-    Ok(Json(ScoreAccessResponse {
+) -> ApiResult<Response> {
+    let writable_owners = score_authorization::writable_owners(
+        &state.pool,
+        authenticated.principal.session_id,
         round_id,
-        writable_owners,
-    }))
+    )
+    .await
+    .map_err(map_authorization_error)?;
+    Ok((
+        [(CACHE_CONTROL, "private, no-store")],
+        Json(ScoreAccessResponse {
+            round_id,
+            writable_owners,
+        }),
+    )
+        .into_response())
 }
 
 async fn get_one(

@@ -636,7 +636,7 @@ async fn both_teammates_can_write_the_team_card_but_other_players_cannot(pool: P
         5
     );
 
-    let other_individual = app
+    let flight_peer_individual = app
         .clone()
         .oneshot(save_request(
             INDIVIDUAL_ROUND_ID,
@@ -647,7 +647,11 @@ async fn both_teammates_can_write_the_team_card_but_other_players_cannot(pool: P
         ))
         .await
         .unwrap();
-    assert_eq!(other_individual.status(), StatusCode::FORBIDDEN);
+    assert_eq!(flight_peer_individual.status(), StatusCode::OK);
+    assert_eq!(
+        response_json(flight_peer_individual).await["submitted_by"],
+        PLAYER_USER_B.to_string()
+    );
 
     for denied_user in [VIEWER_USER, UNLINKED_PLAYER_USER] {
         let denied = app

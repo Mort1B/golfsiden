@@ -23,11 +23,10 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
 - Team, flight, membership, tee, and hole mutation guards serialize through the
   parent-round lock. Once open, scoring configuration and pairings cannot drift.
 - Flights are normalized round/tournament-scoped groupings independent of teams.
-  A player can belong to at most one flight per round. Score authority will be
-  derived at runtime from an authenticated player's exact stored flight
-  membership, so the persistence model has no designated-scorekeeper relation
-  or account-link requirement. Existing team data is not inferred or migrated
-  into flights.
+  A player can belong to at most one flight per round. Runtime score authority is
+  derived from an authenticated player's exact stored flight membership, so the
+  persistence model has no designated-scorekeeper relation. Existing team data
+  is not inferred or migrated into flights.
 - A score has exactly one owner through an exclusive player/team check constraint.
 - Accounts use a canonical lowercase username matching `[a-z0-9_-]{3,32}` and a
   password. Usernames are case-insensitively unique; account email is not stored
@@ -118,14 +117,16 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   locking the round/tournament and entrant rows; pairing triggers use that same
   round lock, so validation and mutation cannot cross unnoticed.
 - The score authorization resolver returns tagged round owners. Tournament
-  admins/scorers receive all eligible owners; tournament players receive their
-  exact individual or round-team owner. Save and confirm recheck this policy
-  under session and membership locks in the score transaction.
-- The normalized flight relation is not yet part of score authorization. A later
-  shared policy can extend the resolver to return every eligible owner in the
-  authenticated player's exact flight. Starting-hole and tee-time coincidences
-  carry no authorization meaning, and tournament admin/scorer overrides remain
-  separate from flight membership.
+  admins/scorers receive all eligible owners. Tournament players receive their
+  direct owner plus every eligible owner in their exact round flight: frozen
+  player snapshots for individual play, or complete two-player teams wholly
+  contained in that flight for scramble. Starting-hole, tee-time, name, and
+  ordering coincidences carry no authorization meaning.
+- The private score-access read re-locks the active session/user and exact
+  tournament membership through deterministic owner assembly in a repeatable-
+  read transaction. Save and confirm invoke the same resolver under the existing
+  round, session, and membership locks, retaining the session user as audit actor
+  and preventing listing/mutation policy drift.
 - Team results can be attributed back to every round member when tournament standings are calculated. There is no permanent tournament team.
 - Locked-round score protection lives in PostgreSQL as well as the domain service. A future correction transaction must explicitly set `app.admin_correction = 'true'`.
 - Score changes are audited by a database trigger.
@@ -223,8 +224,7 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 
 - Global player, scorecard, and live-event read visibility; production signup,
   login, and invitation-registration rate limiting.
-- Flight-aware readiness, membership-wide score authority, seed assignments, and
-  the mobile pairing editor.
+- Faster phone switching among several writable flight cards.
 - Separate migration and runtime database roles plus production privilege policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.
 - Scramble formulas beyond the initial configurable 35%/15% implementation.

@@ -12,7 +12,8 @@ tournament players, rounds, round-specific teams, and gross/net standings. The
 mobile result view supports shareable selections and live refetch inside that
 private workspace. Global player reads remain a separate legacy surface.
 The mobile score view supports authenticated hole entry, correction,
-confirmation, and locked read-only cards for both scoring formats.
+confirmation, locked read-only cards, and every writable card in the signed-in
+player's exact flight for both scoring formats.
 Tournament-scoped memberships now authorize entrant, round, team, lifecycle,
 handicap, and score mutations as well as tournament workspace reads. A first-time
 visitor can create their account, player identity, draft tournament, complete
@@ -126,7 +127,10 @@ while locked rounds are read-only.
 
 `GET /api/rounds/{round_id}/score-access` supplies the exact player or team owners
 the current session may write. The browser filters the scoring selector with this
-server result and never reproduces role or membership policy.
+server result and never reproduces role or membership policy. The private,
+non-cacheable read revalidates and locks the active session/player link plus the
+exact tournament membership inside one repeatable-read transaction before it
+assembles the deterministic owner list.
 
 ## Authentication and scoring access
 
@@ -145,11 +149,18 @@ transaction, so logout cannot complete before an already-authorized write.
 
 `tournament_memberships` owns the role for a specific trip. Tournament admins
 and scorers can write any eligible card in that tournament. A tournament player
-can write only their own individual card or their exact team in that round. Both
-members of a two-player scramble team can therefore enter, correct, and confirm
-the shared card, with their own account retained in the audit attribution.
-Viewers, unlinked accounts, cross-tournament roles, and non-members cannot write.
-Team identity remains specific to one round.
+linked to an exact flight member can enter, correct, and confirm every eligible
+card in that round flight: snapshot-backed player cards for individual play and
+every exact-round two-player scramble team whose complete membership is in that
+flight. A player without stored flight membership retains the legacy-safe direct
+fallback to their own individual card or exact round team. The authenticated
+account remains the audit actor regardless of card ownership.
+
+Listing and save/confirmation authorization use the same owner resolver. Flight
+membership grants authority only; it never changes score ownership. Starting
+hole, tee time, name, order, or a partial team overlap never implies authority.
+Viewers, unlinked accounts, cross-tournament roles, non-members, and players in
+another flight cannot write. Team identity remains specific to one round.
 
 Tournament detail, roster, round, team, readiness, completion-validation, and
 round/tournament leaderboard reads require an active session plus any membership
@@ -357,8 +368,8 @@ owns exact round/tournament identity, a trimmed round-unique name, nullable
 starting hole and tee time, and timestamps. `flight_memberships` proves the
 exact flight, round, tournament, and entrant relationship and permits at most
 one flight per player in a round. There is no separate scorekeeper designation:
-the future runtime policy will allow every authenticated player linked to an
-exact flight member to score every eligible card in that flight.
+every authenticated tournament player linked to an exact flight member can
+score every eligible card in that flight at runtime.
 
 Deleting a flight, round, or tournament cascades its memberships. Direct
 inserts, updates, and deletes on both relations reuse the parent-round pairing
@@ -401,8 +412,8 @@ remain score-owner/history identities. A scheduled retained scramble team clears
 its schedule only when all its members are explicitly placed in one requested
 flight carrying the same starting hole and tee time; equal facts never infer the
 relationship. The old granular team-create/member routes are retired, while the
-member-readable team GET remains for compatibility. Membership-wide scoring
-authority remains a separate follow-up work item.
+member-readable team GET remains for compatibility. Score authority uses only
+the resulting exact flight membership and never schedule equality.
 
 The tournament-admin workspace includes one mobile pairing editor for one
 expanded round at a time. It reads the private aggregate below the authenticated
@@ -535,5 +546,5 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
   deliberately read-only.
 - Pairing roster reads, atomic admin replacement, the mobile draft editor,
   flight-aware opening readiness, and representative ready seed assignments
-  exist, but membership-wide scoring authority is not implemented. There is also
-  no offline score queue or public leaderboard link.
+  exist together with membership-wide scoring authority. There is still no
+  offline score queue or public leaderboard link.

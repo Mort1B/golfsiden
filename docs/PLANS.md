@@ -12,12 +12,12 @@ curated eight-course local catalog, and the Phase 4B immutable local course-
 revision persistence boundary, and the admin-only atomic draft-round course-
 configuration API, mobile course/tee picker, and manual-entry fallback are
 complete, as is the corrected normalized PostgreSQL flight persistence boundary
-with membership-wide future score authority, and the transactional pairing-roster
+with membership-wide score authority, and the transactional pairing-roster
 API plus explicit legacy individual-group conversion and flight-aware pairing
 validation/opening and deterministic representative seed assignments for all
-five rounds and the mobile draft-round pairing roster editor are complete. No
-active implementation step is approved. Runtime flight-member score authority
-is next.
+five rounds, the mobile draft-round pairing roster editor, and runtime exact-
+flight score authority are complete. No active implementation step is approved;
+format-boundary preparation for two-player foursomes is next.
 
 ## Product decisions
 
@@ -77,15 +77,6 @@ is next.
   Stableford, and match play require distinct aggregation or scoring contracts.
 
 ## Upcoming work
-
-### Phase 5: Teams, flights, and pairing validation
-
-- Extend both score-access listing and transactional mutation authorization so
-  every authenticated exact flight member receives every eligible score owner in
-  their flight.
-- **Stop condition:** admins can configure and validate round-specific teams and
-  flights, and tests prove each flight member can score both teams without
-  granting cross-flight or cross-tournament access.
 
 ### Phase 6: Foursomes and format-aware live scoring
 

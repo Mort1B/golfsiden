@@ -1,84 +1,84 @@
 # Latest explanation
 
-## Mobile pairing roster editor
+## Runtime flight-member score authority
 
-Tournament admins can now configure one round's complete pairing roster from the
-management workspace. Each round stays mounted so a collapsed draft is retained,
-but only the expanded round fetches its private aggregate. Draft rounds expose
-semantic add, remove, move, rename, and ordering controls; open, completed, and
-locked rounds show the same authoritative data read-only.
+Every authenticated tournament player linked to an exact round flight member can
+now score every eligible card in that flight. In individual stroke play those
+owners are the flight's snapshot-backed players. In scramble they are the exact-
+round two-player teams whose complete membership is contained in that flight, so
+one flight may expose several shared team cards to every member.
 
-Scramble teams remain round-specific shared-score owners. Flights independently
-own grouping, member order, starting hole, and tee time. Individual rounds expose
-no team editor. The form may save an incomplete roster, while clearly listing
-unassigned entrants and teams that do not yet contain exactly two players;
-backend opening readiness remains the authority.
+Flights grant write authority only. Player and team score ownership, preserved
+handicap snapshots, confirmation state, audit attribution, and locked-round rules
+are unchanged. Starting hole, tee time, display order, name, or one matching team
+member never implies access. A player without stored flight membership retains
+the pre-flight fallback to their own individual card or direct round team.
 
-## Full replacement without silent loss
+## One policy for listing and mutation
 
-The typed API boundary strictly decodes IDs, finite statuses/formats, timestamps,
-nullable schedules, entrants, groups, and ordered members. A save sends complete
-desired arrays and the version read from the server:
+Score-access listing, hole saves/corrections, and card confirmation now call the
+same deterministic owner resolver. Tournament admins and scorers retain every
+eligible round owner. Player access still requires an exact tournament `player`
+membership and a currently linked player identity; viewers, unlinked accounts,
+non-members, and other-flight players receive no authority.
+
+The resolver returns each tagged owner once, ordered by case-insensitive player
+or team name and then UUID. Scramble eligibility requires exactly two team
+members and two opening snapshots, and the flight branch rejects a team unless
+all of those members share the actor's exact stored flight. For example, a player
+in Team A can receive both complete teams in Flight 1 without receiving Team C in
+Flight 2:
 
 ```json
 {
-  "expected_round_updated_at": "2026-08-24T10:00:00Z",
-  "teams": [{ "id": "uuid", "name": "Lag 1", "members": [], "schedule_flight_id": null }],
-  "flights": [{ "id": "uuid", "name": "Flight 1", "starting_hole": 1, "tee_time": "08:30:00", "members": [] }],
-  "legacy_conversions": []
+  "round_id": "round-uuid",
+  "writable_owners": [
+    { "type": "team", "id": "team-b-uuid" },
+    { "type": "team", "id": "team-a-uuid" }
+  ]
 }
 ```
 
-Existing identities and member order are retained, while new groups use browser-
-generated UUIDs. Duplicate submission is blocked. On success the returned
-aggregate becomes the exact pairing cache and the round detail/list timestamps
-are refetched. The local draft records a fingerprint of the complete aggregate,
-not only the round timestamp, so entrant-only changes are detected too. A newer
-aggregate replaces a clean draft, but a dirty draft is preserved behind an
-explicit discard-and-reload conflict state.
+## Transaction and privacy boundary
 
-Stored inactive members remain visible by name and offer removal-only cleanup;
-they cannot be reassigned. Exact server tee-time seconds and fractions survive
-unrelated edits even though the time input edits minute precision.
+`GET /api/rounds/{round_id}/score-access` re-locks the active session and user,
+then holds the exact tournament membership through owner assembly in a
+repeatable-read transaction. Successful responses are `Cache-Control: private,
+no-store`; the browser continues using its user-rooted private query key and
+unchanged tagged-owner decoder.
 
-## Explicit legacy normalization
-
-Individual legacy grouping teams block ordinary editing until a separate first
-save copies every group exactly into a new flight and submits every required
-conversion mapping. For a retained scramble team with an old schedule, the admin
-must explicitly select a flight containing the exact same members. That action
-copies the team's exact starting hole and lossless tee time; equality never makes
-the association automatically.
-
-Changing or clearing a transfer restores the previous target flight's complete
-pre-transfer schedule before another target is updated. This prevents an
-abandoned selection from leaving an orphaned or duplicated schedule in the full-
-replacement request.
+Save and confirmation already lock the round before revalidating the session and
+tournament membership. They now check membership in the same resolved owner set
+inside that transaction. A successful peer write still records the authenticated
+account as `submitted_by` or `confirmed_by`; a valid owner in another flight is
+`403`, while an owner from another round remains the existing
+`409 score_owner_not_eligible` validation error.
 
 ## Validation
 
-Review found and resolved schedule-transfer mismatch, tee-time truncation,
-inactive-member cleanup, same-timestamp entrant refresh, duplicate heading IDs,
-and abandoned-transfer schedule retention. The final review was clean.
+The focused PostgreSQL suite covers peer individual cards, two teams in one
+scramble flight, a member of each team scoring the other team, stable ordering,
+duplicate prevention, direct legacy fallback, a snapshot-backed team split
+across flights, cross-flight save/confirm denial without mutation, cross-round
+rejection, privileged roles, viewer/unlinked denial, and session/membership/link
+revocation. Owner review found no correctness or security defect after those
+cases were added.
 
-All 141 tests across 24 frontend files passed, as did strict TypeScript, ESLint,
-the production build, and `git diff --check`. The PostgreSQL pairing API
-regression suite passed all 13 tests.
+All 193 PostgreSQL-backed tests passed, including the new authorization suite and
+the seven existing scorecard regressions. The 64 standard backend tests, strict
+all-feature Clippy, Rust formatting, 141 tests across 24 frontend files, strict
+TypeScript, ESLint, the production build, and `git diff --check` also passed.
 
-Real Chrome at 375x812 exercised the seeded individual and scramble editors,
-independent team/flight assignment, add/remove/rename/reorder, optional schedule
-entry and clearing, double-submit prevention, a real successful PUT, authoritative
-refetch, and cleanup restoration. The double action emitted exactly one PUT and
-the UI returned to its synchronized state. Phone and 1440x900 desktop layouts had
-no page/editor overflow, measured action targets were at least 44px, and the final
-run had no unexpected HTTP failures, console errors, or uncaught exceptions.
-Programmatic focus could not conclusively trigger Chrome's `:focus-visible`
-heuristic; the controls remain semantic and their CSS defines a visible keyboard
-outline. Stale/non-draft, legacy, scheduled-transfer, and inactive fixtures were
-covered by frontend/PostgreSQL automation rather than separate browser fixtures.
+Real Chrome at 375x812 showed all four round cards while returning exactly the
+two same-flight teams as writable with `Cache-Control: private, no-store`.
+Anders switched to peer Lag 2, saved par, reached `Synkronisert`, received the
+authoritative card refetch, and revisited the persisted score. At 1440x900 a
+direct cross-flight Lag 3 card remained read-only with every score control
+disabled. Both layouts had no horizontal overflow, visual defects, unexpected
+request failures, console errors, or runtime exceptions.
 
 ## Next boundary
 
-Extend score-access listing and transactional score mutation authorization so
-every authenticated exact flight member receives every eligible score owner in
-that flight. This editor does not itself grant any scoring permission.
+Phase 6 begins with splitting format-sensitive lifecycle, scorecard, and
+leaderboard modules before adding two-player foursomes. Faster phone switching
+among several writable flight cards belongs to that format-aware scoring work.

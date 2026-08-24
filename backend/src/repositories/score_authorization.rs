@@ -25,19 +25,21 @@ pub enum ScoreAuthorizationError {
 
 pub async fn writable_owners(
     pool: &PgPool,
-    principal: &SessionPrincipal,
+    session_id: Uuid,
     round_id: Uuid,
 ) -> Result<Vec<ScoreOwner>, ScoreAuthorizationError> {
-    let mut connection = pool.acquire().await?;
-    let context = sqlx::query_as::<_, (Uuid, ScoringFormat)>(
-        "SELECT tournament_id, scoring_format FROM rounds WHERE id = $1",
-    )
-    .bind(round_id)
-    .fetch_optional(&mut *connection)
-    .await?
-    .ok_or(ScoreAuthorizationError::NotFound)?;
-    let role = membership_role(&mut connection, context.0, principal.user_id).await?;
-    list_for_principal(&mut connection, principal, role, round_id, context.1).await
+    let mut transaction = pool.begin().await?;
+    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        .execute(&mut *transaction)
+        .await?;
+    let principal = auth::lock_active_session(&mut transaction, session_id)
+        .await?
+        .ok_or(ScoreAuthorizationError::Unauthenticated)?;
+    let context = round_context(&mut transaction, round_id).await?;
+    let role = membership_role(&mut transaction, context.0, principal.user_id).await?;
+    let owners = resolve_owners(&mut transaction, &principal, role, round_id, context.1).await?;
+    transaction.commit().await?;
+    Ok(owners)
 }
 
 pub async fn authorize_mutation(
@@ -56,118 +58,153 @@ pub async fn authorize_mutation(
     let principal = auth::lock_active_session(transaction, session_id)
         .await?
         .ok_or(ScoreAuthorizationError::Unauthenticated)?;
-    let role = sqlx::query_scalar::<_, TournamentRole>(
-        "SELECT role FROM tournament_memberships
-         WHERE tournament_id = $1 AND user_id = $2 FOR SHARE",
-    )
-    .bind(tournament_id)
-    .bind(principal.user_id)
-    .fetch_optional(&mut **transaction)
-    .await?;
-    if owner_allowed(transaction, &principal, role, round_id, format, owner).await? {
+    let role = membership_role(transaction, tournament_id, principal.user_id).await?;
+    let owners = resolve_owners(transaction, &principal, role, round_id, format).await?;
+    if owners.contains(&owner) {
         Ok(principal.user_id)
     } else {
         Err(ScoreAuthorizationError::Forbidden)
     }
 }
 
-async fn list_for_principal(
+async fn round_context(
+    connection: &mut PgConnection,
+    round_id: Uuid,
+) -> Result<(Uuid, ScoringFormat), ScoreAuthorizationError> {
+    sqlx::query_as("SELECT tournament_id, scoring_format FROM rounds WHERE id = $1")
+        .bind(round_id)
+        .fetch_optional(connection)
+        .await?
+        .ok_or(ScoreAuthorizationError::NotFound)
+}
+
+async fn resolve_owners(
     connection: &mut PgConnection,
     principal: &SessionPrincipal,
     role: Option<TournamentRole>,
     round_id: Uuid,
     format: ScoringFormat,
 ) -> Result<Vec<ScoreOwner>, ScoreAuthorizationError> {
+    let privileged = matches!(role, Some(TournamentRole::Admin | TournamentRole::Scorer));
+    let player_id = if role == Some(TournamentRole::Player) {
+        principal.player_id
+    } else {
+        None
+    };
+    if !privileged && player_id.is_none() {
+        return Ok(Vec::new());
+    }
+
     match format {
         ScoringFormat::IndividualStrokePlay => {
-            let ids = if matches!(role, Some(TournamentRole::Admin | TournamentRole::Scorer)) {
-                sqlx::query_scalar::<_, Uuid>(
-                    "SELECT rhs.player_id
-                     FROM round_handicap_snapshots rhs
-                     JOIN players p ON p.id = rhs.player_id
-                     WHERE rhs.round_id = $1
-                     ORDER BY lower(p.display_name), p.id",
-                )
-                .bind(round_id)
-                .fetch_all(connection)
-                .await?
-            } else if role == Some(TournamentRole::Player) {
-                let Some(player_id) = principal.player_id else {
-                    return Ok(Vec::new());
-                };
-                sqlx::query_scalar::<_, Uuid>(
-                    "SELECT player_id FROM round_handicap_snapshots
-                     WHERE round_id = $1 AND player_id = $2",
-                )
-                .bind(round_id)
-                .bind(player_id)
-                .fetch_optional(connection)
-                .await?
-                .into_iter()
-                .collect()
-            } else {
-                Vec::new()
-            };
+            let ids = individual_owner_ids(connection, round_id, privileged, player_id).await?;
             Ok(ids
                 .into_iter()
                 .map(|id| ScoreOwner::Player { id })
                 .collect())
         }
         ScoringFormat::TeamScramble => {
-            let ids = if matches!(role, Some(TournamentRole::Admin | TournamentRole::Scorer)) {
-                sqlx::query_scalar::<_, Uuid>(
-                    "SELECT id FROM teams WHERE round_id = $1 ORDER BY lower(name), id",
-                )
-                .bind(round_id)
-                .fetch_all(connection)
-                .await?
-            } else if role == Some(TournamentRole::Player) {
-                let Some(player_id) = principal.player_id else {
-                    return Ok(Vec::new());
-                };
-                direct_team_ids(connection, round_id, player_id).await?
-            } else {
-                Vec::new()
-            };
+            let ids = scramble_owner_ids(connection, round_id, privileged, player_id).await?;
             Ok(ids.into_iter().map(|id| ScoreOwner::Team { id }).collect())
         }
     }
 }
 
-async fn owner_allowed(
+async fn individual_owner_ids(
     connection: &mut PgConnection,
-    principal: &SessionPrincipal,
-    role: Option<TournamentRole>,
     round_id: Uuid,
-    format: ScoringFormat,
-    owner: ScoreOwner,
-) -> Result<bool, sqlx::Error> {
-    if matches!(role, Some(TournamentRole::Admin | TournamentRole::Scorer)) {
-        return Ok(true);
-    }
-    if role != Some(TournamentRole::Player) {
-        return Ok(false);
-    }
-    let Some(player_id) = principal.player_id else {
-        return Ok(false);
-    };
-    match (format, owner) {
-        (ScoringFormat::IndividualStrokePlay, ScoreOwner::Player { id }) => Ok(id == player_id),
-        (ScoringFormat::TeamScramble, ScoreOwner::Team { id }) => {
-            sqlx::query_scalar::<_, bool>(
-                "SELECT EXISTS(
-                    SELECT 1 FROM team_memberships
-                    WHERE round_id = $1 AND team_id = $2 AND player_id = $3
-                 )",
-            )
-            .bind(round_id)
-            .bind(id)
-            .bind(player_id)
-            .fetch_one(connection)
-            .await
-        }
-        _ => Ok(false),
-    }
+    privileged: bool,
+    player_id: Option<Uuid>,
+) -> Result<Vec<Uuid>, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT rhs.player_id
+         FROM round_handicap_snapshots rhs
+         JOIN players p ON p.id = rhs.player_id
+         WHERE rhs.round_id = $1
+           AND (
+             $2
+             OR rhs.player_id = $3
+             OR EXISTS (
+               SELECT 1
+               FROM flight_memberships actor_fm
+               JOIN flight_memberships owner_fm
+                 ON owner_fm.flight_id = actor_fm.flight_id
+                AND owner_fm.round_id = actor_fm.round_id
+                AND owner_fm.tournament_id = actor_fm.tournament_id
+               WHERE actor_fm.round_id = $1
+                 AND actor_fm.player_id = $3
+                 AND owner_fm.player_id = rhs.player_id
+             )
+           )
+         ORDER BY lower(p.display_name), p.id",
+    )
+    .bind(round_id)
+    .bind(privileged)
+    .bind(player_id)
+    .fetch_all(connection)
+    .await
+}
+
+async fn scramble_owner_ids(
+    connection: &mut PgConnection,
+    round_id: Uuid,
+    privileged: bool,
+    player_id: Option<Uuid>,
+) -> Result<Vec<Uuid>, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT t.id
+         FROM teams t
+         WHERE t.round_id = $1
+           AND (
+             SELECT count(*) FROM team_memberships member_tm
+             WHERE member_tm.round_id = t.round_id
+               AND member_tm.team_id = t.id
+           ) = 2
+           AND (
+             SELECT count(*)
+             FROM team_memberships eligible_tm
+             JOIN round_handicap_snapshots rhs
+               ON rhs.round_id = eligible_tm.round_id
+              AND rhs.player_id = eligible_tm.player_id
+             WHERE eligible_tm.round_id = t.round_id
+               AND eligible_tm.team_id = t.id
+           ) = 2
+           AND (
+             $2
+             OR EXISTS (
+               SELECT 1 FROM team_memberships direct_tm
+               WHERE direct_tm.round_id = t.round_id
+                 AND direct_tm.team_id = t.id
+                 AND direct_tm.player_id = $3
+             )
+             OR EXISTS (
+               SELECT 1
+               FROM flight_memberships actor_fm
+               WHERE actor_fm.round_id = t.round_id
+                 AND actor_fm.player_id = $3
+                 AND NOT EXISTS (
+                   SELECT 1
+                   FROM team_memberships target_tm
+                   WHERE target_tm.round_id = t.round_id
+                     AND target_tm.team_id = t.id
+                     AND NOT EXISTS (
+                       SELECT 1
+                       FROM flight_memberships target_fm
+                       WHERE target_fm.flight_id = actor_fm.flight_id
+                         AND target_fm.round_id = actor_fm.round_id
+                         AND target_fm.tournament_id = actor_fm.tournament_id
+                         AND target_fm.player_id = target_tm.player_id
+                     )
+                 )
+             )
+           )
+         ORDER BY lower(t.name), t.id",
+    )
+    .bind(round_id)
+    .bind(privileged)
+    .bind(player_id)
+    .fetch_all(connection)
+    .await
 }
 
 async fn membership_role(
@@ -177,29 +214,10 @@ async fn membership_role(
 ) -> Result<Option<TournamentRole>, sqlx::Error> {
     sqlx::query_scalar(
         "SELECT role FROM tournament_memberships
-         WHERE tournament_id = $1 AND user_id = $2",
+         WHERE tournament_id = $1 AND user_id = $2 FOR SHARE",
     )
     .bind(tournament_id)
     .bind(user_id)
     .fetch_optional(connection)
-    .await
-}
-
-async fn direct_team_ids(
-    connection: &mut PgConnection,
-    round_id: Uuid,
-    player_id: Uuid,
-) -> Result<Vec<Uuid>, sqlx::Error> {
-    // Future flight membership expands this ordered set; mutation checks call the same policy.
-    sqlx::query_scalar(
-        "SELECT t.id
-         FROM team_memberships tm
-         JOIN teams t ON t.id = tm.team_id AND t.round_id = tm.round_id
-         WHERE tm.round_id = $1 AND tm.player_id = $2
-         ORDER BY lower(t.name), t.id",
-    )
-    .bind(round_id)
-    .bind(player_id)
-    .fetch_all(connection)
     .await
 }
