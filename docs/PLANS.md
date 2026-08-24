@@ -17,8 +17,9 @@ API plus explicit legacy individual-group conversion and flight-aware pairing
 validation/opening and deterministic representative seed assignments for all
 five rounds, the mobile draft-round pairing roster editor, and runtime exact-
 flight score authority and the exhaustive round-leaderboard format boundary are
-complete. No active implementation step is approved; the remaining lifecycle,
-pairing, completion, authorization, and scorecard format-policy boundary is next.
+complete, as is the exhaustive lifecycle, pairing, completion, authorization,
+and scorecard format-policy boundary. No active implementation step is approved;
+the decision-gated two-player foursomes format is next.
 
 ## Product decisions
 
@@ -81,11 +82,6 @@ pairing, completion, authorization, and scorecard format-policy boundary is next
 
 ### Phase 6: Foursomes and format-aware live scoring
 
-- Centralize the remaining lifecycle, pairing, completion, score-authorization,
-  and scorecard owner/handicap assumptions behind one exhaustive typed policy
-  before expanding the scoring-format enum. Split the near-limit pairing replace
-  module first and preserve every current API/database behavior without building
-  a generic scoring framework.
 - Implement two-player foursomes as the next team-owned format after its handicap
   formula is approved. Update onboarding, round configuration, readiness,
   snapshots, score access, completion, leaderboards, seed data, and UI together.

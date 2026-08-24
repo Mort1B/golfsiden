@@ -1,6 +1,7 @@
-use super::models::ScoringFormat;
-
-const SCRAMBLE_MAX_INDEX_TENTHS: i32 = 360;
+use super::{
+    models::ScoringFormat,
+    round_formats::{RoundFormatPolicy, SnapshotHandicapPolicy},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CalculatedHandicap {
@@ -9,10 +10,7 @@ pub struct CalculatedHandicap {
 }
 
 pub fn effective_index_tenths(scoring_format: ScoringFormat, registered_tenths: i32) -> i32 {
-    match scoring_format {
-        ScoringFormat::IndividualStrokePlay => registered_tenths,
-        ScoringFormat::TeamScramble => registered_tenths.min(SCRAMBLE_MAX_INDEX_TENTHS),
-    }
+    RoundFormatPolicy::for_format(scoring_format).effective_index_tenths(registered_tenths)
 }
 
 pub fn calculate(
@@ -35,12 +33,14 @@ pub fn calculate(
         + i64::from(course_rating_tenths - i32::from(course_par) * 10) * 113;
     let denominator = 1_130;
     let course_handicap = round_ratio_half_away_from_zero(numerator, denominator);
-    let playing_handicap = match scoring_format {
-        ScoringFormat::IndividualStrokePlay => round_ratio_half_away_from_zero(
-            numerator * i64::from(allowance_percent),
-            denominator * 100,
-        ),
-        ScoringFormat::TeamScramble => course_handicap,
+    let playing_handicap = match RoundFormatPolicy::for_format(scoring_format).snapshot_handicap() {
+        SnapshotHandicapPolicy::UncappedIndividualRoundAllowance => {
+            round_ratio_half_away_from_zero(
+                numerator * i64::from(allowance_percent),
+                denominator * 100,
+            )
+        }
+        SnapshotHandicapPolicy::IndexCappedCourseHandicap { .. } => course_handicap,
     };
 
     CalculatedHandicap {

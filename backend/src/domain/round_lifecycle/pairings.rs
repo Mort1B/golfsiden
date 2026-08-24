@@ -5,8 +5,9 @@ use uuid::Uuid;
 use super::{EntrantFact, ReadinessFacts, push_if};
 use crate::domain::models::{
     ParticipantStatus, ReadinessFlightSize, ReadinessIssue, ReadinessIssueCode, ReadinessPlayer,
-    ReadinessTeamSize, ScoringFormat,
+    ReadinessTeamSize,
 };
+use crate::domain::round_formats::{RoundFormatPolicy, ScoreOwnerKind};
 
 pub(super) struct PairingDetails {
     pub missing_team_players: Vec<ReadinessPlayer>,
@@ -73,8 +74,9 @@ pub(super) fn validate(facts: &ReadinessFacts, issues: &mut Vec<ReadinessIssue>)
     let team_sizes = all_team_sizes;
     let mut legacy_individual_groups = Vec::new();
     let mut split_teams = Vec::new();
-    match facts.scoring_format {
-        ScoringFormat::IndividualStrokePlay => {
+    let policy = RoundFormatPolicy::for_format(facts.scoring_format);
+    match policy.owner_kind() {
+        ScoreOwnerKind::Player => {
             legacy_individual_groups = team_sizes.clone();
             push_if(
                 issues,
@@ -83,7 +85,7 @@ pub(super) fn validate(facts: &ReadinessFacts, issues: &mut Vec<ReadinessIssue>)
                 "individual rounds cannot retain legacy grouping teams",
             );
         }
-        ScoringFormat::TeamScramble => {
+        ScoreOwnerKind::Team => {
             let team_assigned: HashSet<Uuid> = facts
                 .teams
                 .iter()
@@ -117,7 +119,9 @@ pub(super) fn validate(facts: &ReadinessFacts, issues: &mut Vec<ReadinessIssue>)
             );
             push_if(
                 issues,
-                team_sizes.iter().any(|team| team.player_count != 2),
+                team_sizes
+                    .iter()
+                    .any(|team| Some(team.player_count) != policy.exact_team_size()),
                 ReadinessIssueCode::InvalidScrambleTeamSize,
                 "scramble teams must contain exactly two players",
             );

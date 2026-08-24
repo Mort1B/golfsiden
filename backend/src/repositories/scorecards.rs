@@ -6,9 +6,9 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::domain::{
-    models::ScoringFormat,
+    round_formats::{RoundFormatPolicy, TeamPlayingHandicap},
     scorecards::{ConfirmationState, ScoreEntry, ScoreOwner, ScorecardSummary, summarize},
-    scoring::{ScoringError, scramble_playing_handicap},
+    scoring::{ScoringError, ScoringError::InvalidTeamSize},
 };
 use rows::{
     ConfirmationRow, HoleScoreRow, RoundContext, ScoreRow, hole_source_from_row, score_from_row,
@@ -122,8 +122,8 @@ async fn validate_owner(
     context: &RoundContext,
     owner: ScoreOwner,
 ) -> Result<i32, ScorecardError> {
-    match (context.scoring_format, owner) {
-        (ScoringFormat::IndividualStrokePlay, ScoreOwner::Player { id }) => {
+    match (RoundFormatPolicy::for_format(context.scoring_format), owner) {
+        (RoundFormatPolicy::PlayerOwned { .. }, ScoreOwner::Player { id }) => {
             let handicap = sqlx::query_scalar::<_, i16>("SELECT playing_handicap FROM round_handicap_snapshots WHERE round_id = $1 AND player_id = $2")
                 .bind(context.id).bind(id).fetch_optional(&mut *connection).await?;
             if let Some(handicap) = handicap {
@@ -135,7 +135,14 @@ async fn validate_owner(
             }
             owner_missing_or_ineligible(connection, "players", id).await
         }
-        (ScoringFormat::TeamScramble, ScoreOwner::Team { id }) => {
+        (
+            RoundFormatPolicy::TeamOwned {
+                exact_team_size,
+                team_playing_handicap,
+                ..
+            },
+            ScoreOwner::Team { id },
+        ) => {
             let team_round =
                 sqlx::query_scalar::<_, Uuid>("SELECT round_id FROM teams WHERE id = $1")
                     .bind(id)
@@ -149,21 +156,52 @@ async fn validate_owner(
                     ScorecardConflict::OwnerNotEligible,
                 ));
             }
+            let member_count = sqlx::query_scalar::<_, i64>(
+                "SELECT count(*) FROM team_memberships WHERE round_id = $1 AND team_id = $2",
+            )
+            .bind(context.id)
+            .bind(id)
+            .fetch_one(&mut *connection)
+            .await?;
             let handicaps = sqlx::query_scalar::<_, i16>("SELECT rhs.course_handicap FROM team_memberships tm JOIN round_handicap_snapshots rhs ON rhs.round_id = tm.round_id AND rhs.player_id = tm.player_id WHERE tm.team_id = $1 ORDER BY rhs.course_handicap, rhs.player_id")
                 .bind(id).fetch_all(&mut *connection).await?;
-            if !context.handicap_enabled && handicaps.len() == 2 {
-                return Ok(0);
-            }
-            scramble_playing_handicap(
-                &handicaps.into_iter().map(i32::from).collect::<Vec<_>>(),
+            team_owner_playing_handicap(
+                exact_team_size,
+                team_playing_handicap,
+                member_count,
+                &handicaps,
                 context.handicap_allowance_percent,
+                context.handicap_enabled,
             )
-            .map_err(ScorecardError::from)
         }
         _ => Err(ScorecardError::Conflict(
             ScorecardConflict::OwnerFormatMismatch,
         )),
     }
+}
+
+fn team_owner_playing_handicap(
+    exact_team_size: u16,
+    formula: TeamPlayingHandicap,
+    member_count: i64,
+    course_handicaps: &[i16],
+    allowance_percent: i16,
+    handicap_enabled: bool,
+) -> Result<i32, ScorecardError> {
+    if member_count != i64::from(exact_team_size)
+        || course_handicaps.len() != usize::from(exact_team_size)
+    {
+        return Err(ScorecardError::Scoring(InvalidTeamSize));
+    }
+    let calculated = formula.calculate(
+        &course_handicaps
+            .iter()
+            .copied()
+            .map(i32::from)
+            .collect::<Vec<_>>(),
+        allowance_percent,
+    )?;
+    Ok(if handicap_enabled { calculated } else { 0 })
 }
 
 async fn owner_missing_or_ineligible(
@@ -242,4 +280,26 @@ async fn build_summary(
         });
     summarize(context.id, owner, playing_handicap, sources, confirmation)
         .map_err(ScorecardError::from)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn disabled_handicap_does_not_hide_an_invalid_team_size() {
+        let result = team_owner_playing_handicap(
+            2,
+            TeamPlayingHandicap::Scramble35And15,
+            3,
+            &[10, 20],
+            95,
+            false,
+        );
+
+        assert!(matches!(
+            result,
+            Err(ScorecardError::Scoring(ScoringError::InvalidTeamSize))
+        ));
+    }
 }

@@ -6,6 +6,7 @@ pub mod leaderboards;
 pub mod models;
 pub mod onboarding;
 pub mod round_completion;
+pub mod round_formats;
 pub mod round_lifecycle;
 pub mod round_pairings;
 pub mod scorecards;

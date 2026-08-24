@@ -9,6 +9,7 @@ use crate::{
             CompletionFacts, OwnerProgressFact, RoundCompletionValidation, TransitionAction,
             TransitionBlocker, transition_blocker, validate,
         },
+        round_formats::{RoundFormatPolicy, ScoreOwnerKind},
         scorecards::ScoreOwner,
     },
     repositories::tournament_authorization::{self, AuthorizationError},
@@ -195,9 +196,9 @@ async fn load_facts(
     else {
         return Ok(None);
     };
-    let owners = match round.scoring_format {
-        ScoringFormat::IndividualStrokePlay => load_individual_owners(connection, round.id).await?,
-        ScoringFormat::TeamScramble => load_team_owners(connection, round.id).await?,
+    let owners = match RoundFormatPolicy::for_format(round.scoring_format).owner_kind() {
+        ScoreOwnerKind::Player => load_individual_owners(connection, round.id).await?,
+        ScoreOwnerKind::Team => load_team_owners(connection, round.id).await?,
     };
     Ok(Some(CompletionFacts {
         round_id: round.id,

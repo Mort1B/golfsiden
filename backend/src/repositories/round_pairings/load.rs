@@ -4,7 +4,10 @@ use sqlx::{FromRow, Postgres, Transaction};
 use uuid::Uuid;
 
 use crate::{
-    domain::models::{ParticipantStatus, ScoringFormat},
+    domain::{
+        models::ParticipantStatus,
+        round_formats::{RoundFormatPolicy, ScoreOwnerKind},
+    },
     repositories::round_pairings::types::{
         PairingEntrant, PairingGroup, PairingMember, RoundPairingRow, RoundPairings,
     },
@@ -53,11 +56,13 @@ pub(super) async fn model(
         round.round_id,
     )
     .await?;
-    let (teams, legacy_individual_groups) = if round.scoring_format == ScoringFormat::TeamScramble {
-        (all_teams, Vec::new())
-    } else {
-        (Vec::new(), all_teams)
-    };
+    let (teams, legacy_individual_groups) =
+        if RoundFormatPolicy::for_format(round.scoring_format).owner_kind() == ScoreOwnerKind::Team
+        {
+            (all_teams, Vec::new())
+        } else {
+            (Vec::new(), all_teams)
+        };
     Ok(RoundPairings {
         round_id: round.round_id,
         tournament_id: round.tournament_id,

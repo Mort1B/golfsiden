@@ -509,6 +509,88 @@ async fn team_summary_and_api_conflicts_are_format_and_round_specific(pool: PgPo
 }
 
 #[sqlx::test(migrations = "../migrations")]
+async fn handicap_disabled_still_rejects_an_invalid_team_owner(pool: PgPool) {
+    sqlx::raw_sql(FIXTURE).execute(&pool).await.unwrap();
+    sqlx::query("UPDATE rounds SET handicap_enabled = false WHERE id = $1")
+        .bind(SCRAMBLE_ROUND_ID)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let player_c = uuid!("30000000-0000-0000-0000-000000000017");
+    sqlx::query(
+        "INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap)
+         VALUES ($1, $2, 12.0)",
+    )
+    .bind(TOURNAMENT_ID)
+    .bind(player_c)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let mut opening = pool.begin().await.unwrap();
+    sqlx::query("SELECT set_config('app.round_opening_id', $1, true)")
+        .bind(SCRAMBLE_ROUND_ID.to_string())
+        .execute(&mut *opening)
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO round_handicap_snapshots
+           (round_id, tournament_id, player_id, handicap_index, course_handicap, playing_handicap)
+         VALUES ($1, $2, $3, 2.0, 2, 2), ($1, $2, $4, 6.0, 6, 6)",
+    )
+    .bind(SCRAMBLE_ROUND_ID)
+    .bind(TOURNAMENT_ID)
+    .bind(PLAYER_A)
+    .bind(PLAYER_B)
+    .execute(&mut *opening)
+    .await
+    .unwrap();
+    opening.commit().await.unwrap();
+
+    let valid = scorecards::get(
+        &pool,
+        SCRAMBLE_ROUND_ID,
+        ScoreOwner::Team {
+            id: SCRAMBLE_TEAM_ID,
+        },
+    )
+    .await
+    .unwrap();
+    assert_eq!(valid.playing_handicap, 0);
+    assert_eq!((valid.gross_total, valid.net_total), (0, 0));
+
+    sqlx::query(
+        "INSERT INTO team_memberships
+           (team_id, round_id, tournament_id, player_id, display_order)
+         VALUES ($1, $2, $3, $4, 3)",
+    )
+    .bind(SCRAMBLE_TEAM_ID)
+    .bind(SCRAMBLE_ROUND_ID)
+    .bind(TOURNAMENT_ID)
+    .bind(player_c)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let error = scorecards::get(
+        &pool,
+        SCRAMBLE_ROUND_ID,
+        ScoreOwner::Team {
+            id: SCRAMBLE_TEAM_ID,
+        },
+    )
+    .await
+    .unwrap_err();
+
+    assert!(matches!(
+        error,
+        scorecards::ScorecardError::Scoring(
+            golf_api::domain::scoring::ScoringError::InvalidTeamSize
+        )
+    ));
+}
+
+#[sqlx::test(migrations = "../migrations")]
 async fn both_teammates_can_write_the_team_card_but_other_players_cannot(pool: PgPool) {
     seed_open(&pool).await;
     let app = api::router(AppState::new(pool.clone()));

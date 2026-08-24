@@ -1,72 +1,74 @@
 # Latest explanation
 
-## Exhaustive round-leaderboard format boundary
+## Exhaustive round scoring-format policy
 
-The pure round leaderboard no longer mixes format selection with stored-fact
-validation, score assembly, totals, confirmation checks, and ranking. The former
-338-line builder is split into a 251-line format-neutral orchestrator and a
-focused owner-policy module.
+The remaining lifecycle and scorecard paths now obtain format semantics from one
+closed domain policy. It maps every current `ScoringFormat` to either a player-
+owned card with its snapshot-handicap rule or a team-owned card with an exact
+team size, snapshot rule, and approved team formula.
 
-This is a behavior-preserving preparation step. It does not add foursomes,
-change `ScoringFormat`, alter PostgreSQL, or change an API response. Its value is
-that a later team-owned format cannot silently inherit scramble semantics merely
-because it is not individual stroke play.
+This is preparation for a future format, not a new format. PostgreSQL enums and
+triggers, API DTOs and errors, frontend contracts, seeds, and visible behavior
+remain unchanged.
 
-## Closed owner and handicap policy
+## Preserved calculations and ownership
 
-One internal policy maps every current Rust format exhaustively:
+The exhaustive mapping is explicit:
 
 ```rust
 match format {
-    ScoringFormat::IndividualStrokePlay => IndividualSnapshots,
-    ScoringFormat::TeamScramble => TwoPlayerTeam {
+    ScoringFormat::IndividualStrokePlay => PlayerOwned {
+        snapshot_handicap: UncappedIndividualRoundAllowance,
+    },
+    ScoringFormat::TeamScramble => TeamOwned {
         exact_team_size: 2,
-        handicap: Scramble35And15,
+        snapshot_handicap: IndexCappedCourseHandicap { maximum_index_tenths: 360 },
+        team_playing_handicap: Scramble35And15,
     },
 }
 ```
 
-Individual entries still come from immutable round snapshots and use the stored
-playing handicap. Scramble entries still come from frozen exact-round teams and
-members, then apply the existing 35%/15% formula and configured allowance.
+Individual play still applies the configured allowance to the unrounded course-
+handicap ratio. Scramble still caps each registered index at `36.0` before tee
+conversion and calculates the team allowance from 35% of the lower and 15% of
+the higher course handicap. Handicap-disabled rounds report zero only after the
+stored team has the required members and snapshots, so malformed ownership does
+not become a writable scorecard.
 
-Team identity, duplicate assignment, snapshot coverage, and exact team size are
-validated before handicap disabling can replace the calculated value with zero.
-Malformed stored ownership therefore remains an error even in a scratch round.
-No generic framework or unapproved future formula was introduced.
+Lifecycle readiness, pairing load and replacement, completion-owner discovery,
+score authorization, and scorecard validation now consume the same owner/team-
+size policy. Every member of a stored flight retains authority to score every
+eligible card in that flight; tournament admins and scorers retain their existing
+override.
 
-## Format-neutral assembly remains authoritative
+## Pairing write boundary
 
-After owner seeds are built, the unchanged path validates holes, exclusive
-player/team score ownership, duplicate score keys, and confirmations. It then
-calculates gross and net totals, par played, completeness, score to par,
-deterministic name/UUID ordering, and competition ties. Tournament aggregation
-continues attributing a team result exactly once to each frozen round member and
-does not branch on scoring format.
+The former 376-line replacement module is split into a small transaction
+orchestrator, validation, and writes. The same transaction still performs exact
+admin authorization, draft and optimistic-version checks, identity and roster
+validation, legacy conversion and schedule-transfer validation, referenced-team
+protection, atomic replacement, authoritative reload, and commit.
 
-The frontend's visible labels are unchanged, but its prior binary fallback is
-now an exhaustive `Record<ScoringFormat, string>`. Adding a new typed format will
-therefore require an explicit Norwegian label instead of silently displaying it
-as individual stroke play. The runtime API decoder continues rejecting unknown
-format strings before caching.
+Membership ordering, timestamps, legacy facts, update behavior, and error
+precedence are preserved. No event behavior changed.
 
 ## Validation
 
-Focused domain coverage includes both existing formats and a new regression that
-proves a one-member scramble team fails closed when handicaps are disabled.
-Owner-level review found no correctness, ordering, serialization, or abstraction
-issue. All 10 focused leaderboard domain tests and seven PostgreSQL leaderboard
-API tests passed. The complete ladder also passed: 65 standard backend tests,
-all 194 PostgreSQL-backed/unit checks, strict all-feature Clippy, Rust formatting,
-142 tests across 25 frontend files, strict TypeScript, ESLint, the production
-build, and `git diff --check`.
+Focused policy, handicap, lifecycle, pairing, completion, authorization, and
+scorecard coverage passed. That includes 68 standard backend tests and 198
+combined unit/PostgreSQL checks; the focused PostgreSQL suites passed with 13
+pairing, 12 lifecycle, six completion, two authorization, and eight scorecard
+tests. Strict all-feature Clippy, Rust formatting, and `git diff --check` also
+passed. Owner-level review found no correctness, security, scoring, locking,
+ordering, transaction, migration, API-contract, or frontend issue after its one
+test-strength finding was resolved.
 
-No browser run is required because the rendered labels, markup, styling, and
-interaction are unchanged.
+No browser or frontend run is required because no client contract, rendered
+state, or interaction changed.
 
 ## Next boundary
 
-Continue the Phase 6 preparation by isolating the lifecycle, pairing, completion,
-authorization, and scorecard owner/handicap policies that still use scramble as
-a proxy for team ownership. The PostgreSQL enum and trigger branches remain
-unchanged until a complete foursomes implementation is approved.
+Two-player foursomes remains a decision-gated implementation. Its handicap
+formula must be approved before the Rust and PostgreSQL scoring-format enums,
+round configuration, snapshots, scoring, leaderboards, seed data, and UI are
+expanded together.

@@ -20,6 +20,15 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   course handicap, and playing handicap used in each opened round.
 - Round opening locks the round and tournament, repeats readiness validation, and captures one immutable snapshot for each active entrant before changing status. A transaction-local opening context prevents direct status or snapshot bypasses.
 - Course handicap uses exact tenths and rational arithmetic for `index * slope / 113 + rating - par`. Individual allowance is applied to the unrounded result before final rounding. Scramble caps each registered index at `36.0` before tee conversion; its member snapshots retain that effective index and rounded course handicap for the later team formula.
+- One closed round-format policy is the application source of truth for score-
+  owner kind, exact team size, snapshot-handicap treatment, and team playing-
+  handicap calculation. Individual stroke play is player-owned and keeps its
+  uncapped, unrounded allowance path. Scramble is an exact two-player team format
+  with the existing `36.0` cap and 35%/15% calculation. Lifecycle readiness,
+  pairing persistence, completion, score authorization, and scorecard validation
+  consume this policy instead of treating every non-individual format as
+  scramble. PostgreSQL constraints and lifecycle triggers remain independent
+  enforcement boundaries.
 - Team, flight, membership, tee, and hole mutation guards serialize through the
   parent-round lock. Once open, scoring configuration and pairings cannot drift.
 - Flights are normalized round/tournament-scoped groupings independent of teams.
@@ -108,6 +117,10 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   membership order, and timestamps. Scramble teams remain durable score-owner
   identities; old team schedule moves only to an explicitly named flight with
   identical members and facts. One round event follows commit.
+- Pairing replacement keeps one transaction but separates orchestration,
+  identity/roster and legacy/schedule validation, and persistence writes. The
+  split preserves optimistic concurrency, validation precedence, deterministic
+  membership ordering, legacy timestamps, and the single post-commit event.
 - Lifecycle readiness is one pure decision shared by the private validation read
   and locked opening transaction. Every effectively active entrant must be in a
   nonempty flight. Individual rounds reject legacy teams; scramble rounds retain

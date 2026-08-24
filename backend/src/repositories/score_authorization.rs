@@ -6,6 +6,7 @@ use crate::{
     auth::SessionPrincipal,
     domain::{
         models::{ScoringFormat, TournamentRole},
+        round_formats::RoundFormatPolicy,
         scorecards::ScoreOwner,
     },
     repositories::auth,
@@ -95,16 +96,25 @@ async fn resolve_owners(
         return Ok(Vec::new());
     }
 
-    match format {
-        ScoringFormat::IndividualStrokePlay => {
+    match RoundFormatPolicy::for_format(format) {
+        RoundFormatPolicy::PlayerOwned { .. } => {
             let ids = individual_owner_ids(connection, round_id, privileged, player_id).await?;
             Ok(ids
                 .into_iter()
                 .map(|id| ScoreOwner::Player { id })
                 .collect())
         }
-        ScoringFormat::TeamScramble => {
-            let ids = scramble_owner_ids(connection, round_id, privileged, player_id).await?;
+        RoundFormatPolicy::TeamOwned {
+            exact_team_size, ..
+        } => {
+            let ids = team_owner_ids(
+                connection,
+                round_id,
+                privileged,
+                player_id,
+                i64::from(exact_team_size),
+            )
+            .await?;
             Ok(ids.into_iter().map(|id| ScoreOwner::Team { id }).collect())
         }
     }
@@ -145,11 +155,12 @@ async fn individual_owner_ids(
     .await
 }
 
-async fn scramble_owner_ids(
+async fn team_owner_ids(
     connection: &mut PgConnection,
     round_id: Uuid,
     privileged: bool,
     player_id: Option<Uuid>,
+    exact_team_size: i64,
 ) -> Result<Vec<Uuid>, sqlx::Error> {
     sqlx::query_scalar(
         "SELECT t.id
@@ -159,7 +170,7 @@ async fn scramble_owner_ids(
              SELECT count(*) FROM team_memberships member_tm
              WHERE member_tm.round_id = t.round_id
                AND member_tm.team_id = t.id
-           ) = 2
+           ) = $4
            AND (
              SELECT count(*)
              FROM team_memberships eligible_tm
@@ -168,7 +179,7 @@ async fn scramble_owner_ids(
               AND rhs.player_id = eligible_tm.player_id
              WHERE eligible_tm.round_id = t.round_id
                AND eligible_tm.team_id = t.id
-           ) = 2
+           ) = $4
            AND (
              $2
              OR EXISTS (
@@ -203,6 +214,7 @@ async fn scramble_owner_ids(
     .bind(round_id)
     .bind(privileged)
     .bind(player_id)
+    .bind(exact_team_size)
     .fetch_all(connection)
     .await
 }
