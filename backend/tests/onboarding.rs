@@ -52,9 +52,9 @@ fn valid_request(username: &str) -> Value {
         "rounds": [
             {
                 "round_number": 2,
-                "name": "Scramble",
+                "name": "Foursomes",
                 "round_date": start.checked_add_days(Days::new(1)).unwrap(),
-                "scoring_format": "team_scramble"
+                "scoring_format": "two_player_foursomes"
             },
             {
                 "round_number": 1,
@@ -166,7 +166,12 @@ async fn onboarding_atomically_links_creator_rounds_invite_and_session(pool: PgP
         assert_eq!(round["status"], "draft");
         assert_eq!(round["number_of_holes"], 18);
         assert_eq!(round["handicap_enabled"], true);
-        assert_eq!(round["handicap_allowance_percent"], 100);
+        let expected_allowance = if round["scoring_format"] == "two_player_foursomes" {
+            50
+        } else {
+            100
+        };
+        assert_eq!(round["handicap_allowance_percent"], expected_allowance);
         assert!(round["course_id"].is_null());
         assert!(round["tee_id"].is_null());
         assert_eq!(round["course_name"], "");

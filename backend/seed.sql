@@ -139,6 +139,14 @@ INSERT INTO rounds (id, tournament_id, round_number, name, round_date, course_id
 ('00000000-0000-0000-0000-000000004005', '00000000-0000-0000-0000-000000002001', 5, 'Finalen', '2026-09-14', '00000000-0000-0000-0000-000000003001', 'Fjord Golfklubb', '00000000-0000-0000-0000-000000003101', 'Gul', 'individual_stroke_play')
 ON CONFLICT (id) DO NOTHING;
 
+UPDATE rounds
+SET scoring_format = 'two_player_foursomes', handicap_allowance_percent = 50
+WHERE id = '00000000-0000-0000-0000-000000004004'
+  AND tournament_id = '00000000-0000-0000-0000-000000002001'
+  AND status = 'draft'
+  AND (scoring_format IS DISTINCT FROM 'two_player_foursomes'
+       OR handicap_allowance_percent IS DISTINCT FROM 50);
+
 INSERT INTO teams (id, round_id, tournament_id, name, starting_hole)
 SELECT seeded.id::uuid, seeded.round_id::uuid, seeded.tournament_id::uuid,
        seeded.name, seeded.starting_hole

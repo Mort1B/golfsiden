@@ -98,10 +98,11 @@ pub fn validate(
         .rounds
         .iter()
         .any(|round| round.scoring_format == ScoringFormat::IndividualStrokePlay);
-    let has_team = input
-        .rounds
-        .iter()
-        .any(|round| round.scoring_format == ScoringFormat::TeamScramble);
+    let has_team = input.rounds.iter().any(|round| {
+        crate::domain::round_formats::RoundFormatPolicy::for_format(round.scoring_format)
+            .owner_kind()
+            == crate::domain::round_formats::ScoreOwnerKind::Team
+    });
     let scoring_mode = match (has_individual, has_team) {
         (true, false) => ScoringMode::Individual,
         (false, true) => ScoringMode::Team,

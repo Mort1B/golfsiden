@@ -29,6 +29,10 @@ impl LeaderboardFormatPolicy {
                 exact_team_size: 2,
                 handicap: TeamHandicapPolicy::Scramble35And15,
             },
+            ScoringFormat::TwoPlayerFoursomes => Self::TwoPlayerTeam {
+                exact_team_size: 2,
+                handicap: TeamHandicapPolicy::PreservedFoursomes,
+            },
         }
     }
 }
@@ -36,6 +40,7 @@ impl LeaderboardFormatPolicy {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum TeamHandicapPolicy {
     Scramble35And15,
+    PreservedFoursomes,
 }
 
 impl TeamHandicapPolicy {
@@ -47,6 +52,7 @@ impl TeamHandicapPolicy {
         match self {
             Self::Scramble35And15 => scramble_playing_handicap(course_handicaps, allowance_percent)
                 .map_err(|_| LeaderboardError::InvalidStoredData),
+            Self::PreservedFoursomes => Err(LeaderboardError::InvalidStoredData),
         }
     }
 }
@@ -137,8 +143,23 @@ fn team_owner_seeds<'a>(
                 .filter_map(|member| snapshots.get(&member.player_id))
                 .map(|snapshot| i32::from(snapshot.course_handicap))
                 .collect::<Vec<_>>();
-            let calculated = handicap
-                .playing_handicap(&course_handicaps, facts.round.handicap_allowance_percent)?;
+            let calculated = match handicap {
+                TeamHandicapPolicy::Scramble35And15 => handicap
+                    .playing_handicap(&course_handicaps, facts.round.handicap_allowance_percent)?,
+                TeamHandicapPolicy::PreservedFoursomes => {
+                    let matching = facts
+                        .team_snapshots
+                        .iter()
+                        .filter(|snapshot| {
+                            snapshot.round_id == facts.round.round_id && snapshot.team_id == team_id
+                        })
+                        .collect::<Vec<_>>();
+                    let [snapshot] = matching.as_slice() else {
+                        return Err(LeaderboardError::InvalidStoredData);
+                    };
+                    i32::from(snapshot.playing_handicap)
+                }
+            };
             Ok(OwnerSeed {
                 owner: LeaderboardOwner::Team { id: team_id },
                 name,

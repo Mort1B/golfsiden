@@ -13,6 +13,7 @@ import {
 import { requestDecoded } from './http'
 import { jsonRequest } from './http'
 import { privateWorkspaceKeys } from './privateWorkspace'
+import { isScoringFormat } from './scoringFormats'
 import type {
   Round,
   RoundStatus,
@@ -50,7 +51,7 @@ function roundStatus(value: unknown, path: string): RoundStatus {
 }
 
 function scoringFormat(value: unknown, path: string): ScoringFormat {
-  if (value === 'individual_stroke_play' || value === 'team_scramble') return value
+  if (isScoringFormat(value)) return value
   return invalidData('rundedata', path)
 }
 

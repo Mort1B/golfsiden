@@ -48,4 +48,20 @@ describe('leaderboard decoders', () => {
       entries: [],
     }, seedRoundId, 'gross')).toThrow('leaderboard.identity')
   })
+
+  it('accepts foursomes and rejects unknown scoring formats', () => {
+    const response = {
+      round_id: seedRoundId,
+      tournament_id: seedTournamentId,
+      status: 'open',
+      scoring_format: 'two_player_foursomes',
+      metric: 'gross',
+      number_of_holes: 18,
+      entries: [],
+    }
+    expect(decodeRoundLeaderboard(response, seedRoundId, 'gross').scoring_format)
+      .toBe('two_player_foursomes')
+    expect(() => decodeRoundLeaderboard({ ...response, scoring_format: 'greensomes' }, seedRoundId, 'gross'))
+      .toThrow('scoring_format')
+  })
 })

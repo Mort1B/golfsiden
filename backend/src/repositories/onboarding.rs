@@ -144,13 +144,17 @@ pub async fn create(
 
     let mut rounds = Vec::with_capacity(input.rounds.len());
     for input_round in &input.rounds {
+        let allowance =
+            crate::domain::round_formats::RoundFormatPolicy::for_format(input_round.scoring_format)
+                .required_allowance_percent()
+                .unwrap_or(100);
         let round = sqlx::query_as::<_, Round>(&format!(
             "INSERT INTO rounds
                (id, tournament_id, round_number, name, round_date,
                 course_id, course_name, tee_id, tee_name, number_of_holes,
                 status, handicap_enabled, handicap_allowance_percent, scoring_format)
              VALUES ($1, $2, $3, $4, $5, NULL, '', NULL, '', 18,
-                     'draft', TRUE, 100, $6)
+                     'draft', TRUE, $6, $7)
              RETURNING {ROUND_COLUMNS}"
         ))
         .bind(Uuid::new_v4())
@@ -158,6 +162,7 @@ pub async fn create(
         .bind(input_round.round_number)
         .bind(&input_round.name)
         .bind(input_round.round_date)
+        .bind(allowance)
         .bind(input_round.scoring_format)
         .fetch_one(&mut *transaction)
         .await

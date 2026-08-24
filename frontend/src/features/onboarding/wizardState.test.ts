@@ -31,6 +31,18 @@ describe('onboarding wizard state', () => {
     })
   })
 
+  it('preserves foursomes in the exact onboarding request and validation', () => {
+    const draft = createInitialDraft('2026-09-01')
+    const firstRound = draft.rounds[0]
+    if (!firstRound) throw new Error('initial draft must have one round')
+    draft.rounds[0] = { ...firstRound, scoringFormat: 'two_player_foursomes' }
+    expect(toOnboardingRequest({
+      ...draft,
+      creator: { ...draft.creator, handicap: '12,4' },
+    }).rounds[0]?.scoring_format).toBe('two_player_foursomes')
+    expect(validateAll(draft, '2026-09-01')).not.toHaveProperty('rounds.round-1.scoringFormat')
+  })
+
   it('mirrors date, byte, password, handicap, and round bounds', () => {
     const draft = createInitialDraft('2026-09-01')
     draft.tournament.name = 'x'.repeat(121)

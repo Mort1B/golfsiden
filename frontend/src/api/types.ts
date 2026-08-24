@@ -1,7 +1,7 @@
 export type TournamentStatus = 'draft' | 'active' | 'completed' | 'archived'
 export type ScoringMode = 'individual' | 'team' | 'combined'
 export type RoundStatus = 'draft' | 'open' | 'completed' | 'locked'
-export type ScoringFormat = 'individual_stroke_play' | 'team_scramble'
+export type ScoringFormat = 'individual_stroke_play' | 'team_scramble' | 'two_player_foursomes'
 export type ParticipantStatus = 'active' | 'withdrawn'
 export type LeaderboardMetric = 'gross' | 'net'
 

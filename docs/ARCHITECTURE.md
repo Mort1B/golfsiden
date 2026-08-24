@@ -18,13 +18,17 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   durable tournament lock marker preserve that decision even if round data is
   later deleted. `round_handicap_snapshots` preserves the exact effective index,
   course handicap, and playing handicap used in each opened round.
+  `round_team_handicap_snapshots` preserves the final team Playing Handicap for
+  each opened foursomes team and is immutable except for ancestor deletion.
 - Round opening locks the round and tournament, repeats readiness validation, and captures one immutable snapshot for each active entrant before changing status. A transaction-local opening context prevents direct status or snapshot bypasses.
 - Course handicap uses exact tenths and rational arithmetic for `index * slope / 113 + rating - par`. Individual allowance is applied to the unrounded result before final rounding. Scramble caps each registered index at `36.0` before tee conversion; its member snapshots retain that effective index and rounded course handicap for the later team formula.
 - One closed round-format policy is the application source of truth for score-
   owner kind, exact team size, snapshot-handicap treatment, and team playing-
   handicap calculation. Individual stroke play is player-owned and keeps its
   uncapped, unrounded allowance path. Scramble is an exact two-player team format
-  with the existing `36.0` cap and 35%/15% calculation. Lifecycle readiness,
+  with the existing `36.0` cap and 35%/15% calculation. Foursomes is an exact
+  two-player team format with a mandatory 50% allowance applied to the combined
+  unrounded Course Handicaps and rounded once under WHS allowance rules. Lifecycle readiness,
   pairing persistence, completion, score authorization, and scorecard validation
   consume this policy instead of treating every non-individual format as
   scramble. PostgreSQL constraints and lifecycle triggers remain independent
@@ -114,7 +118,7 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   round, reauthorizes session and membership, checks the optimistic timestamp,
   and replaces the requested partial draft roster atomically. Individual legacy
   grouping teams convert only through an exact mapping that preserves schedule,
-  membership order, and timestamps. Scramble teams remain durable score-owner
+  membership order, and timestamps. Scramble and foursomes teams remain durable score-owner
   identities; old team schedule moves only to an explicitly named flight with
   identical members and facts. One round event follows commit.
 - Pairing replacement keeps one transaction but separates orchestration,
@@ -123,8 +127,8 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   membership ordering, legacy timestamps, and the single post-commit event.
 - Lifecycle readiness is one pure decision shared by the private validation read
   and locked opening transaction. Every effectively active entrant must be in a
-  nonempty flight. Individual rounds reject legacy teams; scramble rounds retain
-  exact two-player score-owner teams and require each team to be wholly contained
+  nonempty flight. Individual rounds reject legacy teams; scramble and foursomes
+  rounds retain exact two-player score-owner teams and require each team to be wholly contained
   in one flight, while allowing several teams per flight. Schedule metadata is
   deliberately absent from readiness facts. Opening reads pairings only after
   locking the round/tournament and entrant rows; pairing triggers use that same
@@ -133,7 +137,8 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   admins/scorers receive all eligible owners. Tournament players receive their
   direct owner plus every eligible owner in their exact round flight: frozen
   player snapshots for individual play, or complete two-player teams wholly
-  contained in that flight for scramble. Starting-hole, tee-time, name, and
+  contained in that flight for scramble and foursomes. Foursomes authorization
+  additionally requires the preserved team handicap snapshot. Starting-hole, tee-time, name, and
   ordering coincidences carry no authorization meaning.
 - The private score-access read re-locks the active session/user and exact
   tournament membership through deterministic owner assembly in a repeatable-
@@ -150,7 +155,8 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   the current confirmation; stroke audit history remains append-only.
 - Completion and locking serialize on the round row before reading scorecard
   state. Individual readiness is keyed by immutable round snapshots; scramble
-  readiness is keyed by frozen round teams. Both the repository and lifecycle
+  readiness is keyed by frozen round teams; foursomes also requires one immutable
+  team handicap snapshot per owner. Both the repository and lifecycle
   trigger require every owner to have exactly the configured hole count and a
   current confirmation.
 - Transaction-local lifecycle settings route application writes through the
@@ -158,14 +164,15 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   separation and database privilege hardening belong with authentication work.
 - Round leaderboards calculate live gross/net score-to-par from the holes actually
   scored. Tournament leaderboards aggregate only completed or locked rounds and
-  attribute scramble results through frozen membership for that round. Separate
+  attribute team results through frozen membership for that round. Separate
   gross and net routes never use the other metric as a hidden tie-break.
 - Round-leaderboard owner construction is isolated from format-neutral stored-
   fact validation, score/confirmation assembly, totals, and ranking. One closed,
   exhaustive policy maps each current scoring format to snapshot-owned entries
   or an exact-size team plus its approved handicap policy. Individual stroke play
   uses the preserved snapshot playing handicap; two-player scramble alone selects
-  the existing 35%/15% calculation. No unrecognized format falls back to either
+  the existing 35%/15% calculation; foursomes selects its preserved team Playing
+  Handicap. No unrecognized format falls back to another
   path, including in the frontend's typed format label mapping.
 - Leaderboard repositories bulk-load rounds, holes, snapshots, teams,
   memberships, scores, and confirmations inside one repeatable-read, read-only

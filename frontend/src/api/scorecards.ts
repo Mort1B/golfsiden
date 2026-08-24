@@ -9,6 +9,7 @@ import {
   invalidData,
 } from './decoder'
 import type { RoundStatus, ScoringFormat } from './types'
+import { ownerTypeForScoringFormat } from './scoringFormats'
 
 export type ScoreOwnerType = 'player' | 'team'
 export type ScoreOwner = { type: 'player'; id: string } | { type: 'team'; id: string }
@@ -109,7 +110,7 @@ export function ownerEquals(left: ScoreOwner, right: ScoreOwner): boolean {
 }
 
 export function ownerTypeForFormat(format: ScoringFormat): ScoreOwnerType {
-  return format === 'individual_stroke_play' ? 'player' : 'team'
+  return ownerTypeForScoringFormat(format)
 }
 
 function invalid(path: string): never {

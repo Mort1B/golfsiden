@@ -100,6 +100,86 @@ async fn seed_ready(pool: &PgPool) {
     }
 }
 
+#[sqlx::test(migrations = "../migrations")]
+async fn foursomes_opening_preserves_unrounded_team_handicap_and_db_guards(pool: PgPool) {
+    seed_ready(&pool).await;
+
+    let invalid_allowance = sqlx::query(
+        "INSERT INTO rounds (id, tournament_id, round_number, name, round_date, course_name, tee_name, handicap_allowance_percent, scoring_format)
+         VALUES ($1, $2, 2, 'Invalid foursomes', '2026-08-02', '', '', 49, 'two_player_foursomes')",
+    )
+    .bind(Uuid::new_v4())
+    .bind(TOURNAMENT_ID)
+    .execute(&pool)
+    .await;
+    assert!(invalid_allowance.is_err());
+
+    sqlx::query("DELETE FROM flight_memberships WHERE round_id = $1 AND player_id = $2")
+        .bind(ROUND_ID)
+        .bind(PLAYER_C)
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE tournament_players SET status = 'withdrawn' WHERE tournament_id = $1 AND player_id = $2")
+        .bind(TOURNAMENT_ID)
+        .bind(PLAYER_C)
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE rounds SET scoring_format = 'two_player_foursomes', handicap_allowance_percent = 50 WHERE id = $1")
+        .bind(ROUND_ID)
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO teams (id, round_id, tournament_id, name) VALUES ($1, $2, $3, 'Foursomes pair')")
+        .bind(TEAM_ID)
+        .bind(ROUND_ID)
+        .bind(TOURNAMENT_ID)
+        .execute(&pool)
+        .await
+        .unwrap();
+    for (order, player_id) in [(1_i16, PLAYER_A), (2, PLAYER_B)] {
+        sqlx::query("INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id, display_order) VALUES ($1, $2, $3, $4, $5)")
+            .bind(TEAM_ID)
+            .bind(ROUND_ID)
+            .bind(TOURNAMENT_ID)
+            .bind(player_id)
+            .bind(order)
+            .execute(&pool)
+            .await
+            .unwrap();
+    }
+
+    let result = round_lifecycle::open(&pool, ROUND_ID).await.unwrap();
+    assert_eq!(result.handicap_snapshots.len(), 2);
+    assert_eq!(result.team_handicap_snapshots.len(), 1);
+    assert_eq!(result.team_handicap_snapshots[0].team_id, TEAM_ID);
+    assert_eq!(result.team_handicap_snapshots[0].playing_handicap, 0);
+
+    let mutation = sqlx::query(
+        "UPDATE round_team_handicap_snapshots SET playing_handicap = 2 WHERE round_id = $1 AND team_id = $2",
+    )
+    .bind(ROUND_ID)
+    .bind(TEAM_ID)
+    .execute(&pool)
+    .await;
+    assert!(mutation.is_err());
+
+    sqlx::query("DELETE FROM rounds WHERE id = $1")
+        .bind(ROUND_ID)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let remaining = sqlx::query_scalar::<_, i64>(
+        "SELECT count(*) FROM round_team_handicap_snapshots WHERE round_id = $1",
+    )
+    .bind(ROUND_ID)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(remaining, 0);
+}
+
 fn authorize(builder: axum::http::request::Builder) -> axum::http::request::Builder {
     builder
         .header("cookie", format!("golf_session={SESSION_TOKEN}"))

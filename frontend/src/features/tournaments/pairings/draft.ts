@@ -1,9 +1,5 @@
 import type {
-  LegacyConversionInput,
-  PairingFlightInput,
   PairingGroup,
-  PairingReplacement,
-  PairingTeamInput,
   RoundPairings,
 } from '../../../api/pairings'
 
@@ -34,11 +30,6 @@ export interface PairingDraft {
   sourceFingerprint: string
   teams: PairingDraftGroup[]
   flights: PairingDraftGroup[]
-}
-
-export interface DraftValidation {
-  blocking: string[]
-  unresolved: string[]
 }
 
 function editableTime(value: string | null): string {
@@ -140,16 +131,6 @@ export function moveMember(
   return replaceGroups(draft, kind, groups)
 }
 
-function duplicateNames(groups: PairingDraftGroup[]): boolean {
-  const names = groups.map((group) => group.name.trim().toLocaleLowerCase('nb-NO'))
-  return new Set(names).size !== names.length
-}
-
-function duplicateMembers(groups: PairingDraftGroup[]): boolean {
-  const ids = groups.flatMap((group) => group.memberIds)
-  return new Set(ids).size !== ids.length
-}
-
 function sameMembers(left: readonly string[], right: readonly string[]): boolean {
   return left.length === right.length && left.every((member) => right.includes(member))
 }
@@ -160,11 +141,6 @@ export function scheduleFlightOptions(team: PairingDraftGroup, flights: PairingD
 
 export function pairingsFingerprint(pairings: RoundPairings): string {
   return JSON.stringify(pairings)
-}
-
-function serializedTeeTime(group: PairingDraftGroup): string | null {
-  if (!group.teeTimeEdited) return group.sourceTeeTime
-  return group.teeTime === '' ? null : `${group.teeTime}:00`
 }
 
 export function selectScheduleFlight(
@@ -199,100 +175,5 @@ export function selectScheduleFlight(
           teeTimeEdited: team.teeTimeEdited,
         }
       : group),
-  }
-}
-
-export function validateDraft(draft: PairingDraft, pairings: RoundPairings): DraftValidation {
-  const blocking: string[] = []
-  const unresolved: string[] = []
-  const eligible = new Set(pairings.active_entrants.map((entrant) => entrant.player_id))
-  const allGroups = [...draft.teams, ...draft.flights]
-  if (allGroups.some((group) => group.name.length === 0 || group.name !== group.name.trim())) {
-    blocking.push('Alle gruppenavn må være utfylt uten mellomrom først eller sist.')
-  }
-  if (duplicateNames(draft.teams)) blocking.push('Lagnavn må være unike.')
-  if (duplicateNames(draft.flights)) blocking.push('Flightnavn må være unike.')
-  if (duplicateMembers(draft.teams)) blocking.push('En spiller kan bare være på ett lag i runden.')
-  if (duplicateMembers(draft.flights)) blocking.push('En spiller kan bare være i én flight i runden.')
-  if (allGroups.some((group) => group.memberIds.some((id) => !eligible.has(id)))) {
-    blocking.push('Oppsettet inneholder en spiller som ikke lenger er aktiv deltaker. Fjern spilleren fra lag og flight før lagring.')
-  }
-  if (draft.flights.some((flight) => flight.startingHole !== '' &&
-    (!/^\d{1,2}$/.test(flight.startingHole) || Number(flight.startingHole) < 1 || Number(flight.startingHole) > 36))) {
-    blocking.push('Starthull må være et heltall fra 1 til 36, eller stå tomt.')
-  }
-  if (draft.flights.some((flight) => flight.teeTime !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(flight.teeTime))) {
-    blocking.push('Utslagstid må være et gyldig klokkeslett, eller stå tomt.')
-  }
-  for (const team of draft.teams.filter((group) => group.requiresScheduleTransfer)) {
-    const options = scheduleFlightOptions(team, draft.flights)
-    const selected = options.find((flight) => flight.id === team.scheduleFlightId)
-    if (!selected || selected.startingHole !== team.startingHole ||
-      serializedTeeTime(selected) !== serializedTeeTime(team)) {
-      blocking.push(`Velg eksplisitt hvilken flight som overtar starttiden fra ${team.name}.`)
-    }
-  }
-  const assignedTeams = new Set(draft.teams.flatMap((team) => team.memberIds))
-  const assignedFlights = new Set(draft.flights.flatMap((flight) => flight.memberIds))
-  const unassignedFlights = pairings.active_entrants.filter((entrant) => !assignedFlights.has(entrant.player_id)).length
-  if (unassignedFlights > 0) unresolved.push(`${unassignedFlights} aktive spillere mangler flight.`)
-  if (pairings.scoring_format === 'team_scramble') {
-    const unassignedTeams = pairings.active_entrants.filter((entrant) => !assignedTeams.has(entrant.player_id)).length
-    if (unassignedTeams > 0) unresolved.push(`${unassignedTeams} aktive spillere mangler lag.`)
-    const incompleteTeams = draft.teams.filter((team) => team.memberIds.length !== 2).length
-    if (incompleteTeams > 0) unresolved.push(`${incompleteTeams} lag har ikke nøyaktig to spillere.`)
-  }
-  return { blocking, unresolved }
-}
-
-function serializedMembers(group: PairingDraftGroup): { player_id: string }[] {
-  return group.memberIds.map((player_id) => ({ player_id }))
-}
-
-export function replacementFromDraft(draft: PairingDraft, format: RoundPairings['scoring_format']): PairingReplacement {
-  const teams: PairingTeamInput[] = format === 'team_scramble' ? draft.teams.map((team) => ({
-    id: team.id,
-    name: team.name,
-    members: serializedMembers(team),
-    schedule_flight_id: team.scheduleFlightId,
-  })) : []
-  const flights: PairingFlightInput[] = draft.flights.map((flight) => ({
-    id: flight.id,
-    name: flight.name,
-    starting_hole: flight.startingHole === '' ? null : Number(flight.startingHole),
-    tee_time: serializedTeeTime(flight),
-    members: serializedMembers(flight),
-  }))
-  return { expected_round_updated_at: draft.sourceUpdatedAt, teams, flights, legacy_conversions: [] }
-}
-
-export function legacyConversionReplacement(
-  pairings: RoundPairings,
-  createId: () => string = () => crypto.randomUUID(),
-): PairingReplacement {
-  const mappings: LegacyConversionInput[] = []
-  const preservedFlights: PairingFlightInput[] = pairings.flights.map((group) => ({
-    id: group.id,
-    name: group.name,
-    starting_hole: group.starting_hole,
-    tee_time: group.tee_time,
-    members: group.members.map(({ player_id }) => ({ player_id })),
-  }))
-  const convertedFlights = pairings.legacy_individual_groups.map((group) => {
-    const flightId = createId()
-    mappings.push({ team_id: group.id, flight_id: flightId })
-    return {
-      id: flightId,
-      name: group.name,
-      starting_hole: group.starting_hole,
-      tee_time: group.tee_time,
-      members: group.members.map(({ player_id }) => ({ player_id })),
-    }
-  })
-  return {
-    expected_round_updated_at: pairings.updated_at,
-    teams: [],
-    flights: [...preservedFlights, ...convertedFlights],
-    legacy_conversions: mappings,
   }
 }

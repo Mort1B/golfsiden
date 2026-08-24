@@ -5,10 +5,12 @@ use uuid::Uuid;
 
 use crate::domain::leaderboards::{
     ConfirmationFact, HoleFact, MembershipFact, RoundFact, RoundLeaderboardFacts, ScoreFact,
-    SnapshotFact, TeamFact,
+    SnapshotFact, TeamFact, TeamSnapshotFact,
 };
 
-use super::rows::{ConfirmationRow, HoleRow, MembershipRow, ScoreRow, SnapshotRow, TeamRow};
+use super::rows::{
+    ConfirmationRow, HoleRow, MembershipRow, ScoreRow, SnapshotRow, TeamRow, TeamSnapshotRow,
+};
 
 pub(super) async fn related(
     connection: &mut PgConnection,
@@ -29,6 +31,12 @@ pub(super) async fn related(
     .await?;
     let snapshots = sqlx::query_as::<_, SnapshotRow>(
         "SELECT rhs.round_id, rhs.player_id, p.display_name, rhs.course_handicap, rhs.playing_handicap FROM round_handicap_snapshots rhs JOIN players p ON p.id = rhs.player_id WHERE rhs.round_id = ANY($1) ORDER BY rhs.round_id, rhs.player_id",
+    )
+    .bind(&round_ids)
+    .fetch_all(&mut *connection)
+    .await?;
+    let team_snapshots = sqlx::query_as::<_, TeamSnapshotRow>(
+        "SELECT round_id, team_id, playing_handicap FROM round_team_handicap_snapshots WHERE round_id = ANY($1) ORDER BY round_id, team_id",
     )
     .bind(&round_ids)
     .fetch_all(&mut *connection)
@@ -82,6 +90,17 @@ pub(super) async fn related(
                 player_id: row.player_id,
                 display_name: row.display_name,
                 course_handicap: row.course_handicap,
+                playing_handicap: row.playing_handicap,
+            });
+    }
+    for row in team_snapshots {
+        related
+            .team_snapshots
+            .entry(row.round_id)
+            .or_default()
+            .push(TeamSnapshotFact {
+                round_id: row.round_id,
+                team_id: row.team_id,
                 playing_handicap: row.playing_handicap,
             });
     }
@@ -143,6 +162,7 @@ pub(super) async fn related(
 struct Related {
     holes: HashMap<Uuid, Vec<HoleFact>>,
     snapshots: HashMap<Uuid, Vec<SnapshotFact>>,
+    team_snapshots: HashMap<Uuid, Vec<TeamSnapshotFact>>,
     teams: HashMap<Uuid, Vec<TeamFact>>,
     memberships: HashMap<Uuid, Vec<MembershipFact>>,
     scores: HashMap<Uuid, Vec<ScoreFact>>,
@@ -156,6 +176,7 @@ impl Related {
             round,
             holes: self.holes.remove(&id).unwrap_or_default(),
             snapshots: self.snapshots.remove(&id).unwrap_or_default(),
+            team_snapshots: self.team_snapshots.remove(&id).unwrap_or_default(),
             teams: self.teams.remove(&id).unwrap_or_default(),
             memberships: self.memberships.remove(&id).unwrap_or_default(),
             scores: self.scores.remove(&id).unwrap_or_default(),

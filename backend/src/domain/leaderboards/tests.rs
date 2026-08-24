@@ -68,6 +68,7 @@ fn individual_round(id_value: u128, number: i16, status: RoundStatus) -> RoundLe
             snapshot(round.round_id, 1, "Ada", 1, 1),
             snapshot(round.round_id, 2, "bob", -1, -1),
         ],
+        team_snapshots: Vec::new(),
         teams: Vec::new(),
         memberships: Vec::new(),
         scores: Vec::new(),
@@ -148,6 +149,7 @@ fn scramble_uses_frozen_members_and_formula() {
             snapshot(round.round_id, 1, "Ada", 8, 8),
             snapshot(round.round_id, 2, "Bob", 20, 20),
         ],
+        team_snapshots: Vec::new(),
         teams: vec![TeamFact {
             round_id: round.round_id,
             team_id,
@@ -187,6 +189,39 @@ fn scramble_uses_frozen_members_and_formula() {
 }
 
 #[test]
+fn foursomes_uses_preserved_team_handicap_instead_of_rounded_members() {
+    let round = round_fact(320, 1, RoundStatus::Open, ScoringFormat::TwoPlayerFoursomes);
+    let team_id = id(321);
+    let facts = RoundLeaderboardFacts {
+        holes: holes(round.round_id),
+        snapshots: vec![
+            snapshot(round.round_id, 1, "Ada", 1, 1),
+            snapshot(round.round_id, 2, "Bob", 2, 2),
+        ],
+        team_snapshots: vec![TeamSnapshotFact {
+            round_id: round.round_id,
+            team_id,
+            playing_handicap: 1,
+        }],
+        teams: vec![TeamFact {
+            round_id: round.round_id,
+            team_id,
+            team_name: "Foursomes pair".to_owned(),
+        }],
+        memberships: vec![
+            member(round.round_id, team_id, 1, "Ada"),
+            member(round.round_id, team_id, 2, "Bob"),
+        ],
+        scores: Vec::new(),
+        confirmations: Vec::new(),
+        round,
+    };
+
+    let result = build_round_leaderboard(&facts, LeaderboardMetric::Net).unwrap();
+    assert_eq!(result.entries[0].playing_handicap, 1);
+}
+
+#[test]
 fn handicap_disabled_scramble_still_requires_exactly_two_frozen_members() {
     let mut round = round_fact(300, 1, RoundStatus::Open, ScoringFormat::TeamScramble);
     round.handicap_enabled = false;
@@ -194,6 +229,7 @@ fn handicap_disabled_scramble_still_requires_exactly_two_frozen_members() {
     let facts = RoundLeaderboardFacts {
         holes: holes(round.round_id),
         snapshots: vec![snapshot(round.round_id, 1, "Ada", 8, 8)],
+        team_snapshots: Vec::new(),
         teams: vec![TeamFact {
             round_id: round.round_id,
             team_id,
@@ -228,6 +264,7 @@ fn tournament_aggregates_changing_team_attribution_and_ranks_round_count_first()
             snapshot(round.round_id, 1, "Ada", 0, 0),
             snapshot(round.round_id, 3, "Cara", 0, 0),
         ],
+        team_snapshots: Vec::new(),
         teams: vec![TeamFact {
             round_id: round.round_id,
             team_id,
@@ -386,6 +423,7 @@ fn case_insensitive_name_ties_fall_directly_to_uuid() {
             snapshot(scramble_round.round_id, 1, "zed", 0, 0),
             snapshot(scramble_round.round_id, 2, "ZED", 0, 0),
         ],
+        team_snapshots: Vec::new(),
         teams: vec![TeamFact {
             round_id: scramble_round.round_id,
             team_id,
@@ -413,6 +451,7 @@ fn stored_fact_validation_rejects_missing_snapshots_duplicate_attribution_and_in
             snapshot(round.round_id, 1, "Ada", 8, 8),
             snapshot(round.round_id, 2, "Bob", 20, 20),
         ],
+        team_snapshots: Vec::new(),
         teams: vec![TeamFact {
             round_id: round.round_id,
             team_id,

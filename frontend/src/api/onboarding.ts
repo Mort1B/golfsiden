@@ -3,6 +3,7 @@ import { decodeAuthSession, type AuthSession } from './auth'
 import { jsonRequest, requestDecoded } from './http'
 import { decodeRound, decodeTournament } from './tournaments'
 import type { Round, ScoringFormat, Tournament } from './types'
+import { defaultHandicapAllowanceForFormat, isTeamScoringFormat } from './scoringFormats'
 
 export interface OnboardingRequest {
   creator: {
@@ -57,14 +58,15 @@ function validateCreatedDefaults(tournament: Tournament, rounds: Round[], sessio
       invalidData('opprettingsdata', `${path}.round_date`)
     }
     if (round.status !== 'draft') invalidData('opprettingsdata', `${path}.status`)
-    if (round.number_of_holes !== 18 || !round.handicap_enabled || round.handicap_allowance_percent !== 100) {
+    const expectedAllowance = defaultHandicapAllowanceForFormat(round.scoring_format)
+    if (round.number_of_holes !== 18 || !round.handicap_enabled || round.handicap_allowance_percent !== expectedAllowance) {
       invalidData('opprettingsdata', `${path}.defaults`)
     }
     if (round.course_id !== null || round.tee_id !== null || round.course_name !== '' || round.tee_name !== '') {
       invalidData('opprettingsdata', `${path}.course_configuration`)
     }
     hasIndividual ||= round.scoring_format === 'individual_stroke_play'
-    hasTeam ||= round.scoring_format === 'team_scramble'
+    hasTeam ||= isTeamScoringFormat(round.scoring_format)
   })
   const derivedMode = hasIndividual && hasTeam ? 'combined' : hasTeam ? 'team' : 'individual'
   if (tournament.scoring_mode !== derivedMode) invalidData('opprettingsdata', 'onboarding.tournament.scoring_mode')

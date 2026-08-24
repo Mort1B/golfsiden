@@ -26,6 +26,9 @@ describe('pairing API', () => {
     const team = response.teams[0]
     if (!team) throw new Error('Expected team fixture')
     expect(() => decodeRoundPairings({ ...response, teams: [{ ...team, tee_time: '8:30' }] })).toThrow('tee_time')
+    expect(decodeRoundPairings({ ...response, scoring_format: 'two_player_foursomes' }).scoring_format)
+      .toBe('two_player_foursomes')
+    expect(() => decodeRoundPairings({ ...response, scoring_format: 'greensomes' })).toThrow('scoring_format')
   })
 
   it('roots its key by user and sends the complete replacement with CSRF', async () => {

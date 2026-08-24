@@ -18,8 +18,9 @@ validation/opening and deterministic representative seed assignments for all
 five rounds, the mobile draft-round pairing roster editor, and runtime exact-
 flight score authority and the exhaustive round-leaderboard format boundary are
 complete, as is the exhaustive lifecycle, pairing, completion, authorization,
-and scorecard format-policy boundary. No active implementation step is approved;
-the decision-gated two-player foursomes format is next.
+and scorecard format-policy boundary, and the complete two-player foursomes
+format with preserved WHS team handicaps. No active implementation step is
+approved; the phone score-selector optimization is next.
 
 ## Product decisions
 
@@ -67,29 +68,35 @@ the decision-gated two-player foursomes format is next.
   final-round scorecard is complete and confirmed, a 24-hour embargo starts from
   trusted database time. Completion or locking does not reveal the hidden final
   scores early; they become visible automatically when the embargo expires.
+- Two-player foursomes uses one alternate-shot team card. Its Playing Handicap is
+  50% of the partners' combined unrounded Course Handicaps, applied once and
+  rounded only at the end under WHS allowance rules; the final team value is
+  preserved at round opening. Completion and ties follow the existing team-card
+  and competition-position contracts.
+- After foursomes, finish the remaining roadmap, phone/performance optimization,
+  and a dedicated security review before adding any further play modes. Four-ball,
+  Stableford, and match play are final-stage product work, not intermediate
+  extensions.
 
 ## Decision gates
 
 - Best-N provisional standings rank players with more counted results first until
   they reach N. Final eligibility requires N completed attributed results unless
   an explicit withdrawal policy is added.
-- Approve one new scoring format and its team size, handicap allowance, score
-  owner, completion rule, and tie behavior before implementation. Start with
-  two-player foursomes because it can reuse a team-owned hole score. Four-ball,
-  Stableford, and match play require distinct aggregation or scoring contracts.
+- Every later scoring format still requires explicit approval of team size,
+  handicap allowance, score owner, completion rule, and tie behavior. No later
+  format begins before roadmap completion, optimization, and security review.
 
 ## Upcoming work
 
 ### Phase 6: Foursomes and format-aware live scoring
 
-- Implement two-player foursomes as the next team-owned format after its handicap
-  formula is approved. Update onboarding, round configuration, readiness,
-  snapshots, score access, completion, leaderboards, seed data, and UI together.
 - Optimize the phone score selector for a flight member moving quickly among
   all cards in the flight while preserving immediate save, sync, correction,
   audit, confirmation, SSE invalidation, and locked-round behavior.
-- **Stop condition:** foursomes works end to end and every supported format has
-  explicit owner, team-size, handicap, completion, and ranking tests.
+- **Stop condition:** a flight member can switch rapidly among every writable
+  card on a phone without weakening save synchronization, correction, audit,
+  confirmation, invalidation, or locked-round behavior.
 
 ### Phase 7: Live best-N standings, final-nine blackout, and scorecards
 
@@ -138,9 +145,11 @@ the decision-gated two-player foursomes format is next.
 
 ### Later product work
 
-- Add four-ball/best ball only after deciding whether every individual ball is
-  stored; then consider Stableford and match play as separate milestones.
 - Add partner-repeat-aware team generation, handicap balancing, flight progress
   and missing-score alerts, configurable tie-breaks,
   share links, offline scoring, account recovery, rate limiting, deployment,
   backups, and production database roles.
+- After the remaining roadmap, performance optimization, and security review are
+  complete, add four-ball/best ball only after deciding whether every individual
+  ball is stored; then consider Stableford and match play as separate final-stage
+  milestones.

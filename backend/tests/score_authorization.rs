@@ -119,7 +119,20 @@ INSERT INTO flight_memberships (flight_id, round_id, tournament_id, player_id, d
 "#;
 
 async fn seed(pool: &PgPool) {
+    seed_with_team_format(pool, false).await;
+}
+
+async fn seed_with_team_format(pool: &PgPool, foursomes: bool) {
     sqlx::raw_sql(FIXTURE).execute(pool).await.unwrap();
+    if foursomes {
+        sqlx::query(
+            "UPDATE rounds SET scoring_format = 'two_player_foursomes', handicap_allowance_percent = 50 WHERE id = $1",
+        )
+        .bind(SCRAMBLE)
+        .execute(pool)
+        .await
+        .unwrap();
+    }
     round_lifecycle::open(pool, INDIVIDUAL).await.unwrap();
     round_lifecycle::open(pool, SCRAMBLE).await.unwrap();
 
@@ -156,6 +169,42 @@ async fn seed(pool: &PgPool) {
         .await
         .unwrap();
     }
+}
+
+#[sqlx::test(migrations = "../migrations")]
+async fn foursomes_preserves_scramble_flight_wide_authority_parity(pool: PgPool) {
+    seed_with_team_format(&pool, true).await;
+    let app = api::router(AppState::new(pool));
+
+    let access_response = app.clone().oneshot(access(SCRAMBLE, USER_1)).await.unwrap();
+    assert_eq!(access_response.status(), StatusCode::OK);
+    assert_eq!(
+        body(access_response).await["writable_owners"],
+        json!([
+            {"type": "team", "id": TEAM_B},
+            {"type": "team", "id": TEAM_A}
+        ])
+    );
+    for hole in [HOLE_1, HOLE_2] {
+        let response = app
+            .clone()
+            .oneshot(save(
+                SCRAMBLE,
+                hole,
+                json!({"type": "team", "id": TEAM_B}),
+                USER_1,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+    assert_eq!(
+        app.oneshot(confirm(SCRAMBLE, "team", TEAM_B, USER_1))
+            .await
+            .unwrap()
+            .status(),
+        StatusCode::OK
+    );
 }
 
 fn token(user: Uuid) -> &'static str {

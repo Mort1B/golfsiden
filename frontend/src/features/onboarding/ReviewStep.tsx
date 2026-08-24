@@ -3,11 +3,13 @@ import type { WizardDraft } from './wizardState'
 import { WizardControls } from './WizardControls'
 import type { RefObject } from 'react'
 import { formatHandicap, parseHandicap } from '../handicap/format'
+import type { ScoringFormat } from '../../api/types'
 
-const formatLabel: Record<string, string> = {
+const formatLabel = {
   individual_stroke_play: 'Individuell slagkonkurranse',
   team_scramble: 'Lagscramble',
-}
+  two_player_foursomes: 'Foursomes (to spillere)',
+} satisfies Record<ScoringFormat, string>
 
 export function ReviewStep({ draft, onBack, submitting, headingRef }: { draft: WizardDraft; onBack: () => void; submitting: boolean; headingRef: RefObject<HTMLHeadingElement | null> }) {
   const handicap = parseHandicap(draft.creator.handicap)

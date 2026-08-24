@@ -6,14 +6,14 @@ Milestone 1 provides a Rust/Axum API, PostgreSQL schema and migrations, an
 idempotent development seed, and a strict TypeScript React viewer application.
 Milestone 2 now includes deterministic round opening, backend score entry,
 correction, scorecard summary and confirmation, plus atomic round completion and
-locking and live gross/net leaderboard APIs for individual stroke play and
-two-player scramble. Signed-in tournament members can browse their tournaments,
+locking and live gross/net leaderboard APIs for individual stroke play,
+two-player scramble, and two-player foursomes. Signed-in tournament members can browse their tournaments,
 tournament players, rounds, round-specific teams, and gross/net standings. The
 mobile result view supports shareable selections and live refetch inside that
 private workspace. Global player reads remain a separate legacy surface.
 The mobile score view supports authenticated hole entry, correction,
 confirmation, locked read-only cards, and every writable card in the signed-in
-player's exact flight for both scoring formats.
+player's exact flight for all three scoring formats.
 Tournament-scoped memberships now authorize entrant, round, team, lifecycle,
 handicap, and score mutations as well as tournament workspace reads. A first-time
 visitor can create their account, player identity, draft tournament, complete
@@ -55,6 +55,10 @@ handicap is permanently fixed for that tournament afterward.
 - The initial two-player scramble formula is isolated in the domain layer and
   uses 35% of the lower plus 15% of the higher course handicap. Each registered
   index is capped at `36.0` before conversion for scramble only.
+- Two-player foursomes uses one alternate-shot team card and exactly two members.
+  Its fixed 50% allowance is applied once to the sum of both unrounded Course
+  Handicaps, then the team value is rounded under WHS allowance rules. The final
+  Playing Handicap is captured in an immutable round-team snapshot.
 - SSE messages invalidate client queries; clients refetch authoritative data.
 
 ## Round opening
@@ -64,13 +68,14 @@ codes plus deterministic team, flight, legacy-group, and split-team details. An
 eligible entrant has both an active tournament entry and an active player record.
 Every eligible entrant must belong to exactly one nonempty flight, and ineligible
 entrants cannot remain assigned. Individual rounds require no teams and reject
-all remaining legacy grouping teams. Scramble rounds additionally require every
-eligible entrant in exactly one two-player team, with both members contained in
-one flight; one flight may contain multiple complete teams. Flight tee time and
+all remaining legacy grouping teams. Scramble and foursomes rounds additionally
+require every eligible entrant in exactly one two-player score-owning team, with
+both members contained in one flight; one flight may contain multiple complete
+teams. Their exact-size issue codes remain format-specific. Flight tee time and
 starting hole are optional metadata and never prove grouping or readiness.
 
 The response preserves `missing_players`, `ineligible_players`, and `team_sizes`;
-team assignment details apply to scramble, while legacy individual team sizes
+team assignment details apply to both team formats, while legacy individual team sizes
 remain visible for compatibility. It adds `missing_flight_players`,
 `ineligible_flight_players`, `flight_sizes`, `legacy_individual_groups`, and
 `split_teams`, plus stable issue codes for each new invalid state. Course, tee,
@@ -80,9 +85,11 @@ rating, complete hole-number, and stroke-index rules remain unchanged.
 while holding the round and tournament transaction locks plus entrant share
 locks. Team and flight mutations serialize through the parent round lock. A
 failed validation writes no snapshots and emits no event. Success captures exact
-decimal handicap inputs, inserts one immutable snapshot per eligible entrant,
-changes `draft` to `open`, commits, and only then publishes one SSE invalidation.
-Concurrent opens cannot duplicate snapshots. Database triggers freeze pairings
+decimal handicap inputs and inserts one immutable snapshot per eligible entrant.
+For foursomes it also calculates from the unrounded course values and inserts one
+immutable team Playing Handicap snapshot per complete team. It then changes
+`draft` to `open`, commits, and only then publishes one SSE invalidation.
+Concurrent opens cannot duplicate either snapshot kind. Database triggers freeze pairings
 and scoring configuration after draft and require all status/snapshot changes to
 use the lifecycle transaction.
 
@@ -98,7 +105,8 @@ append an audit row and invalidate any current scorecard confirmation.
 in order with partial gross/net totals, the preserved playing handicap,
 completeness, and current confirmation. Individual net uses the opening snapshot.
 Scramble net applies 35%/15% to the members' rounded course handicaps and applies
-the round allowance once.
+the round allowance once. Foursomes net reads the immutable team Playing Handicap
+captured at opening; it never recalculates from rounded member snapshots.
 
 `POST` to that scorecard path plus `/confirm` requires all holes and records the
 session actor as `confirmed_by` plus `confirmed_at`. Confirmation records represent current state;
@@ -151,8 +159,9 @@ transaction, so logout cannot complete before an already-authorized write.
 and scorers can write any eligible card in that tournament. A tournament player
 linked to an exact flight member can enter, correct, and confirm every eligible
 card in that round flight: snapshot-backed player cards for individual play and
-every exact-round two-player scramble team whose complete membership is in that
-flight. A player without stored flight membership retains the legacy-safe direct
+every exact-round two-player scramble or foursomes team whose complete membership
+is in that flight. Foursomes owners additionally require their preserved team
+handicap snapshot. A player without stored flight membership retains the legacy-safe direct
 fallback to their own individual card or exact round team. The authenticated
 account remains the audit actor regardless of card ownership.
 
@@ -189,6 +198,9 @@ One transaction creates the linked player and global `player` account, both
 initial handicap histories, draft tournament, tournament-admin membership,
 entrant, all draft rounds, hashed invitation, and hashed session. The server
 derives round count and the individual/team/combined tournament scoring mode.
+Individual and scramble rounds retain their existing default allowance. A
+foursomes round is created with the required 50% allowance; no separate allowance
+editor is exposed by onboarding.
 Draft rounds intentionally have null course/tee IDs until later configuration,
 so the existing opening-readiness checks keep them closed.
 
@@ -418,12 +430,12 @@ the resulting exact flight membership and never schedule equality.
 The tournament-admin workspace includes one mobile pairing editor for one
 expanded round at a time. It reads the private aggregate below the authenticated
 user's query root and uses labelled inputs, selects, and add/remove/move/order
-buttons rather than drag-only interaction. Scramble teams and flights are edited
-independently; individual rounds expose flights only. Existing group identities
+buttons rather than drag-only interaction. Scramble and foursomes teams are
+edited independently from flights; individual rounds expose flights only. Existing group identities
 and exact member order are preserved, new groups receive browser-generated
 UUIDs, inactive stored members have removal-only cleanup, and non-draft rounds
 remain readable but disabled. Incomplete drafts may be saved while unresolved
-flight assignments and non-two-player scramble teams remain clearly labelled;
+flight assignments and non-two-player score-owning teams remain clearly labelled;
 opening readiness stays authoritative.
 
 Each save sends the entire desired roster with the aggregate `updated_at` token,
@@ -440,9 +452,10 @@ is persisted.
 
 The idempotent development seed now demonstrates that model across all five
 draft rounds. Each round has two deterministic four-player flights scheduled on
-starting holes 1 and 10, with changing player rotations. Scramble rounds one,
-two, and four each retain four two-player score-owner teams wholly contained in
-their flights; individual rounds three and five contain flights but no teams.
+starting holes 1 and 10, with changing player rotations. Scramble rounds one and
+two retain four two-player score-owner teams; round four uses the same exact team/
+flight facts for foursomes with its 50% allowance. Individual rounds three and
+five contain flights but no teams. Every team is wholly contained in one flight.
 Rerunning the seed backfills only nonconflicting deterministic rows. It converts
 the old seed's team-level starting holes to flight schedules only while the exact
 known draft team, membership, and flight facts match, and it skips frozen rounds

@@ -9,6 +9,7 @@ use crate::{
     domain::{
         models::{OpenRoundResult, PairingValidation},
         round_lifecycle::validate,
+        scoring::ScoringError,
     },
     repositories::tournament_authorization::{self, AuthorizationError},
 };
@@ -19,6 +20,8 @@ pub enum OpenRoundError {
     NotFound,
     #[error("round is not ready to open")]
     NotReady(PairingValidation),
+    #[error("round handicap calculation failed")]
+    Scoring(#[from] ScoringError),
     #[error(transparent)]
     Authorization(#[from] AuthorizationError),
     #[error("database operation failed")]

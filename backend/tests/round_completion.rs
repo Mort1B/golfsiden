@@ -62,7 +62,20 @@ INSERT INTO team_memberships (team_id, round_id, tournament_id, player_id) VALUE
 "#;
 
 async fn seed_open(pool: &PgPool) {
+    seed_open_with_team_format(pool, false).await;
+}
+
+async fn seed_open_with_team_format(pool: &PgPool, foursomes: bool) {
     sqlx::raw_sql(FIXTURE).execute(pool).await.unwrap();
+    if foursomes {
+        sqlx::query(
+            "UPDATE rounds SET scoring_format = 'two_player_foursomes', handicap_allowance_percent = 50 WHERE id = $1",
+        )
+        .bind(SCRAMBLE_ROUND)
+        .execute(pool)
+        .await
+        .unwrap();
+    }
     sqlx::query(
         "INSERT INTO tournament_memberships (tournament_id, user_id, role)
          VALUES ($1, $2, 'admin')",
@@ -97,6 +110,15 @@ async fn seed_open(pool: &PgPool) {
                 .bind(round_id).bind(TOURNAMENT_ID).bind(player_id).bind(handicap)
                 .execute(&mut *transaction).await.unwrap();
         }
+        if foursomes && round_id == SCRAMBLE_ROUND {
+            sqlx::query("INSERT INTO round_team_handicap_snapshots (round_id, tournament_id, team_id, playing_handicap) VALUES ($1, $2, $3, 8)")
+                .bind(round_id)
+                .bind(TOURNAMENT_ID)
+                .bind(SCRAMBLE_TEAM)
+                .execute(&mut *transaction)
+                .await
+                .unwrap();
+        }
         sqlx::query("UPDATE rounds SET status = 'open' WHERE id = $1")
             .bind(round_id)
             .execute(&mut *transaction)
@@ -104,6 +126,36 @@ async fn seed_open(pool: &PgPool) {
             .unwrap();
         transaction.commit().await.unwrap();
     }
+}
+
+#[sqlx::test(migrations = "../migrations")]
+async fn foursomes_completion_and_lock_match_scramble_team_card_behavior(pool: PgPool) {
+    seed_open_with_team_format(&pool, true).await;
+    let owner = ScoreOwner::Team { id: SCRAMBLE_TEAM };
+
+    let incomplete = round_completion::complete(&pool, SCRAMBLE_ROUND).await;
+    assert!(matches!(
+        incomplete,
+        Err(RoundCompletionError::Blocked {
+            blocker: TransitionBlocker::IncompleteScorecards,
+            ..
+        })
+    ));
+    fill_and_confirm(&pool, SCRAMBLE_ROUND, owner).await;
+    assert_eq!(
+        round_completion::complete(&pool, SCRAMBLE_ROUND)
+            .await
+            .unwrap()
+            .status,
+        golf_api::domain::models::RoundStatus::Completed
+    );
+    assert_eq!(
+        round_completion::lock(&pool, SCRAMBLE_ROUND)
+            .await
+            .unwrap()
+            .status,
+        golf_api::domain::models::RoundStatus::Locked
+    );
 }
 
 fn authorize(builder: axum::http::request::Builder) -> axum::http::request::Builder {

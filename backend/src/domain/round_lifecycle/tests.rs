@@ -28,7 +28,7 @@ fn base_facts(format: ScoringFormat) -> ReadinessFacts {
         ],
         teams: match format {
             ScoringFormat::IndividualStrokePlay => Vec::new(),
-            ScoringFormat::TeamScramble => vec![TeamFact {
+            ScoringFormat::TeamScramble | ScoringFormat::TwoPlayerFoursomes => vec![TeamFact {
                 team_id: Uuid::from_u128(20),
                 team_name: "Team 1".to_owned(),
                 player_ids: vec![player_a, player_b],
@@ -147,6 +147,27 @@ fn multiple_scramble_teams_may_share_one_flight_and_schedules_are_absent() {
         player_ids: vec![Uuid::from_u128(3), Uuid::from_u128(4)],
     });
     assert!(validate(&facts).ready);
+}
+
+#[test]
+fn foursomes_reuses_exact_two_player_team_and_flight_readiness() {
+    let mut facts = base_facts(ScoringFormat::TwoPlayerFoursomes);
+    assert!(validate(&facts).ready);
+
+    facts.teams[0].player_ids.pop();
+    let validation = validate(&facts);
+    assert!(!validation.ready);
+    assert!(codes(&validation).contains(&ReadinessIssueCode::InvalidFoursomesTeamSize));
+    assert!(
+        validation
+            .issues
+            .iter()
+            .all(|issue| !issue.message.contains("scramble"))
+    );
+    assert!(validation.issues.iter().any(|issue| {
+        issue.code == ReadinessIssueCode::InvalidFoursomesTeamSize
+            && issue.message == "foursomes teams must contain exactly two players"
+    }));
 }
 
 #[test]

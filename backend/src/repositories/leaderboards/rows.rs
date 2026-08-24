@@ -34,6 +34,13 @@ pub(super) struct SnapshotRow {
 }
 
 #[derive(FromRow)]
+pub(super) struct TeamSnapshotRow {
+    pub round_id: Uuid,
+    pub team_id: Uuid,
+    pub playing_handicap: i16,
+}
+
+#[derive(FromRow)]
 pub(super) struct TeamRow {
     pub round_id: Uuid,
     pub team_id: Uuid,

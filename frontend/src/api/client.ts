@@ -12,6 +12,7 @@ import {
   type ScoreOwner,
 } from './scorecards'
 import type { LeaderboardMetric, Player, ScoringFormat, Team } from './types'
+import { roundLifecycleApi } from './roundLifecycle'
 
 async function get<T>(path: string): Promise<T> {
   return requestUnchecked<T>(path)
@@ -40,6 +41,8 @@ export const api = {
   correctTournamentHandicap: tournamentApi.correctHandicap,
   rounds: tournamentApi.rounds,
   round: (id: string) => requestDecoded(`/api/rounds/${id}`, (value) => decodeRound(value)),
+  pairingValidation: roundLifecycleApi.validation,
+  openRound: roundLifecycleApi.open,
   teams: (id: string) => get<Team[]>(`/api/rounds/${id}/teams`),
   players: () => get<Player[]>('/api/players'),
   roundLeaderboard: (id: string, metric: LeaderboardMetric) =>

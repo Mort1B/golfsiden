@@ -21,6 +21,7 @@ import {
   invalidData,
 } from './decoder'
 import { privateWorkspaceKeys } from './privateWorkspace'
+import { isScoringFormat } from './scoringFormats'
 
 export const leaderboardKeys = {
   round: (userId: string, roundId: string, metric: LeaderboardMetric) =>
@@ -48,7 +49,7 @@ function roundStatus(value: unknown, path: string): RoundStatus {
 }
 
 function scoringFormat(value: unknown, path: string): ScoringFormat {
-  if (value === 'individual_stroke_play' || value === 'team_scramble') return value
+  if (isScoringFormat(value)) return value
   return invalid(path)
 }
 

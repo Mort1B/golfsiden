@@ -1,5 +1,6 @@
 import type { CreatorDraft, RoundDraft, TournamentDraft, WizardDraft } from './wizardState'
 import { parseHandicap } from '../handicap/format'
+import { isScoringFormat } from '../../api/scoringFormats'
 
 export type FieldErrors = Record<string, string>
 
@@ -45,7 +46,7 @@ export function validateRounds(rounds: RoundDraft[], tournament: TournamentDraft
     } else if (round.date < tournament.startDate || round.date > tournament.endDate) {
       errors[`${prefix}.date`] = 'Rundedato må være innenfor turneringsperioden.'
     }
-    if (round.scoringFormat !== 'individual_stroke_play' && round.scoringFormat !== 'team_scramble') {
+    if (!isScoringFormat(round.scoringFormat)) {
       errors[`${prefix}.scoringFormat`] = 'Velg en støttet spilleform.'
     }
   }

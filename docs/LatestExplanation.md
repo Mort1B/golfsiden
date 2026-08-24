@@ -1,74 +1,77 @@
 # Latest explanation
 
-## Exhaustive round scoring-format policy
+## Two-player foursomes
 
-The remaining lifecycle and scorecard paths now obtain format semantics from one
-closed domain policy. It maps every current `ScoringFormat` to either a player-
-owned card with its snapshot-handicap rule or a team-owned card with an exact
-team size, snapshot rule, and approved team formula.
+The application now supports `two_player_foursomes` end to end as an exact two-
+player, team-owned alternate-shot format. One team owns one shared hole score,
+and every authenticated member of its flight can keep score for every eligible
+card in that flight.
 
-This is preparation for a future format, not a new format. PostgreSQL enums and
-triggers, API DTOs and errors, frontend contracts, seeds, and visible behavior
-remain unchanged.
+Onboarding, round persistence, pairings, opening readiness, score access,
+scorecards, confirmation, completion, round and tournament leaderboards, seed
+data, strict frontend decoders, and Norwegian labels all recognize the format.
+Individual stroke play and two-player scramble retain their existing behavior.
 
-## Preserved calculations and ownership
+## Preserved WHS handicap
 
-The exhaustive mapping is explicit:
+Foursomes requires a 50% allowance. Opening calculates each partner's unrounded
+Course Handicap from the fixed tournament index and immutable tee facts, sums
+the two values, applies 50% once, and rounds only the final team result. Exact
+half values follow WHS allowance rounding, including moving stored-negative plus
+handicaps toward zero.
 
 ```rust
-match format {
-    ScoringFormat::IndividualStrokePlay => PlayerOwned {
-        snapshot_handicap: UncappedIndividualRoundAllowance,
-    },
-    ScoringFormat::TeamScramble => TeamOwned {
-        exact_team_size: 2,
-        snapshot_handicap: IndexCappedCourseHandicap { maximum_index_tenths: 360 },
-        team_playing_handicap: Scramble35And15,
-    },
-}
+let combined = first_unrounded.checked_add(second_unrounded)?;
+let allowed = combined.checked_mul(50)?;
+let playing_handicap = whs_allowance_round(allowed, 1_130 * 100)?;
 ```
 
-Individual play still applies the configured allowance to the unrounded course-
-handicap ratio. Scramble still caps each registered index at `36.0` before tee
-conversion and calculates the team allowance from 35% of the lower and 15% of
-the higher course handicap. Handicap-disabled rounds report zero only after the
-stored team has the required members and snapshots, so malformed ownership does
-not become a writable scorecard.
+The result is inserted into `round_team_handicap_snapshots` in the same opening
+transaction as the member snapshots and before the round status changes. The
+table permits capture only through that exact foursomes opening context, requires
+two snapshotted members, and is immutable afterward. Scorecards and leaderboards
+read this preserved value rather than recalculating historical results.
 
-Lifecycle readiness, pairing load and replacement, completion-owner discovery,
-score authorization, and scorecard validation now consume the same owner/team-
-size policy. Every member of a stored flight retains authority to score every
-eligible card in that flight; tournament admins and scorers retain their existing
-override.
+## Database and format boundaries
 
-## Pairing write boundary
+Forward migration `0013` appends the enum value, enforces allowance 50, adds the
+team snapshot table, and replaces score, confirmation, completion, and lifecycle
+functions so foursomes is explicitly team-owned. Existing migrations are
+unchanged, and an upgrade regression starts from schema 0012 and exercises an
+existing scramble scorecard through the replaced functions.
 
-The former 376-line replacement module is split into a small transaction
-orchestrator, validation, and writes. The same transaction still performs exact
-admin authorization, draft and optimistic-version checks, identity and roster
-validation, legacy conversion and schedule-transfer validation, referenced-team
-protection, atomic replacement, authoritative reload, and commit.
+The closed Rust and TypeScript format policies map all three formats explicitly.
+Foursomes uses exact two-player teams wholly contained in one flight. Completion
+requires a complete, confirmed shared card; tournament standings attribute that
+round result to both preserved members. Gross and net keep independent
+competition-position ties with no hidden cross-metric tie-break.
 
-Membership ordering, timestamps, legacy facts, update behavior, and error
-precedence are preserved. No event behavior changed.
+Scorecard handicap loading and pairing-draft validation/serialization were split
+into focused modules before adding the new behavior. Query-key ownership, SSE
+invalidation, mutation synchronization, locks, audit actors, and error precedence
+remain unchanged.
 
-## Validation
+## Review and validation
 
-Focused policy, handicap, lifecycle, pairing, completion, authorization, and
-scorecard coverage passed. That includes 68 standard backend tests and 198
-combined unit/PostgreSQL checks; the focused PostgreSQL suites passed with 13
-pairing, 12 lifecycle, six completion, two authorization, and eight scorecard
-tests. Strict all-feature Clippy, Rust formatting, and `git diff --check` also
-passed. Owner-level review found no correctness, security, scoring, locking,
-ordering, transaction, migration, API-contract, or frontend issue after its one
-test-strength finding was resolved.
+Owner-level review found four low-severity test or robustness gaps. Checked
+handicap arithmetic, stable seed timestamps, separate scramble/foursomes parity
+coverage, and post-upgrade trigger coverage resolve them.
 
-No browser or frontend run is required because no client contract, rendered
-state, or interaction changed.
+The final ladder passed 75 standard Rust tests, strict all-feature Clippy and
+formatting, and 210 combined unit/PostgreSQL tests. A fresh database passed
+migrate, seed, a second idempotent seed, and migrate again. The frontend passed
+148 tests, strict TypeScript, ESLint, and the production build.
 
-## Next boundary
+Real Chrome at 375px and 1440px validated onboarding, populated pairings,
+opening, four preserved team snapshots, flight-wide team selection, synchronized
+hole scoring, locked controls, and gross/net leaderboard labels. There were no
+failed requests, uncaught exceptions, unexpected console errors, focus failures,
+or layout overflow. Artificially forced generic error/empty states were skipped
+because those shared components and contracts were unchanged.
 
-Two-player foursomes remains a decision-gated implementation. Its handicap
-formula must be approved before the Rust and PostgreSQL scoring-format enums,
-round configuration, snapshots, scoring, leaderboards, seed data, and UI are
-expanded together.
+## Roadmap order
+
+The next implementation boundary is the phone score-selector optimization.
+Additional play modes such as four-ball, Stableford, and match play are explicitly
+deferred until the remaining roadmap, performance optimization, and a dedicated
+security review are complete.

@@ -46,6 +46,7 @@ pub enum RoundStatus {
 pub enum ScoringFormat {
     IndividualStrokePlay,
     TeamScramble,
+    TwoPlayerFoursomes,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
@@ -214,6 +215,7 @@ pub enum ReadinessIssueCode {
     IneligibleTeamAssignment,
     EmptyTeam,
     InvalidScrambleTeamSize,
+    InvalidFoursomesTeamSize,
     MissingFlightAssignment,
     IneligibleFlightAssignment,
     EmptyFlight,
@@ -280,8 +282,18 @@ pub struct RoundHandicapSnapshot {
     pub captured_at: DateTime<Utc>,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, FromRow)]
+pub struct RoundTeamHandicapSnapshot {
+    pub round_id: Uuid,
+    pub tournament_id: Uuid,
+    pub team_id: Uuid,
+    pub playing_handicap: i16,
+    pub captured_at: DateTime<Utc>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct OpenRoundResult {
     pub round: Round,
     pub handicap_snapshots: Vec<RoundHandicapSnapshot>,
+    pub team_handicap_snapshots: Vec<RoundTeamHandicapSnapshot>,
 }

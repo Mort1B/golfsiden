@@ -41,6 +41,13 @@ pub struct SnapshotFact {
 }
 
 #[derive(Debug, Clone)]
+pub struct TeamSnapshotFact {
+    pub round_id: Uuid,
+    pub team_id: Uuid,
+    pub playing_handicap: i16,
+}
+
+#[derive(Debug, Clone)]
 pub struct TeamFact {
     pub round_id: Uuid,
     pub team_id: Uuid,
@@ -77,6 +84,7 @@ pub struct RoundLeaderboardFacts {
     pub round: RoundFact,
     pub holes: Vec<HoleFact>,
     pub snapshots: Vec<SnapshotFact>,
+    pub team_snapshots: Vec<TeamSnapshotFact>,
     pub teams: Vec<TeamFact>,
     pub memberships: Vec<MembershipFact>,
     pub scores: Vec<ScoreFact>,

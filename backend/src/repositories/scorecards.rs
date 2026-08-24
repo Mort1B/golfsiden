@@ -1,3 +1,4 @@
+mod handicaps;
 mod mutations;
 mod rows;
 
@@ -6,10 +7,10 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::domain::{
-    round_formats::{RoundFormatPolicy, TeamPlayingHandicap},
     scorecards::{ConfirmationState, ScoreEntry, ScoreOwner, ScorecardSummary, summarize},
-    scoring::{ScoringError, ScoringError::InvalidTeamSize},
+    scoring::ScoringError,
 };
+use handicaps::validate_owner;
 use rows::{
     ConfirmationRow, HoleScoreRow, RoundContext, ScoreRow, hole_source_from_row, score_from_row,
 };
@@ -117,116 +118,6 @@ async fn validate_hole(
     }
 }
 
-async fn validate_owner(
-    connection: &mut PgConnection,
-    context: &RoundContext,
-    owner: ScoreOwner,
-) -> Result<i32, ScorecardError> {
-    match (RoundFormatPolicy::for_format(context.scoring_format), owner) {
-        (RoundFormatPolicy::PlayerOwned { .. }, ScoreOwner::Player { id }) => {
-            let handicap = sqlx::query_scalar::<_, i16>("SELECT playing_handicap FROM round_handicap_snapshots WHERE round_id = $1 AND player_id = $2")
-                .bind(context.id).bind(id).fetch_optional(&mut *connection).await?;
-            if let Some(handicap) = handicap {
-                return Ok(if context.handicap_enabled {
-                    i32::from(handicap)
-                } else {
-                    0
-                });
-            }
-            owner_missing_or_ineligible(connection, "players", id).await
-        }
-        (
-            RoundFormatPolicy::TeamOwned {
-                exact_team_size,
-                team_playing_handicap,
-                ..
-            },
-            ScoreOwner::Team { id },
-        ) => {
-            let team_round =
-                sqlx::query_scalar::<_, Uuid>("SELECT round_id FROM teams WHERE id = $1")
-                    .bind(id)
-                    .fetch_optional(&mut *connection)
-                    .await?;
-            let Some(team_round) = team_round else {
-                return Err(ScorecardError::NotFound);
-            };
-            if team_round != context.id {
-                return Err(ScorecardError::Conflict(
-                    ScorecardConflict::OwnerNotEligible,
-                ));
-            }
-            let member_count = sqlx::query_scalar::<_, i64>(
-                "SELECT count(*) FROM team_memberships WHERE round_id = $1 AND team_id = $2",
-            )
-            .bind(context.id)
-            .bind(id)
-            .fetch_one(&mut *connection)
-            .await?;
-            let handicaps = sqlx::query_scalar::<_, i16>("SELECT rhs.course_handicap FROM team_memberships tm JOIN round_handicap_snapshots rhs ON rhs.round_id = tm.round_id AND rhs.player_id = tm.player_id WHERE tm.team_id = $1 ORDER BY rhs.course_handicap, rhs.player_id")
-                .bind(id).fetch_all(&mut *connection).await?;
-            team_owner_playing_handicap(
-                exact_team_size,
-                team_playing_handicap,
-                member_count,
-                &handicaps,
-                context.handicap_allowance_percent,
-                context.handicap_enabled,
-            )
-        }
-        _ => Err(ScorecardError::Conflict(
-            ScorecardConflict::OwnerFormatMismatch,
-        )),
-    }
-}
-
-fn team_owner_playing_handicap(
-    exact_team_size: u16,
-    formula: TeamPlayingHandicap,
-    member_count: i64,
-    course_handicaps: &[i16],
-    allowance_percent: i16,
-    handicap_enabled: bool,
-) -> Result<i32, ScorecardError> {
-    if member_count != i64::from(exact_team_size)
-        || course_handicaps.len() != usize::from(exact_team_size)
-    {
-        return Err(ScorecardError::Scoring(InvalidTeamSize));
-    }
-    let calculated = formula.calculate(
-        &course_handicaps
-            .iter()
-            .copied()
-            .map(i32::from)
-            .collect::<Vec<_>>(),
-        allowance_percent,
-    )?;
-    Ok(if handicap_enabled { calculated } else { 0 })
-}
-
-async fn owner_missing_or_ineligible(
-    connection: &mut PgConnection,
-    table: &str,
-    id: Uuid,
-) -> Result<i32, ScorecardError> {
-    let exists = match table {
-        "players" => {
-            sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM players WHERE id = $1)")
-                .bind(id)
-                .fetch_one(connection)
-                .await?
-        }
-        _ => false,
-    };
-    if exists {
-        Err(ScorecardError::Conflict(
-            ScorecardConflict::OwnerNotEligible,
-        ))
-    } else {
-        Err(ScorecardError::NotFound)
-    }
-}
-
 async fn load_score(
     transaction: &mut Transaction<'_, Postgres>,
     round_id: Uuid,
@@ -280,26 +171,4 @@ async fn build_summary(
         });
     summarize(context.id, owner, playing_handicap, sources, confirmation)
         .map_err(ScorecardError::from)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn disabled_handicap_does_not_hide_an_invalid_team_size() {
-        let result = team_owner_playing_handicap(
-            2,
-            TeamPlayingHandicap::Scramble35And15,
-            3,
-            &[10, 20],
-            95,
-            false,
-        );
-
-        assert!(matches!(
-            result,
-            Err(ScorecardError::Scoring(ScoringError::InvalidTeamSize))
-        ));
-    }
 }

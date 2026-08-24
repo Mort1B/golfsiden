@@ -20,6 +20,15 @@ async fn run_seed(pool: &PgPool) {
 }
 
 async fn assert_representative_pairings(pool: &PgPool) {
+    let foursomes = sqlx::query_as::<_, (String, i16)>(
+        "SELECT scoring_format::text, handicap_allowance_percent FROM rounds WHERE id = $1",
+    )
+    .bind(SEEDED_ROUNDS[3])
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    assert_eq!(foursomes, ("two_player_foursomes".to_owned(), 50));
+
     let counts = sqlx::query_as::<_, (i64, i64, i64, i64)>(
         "SELECT
             (SELECT count(*) FROM teams),
@@ -127,6 +136,22 @@ async fn assert_representative_pairings(pool: &PgPool) {
 #[sqlx::test(migrations = "../migrations")]
 async fn development_seed_has_ready_idempotent_representative_pairings(pool: PgPool) {
     run_seed(&pool).await;
+    let round_four_updated_at = sqlx::query_scalar::<_, chrono::DateTime<chrono::Utc>>(
+        "SELECT updated_at FROM rounds WHERE id = $1",
+    )
+    .bind(SEEDED_ROUNDS[3])
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    run_seed(&pool).await;
+    let round_four_after_rerun = sqlx::query_scalar::<_, chrono::DateTime<chrono::Utc>>(
+        "SELECT updated_at FROM rounds WHERE id = $1",
+    )
+    .bind(SEEDED_ROUNDS[3])
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(round_four_after_rerun, round_four_updated_at);
 
     // Recreate the exact pre-flight round-two seed state to exercise the guarded
     // draft upgrade rather than only the already-current idempotent path.

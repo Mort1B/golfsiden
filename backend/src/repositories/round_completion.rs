@@ -234,7 +234,14 @@ async fn load_team_owners(
     round_id: Uuid,
 ) -> Result<Vec<OwnerProgressFact>, sqlx::Error> {
     let rows = sqlx::query_as::<_, OwnerProgressRow>(
-        "SELECT t.id AS owner_id, t.name AS owner_name, count(s.id) AS holes_scored, EXISTS(SELECT 1 FROM scorecard_confirmations sc WHERE sc.round_id = t.round_id AND sc.team_id = t.id) AS confirmed FROM teams t LEFT JOIN scores s ON s.round_id = t.round_id AND s.team_id = t.id WHERE t.round_id = $1 GROUP BY t.round_id, t.id, t.name ORDER BY t.name, t.id",
+        "SELECT t.id AS owner_id, t.name AS owner_name, count(s.id) AS holes_scored,
+                EXISTS(SELECT 1 FROM scorecard_confirmations sc WHERE sc.round_id = t.round_id AND sc.team_id = t.id)
+                AND (r.scoring_format <> 'two_player_foursomes'
+                     OR EXISTS(SELECT 1 FROM round_team_handicap_snapshots rths WHERE rths.round_id = t.round_id AND rths.team_id = t.id)) AS confirmed
+         FROM teams t JOIN rounds r ON r.id = t.round_id
+         LEFT JOIN scores s ON s.round_id = t.round_id AND s.team_id = t.id
+         WHERE t.round_id = $1
+         GROUP BY t.round_id, t.id, t.name, r.scoring_format ORDER BY t.name, t.id",
     )
     .bind(round_id)
     .fetch_all(connection)

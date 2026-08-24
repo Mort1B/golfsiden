@@ -10,6 +10,7 @@ import {
 } from './decoder'
 import { jsonRequest, requestDecoded } from './http'
 import { privateWorkspaceKeys } from './privateWorkspace'
+import { SCORING_FORMATS } from './scoringFormats'
 import type { ParticipantStatus, RoundStatus, ScoringFormat } from './types'
 
 export interface PairingEntrant {
@@ -71,7 +72,7 @@ export interface PairingReplacement {
 }
 
 const statuses: readonly RoundStatus[] = ['draft', 'open', 'completed', 'locked']
-const formats: readonly ScoringFormat[] = ['individual_stroke_play', 'team_scramble']
+const formats: readonly ScoringFormat[] = SCORING_FORMATS
 const participantStatuses: readonly ParticipantStatus[] = ['active', 'withdrawn']
 const timePattern = /^([01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?$/
 

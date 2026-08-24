@@ -25,7 +25,7 @@ use crate::{
         auth::{AuthenticatedSession, MutationSession},
         authorization::map_authorization_error,
     },
-    domain::models::ScoringFormat,
+    domain::{models::ScoringFormat, round_formats::RoundFormatPolicy},
     error::{ApiError, ApiResult, require_non_empty},
     repositories::{
         rounds::{self, RoundMutationError},
@@ -188,11 +188,7 @@ async fn validate_create(
             "number_of_holes must be between 1 and 36".to_owned(),
         ));
     }
-    if !(0..=100).contains(&input.handicap_allowance_percent) {
-        return Err(ApiError::BadRequest(
-            "handicap_allowance_percent must be between 0 and 100".to_owned(),
-        ));
-    }
+    validate_handicap_allowance(input.scoring_format, input.handicap_allowance_percent)?;
     match (input.course_id, input.tee_id) {
         (None, None) => {}
         (Some(course_id), Some(tee_id)) => {
@@ -217,4 +213,36 @@ async fn validate_create(
         }
     }
     Ok(())
+}
+
+fn validate_handicap_allowance(
+    scoring_format: ScoringFormat,
+    handicap_allowance_percent: i16,
+) -> ApiResult<()> {
+    if !(0..=100).contains(&handicap_allowance_percent) {
+        return Err(ApiError::BadRequest(
+            "handicap_allowance_percent must be between 0 and 100".to_owned(),
+        ));
+    }
+    if let Some(required) =
+        RoundFormatPolicy::for_format(scoring_format).required_allowance_percent()
+        && handicap_allowance_percent != required
+    {
+        return Err(ApiError::BadRequest(format!(
+            "handicap_allowance_percent must be {required} for two_player_foursomes"
+        )));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn direct_round_creation_requires_exact_foursomes_allowance() {
+        assert!(validate_handicap_allowance(ScoringFormat::TwoPlayerFoursomes, 50).is_ok());
+        assert!(validate_handicap_allowance(ScoringFormat::TwoPlayerFoursomes, 49).is_err());
+        assert!(validate_handicap_allowance(ScoringFormat::TeamScramble, 49).is_ok());
+    }
 }

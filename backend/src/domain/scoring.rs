@@ -39,6 +39,28 @@ pub fn scramble_playing_handicap(
     )
 }
 
+const COURSE_HANDICAP_DENOMINATOR: i64 = 1_130;
+const FOURSOMES_ALLOWANCE_PERCENT: i64 = 50;
+
+pub fn foursomes_playing_handicap(course_handicap_numerators: &[i64]) -> Result<i32, ScoringError> {
+    let [first, second] = course_handicap_numerators else {
+        return Err(ScoringError::InvalidTeamSize);
+    };
+    let numerator = first
+        .checked_add(*second)
+        .and_then(|sum| sum.checked_mul(FOURSOMES_ALLOWANCE_PERCENT))
+        .ok_or(ScoringError::ArithmeticOverflow)?;
+    let rounded =
+        round_ratio_half_toward_positive_infinity(numerator, COURSE_HANDICAP_DENOMINATOR * 100);
+    i32::try_from(rounded).map_err(|_| ScoringError::ArithmeticOverflow)
+}
+
+fn round_ratio_half_toward_positive_infinity(numerator: i64, denominator: i64) -> i64 {
+    let quotient = numerator.div_euclid(denominator);
+    let remainder = numerator.rem_euclid(denominator);
+    quotient + i64::from(remainder * 2 >= denominator)
+}
+
 fn round_ratio_half_away_from_zero(numerator: i64, denominator: i64) -> i64 {
     let sign = numerator.signum();
     let absolute = numerator.abs();
@@ -51,6 +73,8 @@ fn round_ratio_half_away_from_zero(numerator: i64, denominator: i64) -> i64 {
 pub enum ScoringError {
     #[error("the initial scramble formula requires exactly two players")]
     InvalidTeamSize,
+    #[error("handicap arithmetic exceeded its supported range")]
+    ArithmeticOverflow,
     #[error("a score must belong to either one player or one team")]
     InvalidScoreOwner,
     #[error("ordinary score changes are not allowed after a round is locked")]
@@ -134,6 +158,31 @@ mod tests {
         );
         assert_eq!(scramble_playing_handicap(&[8, 20], 75), Ok(5));
         assert_eq!(scramble_playing_handicap(&[5, 5], 50), Ok(2));
+    }
+
+    #[test]
+    fn foursomes_applies_fifty_percent_once_without_intermediate_rounding() {
+        assert_eq!(foursomes_playing_handicap(&[16_385, 2_825]), Ok(9));
+        // Rounding the members first would yield (1 + 2) * 50% = 1.5 -> 2.
+        assert_eq!(foursomes_playing_handicap(&[678, 1_808]), Ok(1));
+    }
+
+    #[test]
+    fn foursomes_half_rounding_moves_plus_handicaps_toward_zero() {
+        assert_eq!(foursomes_playing_handicap(&[2_260, 3_390]), Ok(3));
+        assert_eq!(foursomes_playing_handicap(&[-2_260, -3_390]), Ok(-2));
+    }
+
+    #[test]
+    fn foursomes_extreme_inputs_return_overflow_instead_of_panicking() {
+        assert_eq!(
+            foursomes_playing_handicap(&[i64::MAX, 1]),
+            Err(ScoringError::ArithmeticOverflow)
+        );
+        assert_eq!(
+            foursomes_playing_handicap(&[i64::MAX / 2, 0]),
+            Err(ScoringError::ArithmeticOverflow)
+        );
     }
 
     #[test]

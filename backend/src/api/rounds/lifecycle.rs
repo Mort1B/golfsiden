@@ -59,6 +59,7 @@ fn map_open_error(error: OpenRoundError) -> ApiError {
             ApiError::Conflict("round must be draft".to_owned())
         }
         OpenRoundError::NotReady(_) => ApiError::Conflict("round is not ready to open".to_owned()),
+        OpenRoundError::Scoring(_) => ApiError::Internal,
         OpenRoundError::Authorization(error) => map_authorization_error(error),
         OpenRoundError::Database(error) => ApiError::Database(error),
     }

@@ -3,6 +3,7 @@ import type { FieldErrors } from './validation'
 import type { RoundDraft, TournamentDraft } from './wizardState'
 import { FieldError, WizardControls } from './WizardControls'
 import type { RefObject } from 'react'
+import { isScoringFormat } from '../../api/scoringFormats'
 
 interface RoundsStepProps {
   tournament: TournamentDraft
@@ -43,9 +44,12 @@ export function RoundsStep(props: RoundsStepProps) {
               </label>
               <label>
                 <span>Spilleform</span>
-                <select value={round.scoringFormat} onChange={(event) => props.onChange(round.key, { scoringFormat: event.target.value === 'team_scramble' ? 'team_scramble' : 'individual_stroke_play' })}>
+                <select value={round.scoringFormat} onChange={(event) => {
+                  if (isScoringFormat(event.target.value)) props.onChange(round.key, { scoringFormat: event.target.value })
+                }}>
                   <option value="individual_stroke_play">Individuell slagkonkurranse</option>
                   <option value="team_scramble">Lagscramble (to spillere)</option>
+                  <option value="two_player_foursomes">Foursomes (to spillere)</option>
                 </select>
               </label>
             </fieldset>

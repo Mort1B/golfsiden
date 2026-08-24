@@ -5,7 +5,7 @@ use uuid::Uuid;
 use super::{EntrantFact, ReadinessFacts, push_if};
 use crate::domain::models::{
     ParticipantStatus, ReadinessFlightSize, ReadinessIssue, ReadinessIssueCode, ReadinessPlayer,
-    ReadinessTeamSize,
+    ReadinessTeamSize, ScoringFormat,
 };
 use crate::domain::round_formats::{RoundFormatPolicy, ScoreOwnerKind};
 
@@ -103,7 +103,7 @@ pub(super) fn validate(facts: &ReadinessFacts, issues: &mut Vec<ReadinessIssue>)
                 issues,
                 !missing_team_players.is_empty(),
                 ReadinessIssueCode::MissingTeamAssignment,
-                "every active entrant must be assigned to a scramble team",
+                "every active entrant must be assigned to a score-owning team",
             );
             push_if(
                 issues,
@@ -115,22 +115,36 @@ pub(super) fn validate(facts: &ReadinessFacts, issues: &mut Vec<ReadinessIssue>)
                 issues,
                 team_sizes.iter().any(|team| team.player_count == 0),
                 ReadinessIssueCode::EmptyTeam,
-                "scramble teams cannot be empty",
+                "score-owning teams cannot be empty",
             );
+            let (size_code, size_message) = match facts.scoring_format {
+                ScoringFormat::TeamScramble => (
+                    ReadinessIssueCode::InvalidScrambleTeamSize,
+                    "scramble teams must contain exactly two players",
+                ),
+                ScoringFormat::TwoPlayerFoursomes => (
+                    ReadinessIssueCode::InvalidFoursomesTeamSize,
+                    "foursomes teams must contain exactly two players",
+                ),
+                ScoringFormat::IndividualStrokePlay => (
+                    ReadinessIssueCode::InvalidScrambleTeamSize,
+                    "team-owned rounds must contain exact-size teams",
+                ),
+            };
             push_if(
                 issues,
                 team_sizes
                     .iter()
                     .any(|team| Some(team.player_count) != policy.exact_team_size()),
-                ReadinessIssueCode::InvalidScrambleTeamSize,
-                "scramble teams must contain exactly two players",
+                size_code,
+                size_message,
             );
             split_teams = find_split_teams(facts, &team_sizes);
             push_if(
                 issues,
                 !split_teams.is_empty(),
                 ReadinessIssueCode::TeamSplitAcrossFlights,
-                "each scramble team must be contained within one flight",
+                "each score-owning team must be contained within one flight",
             );
         }
     }

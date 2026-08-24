@@ -1,5 +1,6 @@
 import type { OwnerCompletionProgress, ScoreOwner, ScoreOwnerType } from '../../api/scorecards'
 import type { Round } from '../../api/types'
+import { ownerTypeForScoringFormat } from '../../api/scoringFormats'
 
 export type ScoreView = 'hole' | 'summary'
 export type ScoreHistoryAction = 'automatic' | 'previous' | 'next' | 'tournament' | 'round' | 'owner' | 'hole' | 'view'
@@ -64,5 +65,5 @@ export function replaceScoreHistory(action: ScoreHistoryAction): boolean {
 }
 
 export function expectedOwnerType(round: Round): ScoreOwnerType {
-  return round.scoring_format === 'individual_stroke_play' ? 'player' : 'team'
+  return ownerTypeForScoringFormat(round.scoring_format)
 }

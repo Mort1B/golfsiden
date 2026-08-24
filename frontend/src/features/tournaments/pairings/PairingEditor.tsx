@@ -1,9 +1,12 @@
 import { AlertTriangle, LockKeyhole, RefreshCw, Save } from 'lucide-react'
 import type { PairingDraftGroup, PairingDraft } from './draft'
 import type { Round } from '../../../api/types'
-import { legacyConversionReplacement, replacementFromDraft, scheduleFlightOptions, selectScheduleFlight, validateDraft } from './draft'
+import { scheduleFlightOptions, selectScheduleFlight } from './draft'
+import { legacyConversionReplacement, replacementFromDraft } from './serialization'
+import { validateDraft } from './validation'
 import { pairingFailureMessage, usePairingEditor } from './usePairingEditor'
 import { GroupEditor } from './GroupEditor'
+import { isTeamScoringFormat } from '../../../api/scoringFormats'
 
 interface Props { tournamentId: string; round: Round; expanded: boolean }
 
@@ -33,6 +36,7 @@ export function PairingEditor({ tournamentId, round, expanded }: Props) {
   const saving = state.mutation.isPending
   const locked = pairings.status !== 'draft'
   const hasLegacy = pairings.legacy_individual_groups.length > 0
+  const isTeamFormat = isTeamScoringFormat(pairings.scoring_format)
   const validation = validateDraft(draft, pairings)
   const save = () => {
     if (validation.blocking.length > 0 || locked || state.reloadConflict) return
@@ -45,9 +49,9 @@ export function PairingEditor({ tournamentId, round, expanded }: Props) {
     {pairingFailureMessage(state.failure) && <p className="pairing-save-error" role="alert">{pairingFailureMessage(state.failure)}</p>}
     {hasLegacy ? <LegacyConversion groups={pairings.legacy_individual_groups} disabled={saving || locked || state.reloadConflict} onConvert={convert} /> : <>
       {pairings.active_entrants.length === 0 && <p className="pairing-empty">Ingen aktive deltakere kan tildeles i denne runden.</p>}
-      {pairings.scoring_format === 'team_scramble' && <GroupEditor kind="team" idScope={round.id} draft={draft} entrants={pairings.active_entrants} inactiveEntrants={pairings.inactive_entrants} disabled={saving || locked || state.reloadConflict} onChange={state.edit} />}
+      {isTeamFormat && <GroupEditor kind="team" idScope={round.id} draft={draft} entrants={pairings.active_entrants} inactiveEntrants={pairings.inactive_entrants} disabled={saving || locked || state.reloadConflict} onChange={state.edit} />}
       <GroupEditor kind="flight" idScope={round.id} draft={draft} entrants={pairings.active_entrants} inactiveEntrants={pairings.inactive_entrants} disabled={saving || locked || state.reloadConflict} onChange={state.edit} />
-      {pairings.scoring_format === 'team_scramble' && <ScheduleTransfers draft={draft} disabled={saving || locked || state.reloadConflict} onChange={state.edit} />}
+      {isTeamFormat && <ScheduleTransfers draft={draft} disabled={saving || locked || state.reloadConflict} onChange={state.edit} />}
       {pairings.inactive_entrants.length > 0 && <div className="pairing-inactive"><strong>Inaktive deltakere</strong><p>Disse kan ikke legges til på nytt: {pairings.inactive_entrants.map((entrant) => entrant.display_name).join(', ')}.</p></div>}
       {validation.unresolved.length > 0 && <div className="pairing-unresolved" role="status"><strong>Ikke klart for åpning</strong><ul>{validation.unresolved.map((issue) => <li key={issue}>{issue}</li>)}</ul><p>Ufullstendige oppsett kan lagres. Backendens åpningskontroll er autoritativ.</p></div>}
       {validation.blocking.length > 0 && <div className="pairing-validation" role="alert"><strong>Rett før lagring</strong><ul>{validation.blocking.map((issue) => <li key={issue}>{issue}</li>)}</ul></div>}

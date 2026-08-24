@@ -197,6 +197,65 @@ async fn open_latest_round(pool: &PgPool) {
 }
 
 #[sqlx::test(migrations = "../migrations")]
+async fn foursomes_round_and_tournament_leaderboards_use_preserved_team_snapshots(pool: PgPool) {
+    seed(&pool).await;
+    sqlx::query(
+        "UPDATE rounds SET scoring_format = 'two_player_foursomes', handicap_allowance_percent = 50 WHERE id = $1",
+    )
+    .bind(ROUND_TWO)
+    .execute(&pool)
+    .await
+    .unwrap();
+    open(&pool, ROUND_TWO).await;
+    for team_id in [TEAM_TWO_A, TEAM_TWO_B] {
+        for hole_id in [HOLE_ONE, HOLE_TWO] {
+            save(
+                &pool,
+                ROUND_TWO,
+                hole_id,
+                ScoreOwner::Team { id: team_id },
+                5,
+            )
+            .await;
+        }
+        scorecards::confirm(&pool, ROUND_TWO, ScoreOwner::Team { id: team_id }, USER)
+            .await
+            .unwrap();
+    }
+    round_completion::complete(&pool, ROUND_TWO).await.unwrap();
+
+    let app = api::router(AppState::new(pool));
+    let (status, response) = get(&app, format!("/api/rounds/{ROUND_TWO}/leaderboards/net")).await;
+    assert_eq!(status, StatusCode::OK);
+    let entries = response["entries"].as_array().unwrap();
+    let low_pair = entries
+        .iter()
+        .find(|entry| entry["owner"]["id"] == TEAM_TWO_A.to_string())
+        .unwrap();
+    let mixed_pair = entries
+        .iter()
+        .find(|entry| entry["owner"]["id"] == TEAM_TWO_B.to_string())
+        .unwrap();
+    assert_eq!(low_pair["playing_handicap"], 14);
+    assert_eq!(mixed_pair["playing_handicap"], 2);
+
+    let (status, tournament) = get(
+        &app,
+        format!("/api/tournaments/{TOURNAMENT}/leaderboards/net"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let ada = tournament["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["player_id"] == PLAYER_A.to_string())
+        .unwrap();
+    assert_eq!(ada["completed_rounds"], 1);
+    assert_eq!(ada["net_total"], -4);
+}
+
+#[sqlx::test(migrations = "../migrations")]
 async fn round_api_handles_draft_missing_partial_plus_handicap_and_exact_contract(pool: PgPool) {
     seed(&pool).await;
     open(&pool, ROUND_ONE).await;

@@ -3,14 +3,13 @@ import type { RoundPairings } from '../../../api/pairings'
 import {
   assignEntrant,
   draftFromPairings,
-  legacyConversionReplacement,
   moveMember,
   pairingsFingerprint,
-  replacementFromDraft,
   scheduleFlightOptions,
   selectScheduleFlight,
-  validateDraft,
 } from './draft'
+import { legacyConversionReplacement, replacementFromDraft } from './serialization'
+import { validateDraft } from './validation'
 
 const ids = {
   round: '00000000-0000-0000-0000-000000000001', tournament: '00000000-0000-0000-0000-000000000002',
@@ -160,5 +159,17 @@ describe('pairing draft', () => {
     expect(validation.unresolved).toEqual([
       '2 aktive spillere mangler flight.', '2 aktive spillere mangler lag.',
     ])
+  })
+
+  it('treats foursomes as an exact two-player team format', () => {
+    const pairings = aggregate('two_player_foursomes')
+    const draft = draftFromPairings(pairings)
+    expect(replacementFromDraft(draft, pairings.scoring_format).teams).toHaveLength(1)
+    expect(validateDraft(draft, pairings).unresolved).toEqual([])
+    const firstTeam = draft.teams[0]
+    if (!firstTeam) throw new Error('expected team fixture')
+    const incomplete = { ...draft, teams: [{ ...firstTeam, memberIds: [ids.one] }] }
+    expect(validateDraft(incomplete, pairings).unresolved)
+      .toContain('1 foursomes-lag har ikke nøyaktig to spillere.')
   })
 })

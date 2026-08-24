@@ -14,22 +14,31 @@ pub enum ScoreOwnerKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SnapshotHandicapPolicy {
     UncappedIndividualRoundAllowance,
+    UncappedCourseHandicap,
     IndexCappedCourseHandicap { maximum_index_tenths: i32 },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TeamPlayingHandicap {
     Scramble35And15,
+    FoursomesCombinedUnrounded50Percent,
 }
 
 impl TeamPlayingHandicap {
+    pub const fn uses_preserved_team_snapshot(self) -> bool {
+        matches!(self, Self::FoursomesCombinedUnrounded50Percent)
+    }
+
     pub fn calculate(
         self,
         course_handicaps: &[i32],
         allowance_percent: i16,
-    ) -> Result<i32, ScoringError> {
+    ) -> Result<Option<i32>, ScoringError> {
         match self {
-            Self::Scramble35And15 => scramble_playing_handicap(course_handicaps, allowance_percent),
+            Self::Scramble35And15 => {
+                scramble_playing_handicap(course_handicaps, allowance_percent).map(Some)
+            }
+            Self::FoursomesCombinedUnrounded50Percent => Ok(None),
         }
     }
 }
@@ -58,6 +67,11 @@ impl RoundFormatPolicy {
                     maximum_index_tenths: SCRAMBLE_MAX_INDEX_TENTHS,
                 },
                 team_playing_handicap: TeamPlayingHandicap::Scramble35And15,
+            },
+            ScoringFormat::TwoPlayerFoursomes => Self::TeamOwned {
+                exact_team_size: 2,
+                snapshot_handicap: SnapshotHandicapPolicy::UncappedCourseHandicap,
+                team_playing_handicap: TeamPlayingHandicap::FoursomesCombinedUnrounded50Percent,
             },
         }
     }
@@ -89,7 +103,8 @@ impl RoundFormatPolicy {
 
     pub fn effective_index_tenths(self, registered_tenths: i32) -> i32 {
         match self.snapshot_handicap() {
-            SnapshotHandicapPolicy::UncappedIndividualRoundAllowance => registered_tenths,
+            SnapshotHandicapPolicy::UncappedIndividualRoundAllowance
+            | SnapshotHandicapPolicy::UncappedCourseHandicap => registered_tenths,
             SnapshotHandicapPolicy::IndexCappedCourseHandicap {
                 maximum_index_tenths,
             } => registered_tenths.min(maximum_index_tenths),
@@ -106,9 +121,27 @@ impl RoundFormatPolicy {
             Self::TeamOwned {
                 team_playing_handicap,
                 ..
-            } => team_playing_handicap
-                .calculate(course_handicaps, allowance_percent)
-                .map(Some),
+            } => team_playing_handicap.calculate(course_handicaps, allowance_percent),
+        }
+    }
+
+    pub const fn required_allowance_percent(self) -> Option<i16> {
+        match self {
+            Self::TeamOwned {
+                team_playing_handicap: TeamPlayingHandicap::FoursomesCombinedUnrounded50Percent,
+                ..
+            } => Some(50),
+            _ => None,
+        }
+    }
+
+    pub const fn requires_preserved_team_handicap_snapshot(self) -> bool {
+        match self {
+            Self::TeamOwned {
+                team_playing_handicap,
+                ..
+            } => team_playing_handicap.uses_preserved_team_snapshot(),
+            Self::PlayerOwned { .. } => false,
         }
     }
 }
@@ -146,5 +179,15 @@ mod tests {
             }
         );
         assert_eq!(policy.team_playing_handicap(&[10, 20], 100), Ok(Some(7)));
+    }
+
+    #[test]
+    fn foursomes_policy_is_exact_two_player_team_with_fixed_allowance() {
+        let policy = RoundFormatPolicy::for_format(ScoringFormat::TwoPlayerFoursomes);
+        assert_eq!(policy.owner_kind(), ScoreOwnerKind::Team);
+        assert_eq!(policy.exact_team_size(), Some(2));
+        assert_eq!(policy.effective_index_tenths(540), 540);
+        assert_eq!(policy.required_allowance_percent(), Some(50));
+        assert!(policy.requires_preserved_team_handicap_snapshot());
     }
 }

@@ -22,9 +22,10 @@ const MIGRATIONS_1_TO_9: [&str; 9] = [
     include_str!("../../migrations/0009_username_accounts_fixed_handicaps.sql"),
 ];
 const MIGRATION_10: &str = include_str!("../../migrations/0010_course_revisions.sql");
-const CURRENT_MIGRATIONS_AFTER_10: [&str; 2] = [
+const CURRENT_MIGRATIONS_AFTER_10: [&str; 3] = [
     include_str!("../../migrations/0011_round_flights.sql"),
     include_str!("../../migrations/0012_remove_flight_scorekeepers.sql"),
+    include_str!("../../migrations/0013_two_player_foursomes.sql"),
 ];
 
 fn command(source: CourseRevisionSource) -> CourseRevisionCommand {

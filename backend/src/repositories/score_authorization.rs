@@ -113,6 +113,7 @@ async fn resolve_owners(
                 privileged,
                 player_id,
                 i64::from(exact_team_size),
+                RoundFormatPolicy::for_format(format).requires_preserved_team_handicap_snapshot(),
             )
             .await?;
             Ok(ids.into_iter().map(|id| ScoreOwner::Team { id }).collect())
@@ -161,6 +162,7 @@ async fn team_owner_ids(
     privileged: bool,
     player_id: Option<Uuid>,
     exact_team_size: i64,
+    requires_team_snapshot: bool,
 ) -> Result<Vec<Uuid>, sqlx::Error> {
     sqlx::query_scalar(
         "SELECT t.id
@@ -171,6 +173,13 @@ async fn team_owner_ids(
              WHERE member_tm.round_id = t.round_id
                AND member_tm.team_id = t.id
            ) = $4
+           AND (
+             NOT $5
+             OR EXISTS (
+               SELECT 1 FROM round_team_handicap_snapshots rths
+               WHERE rths.round_id = t.round_id AND rths.team_id = t.id
+             )
+           )
            AND (
              SELECT count(*)
              FROM team_memberships eligible_tm
@@ -215,6 +224,7 @@ async fn team_owner_ids(
     .bind(privileged)
     .bind(player_id)
     .bind(exact_team_size)
+    .bind(requires_team_snapshot)
     .fetch_all(connection)
     .await
 }

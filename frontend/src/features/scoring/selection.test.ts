@@ -49,13 +49,14 @@ describe('scoring selection', () => {
     expect(scoreableRounds([round(1, 'draft'), round(2, 'open')]).map((item) => item.round_number)).toEqual([2])
   })
 
-  it('validates requested individual and scramble owners against authority order', () => {
+  it('validates requested owners for all formats against authority order', () => {
     const owners = [owner('team', 'team-a'), owner('team', 'team-b')]
     expect(selectedOwner(owners, 'team', 'team-b')?.owner.id).toBe('team-b')
     expect(selectedOwner(owners, 'player', 'team-b')?.owner.id).toBe('team-a')
     expect(selectedOwner([], 'team', 'team-b')).toBeUndefined()
     expect(expectedOwnerType(round(1, 'open'))).toBe('player')
     expect(expectedOwnerType(round(1, 'open', 'team_scramble'))).toBe('team')
+    expect(expectedOwnerType(round(1, 'open', 'two_player_foursomes'))).toBe('team')
   })
 
   it('preserves a requested read-only owner but prefers a writable default', () => {

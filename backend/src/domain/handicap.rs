@@ -29,8 +29,12 @@ pub fn calculate(
         };
     }
 
-    let numerator = i64::from(handicap_index_tenths) * i64::from(slope_rating)
-        + i64::from(course_rating_tenths - i32::from(course_par) * 10) * 113;
+    let numerator = course_handicap_numerator(
+        handicap_index_tenths,
+        slope_rating,
+        course_rating_tenths,
+        course_par,
+    );
     let denominator = 1_130;
     let course_handicap = round_ratio_half_away_from_zero(numerator, denominator);
     let playing_handicap = match RoundFormatPolicy::for_format(scoring_format).snapshot_handicap() {
@@ -40,6 +44,7 @@ pub fn calculate(
                 denominator * 100,
             )
         }
+        SnapshotHandicapPolicy::UncappedCourseHandicap => course_handicap,
         SnapshotHandicapPolicy::IndexCappedCourseHandicap { .. } => course_handicap,
     };
 
@@ -47,6 +52,16 @@ pub fn calculate(
         course_handicap: course_handicap as i16,
         playing_handicap: playing_handicap as i16,
     }
+}
+
+pub fn course_handicap_numerator(
+    handicap_index_tenths: i32,
+    slope_rating: i16,
+    course_rating_tenths: i32,
+    course_par: i16,
+) -> i64 {
+    i64::from(handicap_index_tenths) * i64::from(slope_rating)
+        + i64::from(course_rating_tenths - i32::from(course_par) * 10) * 113
 }
 
 fn round_ratio_half_away_from_zero(numerator: i64, denominator: i64) -> i64 {

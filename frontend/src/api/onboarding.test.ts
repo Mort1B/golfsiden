@@ -106,6 +106,30 @@ describe('creator onboarding API', () => {
     })).toThrow('rounds[1].id')
   })
 
+  it('accepts derived foursomes defaults and team scoring mode', () => {
+    const foursomes = {
+      ...response,
+      tournament: { ...response.tournament, scoring_mode: 'team' },
+      rounds: [{
+        ...response.rounds[0],
+        scoring_format: 'two_player_foursomes',
+        handicap_allowance_percent: 50,
+      }],
+    }
+    expect(decodeOnboardingResponse(foursomes).rounds[0]).toMatchObject({
+      scoring_format: 'two_player_foursomes',
+      handicap_allowance_percent: 50,
+    })
+    expect(() => decodeOnboardingResponse({
+      ...foursomes,
+      rounds: [{ ...foursomes.rounds[0], handicap_allowance_percent: 100 }],
+    })).toThrow('defaults')
+    expect(() => decodeOnboardingResponse({
+      ...response,
+      rounds: [{ ...response.rounds[0], scoring_format: 'greensomes' }],
+    })).toThrow('scoring_format')
+  })
+
   it('posts the exact nested request once', async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify(response), {
       status: 201,
