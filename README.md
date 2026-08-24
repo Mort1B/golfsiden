@@ -60,8 +60,11 @@ cargo run -p golf-api --bin seed
 ```
 
 The seed creates one admin identity, eight linked player accounts, one course
-with 18 holes, a five-round tournament, and different two-player teams for
-rounds one and two. Development credentials are:
+with 18 holes, and a five-round tournament whose pairings are ready to open.
+Each round has two four-player flights starting on holes 1 and 10. Scramble
+rounds one, two, and four have four two-player score-owner teams; individual
+rounds three and five use flights only. The player rotations change between
+rounds. Development credentials are:
 
 - Admin username: `admin`
 - Player usernames: `anders`, `bjarne`, `christian`, `daniel`, `eirik`,
@@ -158,10 +161,11 @@ still requires rotation. Request throttling is required before public
 deployment. The backend now exposes a private consolidated team/flight roster and
 an atomic admin replacement endpoint for draft rounds. Flight-aware validation
 and opening require complete assignments and keep scramble teams within one
-flight. The remaining tournament settings, pairing UI, representative seed
-assignments, flight-member score authority, offline scoring, and locked-round
-score corrections remain deferred. Flights are explicit and are never inferred
-from matching tee times or starting holes.
+flight; the development seed supplies representative ready assignments for all
+five rounds. The remaining tournament settings, pairing UI, flight-member score
+authority, offline scoring, and locked-round score corrections remain deferred.
+Flights are explicit and are never inferred from matching tee times or starting
+holes.
 
 Migration `0009` removes account email after deterministically deriving usernames
 for existing accounts. Back up production data and retain the generated username

@@ -22,6 +22,10 @@ const MIGRATIONS_1_TO_9: [&str; 9] = [
     include_str!("../../migrations/0009_username_accounts_fixed_handicaps.sql"),
 ];
 const MIGRATION_10: &str = include_str!("../../migrations/0010_course_revisions.sql");
+const CURRENT_MIGRATIONS_AFTER_10: [&str; 2] = [
+    include_str!("../../migrations/0011_round_flights.sql"),
+    include_str!("../../migrations/0012_remove_flight_scorekeepers.sql"),
+];
 
 fn command(source: CourseRevisionSource) -> CourseRevisionCommand {
     CourseRevisionCommand {
@@ -397,6 +401,9 @@ async fn upgraded_deterministic_seed_is_backfilled_and_idempotently_finalized(po
     .await
     .unwrap();
     sqlx::raw_sql(MIGRATION_10).execute(&pool).await.unwrap();
+    for migration in CURRENT_MIGRATIONS_AFTER_10 {
+        sqlx::raw_sql(migration).execute(&pool).await.unwrap();
+    }
 
     for _ in 0..2 {
         sqlx::raw_sql(include_str!("../seed.sql"))

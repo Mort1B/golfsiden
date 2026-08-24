@@ -401,9 +401,18 @@ remain score-owner/history identities. A scheduled retained scramble team clears
 its schedule only when all its members are explicitly placed in one requested
 flight carrying the same starting hole and tee time; equal facts never infer the
 relationship. The old granular team-create/member routes are retired, while the
-member-readable team GET remains for compatibility. Opening readiness, seed
-assignments, frontend editing, and membership-wide scoring authority remain
-separate follow-up work.
+member-readable team GET remains for compatibility. Frontend editing and
+membership-wide scoring authority remain separate follow-up work.
+
+The idempotent development seed now demonstrates that model across all five
+draft rounds. Each round has two deterministic four-player flights scheduled on
+starting holes 1 and 10, with changing player rotations. Scramble rounds one,
+two, and four each retain four two-player score-owner teams wholly contained in
+their flights; individual rounds three and five contain flights but no teams.
+Rerunning the seed backfills only nonconflicting deterministic rows. It converts
+the old seed's team-level starting holes to flight schedules only while the exact
+known draft team, membership, and flight facts match, and it skips frozen rounds
+without bypassing pairing locks.
 
 ## Fixed tournament handicaps
 
@@ -501,7 +510,7 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 - Tournament settings, pairing, and lifecycle editors are not implemented. The
   Courses section supports draft-round configuration; non-draft rounds are
   deliberately read-only.
-- Pairing roster reads, atomic admin replacement, and flight-aware opening
-  readiness exist, but seed assignments, frontend editing, and membership-wide
-  scoring authority are not implemented. There is also no offline score queue or
-  public leaderboard link.
+- Pairing roster reads, atomic admin replacement, flight-aware opening readiness,
+  and representative ready seed assignments exist, but frontend editing and
+  membership-wide scoring authority are not implemented. There is also no
+  offline score queue or public leaderboard link.

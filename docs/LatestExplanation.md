@@ -1,87 +1,74 @@
 # Latest explanation
 
-## Flight-aware readiness and opening
+## Representative deterministic seed pairings
 
-Pairing validation and transactional round opening now share one flight-aware
-domain decision. The lifecycle code was split before adding the rules: focused
-domain modules own pairing and course configuration validation, while focused
-repository modules own fact loading and the locked opening transaction. Every
-production lifecycle file is comfortably below the 400-line limit.
+The development tournament now demonstrates the complete flight-aware pairing
+model instead of stopping at course, entrant, and partial team data. All five
+rounds are ready under the same repository validation used by round opening.
 
-An entrant is eligible only when both the tournament entry and global player are
-active. Every eligible entrant must be assigned to exactly one nonempty flight;
-withdrawn or inactive entrants cannot remain in a flight.
+Each round has two four-player flights. Flight 1 starts on hole 1 and Flight 2
+starts on hole 10, while player membership rotates between rounds. Scramble
+rounds one, two, and four each have four two-player score-owner teams, with two
+complete teams contained in each flight. Individual rounds three and five have
+no teams because their players own their scorecards directly; flights provide
+grouping only.
 
-Format-specific rules stay explicit:
+This preserves the central boundary: teams own shared scramble scores, while
+flights own scheduling and determine future membership-wide scoring access.
+This seed step does not grant that runtime score permission.
 
-- Individual stroke play uses player-owned scores and requires no teams. Any
-  remaining individual-round team is a legacy grouping and blocks opening until
-  it is converted through the pairing API.
-- Team scramble retains round-specific teams as shared score owners. Every
-  eligible entrant must belong to one exactly two-player team, and both team
-  members must be contained in the same flight. A flight may contain multiple
-  complete teams.
+## Safe refresh behavior
 
-Starting hole, tee time, names, and equal schedule values never establish team
-containment. Only stored member identities do.
+The seed remains one transaction and can be run repeatedly. Every pairing insert
+joins the exact seeded parent round while it is still draft before the statement
+reaches the database pairing triggers. A frozen round therefore produces no
+attempted pairing mutation, rather than relying on `ON CONFLICT` after a trigger
+has already rejected the statement.
 
-## Additive validation contract
+Missing deterministic rows are added only when they do not conflict with an
+existing player assignment. The previous development seed stored starting holes
+on its first eight teams. Those known values are cleared only when the round is
+draft and the exact team identity, two-player membership, matching four-player
+flight, and schedule all agree:
 
-Existing readiness fields and codes remain present. For compatibility,
-`team_sizes` still lists stored legacy individual teams even though team missing/
-ineligible rules now apply only to scramble. The response adds:
-
-```json
-{
-  "missing_flight_players": [],
-  "ineligible_flight_players": [],
-  "flight_sizes": [
-    { "flight_id": "uuid", "flight_name": "Flight 1", "player_count": 4 }
-  ],
-  "legacy_individual_groups": [],
-  "split_teams": []
-}
+```sql
+UPDATE teams seeded_team
+SET starting_hole = NULL
+FROM seeded_schedule schedule
+JOIN rounds seeded_round
+  ON seeded_round.id = schedule.round_id
+ AND seeded_round.status = 'draft'
+JOIN flights seeded_flight
+  ON seeded_flight.id = schedule.flight_id
+WHERE seeded_team.id = schedule.team_id
+  AND seeded_team.starting_hole = schedule.starting_hole;
 ```
 
-The new stable issue codes are `missing_flight_assignment`,
-`ineligible_flight_assignment`, `empty_flight`,
-`legacy_individual_groups_present`, and `team_split_across_flights`. Detail arrays
-and issue ordering are deterministic. A team with one member missing a flight is
-reported as missing assignment, not falsely as split.
+The production statement adds the exact tournament, name, tee-time, membership,
+and flight-size guards omitted from this compact example. That schedule
+conversion leaves edited or partially conflicting facts alone; the insert
+backfills neither delete nor overwrite rows, and no frozen-round trigger is
+bypassed.
 
-## Opening transaction
+## Coverage and validation
 
-The private validation GET uses repeatable-read membership authorization. Opening
-locks the round first, then the tournament and entrant rows, loads teams and
-flights, and applies the same pure validator. Existing pairing triggers acquire
-the parent round lock, so a mutation that commits first is observed by opening;
-opening that owns the lock first freezes the waiting mutation.
+The focused PostgreSQL seed test now proves exact rotations and stable totals of
+12 teams, 24 team memberships, 10 flights, and 40 flight memberships. It also
+checks that individual rounds remain team-free, every scramble team is exactly
+two players contained in one flight, and all five rounds pass shipped pairing
+readiness. The test recreates the old round-two draft seed before refreshing it,
+then opens round one and reruns the seed to prove frozen pairings remain
+unchanged.
 
-Failed opening writes no handicap snapshots, changes no status, and emits no SSE.
-A ready round captures the same preserved handicap facts as before, changes to
-open, commits, and publishes one payload-free round event. Scoring ownership,
-handicap formulas, completion, leaderboards, and historical current-team reads
-are unchanged.
-
-## Validation
-
-Pure lifecycle coverage now includes ready individual/scramble facts, legacy
-groups, missing/ineligible/empty flights, exact scramble team sizes, multiple
-teams in one flight, true split teams, missing-without-false-split behavior, and
-unchanged course facts. Independent validation passed 6 focused pure tests and
-39 focused PostgreSQL tests, including lifecycle 12/12, pairings 13/13, flight
-migration 7/7, and leaderboards 7/7. The standard workspace passed 64 tests and
-the complete database-enabled workspace passed 191/191. Formatting, all-target/
-all-feature checking, Clippy with warnings denied, and `git diff --check` passed.
-
-A fresh migration build applied versions 1–12 to an isolated PostgreSQL 17.10
-database. The unchanged seed ran twice idempotently with one tournament, eight
-players, five rounds, eight teams, sixteen team memberships, and intentionally
-zero flights or flight memberships. The isolated database and temporary build
-target were removed.
+Validation passed formatting, whitespace checks, Clippy with warnings denied,
+all 64 standard workspace tests, and all 191 PostgreSQL-enabled tests. The latter
+includes the focused seed test and all ten course-revision tests. The historical
+course-revision fixture still proves its version-10 upgrade behavior, then brings
+that test database through migrations 11 and 12 before executing the current
+flight-aware seed.
 
 ## Next boundary
 
-Populate representative development seed flights and teams, then build the
-mobile roster editor. Membership-wide score listing/mutation authority remains a
-separate later boundary; this readiness step grants no score permission.
+Build the mobile roster editor for teams, flights, membership, starting holes,
+and tee times. Extending score-access listing and score mutations to every exact
+flight member remains the following separately approved step.
