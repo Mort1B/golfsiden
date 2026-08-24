@@ -46,6 +46,42 @@
   color: #176640;
 }
 
+.counted-rounds-choice {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 20px;
+  padding: 14px;
+  border: 1px solid #cbd5cd;
+  border-radius: 8px;
+  background: #f7faf7;
+}
+
+.counted-rounds-choice label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px;
+  align-items: center;
+  gap: 12px;
+  color: #35433b;
+  font-size: .86rem;
+  font-weight: 750;
+}
+
+.counted-rounds-choice select {
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid #aeb8b1;
+  border-radius: 6px;
+  background: #fff;
+  color: #17201c;
+}
+
+.counted-rounds-choice p {
+  color: #68736c;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
 .review-summary {
   display: grid;
   margin: 0;

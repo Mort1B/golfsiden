@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   decodeMyTournaments,
+  decodeTournament,
   decodeTournamentHandicapCorrection,
   decodeTournamentPlayerRoster,
   tournamentApi,
@@ -16,6 +17,7 @@ const tournament: Tournament = {
   start_date: '2026-09-01',
   end_date: '2026-09-02',
   number_of_rounds: 2,
+  counted_rounds: 1,
   status: 'draft',
   scoring_mode: 'combined',
   created_at: '2026-08-16T12:00:00Z',
@@ -46,6 +48,13 @@ describe('tournament memberships', () => {
 
   it('rejects global or unknown roles', () => {
     expect(() => decodeMyTournaments([{ tournament, role: 'platform_admin', player_id: null }])).toThrow('role')
+  })
+
+  it('requires counted rounds within the configured tournament range', () => {
+    expect(decodeTournament(tournament).counted_rounds).toBe(1)
+    expect(() => decodeTournament({ ...tournament, counted_rounds: 0 })).toThrow('counted_rounds')
+    expect(() => decodeTournament({ ...tournament, counted_rounds: 3 })).toThrow('counted_rounds')
+    expect(() => decodeTournament({ ...tournament, counted_rounds: undefined })).toThrow('counted_rounds')
   })
 
   it('uses stable hierarchical cache keys', () => {
@@ -105,5 +114,26 @@ describe('tournament memberships', () => {
         body: JSON.stringify({ handicap_index: 13.8, reason: 'Feil ved påmelding' }),
       },
     )
+  })
+
+  it('patches counted rounds with the optimistic tournament timestamp', async () => {
+    const updated = { ...tournament, counted_rounds: 2, updated_at: '2026-08-16T13:00:00Z' }
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(updated), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(tournamentApi.updateCountedRounds(tournament.id, {
+      counted_rounds: 2,
+      expected_tournament_updated_at: tournament.updated_at,
+    }, 'csrf-token')).resolves.toEqual(updated)
+
+    expect(fetchMock).toHaveBeenCalledWith(`/api/tournaments/${tournament.id}/counted-rounds`, {
+      credentials: 'include',
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', 'x-csrf-token': 'csrf-token' },
+      body: JSON.stringify({
+        counted_rounds: 2,
+        expected_tournament_updated_at: tournament.updated_at,
+      }),
+    })
   })
 })

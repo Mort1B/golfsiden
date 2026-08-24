@@ -12,6 +12,7 @@ const tournament: Tournament = {
   start_date: '2026-09-01',
   end_date: '2026-09-04',
   number_of_rounds: 3,
+  counted_rounds: 2,
   status: 'draft',
   scoring_mode: 'combined',
   created_at: '2026-01-01T00:00:00Z',

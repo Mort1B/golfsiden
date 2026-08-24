@@ -26,6 +26,8 @@ export interface CreatorDraft {
 export interface WizardDraft {
   tournament: TournamentDraft
   rounds: RoundDraft[]
+  countedRounds: number
+  countedRoundsMode: 'all' | 'custom'
   creator: CreatorDraft
   nextRoundKey: number
 }
@@ -41,6 +43,8 @@ export function createInitialDraft(today = localDateString()): WizardDraft {
   return {
     tournament: { name: '', description: '', startDate: today, endDate: today },
     rounds: [{ key: 'round-1', name: 'Runde 1', date: today, scoringFormat: 'individual_stroke_play' }],
+    countedRounds: 1,
+    countedRoundsMode: 'all',
     creator: { displayName: '', username: '', password: '', handicap: '' },
     nextRoundKey: 2,
   }
@@ -50,8 +54,12 @@ export function addRound(draft: WizardDraft): WizardDraft {
   if (draft.rounds.length >= 30) return draft
   const number = draft.rounds.length + 1
   const previous = draft.rounds[draft.rounds.length - 1]
+  const countedRounds = draft.countedRoundsMode === 'all'
+    ? number
+    : draft.countedRounds
   return {
     ...draft,
+    countedRounds,
     nextRoundKey: draft.nextRoundKey + 1,
     rounds: [...draft.rounds, {
       key: `round-${draft.nextRoundKey}`,
@@ -64,7 +72,17 @@ export function addRound(draft: WizardDraft): WizardDraft {
 
 export function removeRound(draft: WizardDraft, key: string): WizardDraft {
   if (draft.rounds.length === 1) return draft
-  return { ...draft, rounds: draft.rounds.filter((round) => round.key !== key) }
+  const rounds = draft.rounds.filter((round) => round.key !== key)
+  return { ...draft, rounds, countedRounds: Math.min(draft.countedRounds, rounds.length) }
+}
+
+export function updateCountedRounds(draft: WizardDraft, countedRounds: number): WizardDraft {
+  if (!Number.isInteger(countedRounds) || countedRounds < 1 || countedRounds > draft.rounds.length) return draft
+  return {
+    ...draft,
+    countedRounds,
+    countedRoundsMode: countedRounds === draft.rounds.length ? 'all' : 'custom',
+  }
 }
 
 export function updateRound(
@@ -92,6 +110,7 @@ export function toOnboardingRequest(draft: WizardDraft): OnboardingRequest {
       description: draft.tournament.description.trim(),
       start_date: draft.tournament.startDate,
       end_date: draft.tournament.endDate,
+      counted_rounds: draft.countedRounds,
     },
     rounds: draft.rounds.map((round, index) => ({
       round_number: index + 1,

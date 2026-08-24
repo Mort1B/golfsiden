@@ -207,6 +207,9 @@ One transaction creates the linked player and global `player` account, both
 initial handicap histories, draft tournament, tournament-admin membership,
 entrant, all draft rounds, hashed invitation, and hashed session. The server
 derives round count and the individual/team/combined tournament scoring mode.
+The creator chooses how many rounds count; the wizard defaults to all configured
+rounds, preserves a smaller explicit best-N choice while rounds are edited, and
+submits `counted_rounds` within `1..=number_of_rounds`.
 Individual and scramble rounds retain their existing default allowance. A
 foursomes round is created with the required 50% allowance; no separate allowance
 editor is exposed by onboarding.
@@ -274,7 +277,16 @@ read and invitation mutation remains protected by backend membership policy.
 The workspace provides semantic anchors for settings, entrants, invitations,
 rounds, courses, pairings, and lifecycle. Most sections report only facts already
 preserved by the existing private APIs and link to the invitation and round
-surfaces. The Courses section is writable for draft rounds through the existing
+surfaces. Settings exposes “Tellende runder” while every existing round remains
+draft. `PATCH /api/tournaments/{tournament_id}/counted-rounds` requires the
+current tournament timestamp, CSRF, and exact tournament-admin membership. It
+locks the round set before the tournament, rejects stale writes, and permanently
+freezes the value when the first round opens. PostgreSQL independently requires
+the admin workflow context and uses the durable opening marker even if child rows
+are later removed. Success returns the authoritative private tournament and
+publishes one payload-free invalidation after commit.
+
+The Courses section is writable for draft rounds through the existing
 atomic course-configuration API. It does not infer revisions, load teams per
 round, or expose unsupported mutation controls. Returning from invitation
 administration replaces that history entry, restores the Invitations section,
@@ -563,9 +575,10 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
   leaderboard access will use explicit share tokens.
 - Request throttling is not implemented, so the public onboarding and
   registration endpoints are not ready for an internet-facing deployment.
-- Tournament settings, pairing, and lifecycle editors are not implemented. The
-  Courses section supports draft-round configuration; non-draft rounds are
-  deliberately read-only.
+- Tournament settings currently edit only the pre-opening counted-round value;
+  general tournament and lifecycle editors remain unimplemented. The Courses
+  section supports draft-round configuration; non-draft rounds are deliberately
+  read-only.
 - Pairing roster reads, atomic admin replacement, the mobile draft editor,
   flight-aware opening readiness, and representative ready seed assignments
   exist together with membership-wide scoring authority. There is still no

@@ -12,6 +12,7 @@ export interface Tournament {
   start_date: string
   end_date: string
   number_of_rounds: number
+  counted_rounds: number
   status: TournamentStatus
   scoring_mode: ScoringMode
   created_at: string

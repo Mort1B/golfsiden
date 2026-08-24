@@ -20,8 +20,8 @@ flight score authority and the exhaustive round-leaderboard format boundary are
 complete, as is the exhaustive lifecycle, pairing, completion, authorization,
 and scorecard format-policy boundary, and the complete two-player foursomes
 format with preserved WHS team handicaps, and the phone-first writable-card
-selector optimization are complete. No active implementation step is approved;
-the bounded `counted_rounds` configuration boundary in Phase 7 is next.
+selector optimization, and the persisted draft-only `counted_rounds`
+configuration boundary are complete. No active implementation step is approved.
 
 ## Product decisions
 
@@ -92,8 +92,6 @@ the bounded `counted_rounds` configuration boundary in Phase 7 is next.
 
 ### Phase 7: Live best-N standings, final-nine blackout, and scorecards
 
-- Add `counted_rounds` with `1 <= counted_rounds <= number_of_rounds`, editable
-  only while tournament configuration is mutable.
 - Select each player's lowest N completed score-to-par results independently for
   gross and net. Return every round contribution with round ID, tagged player or
   team owner, metric totals, and counted/excluded state; keep deterministic ties

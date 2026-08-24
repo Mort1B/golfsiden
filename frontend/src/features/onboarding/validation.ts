@@ -34,9 +34,16 @@ export function validateTournament(tournament: TournamentDraft, today: string): 
   return errors
 }
 
-export function validateRounds(rounds: RoundDraft[], tournament: TournamentDraft): FieldErrors {
+export function validateRounds(
+  rounds: RoundDraft[],
+  tournament: TournamentDraft,
+  countedRounds: number,
+): FieldErrors {
   const errors: FieldErrors = {}
   if (rounds.length < 1 || rounds.length > 30) errors.rounds = 'Turneringen må ha mellom 1 og 30 runder.'
+  if (!Number.isInteger(countedRounds) || countedRounds < 1 || countedRounds > rounds.length) {
+    errors['rounds.countedRounds'] = 'Velg hvor mange av de planlagte rundene som skal telle.'
+  }
   for (const round of rounds) {
     const prefix = `rounds.${round.key}`
     const nameError = validateName(round.name, 'Rundenavn')
@@ -72,7 +79,7 @@ export function validateCreator(creator: CreatorDraft): FieldErrors {
 export function validateAll(draft: WizardDraft, today: string): FieldErrors {
   return {
     ...validateTournament(draft.tournament, today),
-    ...validateRounds(draft.rounds, draft.tournament),
+    ...validateRounds(draft.rounds, draft.tournament, draft.countedRounds),
     ...validateCreator(draft.creator),
   }
 }

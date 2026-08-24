@@ -3,7 +3,7 @@
 .management-section-nav { display: flex; gap: 8px; margin: 0 -16px 18px; padding: 2px 16px 12px; overflow-x: auto; scrollbar-width: thin; }
 .management-section-nav a { display: inline-flex; min-height: 44px; flex: 0 0 auto; align-items: center; padding: 8px 13px; border: 1px solid #d6ddd7; border-radius: 999px; background: #fff; color: #365047; font-size: .82rem; font-weight: 750; }
 .management-section-nav a:hover { border-color: #8ba697; }
-.management-section-nav a:focus-visible, .management-link:focus-visible, .management-links-list a:focus-visible, .management-state-link:focus-visible { outline: 3px solid #176640; outline-offset: 2px; }
+.management-section-nav a:focus-visible, .management-link:focus-visible, .management-links-list a:focus-visible, .management-state-link:focus-visible, .counted-rounds-editor select:focus-visible, .counted-rounds-editor button:focus-visible { outline: 3px solid #176640; outline-offset: 2px; }
 .management-sections { display: grid; gap: 14px; }
 .management-section { scroll-margin-top: 18px; overflow: hidden; padding: 20px 16px; border: 1px solid #dbe1dc; border-radius: 9px; background: #fff; box-shadow: 0 2px 8px rgba(27,43,34,.04); }
 .management-section:focus, .management-section:target { outline: 3px solid #176640; outline-offset: 3px; }
@@ -16,6 +16,20 @@
 .management-facts dt { color: #69746d; font-size: .82rem; }
 .management-facts dd { margin: 0; overflow-wrap: anywhere; text-align: right; font-weight: 700; }
 .management-description { margin-top: 14px; overflow-wrap: anywhere; }
+.counted-rounds-editor { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px 14px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #e2e6e2; }
+.counted-rounds-editor h3 { font-size: .96rem; }
+.counted-rounds-editor > div:first-child p, .counted-rounds-state { margin-top: 3px; color: #68736c; font-size: .78rem; line-height: 1.45; }
+.counted-rounds-editor label { display: grid; gap: 5px; color: #4f5b54; font-size: .76rem; font-weight: 750; }
+.counted-rounds-editor select { min-width: 88px; min-height: 44px; padding: 7px 30px 7px 10px; border: 1px solid #aeb8b1; border-radius: 6px; background: #fff; color: #17201c; }
+.counted-rounds-save, .counted-rounds-message button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 7px; padding: 8px 12px; border: 1px solid #176640; border-radius: 6px; background: #176640; color: #fff; font-weight: 800; }
+.counted-rounds-save:disabled { cursor: not-allowed; opacity: .58; }
+.counted-rounds-save svg, .counted-rounds-message svg, .counted-rounds-receipt svg { width: 17px; flex: 0 0 auto; }
+.counted-rounds-locked { display: flex; grid-column: 1 / -1; align-items: flex-start; gap: 8px; color: #69736d; font-size: .8rem; line-height: 1.5; }
+.counted-rounds-locked svg { width: 18px; flex: 0 0 auto; color: #28734f; }
+.counted-rounds-message, .counted-rounds-receipt { grid-column: 1 / -1; font-size: .8rem; line-height: 1.45; }
+.counted-rounds-message.error { padding: 10px 12px; border-left: 4px solid #a33d35; background: #fff2f0; color: #7f2a23; }
+.counted-rounds-message button { margin-top: 8px; border-color: currentColor; background: #fff; color: inherit; }
+.counted-rounds-receipt { display: flex; min-height: 20px; align-items: center; gap: 6px; color: #176640; font-weight: 750; }
 .management-link, .management-state-link { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; margin-top: 14px; color: #176640; font-weight: 800; }
 .management-link svg { width: 18px; }
 .management-state-link { justify-content: center; color: inherit; text-decoration: underline; }
@@ -42,4 +56,10 @@
   .management-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
   .management-section:first-child, .management-section:nth-child(4), .management-section:last-child { grid-column: 1 / -1; }
   .management-section { padding: 22px; }
+}
+
+@media (max-width: 420px) {
+  .counted-rounds-editor { grid-template-columns: 1fr; align-items: stretch; }
+  .counted-rounds-editor label { grid-template-columns: minmax(0, 1fr) 88px; align-items: center; }
+  .counted-rounds-save { width: 100%; }
 }

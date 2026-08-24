@@ -1,79 +1,67 @@
 # Latest explanation
 
-## Fast flight-card switching
+## Counted-round configuration
 
-The score page now gives a flight member a phone-first horizontal rail for every
-scorecard returned by the server's writable-owner list. Each semantic button
-shows the player or team name plus holes scored, readiness, or confirmation, and
-marks the selected card explicitly. The unchanged full owner selector remains
-available for eligible cards that are read-only for the current session.
+Every tournament now preserves `counted_rounds` in the database, bounded to
+`1..=number_of_rounds`. Migration 0014 backfills existing tournaments to count
+all of their rounds, while creator onboarding can choose a smaller best-N value.
+The wizard continues tracking “all” as rounds are added, preserves an explicit
+smaller choice, and clamps it safely when rounds are removed.
 
-A quick switch keeps the current hole, returns to hole entry from the summary,
-and replaces browser history. Repeated card changes therefore do not make the
-Back button traverse each scoring tap. Long names are ellipsized within 52px
-touch targets, the rail scrolls horizontally on narrow screens, and keyboard
-focus retains the existing high-contrast outline.
+The representative five-round seed deliberately stores three counted rounds.
+Leaderboard ranking is unchanged in this release; consuming the persisted value
+is the next Phase 7 boundary.
 
 ```ts
-export function quickOwnerSelection(
-  selection: ScoreSelection,
-  owner: ScoreOwner,
-): ScoreSelection {
-  return { ...selection, owner, view: 'hole' }
-}
+const countedRounds = draft.countedRoundsMode === 'all'
+  ? draft.rounds.length + 1
+  : draft.countedRounds
 ```
 
-## Authoritative cache and navigation boundary
+## Permanent administration boundary
 
-The route still owns canonical tournament, round, tagged owner, hole, and view
-parameters. Completion validation supplies owner names and progress; score
-access supplies the exact ordered writable set. Their tagged intersection is
-rendered without copying server state into a client store.
+An exact tournament admin can update the setting from the management workspace
+while every round is still draft. The strict PATCH request includes the expected
+tournament timestamp, rejects stale writes, returns the authoritative private
+tournament, and emits one payload-free tournament invalidation only after a real
+committed change. No-op writes preserve the timestamp and emit no event.
 
-The selected card uses its existing TanStack Query key. After selection the
-route prefetches only the previous and next writable cards, while pointer or
-keyboard intent can warm the one card being approached. Prefetch therefore
-remains owner-scoped and bounded instead of eagerly loading an entire flight.
-SSE continues to carry invalidation only and authoritative refetches update both
-scorecards and completion progress.
+The repository locks every round in deterministic order before locking the
+tournament, matching the opening workflow so configuration and opening cannot
+cross. PostgreSQL independently requires transaction-local tournament and admin
+context. Any non-draft round, handicap snapshot, team snapshot, or durable
+first-opening marker freezes the value permanently, including after child data
+is later deleted.
 
-The existing score coordinator remains the navigation authority. Saving,
-verification, a failed mutation awaiting Retry or Discard, and confirmation all
-disable both the full selectors and the new rail. Correction remains explicit,
-the first changed stroke removes confirmation, audit behavior is unchanged, and
-locked rounds retain their existing read-only edit boundary. No backend, API,
-query-key, ownership, handicap, or scoring-format contract changed.
+The frontend editor treats its all-draft check as presentation only. Stale and
+locked responses discard the local draft and trigger an authoritative refetch;
+successful responses update the detail cache and invalidate the complete
+user-scoped tournament query root.
 
 ## Review and validation
 
-Owner-level review found no correctness, locking, state-sync, accessibility,
-strict-TypeScript, SSE, query-key, or file-boundary defect. Its one low-severity
-test gap was resolved by extracting and testing the exact same-hole, tagged-owner
-route selection.
+Review identified four issues: preserving a custom N through remove-then-add,
+testing the real opening race, avoiding round locks for clearly unauthorized
+requests, and explicit no-op persistence/SSE coverage. All four were corrected
+and re-review found no remaining defect.
 
-The final frontend ladder passed 151 tests across 26 files, strict TypeScript,
-ESLint, the production build, diff checks, and production file-size checks.
+The final automated ladder passed formatting, 75 standard Rust tests, strict
+all-feature Clippy, 215 PostgreSQL-enabled tests, an isolated migration plus two
+idempotent seed runs with a `5/3` readback, 158 frontend tests, strict TypeScript,
+ESLint, the production build, diff checks, and production file-size checks. The
+course-revision upgrade fixture was extended through migration 0014 so the
+current seed is also verified against the complete upgraded schema.
 
-Real Chrome used an isolated database and a flight member with four writable and
-four additional read-only cards. At 320px, 375px, 390px, and 1440px it preserved
-hole 9 across four rapid switches, kept history length unchanged, avoided a
-loading state, and fetched only the current/adjacent or explicitly focused
-owner. Semantic 52px buttons, visible keyboard focus, horizontal rail scrolling,
-long-name ellipsis, and absence of page overflow passed.
-
-Saving and deliberately forced offline failure disabled the rail and selectors;
-Retry synchronized and restored navigation. Confirmation disabled navigation,
-the rail showed confirmed state, explicit correction removed confirmation, and
-an external score mutation produced an SSE-driven completion refetch and updated
-progress. There were no unexpected failed requests, console errors, or browser
-exceptions. Locked-round rendering was fixture-limited because the isolated
-database had no completed-and-confirmed round safe to lock; the existing locked
-mutation/editability path was unchanged and had passed the preceding release's
-browser validation.
+Real-Chrome validation could not run in this iteration because the environment's
+automatic approval quota rejected starting the isolated backend and explicitly
+prohibited retry until August 31. The requested mobile/desktop onboarding,
+management, stale/error, locked, non-admin, accessibility, overflow, console,
+and network cases therefore remain recorded as unavailable browser evidence;
+they are not claimed as passed.
 
 ## Roadmap order
 
-Phase 6 is complete. The next bounded roadmap item is `counted_rounds` and its
-draft-only configuration boundary in Phase 7. Additional play modes remain
-deferred until the remaining roadmap, optimization, and security review are
-finished.
+The persisted configuration boundary is complete. The next Phase 7 step is to
+select and expose each metric's best completed N contributions. Additional play
+modes remain deferred until the remaining roadmap, optimization, and security
+review are finished.

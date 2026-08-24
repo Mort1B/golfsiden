@@ -47,7 +47,8 @@ fn valid_request(username: &str) -> Value {
             "name": "Annual Trip",
             "description": "Private tournament",
             "start_date": start,
-            "end_date": end
+            "end_date": end,
+            "counted_rounds": 1
         },
         "rounds": [
             {
@@ -78,6 +79,7 @@ fn repository_input(username: &str, tournament_name: &str) -> ValidatedOnboardin
             description: "Repository rollback test".to_owned(),
             start_date,
             end_date,
+            counted_rounds: 1,
             rounds: vec![RoundInput {
                 round_number: 1,
                 name: "Opening round".to_owned(),
@@ -155,6 +157,7 @@ async fn onboarding_atomically_links_creator_rounds_invite_and_session(pool: PgP
     let body = response_json(response).await;
 
     assert_eq!(body["tournament"]["number_of_rounds"], 2);
+    assert_eq!(body["tournament"]["counted_rounds"], 1);
     assert_eq!(body["tournament"]["scoring_mode"], "combined");
     assert_eq!(body["tournament"]["status"], "draft");
     assert_eq!(body["creator"]["tournament_role"], "admin");

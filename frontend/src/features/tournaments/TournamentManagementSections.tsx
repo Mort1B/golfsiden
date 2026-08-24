@@ -4,6 +4,7 @@ import type { Round, Tournament, TournamentPlayerRoster } from '../../api/types'
 import { EmptyState, ErrorState, LoadingState } from '../../ui/AsyncState'
 import { StatusBadge } from '../../ui/StatusBadge'
 import { CourseConfigurationSection } from './CourseConfigurationSection'
+import { CountedRoundsEditor } from './CountedRoundsEditor'
 import { PairingSection } from './pairings/PairingSection'
 
 interface ReadState<T> {
@@ -70,6 +71,13 @@ export function TournamentManagementSections({ tournament, roster, rounds }: Pro
           <div><dt>Poengvisning</dt><dd>{scoringMode(tournament.scoring_mode)}</dd></div>
           <div><dt>Planlagte runder</dt><dd>{tournament.number_of_rounds}</dd></div>
         </dl>
+        <CountedRoundsEditor
+          tournament={tournament}
+          rounds={rounds.data}
+          roundsPending={rounds.pending}
+          roundsError={rounds.error}
+          onRetryRounds={rounds.retry}
+        />
         {tournament.description && <p className="management-description">{tournament.description}</p>}
       </section>
 

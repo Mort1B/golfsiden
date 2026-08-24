@@ -116,13 +116,15 @@ export function decodeTournamentHandicapCorrection(value: unknown): TournamentHa
 
 export function decodeTournament(value: unknown, path = 'tournament'): Tournament {
   const data = decodeObject(value, path, 'turneringsdata')
+  const numberOfRounds = decodeInteger(data.number_of_rounds, `${path}.number_of_rounds`, 1, 30, 'turneringsdata')
   return {
     id: decodeUuid(data.id, `${path}.id`, 'turneringsdata'),
     name: decodeString(data.name, `${path}.name`, 'turneringsdata'),
     description: decodeString(data.description, `${path}.description`, 'turneringsdata'),
     start_date: decodeDate(data.start_date, `${path}.start_date`, 'turneringsdata'),
     end_date: decodeDate(data.end_date, `${path}.end_date`, 'turneringsdata'),
-    number_of_rounds: decodeInteger(data.number_of_rounds, `${path}.number_of_rounds`, 1, 30, 'turneringsdata'),
+    number_of_rounds: numberOfRounds,
+    counted_rounds: decodeInteger(data.counted_rounds, `${path}.counted_rounds`, 1, numberOfRounds, 'turneringsdata'),
     status: tournamentStatus(data.status, `${path}.status`),
     scoring_mode: scoringMode(data.scoring_mode, `${path}.scoring_mode`),
     created_at: decodeTimestamp(data.created_at, `${path}.created_at`, 'turneringsdata'),
@@ -191,6 +193,19 @@ export const tournamentApi = {
   rounds: (id: string) => requestDecoded(`/api/tournaments/${id}/rounds`, (value) =>
     decodeArray(value, 'rounds', decodeRound, 'rundedata')),
   players: (id: string) => requestDecoded(`/api/tournaments/${id}/players`, decodeTournamentPlayerRoster),
+  updateCountedRounds: (
+    tournamentId: string,
+    input: { counted_rounds: number; expected_tournament_updated_at: string },
+    csrfToken: string,
+  ) => requestDecoded(
+    `/api/tournaments/${tournamentId}/counted-rounds`,
+    (value) => decodeTournament(value),
+    {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', 'x-csrf-token': csrfToken },
+      body: JSON.stringify(input),
+    },
+  ),
   correctHandicap: (
     tournamentId: string,
     playerId: string,

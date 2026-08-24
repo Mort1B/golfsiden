@@ -1,5 +1,7 @@
+mod counted_rounds;
 mod handicaps;
 
+pub use counted_rounds::{UpdateCountedRoundsResult, update_counted_rounds_authorized};
 pub use handicaps::{change_player_handicap_authorized, list_players, list_players_for_member};
 
 use chrono::NaiveDate;
@@ -14,7 +16,7 @@ use crate::{
     repositories::tournament_authorization::{self, AuthorizationError},
 };
 
-const COLUMNS: &str = "id, name, description, start_date, end_date, number_of_rounds, status, scoring_mode, created_at, updated_at";
+pub(super) const COLUMNS: &str = "id, name, description, start_date, end_date, number_of_rounds, counted_rounds, status, scoring_mode, created_at, updated_at";
 
 #[derive(Debug, Error)]
 pub enum TournamentMutationError {
@@ -24,6 +26,12 @@ pub enum TournamentMutationError {
     HandicapLocked,
     #[error("tournament handicap is unchanged")]
     HandicapUnchanged,
+    #[error("counted rounds are outside the tournament round count")]
+    CountedRoundsInvalid,
+    #[error("tournament configuration is locked")]
+    ConfigurationLocked,
+    #[error("tournament configuration has changed")]
+    ConfigurationStale,
     #[error(transparent)]
     Authorization(#[from] AuthorizationError),
     #[error("database operation failed")]
@@ -38,6 +46,7 @@ struct MyTournamentRow {
     start_date: NaiveDate,
     end_date: NaiveDate,
     number_of_rounds: i16,
+    counted_rounds: i16,
     status: TournamentStatus,
     scoring_mode: ScoringMode,
     created_at: chrono::DateTime<chrono::Utc>,
@@ -108,13 +117,14 @@ pub async fn create(
     start_date: NaiveDate,
     end_date: NaiveDate,
     number_of_rounds: i16,
+    counted_rounds: i16,
     status: TournamentStatus,
     scoring_mode: ScoringMode,
 ) -> Result<Tournament, sqlx::Error> {
     let id = Uuid::new_v4();
-    sqlx::query("INSERT INTO tournaments (id, name, description, start_date, end_date, number_of_rounds, status, scoring_mode) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)")
+    sqlx::query("INSERT INTO tournaments (id, name, description, start_date, end_date, number_of_rounds, counted_rounds, status, scoring_mode) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)")
         .bind(id).bind(name.trim()).bind(description.trim()).bind(start_date).bind(end_date)
-        .bind(number_of_rounds).bind(status).bind(scoring_mode).execute(pool).await?;
+        .bind(number_of_rounds).bind(counted_rounds).bind(status).bind(scoring_mode).execute(pool).await?;
     get(pool, id).await?.ok_or(sqlx::Error::RowNotFound)
 }
 
@@ -127,6 +137,7 @@ pub async fn create_platform_authorized(
     start_date: NaiveDate,
     end_date: NaiveDate,
     number_of_rounds: i16,
+    counted_rounds: i16,
     status: TournamentStatus,
     scoring_mode: ScoringMode,
 ) -> Result<Tournament, TournamentMutationError> {
@@ -140,6 +151,7 @@ pub async fn create_platform_authorized(
         start_date,
         end_date,
         number_of_rounds,
+        counted_rounds,
         status,
         scoring_mode,
     )
@@ -159,7 +171,7 @@ pub async fn create_platform_authorized(
 pub async fn list_for_user(pool: &PgPool, user_id: Uuid) -> Result<Vec<MyTournament>, sqlx::Error> {
     let rows = sqlx::query_as::<_, MyTournamentRow>(
         "SELECT t.id, t.name, t.description, t.start_date, t.end_date,
-                t.number_of_rounds, t.status, t.scoring_mode, t.created_at,
+                t.number_of_rounds, t.counted_rounds, t.status, t.scoring_mode, t.created_at,
                 t.updated_at, tm.role,
                 CASE WHEN tp.player_id IS NOT NULL THEN u.player_id END AS player_id
          FROM tournament_memberships tm
@@ -225,13 +237,14 @@ async fn insert_tournament(
     start_date: NaiveDate,
     end_date: NaiveDate,
     number_of_rounds: i16,
+    counted_rounds: i16,
     status: TournamentStatus,
     scoring_mode: ScoringMode,
 ) -> Result<Tournament, sqlx::Error> {
     let id = Uuid::new_v4();
     sqlx::query_as::<_, Tournament>(&format!(
-        "INSERT INTO tournaments (id, name, description, start_date, end_date, number_of_rounds, status, scoring_mode)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING {COLUMNS}"
+        "INSERT INTO tournaments (id, name, description, start_date, end_date, number_of_rounds, counted_rounds, status, scoring_mode)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING {COLUMNS}"
     ))
     .bind(id)
     .bind(name.trim())
@@ -239,6 +252,7 @@ async fn insert_tournament(
     .bind(start_date)
     .bind(end_date)
     .bind(number_of_rounds)
+    .bind(counted_rounds)
     .bind(status)
     .bind(scoring_mode)
     .fetch_one(&mut **transaction)
@@ -300,6 +314,7 @@ impl MyTournamentRow {
                 start_date: self.start_date,
                 end_date: self.end_date,
                 number_of_rounds: self.number_of_rounds,
+                counted_rounds: self.counted_rounds,
                 status: self.status,
                 scoring_mode: self.scoring_mode,
                 created_at: self.created_at,

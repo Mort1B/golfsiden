@@ -7,7 +7,7 @@ use axum::{
     response::IntoResponse,
     routing::get,
 };
-use chrono::NaiveDate;
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -28,6 +28,10 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/api/me/tournaments", get(list_mine))
         .route("/api/tournaments/{tournament_id}", get(get_one))
         .route(
+            "/api/tournaments/{tournament_id}/counted-rounds",
+            axum::routing::patch(update_counted_rounds),
+        )
+        .route(
             "/api/tournaments/{tournament_id}/players",
             get(list_players).post(add_player),
         )
@@ -46,6 +50,7 @@ struct CreateTournament {
     start_date: NaiveDate,
     end_date: NaiveDate,
     number_of_rounds: i16,
+    counted_rounds: Option<i16>,
     #[serde(default = "default_status")]
     status: TournamentStatus,
     #[serde(default = "default_scoring_mode")]
@@ -65,6 +70,13 @@ struct AddTournamentPlayer {
 struct ChangeTournamentHandicap {
     handicap_index: f64,
     reason: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct UpdateCountedRounds {
+    counted_rounds: i16,
+    expected_tournament_updated_at: DateTime<Utc>,
 }
 
 fn default_status() -> TournamentStatus {
@@ -110,6 +122,12 @@ async fn create(
             "number_of_rounds must be between 1 and 30".to_owned(),
         ));
     }
+    let counted_rounds = input.counted_rounds.unwrap_or(input.number_of_rounds);
+    if counted_rounds < 1 || counted_rounds > input.number_of_rounds {
+        return Err(ApiError::BadRequest(
+            "counted_rounds must be between 1 and number_of_rounds".to_owned(),
+        ));
+    }
     let tournament = tournaments::create_platform_authorized(
         &state.pool,
         authenticated.principal.session_id,
@@ -118,6 +136,7 @@ async fn create(
         input.start_date,
         input.end_date,
         input.number_of_rounds,
+        counted_rounds,
         input.status,
         input.scoring_mode,
     )
@@ -210,6 +229,41 @@ async fn change_player_handicap(
     Ok((StatusCode::CREATED, Json(correction)))
 }
 
+async fn update_counted_rounds(
+    State(state): State<Arc<AppState>>,
+    Path(tournament_id): Path<Uuid>,
+    MutationSession(authenticated): MutationSession,
+    input: Result<Json<UpdateCountedRounds>, JsonRejection>,
+) -> ApiResult<impl IntoResponse> {
+    let Json(input) = input.map_err(|_| {
+        ApiError::BadRequest(
+            "request must contain only counted_rounds and expected_tournament_updated_at"
+                .to_owned(),
+        )
+    })?;
+    if !(1..=30).contains(&input.counted_rounds) {
+        return Err(ApiError::BadRequest(
+            "counted_rounds must be between 1 and the tournament round count".to_owned(),
+        ));
+    }
+    let result = tournaments::update_counted_rounds_authorized(
+        &state.pool,
+        authenticated.principal.session_id,
+        tournament_id,
+        input.counted_rounds,
+        input.expected_tournament_updated_at,
+    )
+    .await
+    .map_err(map_mutation_error)?;
+    if result.changed {
+        state.notify("tournament", tournament_id);
+    }
+    Ok((
+        [(CACHE_CONTROL, "private, no-store")],
+        Json(result.tournament),
+    ))
+}
+
 fn map_mutation_error(error: TournamentMutationError) -> ApiError {
     match error {
         TournamentMutationError::NotFound => ApiError::NotFound,
@@ -220,6 +274,17 @@ fn map_mutation_error(error: TournamentMutationError) -> ApiError {
         TournamentMutationError::HandicapUnchanged => ApiError::DomainConflict {
             code: "tournament_handicap_unchanged",
             message: "tournament handicap is unchanged",
+        },
+        TournamentMutationError::CountedRoundsInvalid => ApiError::BadRequest(
+            "counted_rounds must be between 1 and the tournament round count".to_owned(),
+        ),
+        TournamentMutationError::ConfigurationLocked => ApiError::DomainConflict {
+            code: "tournament_configuration_locked",
+            message: "tournament configuration is locked after round opening",
+        },
+        TournamentMutationError::ConfigurationStale => ApiError::DomainConflict {
+            code: "tournament_configuration_stale",
+            message: "tournament configuration changed; refresh and try again",
         },
         TournamentMutationError::Authorization(error) => map_authorization_error(error),
         TournamentMutationError::Database(error) => ApiError::Database(error),

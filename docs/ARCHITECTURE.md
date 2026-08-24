@@ -21,6 +21,13 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   `round_team_handicap_snapshots` preserves the final team Playing Handicap for
   each opened foursomes team and is immutable except for ancestor deletion.
 - Round opening locks the round and tournament, repeats readiness validation, and captures one immutable snapshot for each active entrant before changing status. A transaction-local opening context prevents direct status or snapshot bypasses.
+- `tournaments.counted_rounds` is a required cross-column bounded configuration
+  fact. Existing tournaments were backfilled to count every configured round.
+  Creator onboarding persists an explicit value; the admin mutation uses
+  optimistic tournament time and the same round-before-tournament lock order as
+  opening. A transaction-context trigger verifies exact admin membership and the
+  durable first-opening marker, so later deletion cannot make the setting
+  mutable again. Leaderboard selection does not yet consume this field.
 - Course handicap uses exact tenths and rational arithmetic for `index * slope / 113 + rating - par`. Individual allowance is applied to the unrounded result before final rounding. Scramble caps each registered index at `36.0` before tee conversion; its member snapshots retain that effective index and rounded course handicap for the later team formula.
 - One closed round-format policy is the application source of truth for score-
   owner kind, exact team size, snapshot-handicap treatment, and team playing-
@@ -239,6 +246,7 @@ Implemented resources:
 | `GET` | `/api/auth/session` | Retrieve the current session and CSRF value |
 | `POST` | `/api/auth/logout` | Revoke and clear the current session |
 | `GET` | `/api/me/tournaments` | List the session user's tournament memberships and player links |
+| `PATCH` | `/api/tournaments/{tournament_id}/counted-rounds` | Update best-N round configuration before the first opening |
 | `GET` | `/api/tournaments/{tournament_id}/course-catalog` | Search the bundled curated course shortlist as a tournament admin |
 | `GET` | `/api/tournaments/{tournament_id}/course-provider/courses/{provider_course_id}` | Retrieve normalized provider tee and hole detail as a tournament admin |
 | `POST` | `/api/onboarding/tournaments` | Atomically create a first-time creator, draft tournament plan, invitation, and session |

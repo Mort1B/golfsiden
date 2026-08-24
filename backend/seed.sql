@@ -33,8 +33,8 @@ SELECT ('00000000-0000-0000-0000-' || lpad((1100 + seed_number)::text, 12, '0'))
 FROM (VALUES (1, 8.2), (2, 11.4), (3, 14.7), (4, 17.1), (5, 19.8), (6, 22.3), (7, 25.0), (8, 28.6)) AS seeded(seed_number, handicap)
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO tournaments (id, name, description, start_date, end_date, number_of_rounds, status, scoring_mode)
-VALUES ('00000000-0000-0000-0000-000000002001', 'Guttas Golf 2026', 'Annual five-round golf trip', '2026-09-10', '2026-09-14', 5, 'draft', 'combined')
+INSERT INTO tournaments (id, name, description, start_date, end_date, number_of_rounds, counted_rounds, status, scoring_mode)
+VALUES ('00000000-0000-0000-0000-000000002001', 'Guttas Golf 2026', 'Annual five-round golf trip', '2026-09-10', '2026-09-14', 5, 3, 'draft', 'combined')
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, description = EXCLUDED.description;
 
 INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap, seed)

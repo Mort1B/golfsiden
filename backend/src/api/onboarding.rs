@@ -76,6 +76,7 @@ struct TournamentRequest {
     description: String,
     start_date: NaiveDate,
     end_date: NaiveDate,
+    counted_rounds: i16,
 }
 
 #[derive(Deserialize)]
@@ -218,6 +219,7 @@ impl CreateOnboardingRequest {
             description: self.tournament.description,
             start_date: self.tournament.start_date,
             end_date: self.tournament.end_date,
+            counted_rounds: self.tournament.counted_rounds,
             rounds: self
                 .rounds
                 .into_iter()

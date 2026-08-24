@@ -8,10 +8,12 @@ import { isScoringFormat } from '../../api/scoringFormats'
 interface RoundsStepProps {
   tournament: TournamentDraft
   rounds: RoundDraft[]
+  countedRounds: number
   errors: FieldErrors
   onAdd: () => void
   onRemove: (key: string) => void
   onChange: (key: string, value: Partial<Omit<RoundDraft, 'key'>>) => void
+  onCountedRounds: (value: number) => void
   onBack: () => void
   onNext: () => void
   headingRef: RefObject<HTMLHeadingElement | null>
@@ -21,6 +23,22 @@ export function RoundsStep(props: RoundsStepProps) {
   return (
     <section className="wizard-step" aria-labelledby="rounds-step-heading">
       <header><p className="eyebrow">Steg 2 av 4</p><h1 id="rounds-step-heading" ref={props.headingRef} tabIndex={-1}>Planlegg rundene</h1><p>Velg spilleform for hver runde. Bane og utslagssted kan settes senere.</p></header>
+      <div className="counted-rounds-choice">
+        <label htmlFor="counted-rounds">
+          <span>Tellende runder</span>
+          <select
+            id="counted-rounds"
+            value={props.countedRounds}
+            aria-invalid={Boolean(props.errors['rounds.countedRounds'])}
+            aria-describedby="counted-rounds-help counted-rounds-error"
+            onChange={(event) => props.onCountedRounds(Number(event.target.value))}
+          >
+            {props.rounds.map((_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}
+          </select>
+        </label>
+        <p id="counted-rounds-help">Beste {props.countedRounds} av {props.rounds.length} runder teller i turneringen.</p>
+        <FieldError id="counted-rounds-error">{props.errors['rounds.countedRounds']}</FieldError>
+      </div>
       <div className="round-editor-list">
         {props.rounds.map((round, index) => {
           const prefix = `rounds.${round.key}`

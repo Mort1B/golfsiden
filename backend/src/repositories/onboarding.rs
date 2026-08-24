@@ -12,7 +12,7 @@ use crate::{
     repositories::auth,
 };
 
-const TOURNAMENT_COLUMNS: &str = "id, name, description, start_date, end_date, number_of_rounds, status, scoring_mode, created_at, updated_at";
+const TOURNAMENT_COLUMNS: &str = "id, name, description, start_date, end_date, number_of_rounds, counted_rounds, status, scoring_mode, created_at, updated_at";
 const ROUND_COLUMNS: &str = "id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, status, handicap_enabled, handicap_allowance_percent, scoring_format, created_at, updated_at";
 
 #[derive(Debug, Error)]
@@ -89,8 +89,8 @@ pub async fn create(
     let tournament_id = Uuid::new_v4();
     let tournament = sqlx::query_as::<_, Tournament>(&format!(
         "INSERT INTO tournaments
-           (id, name, description, start_date, end_date, number_of_rounds, status, scoring_mode)
-         VALUES ($1, $2, $3, $4, $5, $6, 'draft', $7)
+           (id, name, description, start_date, end_date, number_of_rounds, counted_rounds, status, scoring_mode)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'draft', $8)
          RETURNING {TOURNAMENT_COLUMNS}"
     ))
     .bind(tournament_id)
@@ -103,6 +103,7 @@ pub async fn create(
             "validated round count exceeded i16".to_owned(),
         ))
     })?)
+    .bind(input.counted_rounds)
     .bind(input.scoring_mode)
     .fetch_one(&mut *transaction)
     .await

@@ -19,7 +19,7 @@ export function ReviewStep({ draft, onBack, submitting, headingRef }: { draft: W
       <dl className="review-summary">
         <div><dt><Flag aria-hidden="true" /> Turnering</dt><dd><strong>{draft.tournament.name.trim()}</strong><span>{draft.tournament.startDate} – {draft.tournament.endDate}</span></dd></div>
         <div><dt><UserRound aria-hidden="true" /> Administrator</dt><dd><strong>{draft.creator.displayName.trim()}</strong><span>@{draft.creator.username.trim().toLowerCase()} · HCP {handicap.ok ? formatHandicap(handicap.value) : draft.creator.handicap}</span></dd></div>
-        <div><dt><CalendarDays aria-hidden="true" /> Runder</dt><dd>{draft.rounds.length}</dd></div>
+        <div><dt><CalendarDays aria-hidden="true" /> Runder</dt><dd><strong>{draft.rounds.length} planlagt</strong><span>Beste {draft.countedRounds} av {draft.rounds.length}</span></dd></div>
       </dl>
       <ol className="review-rounds">
         {draft.rounds.map((round, index) => <li key={round.key}><span>{index + 1}</span><div><strong>{round.name.trim()}</strong><small>{round.date} · {formatLabel[round.scoringFormat]}</small></div></li>)}

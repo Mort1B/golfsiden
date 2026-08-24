@@ -15,6 +15,7 @@ export interface OnboardingRequest {
     description: string
     start_date: string
     end_date: string
+    counted_rounds: number
   }
   rounds: Array<{
     round_number: number
