@@ -171,8 +171,11 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   separation and database privilege hardening belong with authentication work.
 - Round leaderboards calculate live gross/net score-to-par from the holes actually
   scored. Tournament leaderboards aggregate only completed or locked rounds and
-  attribute team results through frozen membership for that round. Separate
-  gross and net routes never use the other metric as a hidden tie-break.
+  independently select each player's lowest configured N score-to-par results
+  for the requested metric. Contributions retain their tagged owner and are
+  attributed through frozen membership for that exact round. Counted-result
+  count ranks provisionally before selected score-to-par; separate gross and net
+  routes never use the other metric as a hidden tie-break.
 - Round-leaderboard owner construction is isolated from format-neutral stored-
   fact validation, score/confirmation assembly, totals, and ranking. One closed,
   exhaustive policy maps each current scoring format to snapshot-owned entries
@@ -184,7 +187,9 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
 - Leaderboard repositories bulk-load rounds, holes, snapshots, teams,
   memberships, scores, and confirmations inside one repeatable-read, read-only
   transaction. Pure domain assembly validates stored facts, calculates handicap
-  results, attributes players, and applies deterministic competition ranking.
+  results, attributes players, selects deterministic metric-specific best-N
+  contributions, and applies competition ranking. Open-round facts are validated
+  fail-closed but are not counted yet.
 - Server-Sent Events carry invalidation notifications, not full mutable state. Clients refetch through TanStack Query.
 - Private workspace query keys are rooted by session user ID. Initial or changed
   identities clear that root before publication; same-user refreshes preserve it.
@@ -192,8 +197,8 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   scoring state.
 - The global leaderboard route owns selection in canonical URL parameters instead
   of a client store. It validates round ownership before enabling hierarchical
-  queries, and leaderboard responses pass focused runtime decoding before
-  entering the query cache.
+  queries, and leaderboard responses pass focused runtime and aggregate-coherence
+  decoding before entering the query cache.
 - The score route likewise owns tournament, round, tagged owner, hole, and view
   selection in canonical URL parameters. Completion validation is its owner
   authority, and exact runtime decoders protect scorecard state before caching.

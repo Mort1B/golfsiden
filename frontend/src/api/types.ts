@@ -144,6 +144,17 @@ export interface CurrentTeam {
   team_name: string
 }
 
+export interface TournamentContribution {
+  round_id: string
+  owner: LeaderboardOwner
+  owner_name: string
+  gross_total: number
+  net_total: number
+  par_total: number
+  score_to_par: number
+  counted: boolean
+}
+
 export interface TournamentLeaderboardEntry {
   position: number | null
   tied: boolean
@@ -151,14 +162,20 @@ export interface TournamentLeaderboardEntry {
   display_name: string
   status: ParticipantStatus
   completed_rounds: number
+  counted_contributions: number
+  eligible: boolean
   gross_total: number
   net_total: number
+  par_total: number
+  score_to_par: number
+  contributions: TournamentContribution[]
   current_team: CurrentTeam | null
 }
 
 export interface TournamentLeaderboard {
   tournament_id: string
   metric: LeaderboardMetric
+  required_counted_rounds: number
   current_round_id: string | null
   included_round_ids: string[]
   entries: TournamentLeaderboardEntry[]

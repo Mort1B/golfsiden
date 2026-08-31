@@ -121,14 +121,16 @@ async fn tournament_read(
     sqlx::query(transaction_mode)
         .execute(&mut *transaction)
         .await?;
-    let exists =
-        sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM tournaments WHERE id = $1)")
+    let counted_rounds =
+        sqlx::query_scalar::<_, i16>("SELECT counted_rounds FROM tournaments WHERE id = $1")
             .bind(tournament_id)
-            .fetch_one(&mut *transaction)
-            .await?;
-    if !exists {
-        return Err(LeaderboardError::NotFound);
-    }
+            .fetch_optional(&mut *transaction)
+            .await?
+            .ok_or(LeaderboardError::NotFound)?;
+    let counted_rounds = usize::try_from(counted_rounds)
+        .ok()
+        .filter(|count| *count > 0)
+        .ok_or(LeaderboardError::InvalidStoredData)?;
     if let Some(user_id) = user_id {
         tournament_authorization::require_tournament_member_read(
             &mut transaction,
@@ -161,6 +163,7 @@ async fn tournament_read(
     let result = build_tournament_leaderboard(
         &TournamentLeaderboardFacts {
             tournament_id,
+            counted_rounds,
             participants,
             rounds,
         },

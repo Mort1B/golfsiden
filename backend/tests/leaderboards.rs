@@ -49,8 +49,8 @@ INSERT INTO players (id, display_name, current_handicap_index) VALUES
 ('50000000-0000-0000-0000-000000000023', 'Plus', -1.0),
 ('50000000-0000-0000-0000-000000000024', 'Zed', 5.0),
 ('50000000-0000-0000-0000-000000000025', 'Withdrawn zero', 12.0);
-INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds, status)
-VALUES ('50000000-0000-0000-0000-000000000001', 'Leaderboard Cup', '2026-08-01', '2026-08-04', 4, 'active');
+INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds, counted_rounds, status)
+VALUES ('50000000-0000-0000-0000-000000000001', 'Leaderboard Cup', '2026-08-01', '2026-08-04', 4, 2, 'active');
 INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap, status) VALUES
 ('50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000021', 8.0, 'active'),
 ('50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000022', 20.0, 'active'),
@@ -426,14 +426,27 @@ async fn tournament_api_aggregates_completed_rounds_and_keeps_current_teams(pool
         json!({
             "tournament_id": TOURNAMENT,
             "metric": "net",
+            "required_counted_rounds": 2,
             "current_round_id": ROUND_DRAFT,
             "included_round_ids": [ROUND_ONE, ROUND_TWO],
             "entries": [
-                {"position": 1, "tied": false, "player_id": PLAYER_B, "display_name": "Bob", "status": "active", "completed_rounds": 2, "gross_total": 18, "net_total": -8, "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM, "team_name": "Latest current"}},
-                {"position": 2, "tied": false, "player_id": PLAYER_A, "display_name": "Ada", "status": "active", "completed_rounds": 2, "gross_total": 18, "net_total": 4, "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM, "team_name": "Latest current"}},
-                {"position": 3, "tied": false, "player_id": PLAYER_D, "display_name": "Zed", "status": "withdrawn", "completed_rounds": 2, "gross_total": 20, "net_total": 15, "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM_TWO, "team_name": "Latest current two"}},
-                {"position": 4, "tied": false, "player_id": PLAYER_PLUS, "display_name": "Plus", "status": "active", "completed_rounds": 2, "gross_total": 18, "net_total": 19, "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM_TWO, "team_name": "Latest current two"}},
-                {"position": null, "tied": false, "player_id": PLAYER_ZERO, "display_name": "Withdrawn zero", "status": "withdrawn", "completed_rounds": 0, "gross_total": 0, "net_total": 0, "current_team": null}
+                {"position": 1, "tied": false, "player_id": PLAYER_B, "display_name": "Bob", "status": "active", "completed_rounds": 2, "counted_contributions": 2, "eligible": true, "gross_total": 18, "net_total": -8, "par_total": 16, "score_to_par": -24, "contributions": [
+                    {"round_id": ROUND_ONE, "owner": {"type": "player", "id": PLAYER_B}, "owner_name": "Bob", "gross_total": 10, "net_total": -10, "par_total": 8, "score_to_par": -18, "counted": true},
+                    {"round_id": ROUND_TWO, "owner": {"type": "team", "id": TEAM_TWO_A}, "owner_name": "Low pair", "gross_total": 8, "net_total": 2, "par_total": 8, "score_to_par": -6, "counted": true}
+                ], "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM, "team_name": "Latest current"}},
+                {"position": 2, "tied": false, "player_id": PLAYER_A, "display_name": "Ada", "status": "active", "completed_rounds": 2, "counted_contributions": 2, "eligible": true, "gross_total": 18, "net_total": 4, "par_total": 16, "score_to_par": -12, "contributions": [
+                    {"round_id": ROUND_ONE, "owner": {"type": "player", "id": PLAYER_A}, "owner_name": "Ada", "gross_total": 10, "net_total": 2, "par_total": 8, "score_to_par": -6, "counted": true},
+                    {"round_id": ROUND_TWO, "owner": {"type": "team", "id": TEAM_TWO_A}, "owner_name": "Low pair", "gross_total": 8, "net_total": 2, "par_total": 8, "score_to_par": -6, "counted": true}
+                ], "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM, "team_name": "Latest current"}},
+                {"position": 3, "tied": false, "player_id": PLAYER_D, "display_name": "Zed", "status": "withdrawn", "completed_rounds": 2, "counted_contributions": 2, "eligible": true, "gross_total": 20, "net_total": 15, "par_total": 16, "score_to_par": -1, "contributions": [
+                    {"round_id": ROUND_ONE, "owner": {"type": "player", "id": PLAYER_D}, "owner_name": "Zed", "gross_total": 10, "net_total": 5, "par_total": 8, "score_to_par": -3, "counted": true},
+                    {"round_id": ROUND_TWO, "owner": {"type": "team", "id": TEAM_TWO_B}, "owner_name": "Mixed pair", "gross_total": 10, "net_total": 10, "par_total": 8, "score_to_par": 2, "counted": true}
+                ], "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM_TWO, "team_name": "Latest current two"}},
+                {"position": 4, "tied": false, "player_id": PLAYER_PLUS, "display_name": "Plus", "status": "active", "completed_rounds": 2, "counted_contributions": 2, "eligible": true, "gross_total": 18, "net_total": 19, "par_total": 16, "score_to_par": 3, "contributions": [
+                    {"round_id": ROUND_ONE, "owner": {"type": "player", "id": PLAYER_PLUS}, "owner_name": "Plus", "gross_total": 8, "net_total": 9, "par_total": 8, "score_to_par": 1, "counted": true},
+                    {"round_id": ROUND_TWO, "owner": {"type": "team", "id": TEAM_TWO_B}, "owner_name": "Mixed pair", "gross_total": 10, "net_total": 10, "par_total": 8, "score_to_par": 2, "counted": true}
+                ], "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM_TWO, "team_name": "Latest current two"}},
+                {"position": null, "tied": false, "player_id": PLAYER_ZERO, "display_name": "Withdrawn zero", "status": "withdrawn", "completed_rounds": 0, "counted_contributions": 0, "eligible": false, "gross_total": 0, "net_total": 0, "par_total": 0, "score_to_par": 0, "contributions": [], "current_team": null}
             ]
         })
     );

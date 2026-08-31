@@ -21,7 +21,8 @@ complete, as is the exhaustive lifecycle, pairing, completion, authorization,
 and scorecard format-policy boundary, and the complete two-player foursomes
 format with preserved WHS team handicaps, and the phone-first writable-card
 selector optimization, and the persisted draft-only `counted_rounds`
-configuration boundary are complete. No active implementation step is approved.
+configuration boundary, and metric-specific completed best-N tournament
+contributions are complete. No active implementation step is approved.
 
 ## Product decisions
 
@@ -90,12 +91,15 @@ configuration boundary are complete. No active implementation step is approved.
 
 ## Upcoming work
 
+### Validation repair
+
+- Restore strict all-feature Clippy by reducing or boxing the three oversized
+  `round_lifecycle` error variants reported at `opening.rs:22` and `mod.rs:60,71`.
+  Preserve public error mapping and lifecycle behavior, add no feature semantics,
+  and require the complete Rust/database ladder before returning to Phase 7.
+
 ### Phase 7: Live best-N standings, final-nine blackout, and scorecards
 
-- Select each player's lowest N completed score-to-par results independently for
-  gross and net. Return every round contribution with round ID, tagged player or
-  team owner, metric totals, and counted/excluded state; keep deterministic ties
-  and changing-team attribution.
 - Include the current open round as an explicitly provisional contribution in
   both round and tournament standings, with holes played exposed so uneven live
   progress is not presented as final. Re-evaluate the provisional best N whenever

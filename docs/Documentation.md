@@ -533,18 +533,31 @@ preserved or calculated playing handicap by each scored hole's stroke index.
 Tournament leaderboards are available at
 `GET /api/tournaments/{tournament_id}/leaderboards/gross` and `/net`. They include
 all registered players, including withdrawn and zero-result entries, but aggregate
-only completed or locked rounds. Individual results stay with their snapshot
-owner; each scramble result is attributed once to every member of that exact
-round team. Players with more attributed completed rounds rank before players
-with fewer, then by the selected total. Current-team data comes from the
-highest-numbered open round, independent of its scoring format.
+only completed or locked rounds. Each metric independently selects the configured
+best N score-to-par contributions. Players with fewer counted results rank behind
+players with more until they reach N; equal counted-result counts then compare
+only the selected metric's score-to-par total. Competition ties ignore names and
+the other metric, while case-insensitive name and UUID stabilize display order.
+
+The response returns `required_counted_rounds` and every player's complete
+round-ordered contribution history. Each contribution preserves its round ID,
+tagged player or team owner, owner name, gross/net/par totals, metric
+score-to-par, and counted state. Aggregate totals cover only the subset selected
+for that requested metric. `completed_rounds`, `counted_contributions`, and
+`eligible` distinguish provisional players from those with N results. Individual
+results stay with their snapshot owner; scramble and foursomes results are
+attributed once to every frozen member of that exact round team. Current-team
+data still comes from the highest-numbered open round, but open-round scores are
+not contributions in this boundary.
 
 Completed status is authoritative for tournament totals. A completed-round score
 correction therefore updates the leaderboard immediately even though the changed
 card must be reconfirmed before locking. Current player handicaps are never read
 for historical net totals. All leaderboard reads use one repeatable-read snapshot
 and bounded bulk queries; inconsistent completed-round or owner data fails closed
-instead of producing plausible partial standings.
+instead of producing plausible partial standings. Supplied open-round facts also
+retain fail-closed validation even though they do not yet affect tournament
+totals.
 Both round and tournament leaderboard routes require membership in the target
 tournament and are returned as private, non-cacheable responses.
 
@@ -557,7 +570,9 @@ cards; tournament rows retain registered players with zero completed rounds.
 
 Leaderboard responses cross a focused runtime decoder before entering TanStack
 Query. The decoder checks tagged owners, finite states, identifiers, nullability,
-numeric fields, and response identity. The single application EventSource
+numeric fields, response identity, and aggregate coherence across contribution
+counts, selected sums, metric score-to-par, eligibility, and current-round facts.
+The single application EventSource
 remains an invalidation signal only; clients refetch the selected authoritative
 leaderboard instead of calculating or merging score state in the browser.
 

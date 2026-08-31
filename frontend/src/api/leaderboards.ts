@@ -8,6 +8,7 @@ import type {
   RoundLeaderboardEntry,
   RoundStatus,
   ScoringFormat,
+  TournamentContribution,
   TournamentLeaderboard,
   TournamentLeaderboardEntry,
 } from './types'
@@ -104,6 +105,20 @@ function currentTeam(value: unknown, path: string): CurrentTeam | null {
   }
 }
 
+function tournamentContribution(value: unknown, path: string): TournamentContribution {
+  const data = decodeObject(value, path, 'resultatdata')
+  return {
+    round_id: decodeUuid(data.round_id, `${path}.round_id`, 'resultatdata'),
+    owner: owner(data.owner, `${path}.owner`),
+    owner_name: decodeString(data.owner_name, `${path}.owner_name`, 'resultatdata'),
+    gross_total: decodeInteger(data.gross_total, `${path}.gross_total`, undefined, undefined, 'resultatdata'),
+    net_total: decodeInteger(data.net_total, `${path}.net_total`, undefined, undefined, 'resultatdata'),
+    par_total: decodeInteger(data.par_total, `${path}.par_total`, undefined, undefined, 'resultatdata'),
+    score_to_par: decodeInteger(data.score_to_par, `${path}.score_to_par`, undefined, undefined, 'resultatdata'),
+    counted: decodeBoolean(data.counted, `${path}.counted`, 'resultatdata'),
+  }
+}
+
 function tournamentEntry(value: unknown, path: string): TournamentLeaderboardEntry {
   const data = decodeObject(value, path, 'resultatdata')
   return {
@@ -113,10 +128,73 @@ function tournamentEntry(value: unknown, path: string): TournamentLeaderboardEnt
     display_name: decodeString(data.display_name, `${path}.display_name`, 'resultatdata'),
     status: participantStatus(data.status, `${path}.status`),
     completed_rounds: decodeInteger(data.completed_rounds, `${path}.completed_rounds`, 0, undefined, 'resultatdata'),
+    counted_contributions: decodeInteger(data.counted_contributions, `${path}.counted_contributions`, 0, undefined, 'resultatdata'),
+    eligible: decodeBoolean(data.eligible, `${path}.eligible`, 'resultatdata'),
     gross_total: decodeInteger(data.gross_total, `${path}.gross_total`, undefined, undefined, 'resultatdata'),
     net_total: decodeInteger(data.net_total, `${path}.net_total`, undefined, undefined, 'resultatdata'),
+    par_total: decodeInteger(data.par_total, `${path}.par_total`, undefined, undefined, 'resultatdata'),
+    score_to_par: decodeInteger(data.score_to_par, `${path}.score_to_par`, undefined, undefined, 'resultatdata'),
+    contributions: decodeArray(data.contributions, `${path}.contributions`, tournamentContribution, 'resultatdata'),
     current_team: currentTeam(data.current_team, `${path}.current_team`),
   }
+}
+
+function validateTournamentCoherence(leaderboard: TournamentLeaderboard): void {
+  const includedRoundIds = new Set(leaderboard.included_round_ids)
+  if (includedRoundIds.size !== leaderboard.included_round_ids.length) {
+    invalid('leaderboard.included_round_ids')
+  }
+  if (leaderboard.current_round_id !== null && includedRoundIds.has(leaderboard.current_round_id)) {
+    invalid('leaderboard.current_round_id')
+  }
+  leaderboard.entries.forEach((entry, entryIndex) => {
+    const path = `leaderboard.entries[${entryIndex}]`
+    if (entry.current_team !== null
+      && (leaderboard.current_round_id === null
+        || entry.current_team.round_id !== leaderboard.current_round_id)) {
+      invalid(`${path}.current_team.round_id`)
+    }
+    if (entry.contributions.length !== entry.completed_rounds) invalid(`${path}.completed_rounds`)
+
+    const counted = entry.contributions.filter((contribution) => contribution.counted)
+    if (counted.length !== entry.counted_contributions
+      || entry.counted_contributions > leaderboard.required_counted_rounds) {
+      invalid(`${path}.counted_contributions`)
+    }
+    if (entry.eligible !== (entry.completed_rounds >= leaderboard.required_counted_rounds)) {
+      invalid(`${path}.eligible`)
+    }
+
+    const contributionRoundIds = new Set<string>()
+    entry.contributions.forEach((contribution, contributionIndex) => {
+      const contributionPath = `${path}.contributions[${contributionIndex}]`
+      if (contributionRoundIds.has(contribution.round_id)) invalid(`${contributionPath}.round_id`)
+      contributionRoundIds.add(contribution.round_id)
+      if (!includedRoundIds.has(contribution.round_id)) invalid(`${contributionPath}.round_id`)
+      if (contribution.owner.type === 'player' && contribution.owner.id !== entry.player_id) {
+        invalid(`${contributionPath}.owner.id`)
+      }
+
+      const metricTotal = leaderboard.metric === 'gross'
+        ? contribution.gross_total
+        : contribution.net_total
+      if (contribution.score_to_par !== metricTotal - contribution.par_total) {
+        invalid(`${contributionPath}.score_to_par`)
+      }
+    })
+
+    const selectedTotals = counted.reduce((totals, contribution) => ({
+      gross: totals.gross + contribution.gross_total,
+      net: totals.net + contribution.net_total,
+      par: totals.par + contribution.par_total,
+    }), { gross: 0, net: 0, par: 0 })
+    if (entry.gross_total !== selectedTotals.gross) invalid(`${path}.gross_total`)
+    if (entry.net_total !== selectedTotals.net) invalid(`${path}.net_total`)
+    if (entry.par_total !== selectedTotals.par) invalid(`${path}.par_total`)
+
+    const metricTotal = leaderboard.metric === 'gross' ? entry.gross_total : entry.net_total
+    if (entry.score_to_par !== metricTotal - entry.par_total) invalid(`${path}.score_to_par`)
+  })
 }
 
 export function decodeRoundLeaderboard(
@@ -147,10 +225,12 @@ export function decodeTournamentLeaderboard(
   const decoded: TournamentLeaderboard = {
     tournament_id: decodeUuid(data.tournament_id, 'leaderboard.tournament_id', 'resultatdata'),
     metric: metric(data.metric, 'leaderboard.metric'),
+    required_counted_rounds: decodeInteger(data.required_counted_rounds, 'leaderboard.required_counted_rounds', 1, undefined, 'resultatdata'),
     current_round_id: data.current_round_id === null ? null : decodeUuid(data.current_round_id, 'leaderboard.current_round_id', 'resultatdata'),
     included_round_ids: decodeArray(data.included_round_ids, 'leaderboard.included_round_ids', (item, path) => decodeUuid(item, path, 'resultatdata'), 'resultatdata'),
     entries: decodeArray(data.entries, 'leaderboard.entries', tournamentEntry, 'resultatdata'),
   }
   if (decoded.tournament_id !== expectedTournamentId || decoded.metric !== expectedMetric) invalid('leaderboard.identity')
+  validateTournamentCoherence(decoded)
   return decoded
 }

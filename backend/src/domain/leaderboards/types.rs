@@ -152,6 +152,7 @@ pub struct ParticipantFact {
 #[derive(Debug, Clone)]
 pub struct TournamentLeaderboardFacts {
     pub tournament_id: Uuid,
+    pub counted_rounds: usize,
     pub participants: Vec<ParticipantFact>,
     pub rounds: Vec<RoundLeaderboardFacts>,
 }
@@ -171,15 +172,33 @@ pub struct TournamentLeaderboardEntry {
     pub display_name: String,
     pub status: ParticipantStatus,
     pub completed_rounds: usize,
+    pub counted_contributions: usize,
+    pub eligible: bool,
     pub gross_total: i32,
     pub net_total: i32,
+    pub par_total: i32,
+    pub score_to_par: i32,
+    pub contributions: Vec<TournamentContribution>,
     pub current_team: Option<CurrentTeam>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct TournamentContribution {
+    pub round_id: Uuid,
+    pub owner: LeaderboardOwner,
+    pub owner_name: String,
+    pub gross_total: i32,
+    pub net_total: i32,
+    pub par_total: i32,
+    pub score_to_par: i32,
+    pub counted: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct TournamentLeaderboard {
     pub tournament_id: Uuid,
     pub metric: LeaderboardMetric,
+    pub required_counted_rounds: usize,
     pub current_round_id: Option<Uuid>,
     pub included_round_ids: Vec<Uuid>,
     pub entries: Vec<TournamentLeaderboardEntry>,
