@@ -613,6 +613,29 @@ confirmed again. Once locked, ordinary score changes remain rejected. Migration
 4 also fails fast when upgrading a database that already contains an invalid
 completed or locked round.
 
+### Persisted final-score embargo clock
+
+Migration `0017` adds nullable `rounds.final_scores_hidden_until`. For the
+authoritative final round only, the last required confirmation starts one
+database-time deadline 24 hours ahead. Intermediate confirmations, non-final
+rounds, duplicate confirmations, completion, and locking do not create, extend,
+or shorten it. A score correction that removes confirmation strictly before
+expiry clears the deadline; complete reconfirmation then starts a fresh 24-hour
+window. At or after expiry, the stored deadline remains unchanged because those
+results have already been revealed.
+
+Upgrades from schema 16 reconstruct an already-ready final round's deadline as
+the latest required stored `confirmed_at` plus 24 hours. Unready and non-final
+rounds remain null. Direct ordinary deadline writes are rejected. Tournament
+round count and child round numbers are frozen when start commits, so direct SQL
+cannot redefine the final round afterward; concurrent start and renumbering
+serialize in the existing round-before-tournament lock order.
+
+This migration persists the trusted clock only. Current leaderboard and
+scorecard responses remain unchanged and are not yet redacted by role or hole.
+Phase 7B must apply one shared read policy to leaderboard calculations and direct
+scorecard projections before the final-nine blackout is considered enforced.
+
 ## Leaderboards
 
 Round leaderboards are available at
@@ -703,3 +726,6 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
   flight-aware opening readiness, and representative ready seed assignments
   exist together with membership-wide scoring authority. There is still no
   offline score queue or public leaderboard link.
+- The trusted final-score embargo deadline is persisted, reset, and protected,
+  but existing leaderboard and scorecard reads do not enforce final-nine
+  redaction yet. That projection work remains Phase 7B.

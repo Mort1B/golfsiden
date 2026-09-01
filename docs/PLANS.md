@@ -22,8 +22,9 @@ and scorecard format-policy boundary, and the complete two-player foursomes
 format with preserved WHS team handicaps, and the phone-first writable-card
 selector optimization, and the persisted draft-only `counted_rounds`
 configuration boundary, metric-specific completed best-N tournament
-contributions, the strict-Clippy lifecycle error-size repair, and the optional
-mandatory-round configuration and reserved best-N selection are complete.
+contributions, the strict-Clippy lifecycle error-size repair, the optional
+mandatory-round configuration and reserved best-N selection, and the Phase 7A
+trusted final-score embargo clock are complete.
 The exact-admin tournament-start lifecycle and hosted management action are also
 complete, including draft-only creation and concurrent lifecycle coverage.
 
@@ -40,8 +41,8 @@ membership is also mandatory for score-access reads, and the backend
 participation boundary is covered by a two-tournament player/team isolation
 fixture. Frontend target-coherent runtime decoding and tournament-keyed transient
 state now prevent cross-target cache or UI reuse during same-account navigation.
-There is no active implementation step. Phase 7 is the next bounded milestone
-and requires explicit approval before implementation.
+There is no active implementation step. Phase 7B role-aware visibility and live
+standings are next and require explicit approval before implementation.
 
 ## Product decisions
 
@@ -131,7 +132,7 @@ and requires explicit approval before implementation.
 
 ## Upcoming work
 
-### Phase 7: Live best-N standings, final-nine blackout, and scorecards
+### Phase 7B: Live best-N standings, final-nine blackout, and scorecards
 
 - Include the current open round as an explicitly provisional contribution in
   both round and tournament standings, with holes played exposed so uneven live
@@ -143,11 +144,6 @@ and requires explicit approval before implementation.
   and throughout its 24-hour final-score embargo. Tournament admins receive the
   complete projection. SSE remains payload-free invalidation and cannot leak
   hidden strokes.
-- Persist `final_scores_hidden_until` from database time when all required final-
-  round scorecards first become complete and confirmed. A correction that removes
-  confirmation before expiry clears the deadline; after every corrected card is
-  complete and reconfirmed, start a new 24-hour embargo. Round completion and
-  locking must preserve, not shorten, the current deadline.
 - Mark role-dependent leaderboard and scorecard responses private/non-cacheable;
   include session identity in client query ownership and clear privileged cached
   projections when the session changes.

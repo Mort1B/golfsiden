@@ -196,6 +196,16 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   team handicap snapshot per owner. Both the repository and lifecycle
   trigger require every owner to have exactly the configured hole count and a
   current confirmation.
+- `rounds.final_scores_hidden_until` is the database-owned final-score embargo
+  clock. Only the round whose number equals its tournament's configured count can
+  receive it. The last required confirmation starts one 24-hour window from
+  PostgreSQL time; a confirmation invalidated strictly before expiry clears it,
+  while expiry, completion, and locking preserve it. Schema upgrades reconstruct
+  ready final-round deadlines from the latest required `confirmed_at` fact.
+- Final-round identity is immutable after tournament start: PostgreSQL freezes
+  both `tournaments.number_of_rounds` and each child `rounds.round_number` across
+  the start boundary. Round-number checks lock round then parent tournament,
+  matching lifecycle lock order and serializing start-versus-renumber races.
 - Transaction-local lifecycle settings route application writes through the
   expected integrity paths; they are not an authorization boundary. Runtime role
   separation and database privilege hardening belong with authentication work.

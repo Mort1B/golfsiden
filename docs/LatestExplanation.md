@@ -1,56 +1,56 @@
 # Latest explanation
 
-## A mandatory round reserves one of best N
+## PostgreSQL now owns the final-score embargo clock
 
-A tournament admin can now combine a normal best-N rule with one optional round
-that must count. In a four-round tournament using best three, selecting round
-four means every eligible gross or net total contains round four plus that
-metric's best two results from rounds one through three. If a player misses round
-four, only two optional results can count and the player remains ineligible.
+Phase 7A adds the persistence boundary needed before hiding the final nine from
+non-admin reads. Only the round whose `round_number` equals its tournament's
+configured round count can receive `final_scores_hidden_until`. When insertion
+of the last required confirmation makes that round ready, PostgreSQL records one
+deadline from its own clock:
 
-The same rule covers the edge case where N is one: only the mandatory result can
-be ranked. Gross and net still choose their optional contributions independently,
-and team-owned results remain attributed to the exact frozen members of that
-round.
-
-```rust
-let optional_slots = if mandatory_round_id.is_some() {
-    required.saturating_sub(1)
-} else {
-    required
-};
+```sql
+SET final_scores_hidden_until = workflow_time + INTERVAL '24 hours'
+WHERE final_scores_hidden_until IS NULL
+  AND round_scorecards_ready(id);
 ```
 
-## Configuration is atomic and permanently scoped
+The same readiness function already understands individual snapshot owners,
+scramble teams, and foursomes teams with preserved handicap snapshots. An
+intermediate or duplicate confirmation does nothing, so retries cannot extend
+the embargo or change the round timestamp.
 
-Migration `0016` adds nullable `tournaments.mandatory_round_id` with a deferred
-same-tournament foreign key. The deferred constraint lets onboarding preallocate
-round UUIDs and create the tournament and its selected future round in one
-transaction, while rejecting cross-tournament IDs and direct deletion of a
-selected round.
+## Corrections reset only an unexpired embargo
 
-The existing configuration PATCH now requires counted N and an explicit UUID or
-JSON `null`. It locks the tournament's rounds first, reauthorizes the exact
-tournament admin, applies optimistic concurrency, and changes both facts or
-neither. Start, opening, or a captured handicap snapshot freezes the pair
-permanently. No-op requests preserve the timestamp and send no live event.
+A real score correction already removes that owner's current confirmation. The
+new confirmation-delete trigger clears the deadline only when it is strictly in
+the future. Once every corrected card is complete and confirmed again, the last
+confirmation starts a fresh full 24 hours. At or after expiry, correction keeps
+the expired timestamp because the results were already revealed. Completion and
+locking also preserve the exact deadline.
 
-The frontend mirrors that contract in creator onboarding and tournament
-settings. Stable draft keys keep the onboarding choice attached to the intended
-round and clear it when that round is removed. Settings and standings validate a
-non-null mandatory UUID against the exact decoded tournament round collection
-before caching it. Standings show the selected round by name as completed or
-missing in both gross and net views.
+Schema-16 upgrades reconstruct ready final-round deadlines from the latest
+required stored `confirmed_at` plus 24 hours. This preserves the historical
+trusted clock rather than starting a new window at migration time.
 
-## Validation
+## Final-round identity cannot drift after start
 
-Automated backend, PostgreSQL, and frontend checks cover set, replace, clear,
-no-op, cross-target rejection, selection-versus-deletion races,
-start/open/snapshot freezing, onboarding removal, N=1, metric-specific selection,
-and both missing and completed label contracts. Chrome at phone and desktop sizes
-verified onboarding removal, an atomic settings save, a locked tournament, long
-names, gross/net switching, and the missing label with a clean console/network.
+The embargo depends on a stable definition of “final.” PostgreSQL therefore now
+freezes both the tournament round count and child round numbers across the start
+boundary. A round renumber locks its parent after its own row, matching the
+existing lifecycle order. Concurrent start and renumber operations either leave
+a valid changed draft plan that cannot start or commit start and reject the
+renumber; they cannot deadlock or silently reclassify the final round.
 
-The next bounded roadmap step remains Phase 7 live best-N standings, final-nine
-blackout, and scorecard drilldowns. Additional play modes remain deferred until
-the roadmap, optimization, and security review are complete.
+## Scope and validation
+
+Focused tests cover database-time bounds, individual/scramble/foursomes
+readiness, non-final exclusion, correction and reconfirmation, exact expiry,
+duplicate stability, completion and locking, direct-write rejection, schema-16
+backfill, cascade deletion, and bounded lifecycle races. The focused suites,
+ten repeated concurrency runs, full Rust and serialized PostgreSQL ladders,
+strict Clippy, clean/schema-16 migration, and idempotent seed all passed.
+
+This step deliberately changes no HTTP or frontend contract. The deadline is
+not yet a claim that scores are hidden. Phase 7B must apply one role-aware policy
+before round and tournament calculations and direct scorecard responses, then
+add trusted expiry refetching in the client.
