@@ -28,6 +28,7 @@ const player = {
   tournament_id: tournament.id,
   player_id: '00000000-0000-0000-0000-000000000002',
   display_name: 'Morten',
+  player_active: true,
   tournament_handicap: 14.4,
   seed: null,
   status: 'active',
@@ -80,6 +81,10 @@ describe('tournament memberships', () => {
       .toEqual({ handicap_correction: { state: 'locked', reason: 'round_opened' }, players: [] })
     expect(() => decodeTournamentPlayerRoster({ handicap_correction: { state: 'locked', reason: 'round_completed' }, players: [] }))
       .toThrow('handicap_correction')
+    expect(() => decodeTournamentPlayerRoster({
+      handicap_correction: { state: 'editable' },
+      players: [{ ...player, player_active: undefined }],
+    })).toThrow('player_active')
   })
 
   it('posts an audited correction and validates its response', async () => {
@@ -135,5 +140,27 @@ describe('tournament memberships', () => {
         expected_tournament_updated_at: tournament.updated_at,
       }),
     })
+  })
+
+  it('starts a tournament with CSRF, the optimistic timestamp, and strict decoding', async () => {
+    const started = { ...tournament, status: 'active', updated_at: '2026-08-16T13:00:00Z' }
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(started), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(tournamentApi.start(tournament.id, {
+      expected_tournament_updated_at: tournament.updated_at,
+    }, 'csrf-token')).resolves.toEqual(started)
+
+    expect(fetchMock).toHaveBeenCalledWith(`/api/tournaments/${tournament.id}/start`, {
+      credentials: 'include',
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-csrf-token': 'csrf-token' },
+      body: JSON.stringify({ expected_tournament_updated_at: tournament.updated_at }),
+    })
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ...started, counted_rounds: 0 }), { status: 200 }))
+    await expect(tournamentApi.start(tournament.id, {
+      expected_tournament_updated_at: tournament.updated_at,
+    }, 'csrf-token')).rejects.toThrow('counted_rounds')
   })
 })

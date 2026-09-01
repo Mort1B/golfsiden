@@ -1,6 +1,11 @@
 #![cfg(feature = "database-tests")]
 
-use golf_api::repositories::round_lifecycle;
+use chrono::{Duration, Utc};
+use golf_api::{
+    auth::hash_session_token,
+    domain::models::ReadinessIssueCode,
+    repositories::{auth, round_lifecycle, tournaments},
+};
 use sqlx::PgPool;
 use uuid::{Uuid, uuid};
 
@@ -11,6 +16,8 @@ const SEEDED_ROUNDS: [Uuid; 5] = [
     uuid!("00000000-0000-0000-0000-000000004004"),
     uuid!("00000000-0000-0000-0000-000000004005"),
 ];
+const SEEDED_TOURNAMENT: Uuid = uuid!("00000000-0000-0000-0000-000000002001");
+const SEEDED_ADMIN: Uuid = uuid!("00000000-0000-0000-0000-000000000001");
 
 async fn run_seed(pool: &PgPool) {
     sqlx::raw_sql(include_str!("../seed.sql"))
@@ -201,6 +208,44 @@ async fn development_seed_has_ready_idempotent_representative_pairings(pool: PgP
             "henrik",
         ]
     );
+
+    for round_id in SEEDED_ROUNDS {
+        let validation = round_lifecycle::pairing_validation(&pool, round_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(
+            !validation.ready
+                && validation.issues.len() == 1
+                && validation.issues[0].code == ReadinessIssueCode::TournamentNotOpenable,
+            "round {round_id}: {:?}",
+            validation.issues
+        );
+    }
+
+    let admin_session = auth::create_session(
+        &pool,
+        SEEDED_ADMIN,
+        &hash_session_token("seed-start-admin"),
+        Utc::now() + Duration::hours(1),
+    )
+    .await
+    .unwrap();
+    let expected_updated_at =
+        sqlx::query_scalar("SELECT updated_at FROM tournaments WHERE id = $1")
+            .bind(SEEDED_TOURNAMENT)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    let started = tournaments::start_authorized(
+        &pool,
+        admin_session.session_id,
+        SEEDED_TOURNAMENT,
+        expected_updated_at,
+    )
+    .await
+    .unwrap();
+    assert!(started.changed);
 
     for round_id in SEEDED_ROUNDS {
         let validation = round_lifecycle::pairing_validation(&pool, round_id)

@@ -51,10 +51,14 @@ async fn insert_clean_fixture(pool: &PgPool) {
         INSERT INTO users (id, username, display_name, role, player_id) VALUES
           ('a1000000-0000-0000-0000-000000000041', 'linked_one', 'Linked one', 'player', '{PLAYER_1}'),
           ('a1000000-0000-0000-0000-000000000043', 'linked_three', 'Linked three', 'player', '{PLAYER_3}');
+        INSERT INTO users (id, username, display_name, role)
+        VALUES ('a1000000-0000-0000-0000-000000000049', 'flight_admin', 'Flight admin', 'player');
         INSERT INTO tournaments
           (id, name, start_date, end_date, number_of_rounds) VALUES
           ('{TOURNAMENT_1}', 'First trip', '2026-01-01', '2026-01-02', 2),
           ('{TOURNAMENT_2}', 'Other trip', '2026-02-01', '2026-02-01', 1);
+        INSERT INTO tournament_memberships (tournament_id, user_id, role)
+        VALUES ('{TOURNAMENT_1}', 'a1000000-0000-0000-0000-000000000049', 'admin');
         INSERT INTO tournament_players
           (tournament_id, player_id, tournament_handicap) VALUES
           ('{TOURNAMENT_1}', '{PLAYER_1}', 10.0),
@@ -83,6 +87,33 @@ async fn insert_clean_fixture(pool: &PgPool) {
     .execute(pool)
     .await
     .unwrap();
+    let guarded_start = sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS (
+           SELECT 1 FROM pg_trigger WHERE tgname = 'tournaments_validate_status_transition'
+         )",
+    )
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    let mut lifecycle = pool.begin().await.unwrap();
+    if guarded_start {
+        sqlx::query(
+            "SELECT
+               set_config('app.tournament_start_tournament_id', $1, true),
+               set_config('app.tournament_start_user_id', $2, true)",
+        )
+        .bind(TOURNAMENT_1)
+        .bind("a1000000-0000-0000-0000-000000000049")
+        .execute(&mut *lifecycle)
+        .await
+        .unwrap();
+    }
+    sqlx::query("UPDATE tournaments SET status = 'active' WHERE id = $1::uuid")
+        .bind(TOURNAMENT_1)
+        .execute(&mut *lifecycle)
+        .await
+        .unwrap();
+    lifecycle.commit().await.unwrap();
 }
 
 async fn stage_first_round_open(transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>) {

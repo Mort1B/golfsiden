@@ -69,12 +69,9 @@ pub fn validate(facts: &ReadinessFacts) -> PairingValidation {
     );
     push_if(
         &mut issues,
-        !matches!(
-            facts.tournament_status,
-            TournamentStatus::Draft | TournamentStatus::Active
-        ),
+        facts.tournament_status != TournamentStatus::Active,
         ReadinessIssueCode::TournamentNotOpenable,
-        "tournament must be draft or active",
+        "tournament must be active",
     );
     let eligible_count = facts
         .entrants

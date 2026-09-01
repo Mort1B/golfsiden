@@ -11,7 +11,9 @@ use golf_api::{
     AppState, api,
     auth::{derive_csrf_token, hash_session_token},
     domain::{round_completion::TransitionBlocker, scorecards::ScoreOwner},
-    repositories::{auth, round_completion, round_completion::RoundCompletionError, scorecards},
+    repositories::{
+        auth, round_completion, round_completion::RoundCompletionError, scorecards, tournaments,
+    },
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -37,8 +39,8 @@ VALUES ('40000000-0000-0000-0000-000000000001', 'completion_admin', 'Admin', 'ad
 INSERT INTO players (id, display_name, current_handicap_index) VALUES
 ('40000000-0000-0000-0000-000000000011', 'Ada', 4.0),
 ('40000000-0000-0000-0000-000000000012', 'Bea', 12.0);
-INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds, status)
-VALUES ('40000000-0000-0000-0000-000000000002', 'Completion Cup', '2026-09-01', '2026-09-02', 2, 'active');
+INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds)
+VALUES ('40000000-0000-0000-0000-000000000002', 'Completion Cup', '2026-09-01', '2026-09-02', 2);
 INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap) VALUES
 ('40000000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000011', 4.0),
 ('40000000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000012', 12.0);
@@ -85,7 +87,7 @@ async fn seed_open_with_team_format(pool: &PgPool, foursomes: bool) {
     .execute(pool)
     .await
     .unwrap();
-    auth::create_session(
+    let session = auth::create_session(
         pool,
         USER_ID,
         &hash_session_token(SESSION_TOKEN),
@@ -93,6 +95,14 @@ async fn seed_open_with_team_format(pool: &PgPool, foursomes: bool) {
     )
     .await
     .unwrap();
+    let updated_at = sqlx::query_scalar("SELECT updated_at FROM tournaments WHERE id = $1")
+        .bind(TOURNAMENT_ID)
+        .fetch_one(pool)
+        .await
+        .unwrap();
+    tournaments::start_authorized(pool, session.session_id, TOURNAMENT_ID, updated_at)
+        .await
+        .unwrap();
     for round_id in [INDIVIDUAL_ROUND, SCRAMBLE_ROUND] {
         let mut transaction = pool.begin().await.unwrap();
         sqlx::query("SELECT id FROM rounds WHERE id = $1 FOR UPDATE")

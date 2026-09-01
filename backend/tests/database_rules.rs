@@ -1,6 +1,10 @@
 #![cfg(feature = "database-tests")]
 
-use golf_api::repositories::round_completion;
+use chrono::{Duration, Utc};
+use golf_api::{
+    auth::hash_session_token,
+    repositories::{auth, round_completion, tournaments},
+};
 use sqlx::{PgPool, Row};
 
 const BASE_DATA: &str = r#"
@@ -10,6 +14,9 @@ INSERT INTO players (id, display_name, current_handicap_index)
 VALUES ('10000000-0000-0000-0000-000000000002', 'Test Player', 12.0);
 INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds)
 VALUES ('10000000-0000-0000-0000-000000000003', 'Test Tournament', '2026-01-01', '2026-01-01', 1);
+INSERT INTO tournament_memberships (tournament_id, user_id, role)
+VALUES ('10000000-0000-0000-0000-000000000003',
+        '10000000-0000-0000-0000-000000000001', 'admin');
 INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap)
 VALUES ('10000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000002', 12.0);
 INSERT INTO courses (id, name) VALUES ('10000000-0000-0000-0000-000000000004', 'Test Course');
@@ -25,6 +32,29 @@ INSERT INTO teams (id, round_id, tournament_id, name) VALUES
 
 async fn seed_base(pool: &PgPool) {
     sqlx::raw_sql(BASE_DATA).execute(pool).await.unwrap();
+    let session = auth::create_session(
+        pool,
+        uuid::uuid!("10000000-0000-0000-0000-000000000001"),
+        &hash_session_token("database-rules-admin"),
+        Utc::now() + Duration::hours(1),
+    )
+    .await
+    .unwrap();
+    let updated_at = sqlx::query_scalar(
+        "SELECT updated_at FROM tournaments
+         WHERE id = '10000000-0000-0000-0000-000000000003'",
+    )
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    tournaments::start_authorized(
+        pool,
+        session.session_id,
+        uuid::uuid!("10000000-0000-0000-0000-000000000003"),
+        updated_at,
+    )
+    .await
+    .unwrap();
 }
 
 async fn open_fixture_round(pool: &PgPool) {

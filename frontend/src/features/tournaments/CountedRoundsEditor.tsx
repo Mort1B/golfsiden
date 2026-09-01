@@ -21,7 +21,8 @@ export function CountedRoundsEditor(props: CountedRoundsEditorProps) {
   const [draftValue, setDraftValue] = useState<number | null>(null)
   const [receipt, setReceipt] = useState<string | null>(null)
   const value = draftValue ?? props.tournament.counted_rounds
-  const editable = countedRoundsAreEditable(props.rounds)
+  const editable = countedRoundsAreEditable(props.tournament.status, props.rounds)
+  const tournamentLocked = props.tournament.status !== 'draft'
 
   const mutation = useMutation({
     mutationFn: (countedRounds: number) => {
@@ -63,15 +64,19 @@ export function CountedRoundsEditor(props: CountedRoundsEditorProps) {
         <h3>Tellende runder</h3>
         <p>Lagret valg: Beste {props.tournament.counted_rounds} av {props.tournament.number_of_rounds} runder.</p>
       </div>
-      {props.roundsPending && <p className="counted-rounds-state" role="status">Kontrollerer om valget kan endres …</p>}
-      {props.roundsError && (
+      {!tournamentLocked && props.roundsPending && <p className="counted-rounds-state" role="status">Kontrollerer om valget kan endres …</p>}
+      {!tournamentLocked && props.roundsError && (
         <div className="counted-rounds-message error" role="alert">
           <p>Kunne ikke kontrollere rundestatus. Valget kan ikke endres før oppdateringen lykkes.</p>
           <button type="button" onClick={props.onRetryRounds}><RefreshCw aria-hidden="true" /> Prøv igjen</button>
         </div>
       )}
-      {!props.roundsPending && !props.roundsError && !editable && (
-        <p className="counted-rounds-locked"><LockKeyhole aria-hidden="true" /> Valget er permanent låst fordi minst én runde ikke lenger er et utkast.</p>
+      {(tournamentLocked || (!props.roundsPending && !props.roundsError && !editable)) && (
+        <p className="counted-rounds-locked"><LockKeyhole aria-hidden="true" />
+          {tournamentLocked
+            ? 'Valget er låst fordi turneringen ikke lenger er i kladd.'
+            : 'Valget er permanent låst fordi minst én runde ikke lenger er et utkast.'}
+        </p>
       )}
       {editable && (
         <>
@@ -91,7 +96,7 @@ export function CountedRoundsEditor(props: CountedRoundsEditorProps) {
               ))}
             </select>
           </label>
-          <p className="counted-rounds-state">Kan endres frem til første runde åpnes.</p>
+          <p className="counted-rounds-state">Kan endres frem til turneringen startes.</p>
           <button className="counted-rounds-save" type="submit" disabled={mutation.isPending || unchanged}>
             <Save aria-hidden="true" /> {mutation.isPending ? 'Lagrer …' : failure ? 'Prøv lagring igjen' : 'Lagre valg'}
           </button>

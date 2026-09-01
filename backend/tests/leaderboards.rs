@@ -11,7 +11,7 @@ use golf_api::{
     AppState, api,
     auth::hash_session_token,
     domain::scorecards::ScoreOwner,
-    repositories::{auth, round_completion, round_lifecycle, scorecards},
+    repositories::{auth, round_completion, round_lifecycle, scorecards, tournaments},
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -38,19 +38,21 @@ const LATEST_TEAM_TWO: Uuid = uuid!("50000000-0000-0000-0000-000000000037");
 const HOLE_ONE: Uuid = uuid!("50000000-0000-0000-0000-000000000041");
 const HOLE_TWO: Uuid = uuid!("50000000-0000-0000-0000-000000000042");
 const USER: Uuid = uuid!("50000000-0000-0000-0000-000000000051");
+const ADMIN: Uuid = uuid!("50000000-0000-0000-0000-000000000052");
 const SESSION_TOKEN: &str = "leaderboard-private-token";
 
 const FIXTURE: &str = r#"
 INSERT INTO users (id, username, display_name, role) VALUES
-('50000000-0000-0000-0000-000000000051', 'leaderboard_scorer', 'Scorer', 'scorer');
+('50000000-0000-0000-0000-000000000051', 'leaderboard_scorer', 'Scorer', 'scorer'),
+('50000000-0000-0000-0000-000000000052', 'leaderboard_admin', 'Admin', 'viewer');
 INSERT INTO players (id, display_name, current_handicap_index) VALUES
 ('50000000-0000-0000-0000-000000000021', 'Ada', 8.0),
 ('50000000-0000-0000-0000-000000000022', 'Bob', 20.0),
 ('50000000-0000-0000-0000-000000000023', 'Plus', -1.0),
 ('50000000-0000-0000-0000-000000000024', 'Zed', 5.0),
 ('50000000-0000-0000-0000-000000000025', 'Withdrawn zero', 12.0);
-INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds, counted_rounds, status)
-VALUES ('50000000-0000-0000-0000-000000000001', 'Leaderboard Cup', '2026-08-01', '2026-08-04', 4, 2, 'active');
+INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds, counted_rounds)
+VALUES ('50000000-0000-0000-0000-000000000001', 'Leaderboard Cup', '2026-08-01', '2026-08-04', 4, 2);
 INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap, status) VALUES
 ('50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000021', 8.0, 'active'),
 ('50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000022', 20.0, 'active'),
@@ -108,13 +110,30 @@ async fn seed(pool: &PgPool) {
     sqlx::raw_sql(FIXTURE).execute(pool).await.unwrap();
     sqlx::query(
         "INSERT INTO tournament_memberships (tournament_id, user_id, role)
-         VALUES ($1, $2, 'scorer') ON CONFLICT DO NOTHING",
+         VALUES ($1, $2, 'scorer'), ($1, $3, 'admin') ON CONFLICT DO NOTHING",
     )
     .bind(TOURNAMENT)
     .bind(USER)
+    .bind(ADMIN)
     .execute(pool)
     .await
     .unwrap();
+    let admin = auth::create_session(
+        pool,
+        ADMIN,
+        &hash_session_token("leaderboard-admin-token"),
+        Utc::now() + ChronoDuration::hours(1),
+    )
+    .await
+    .unwrap();
+    let updated_at = sqlx::query_scalar("SELECT updated_at FROM tournaments WHERE id = $1")
+        .bind(TOURNAMENT)
+        .fetch_one(pool)
+        .await
+        .unwrap();
+    tournaments::start_authorized(pool, admin.session_id, TOURNAMENT, updated_at)
+        .await
+        .unwrap();
     auth::create_session(
         pool,
         USER,

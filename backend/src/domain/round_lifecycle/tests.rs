@@ -56,6 +56,17 @@ fn codes(validation: &PairingValidation) -> Vec<ReadinessIssueCode> {
 }
 
 #[test]
+fn draft_parent_tournament_is_not_openable() {
+    let mut facts = base_facts(ScoringFormat::IndividualStrokePlay);
+    facts.tournament_status = TournamentStatus::Draft;
+
+    let validation = validate(&facts);
+
+    assert!(!validation.ready);
+    assert!(codes(&validation).contains(&ReadinessIssueCode::TournamentNotOpenable));
+}
+
+#[test]
 fn individual_requires_complete_flights_and_no_legacy_teams() {
     let mut facts = base_facts(ScoringFormat::IndividualStrokePlay);
     assert!(validate(&facts).ready);

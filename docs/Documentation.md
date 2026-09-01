@@ -25,6 +25,10 @@ rotation, and revocation from mobile-first React views.
 Accounts now use username and password only. Tournament admins can correct a
 registered handicap with an audit reason until the first round opens; the
 handicap is permanently fixed for that tournament afterward.
+An exact tournament admin can now start a ready draft tournament from its
+management workspace. Tournament start and round opening are separate lifecycle
+actions: start activates the tournament and freezes pre-start settings, while
+every round remains draft until it is explicitly opened.
 
 ## Repository structure
 
@@ -62,6 +66,11 @@ handicap is permanently fixed for that tournament afterward.
 - SSE messages invalidate client queries; clients refetch authoritative data.
 
 ## Round opening
+
+A round can open only while its parent tournament is `active`. Tournament start
+therefore cannot be bypassed through the round lifecycle. Starting a tournament
+does not require course, tee, team, flight, or scoring readiness; those checks
+remain authoritative at the separate round-opening boundary below.
 
 `GET /api/rounds/{round_id}/pairing-validation` reports stable readiness issue
 codes plus deterministic team, flight, legacy-group, and split-team details. An
@@ -277,14 +286,47 @@ read and invitation mutation remains protected by backend membership policy.
 The workspace provides semantic anchors for settings, entrants, invitations,
 rounds, courses, pairings, and lifecycle. Most sections report only facts already
 preserved by the existing private APIs and link to the invitation and round
-surfaces. Settings exposes “Tellende runder” while every existing round remains
-draft. `PATCH /api/tournaments/{tournament_id}/counted-rounds` requires the
+surfaces. Settings exposes “Tellende runder” while the tournament and every
+existing round remain draft. `PATCH /api/tournaments/{tournament_id}/counted-rounds` requires the
 current tournament timestamp, CSRF, and exact tournament-admin membership. It
 locks the round set before the tournament, rejects stale writes, and permanently
-freezes the value when the first round opens. PostgreSQL independently requires
-the admin workflow context and uses the durable opening marker even if child rows
-are later removed. Success returns the authoritative private tournament and
-publishes one payload-free invalidation after commit.
+freezes the value when the tournament starts or a legacy round has already
+opened. PostgreSQL independently requires the admin workflow context and uses
+the durable opening marker even if child rows are later removed. Success returns
+the authoritative private tournament and publishes one payload-free invalidation
+after commit.
+
+The Lifecycle section exposes `Start turneringen` only to the exact tournament
+admin. `POST /api/tournaments/{tournament_id}/start` requires CSRF plus the
+current tournament `updated_at`. Under deterministic locks it revalidates the
+active session and exact `admin` membership, requires rounds numbered exactly
+`1..=number_of_rounds`, requires every round to remain draft, and requires at
+least one registered, non-withdrawn player whose account is active. Course, tee,
+pairing, and flight readiness are deliberately deferred to round opening.
+
+A successful start changes only the tournament from `draft` to `active`, returns
+the authoritative private/non-cacheable tournament, updates the identity-scoped
+query cache, and publishes one payload-free tournament invalidation after commit.
+An already-active retry is idempotent and emits no event. Stale, not-ready, and
+invalid-state requests use `tournament_start_stale`,
+`tournament_start_not_ready`, and `tournament_start_invalid_state`; `401`, `403`,
+and `404` retain their existing meanings. The mobile panel fails closed while
+roster or rounds load, gives explicit retry guidance, prevents duplicate starts,
+and confirms that individual rounds remain in `Kladd` after tournament start.
+
+Migration 0015 protects the transition and preserves the complete existing
+round completion, locking, snapshot, and foursomes database guards. Tournaments
+that legally had a non-draft round while still marked draft under the previous
+schema are promoted to active during upgrade, with their round states preserved
+and the tournament timestamp intentionally refreshed. Untouched draft
+tournaments remain draft and use the explicit start workflow. A separate
+`BEFORE INSERT` guard rejects every non-draft tournament creation, so internal
+repository or direct-SQL callers cannot manufacture an active, completed, or
+archived tournament. The general repository creator and legacy HTTP creator are
+both draft-only. Concurrent starts commit one changed result and one event;
+start racing the counted-round update serializes without deadlock and leaves
+either the started original configuration or a newer draft configuration that
+must be started with its refreshed timestamp.
 
 The Courses section is writable for draft rounds through the existing
 atomic course-configuration API. It does not infer revisions, load teams per
@@ -480,7 +522,9 @@ five contain flights but no teams. Every team is wholly contained in one flight.
 Rerunning the seed backfills only nonconflicting deterministic rows. It converts
 the old seed's team-level starting holes to flight schedules only while the exact
 known draft team, membership, and flight facts match, and it skips frozen rounds
-without bypassing pairing locks.
+without bypassing pairing locks. The seeded tournament remains in `draft` so the
+hosted start action can be exercised; its round pairings become openable only
+after the seeded exact admin starts the tournament.
 
 ## Fixed tournament handicaps
 
@@ -585,15 +629,17 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 
 ## Known limitations
 
-- Global player reads, scorecard read visibility, and SSE event visibility still
-  need explicit private/public policy decisions. Later public tournament or
+- The legacy global player/profile/handicap directory remains publicly readable
+  and is the next security-removal step. Product-facing player discovery must use
+  tournament-scoped private rosters. Scorecard and SSE visibility still need
+  explicit private/public policy decisions; later public tournament or
   leaderboard access will use explicit share tokens.
 - Request throttling is not implemented, so the public onboarding and
   registration endpoints are not ready for an internet-facing deployment.
-- Tournament settings currently edit only the pre-opening counted-round value;
-  general tournament and lifecycle editors remain unimplemented. The Courses
-  section supports draft-round configuration; non-draft rounds are deliberately
-  read-only.
+- Tournament settings currently edit only the pre-start counted-round value and
+  expose the explicit tournament-start action; general tournament editing and
+  later completion/archive controls remain unimplemented. The Courses section
+  supports draft-round configuration; non-draft rounds are deliberately read-only.
 - Pairing roster reads, atomic admin replacement, the mobile draft editor,
   flight-aware opening readiness, and representative ready seed assignments
   exist together with membership-wide scoring authority. There is still no

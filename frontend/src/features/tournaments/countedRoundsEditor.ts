@@ -1,5 +1,5 @@
 import { ApiHttpError } from '../../api/http'
-import type { Round } from '../../api/types'
+import type { Round, TournamentStatus } from '../../api/types'
 
 export interface CountedRoundsFailure {
   message: string
@@ -26,8 +26,10 @@ export function countedRoundsFailure(error: Error | null): CountedRoundsFailure 
 }
 
 export function countedRoundsAreEditable(
+  tournamentStatus: TournamentStatus,
   rounds: Round[] | undefined,
 ): boolean {
-  return rounds !== undefined
+  return tournamentStatus === 'draft'
+    && rounds !== undefined
     && rounds.every((round) => round.status === 'draft')
 }

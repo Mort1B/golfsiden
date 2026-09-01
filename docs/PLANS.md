@@ -17,12 +17,14 @@ API plus explicit legacy individual-group conversion and flight-aware pairing
 validation/opening and deterministic representative seed assignments for all
 five rounds, the mobile draft-round pairing roster editor, and runtime exact-
 flight score authority and the exhaustive round-leaderboard format boundary are
-complete, as is the exhaustive lifecycle, pairing, completion, authorization,
+complete, as is the exhaustive round lifecycle, pairing, completion, authorization,
 and scorecard format-policy boundary, and the complete two-player foursomes
 format with preserved WHS team handicaps, and the phone-first writable-card
 selector optimization, and the persisted draft-only `counted_rounds`
 configuration boundary, and metric-specific completed best-N tournament
-contributions and the strict-Clippy lifecycle error-size repair are complete. No
+contributions and the strict-Clippy lifecycle error-size repair are complete.
+The exact-admin tournament-start lifecycle and hosted management action are also
+complete, including draft-only creation and concurrent lifecycle coverage. No
 active implementation step is approved.
 
 ## Product decisions
@@ -113,32 +115,28 @@ active implementation step is approved.
 
 ## Upcoming work
 
-### Tournament scope and start lifecycle
+### Tournament scope isolation and legacy-directory retirement
 
-- Audit every tournament admin read and mutation to prove that only an exact
-  `tournament_memberships.role = 'admin'` relation grants authority. Remove or
-  retire remaining global-role tournament bypasses and platform-admin creation
-  assumptions without changing account login. Test two creators and two
-  tournaments in both directions: each creator can administer only the
-  tournament they created and receives `403` for the other's existing resources.
+- Remove the public `/players` navigation and page plus unauthenticated global
+  player, profile, and handicap-history reads. Tournament members must discover
+  players only through the target tournament's private roster. If global player
+  operations remain necessary for deployment, place them behind a distinct
+  authenticated operator boundary rather than a member-visible directory.
+- Audit the remaining legacy platform-admin tournament/player mutation surfaces
+  and retire product-facing global-role assumptions without changing account
+  login. Exact tournament administration continues to require
+  `tournament_memberships.role = 'admin'`; the now-covered two-creator start path
+  must remain isolated in both directions.
 - Audit roster, pairing, scoring, scorecard, and leaderboard reads so a player is
   visible only through the target tournament's explicit membership and
   `tournament_players` registration. Reusing the same account in another
   tournament must create separate tournament participation facts; it must never
   inherit roster presence, handicap, team/flight assignment, score authority, or
-  results. Remove member-facing global player discovery if any remains.
-- Add an exact-admin, CSRF-protected tournament-start mutation with deterministic
-  locking, an authoritative readiness response, stable conflict codes, and one
-  payload-free tournament invalidation after commit. Add a clear management
-  action for `draft -> active`, with pending, readiness-error, retry, and success
-  states. Starting is idempotent only for the already-active tournament and does
-  not open a round. Validate the hosted path in real Chrome so an eligible admin
-  is no longer stuck at “Kladd.”
-- **Stop condition:** two isolated tournament creators have no cross-tournament
-  authority or player leakage; a ready draft tournament can be started from the
-  hosted management UI and becomes authoritatively active; invalid or
-  unauthorized starts cannot mutate state or emit SSE; individual rounds remain
-  draft until explicitly opened.
+  results.
+- **Stop condition:** unauthenticated callers and ordinary members cannot
+  enumerate a global player/profile/handicap directory, and two isolated
+  tournaments expose only their own registered participants through every
+  product-facing read and mutation.
 
 ### Mandatory counted round
 

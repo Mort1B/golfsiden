@@ -60,7 +60,9 @@ cargo run -p golf-api --bin seed
 ```
 
 The seed creates one admin identity, eight linked player accounts, one course
-with 18 holes, and a five-round tournament whose pairings are ready to open.
+with 18 holes, and a five-round draft tournament that is ready to start. After
+the admin starts the tournament in its management workspace, every seeded
+round's pairings are ready to open.
 Each round has two four-player flights starting on holes 1 and 10. Scramble
 rounds one, two, and four have four two-player score-owner teams; individual
 rounds three and five use flights only. The player rotations change between
@@ -161,8 +163,9 @@ still requires rotation. Request throttling is required before public
 deployment. The backend now exposes a private consolidated team/flight roster and
 an atomic admin replacement endpoint for draft rounds. Flight-aware validation
 and opening require complete assignments and keep scramble teams within one
-flight; the development seed supplies representative ready assignments for all
-five rounds. Tournament admins can edit one draft round at a time with accessible
+flight; the development seed supplies representative assignments for all five
+rounds, ready to open after the admin starts the tournament. Tournament admins
+can edit one draft round at a time with accessible
 add, move, remove, and ordering controls; saves replace the complete team/flight
 roster atomically and preserve dirty input on conflicts. The remaining
 tournament settings, offline scoring, and locked-round score corrections remain

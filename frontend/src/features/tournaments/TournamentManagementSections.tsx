@@ -6,6 +6,7 @@ import { StatusBadge } from '../../ui/StatusBadge'
 import { CourseConfigurationSection } from './CourseConfigurationSection'
 import { CountedRoundsEditor } from './CountedRoundsEditor'
 import { PairingSection } from './pairings/PairingSection'
+import { TournamentStartPanel } from './TournamentStartPanel'
 
 interface ReadState<T> {
   data: T | undefined
@@ -120,6 +121,7 @@ export function TournamentManagementSections({ tournament, roster, rounds }: Pro
       <section id="lifecycle" className="management-section" aria-labelledby="lifecycle-heading" tabIndex={-1}>
         <header><p className="eyebrow">Gjeldende status</p><h2 id="lifecycle-heading">Livsløp</h2></header>
         <p className="management-current-status">Turneringen er <StatusBadge status={tournament.status} />.</p>
+        <TournamentStartPanel tournament={tournament} roster={roster} rounds={rounds} />
         <RoundState state={rounds}>{(items) => (
           <ul className="management-detail-list">
             {items.map((round) => <li key={round.id}><CalendarDays aria-hidden="true" /><span><strong>{formatName(round)}</strong>{formatDate(round.round_date)} · {round.number_of_holes} hull · <StatusBadge status={round.status} /></span></li>)}

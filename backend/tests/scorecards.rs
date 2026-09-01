@@ -11,7 +11,7 @@ use golf_api::{
     AppState, api,
     auth::{derive_csrf_token, hash_session_token},
     domain::scorecards::ScoreOwner,
-    repositories::{auth, round_completion, round_lifecycle, scorecards},
+    repositories::{auth, round_completion, round_lifecycle, scorecards, tournaments},
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -52,8 +52,8 @@ INSERT INTO users (id, username, display_name, role, player_id) VALUES
 ('30000000-0000-0000-0000-000000000015', 'ada_player', 'Ada', 'player', '30000000-0000-0000-0000-000000000011'),
 ('30000000-0000-0000-0000-000000000016', 'bjorn_player', 'Bjorn', 'player', '30000000-0000-0000-0000-000000000012'),
 ('30000000-0000-0000-0000-000000000018', 'carla_player', 'Carla', 'player', '30000000-0000-0000-0000-000000000017');
-INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds, status)
-VALUES ('30000000-0000-0000-0000-000000000001', 'Score Cup', '2026-08-01', '2026-08-03', 3, 'active');
+INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds)
+VALUES ('30000000-0000-0000-0000-000000000001', 'Score Cup', '2026-08-01', '2026-08-03', 3);
 INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap) VALUES
 ('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000011', 2.0),
 ('30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000012', 6.0);
@@ -95,6 +95,22 @@ INSERT INTO flight_memberships (flight_id, round_id, tournament_id, player_id, d
 
 async fn seed_open(pool: &PgPool) {
     sqlx::raw_sql(FIXTURE).execute(pool).await.unwrap();
+    let admin = auth::create_session(
+        pool,
+        USER_A,
+        &hash_session_token(token_for_user(USER_A)),
+        Utc::now() + ChronoDuration::hours(1),
+    )
+    .await
+    .unwrap();
+    let updated_at = sqlx::query_scalar("SELECT updated_at FROM tournaments WHERE id = $1")
+        .bind(TOURNAMENT_ID)
+        .fetch_one(pool)
+        .await
+        .unwrap();
+    tournaments::start_authorized(pool, admin.session_id, TOURNAMENT_ID, updated_at)
+        .await
+        .unwrap();
     round_lifecycle::open(pool, INDIVIDUAL_ROUND_ID)
         .await
         .unwrap();
@@ -102,7 +118,6 @@ async fn seed_open(pool: &PgPool) {
         .await
         .unwrap();
     for user_id in [
-        USER_A,
         USER_B,
         PLAYER_USER_A,
         PLAYER_USER_B,

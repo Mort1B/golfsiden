@@ -34,6 +34,7 @@ export interface TournamentPlayer {
   tournament_id: string
   player_id: string
   display_name: string
+  player_active: boolean
   tournament_handicap: number
   seed: number | null
   status: ParticipantStatus

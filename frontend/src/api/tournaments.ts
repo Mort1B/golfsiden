@@ -71,6 +71,7 @@ export function decodeTournamentPlayer(value: unknown, path = 'player'): Tournam
     tournament_id: decodeUuid(data.tournament_id, `${path}.tournament_id`, 'turneringsspillerdata'),
     player_id: decodeUuid(data.player_id, `${path}.player_id`, 'turneringsspillerdata'),
     display_name: decodeString(data.display_name, `${path}.display_name`, 'turneringsspillerdata'),
+    player_active: decodeBoolean(data.player_active, `${path}.player_active`, 'turneringsspillerdata'),
     tournament_handicap: decodeNumber(data.tournament_handicap, `${path}.tournament_handicap`, -10, 54, 'turneringsspillerdata'),
     seed: data.seed === null ? null : decodeInteger(data.seed, `${path}.seed`, undefined, undefined, 'turneringsspillerdata'),
     status: participantStatus(data.status, `${path}.status`),
@@ -205,6 +206,15 @@ export const tournamentApi = {
       headers: { 'content-type': 'application/json', 'x-csrf-token': csrfToken },
       body: JSON.stringify(input),
     },
+  ),
+  start: (
+    tournamentId: string,
+    input: { expected_tournament_updated_at: string },
+    csrfToken: string,
+  ) => requestDecoded(
+    `/api/tournaments/${tournamentId}/start`,
+    (value) => decodeTournament(value),
+    jsonRequest('POST', input, csrfToken),
   ),
   correctHandicap: (
     tournamentId: string,

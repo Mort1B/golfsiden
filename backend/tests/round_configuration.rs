@@ -13,7 +13,10 @@ use golf_api::{
     course_provider::{
         CourseDetail, CourseLocation, Hole, Tee, TeeCategory, revision_adapter::select_and_validate,
     },
-    repositories::{auth, course_revisions as course_revision_repository, round_configuration},
+    repositories::{
+        auth, course_revisions as course_revision_repository, round_configuration, round_lifecycle,
+        tournaments,
+    },
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -35,30 +38,55 @@ async fn seed(pool: &PgPool) {
          ('84000000-0000-0000-0000-000000000001', 'configuration_admin', 'Admin', 'player'),
          ('84000000-0000-0000-0000-000000000002', 'configuration_viewer', 'Viewer', 'admin');
          INSERT INTO tournaments
-           (id, name, start_date, end_date, number_of_rounds, status)
+           (id, name, start_date, end_date, number_of_rounds)
          VALUES ('84000000-0000-0000-0000-000000000003', 'Configuration Cup',
-                 '2026-10-01', '2026-10-02', 2, 'draft');
+                 '2026-10-01', '2026-10-02', 2);
          INSERT INTO tournament_memberships (tournament_id, user_id, role) VALUES
          ('84000000-0000-0000-0000-000000000003',
           '84000000-0000-0000-0000-000000000001', 'admin'),
          ('84000000-0000-0000-0000-000000000003',
           '84000000-0000-0000-0000-000000000002', 'viewer');
+         INSERT INTO players (id, display_name, current_handicap_index)
+         VALUES ('84000000-0000-0000-0000-000000000020', 'Open Player', 8.0);
+         INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap)
+         VALUES ('84000000-0000-0000-0000-000000000003',
+                 '84000000-0000-0000-0000-000000000020', 8.0);
+         INSERT INTO courses (id, name)
+         VALUES ('84000000-0000-0000-0000-000000000021', 'Open Course');
+         INSERT INTO tees (id, course_id, name, slope_rating, course_rating)
+         VALUES ('84000000-0000-0000-0000-000000000022',
+                 '84000000-0000-0000-0000-000000000021', 'Open Tee', 113, 4.0);
+         INSERT INTO holes (id, tee_id, hole_number, par, stroke_index)
+         VALUES ('84000000-0000-0000-0000-000000000023',
+                 '84000000-0000-0000-0000-000000000022', 1, 4, 1);
          INSERT INTO rounds
-           (id, tournament_id, round_number, name, round_date, course_name,
-            tee_name, number_of_holes, status, scoring_format)
+           (id, tournament_id, round_number, name, round_date, course_id,
+            course_name, tee_id, tee_name, number_of_holes, scoring_format)
          VALUES
          ('84000000-0000-0000-0000-000000000004',
           '84000000-0000-0000-0000-000000000003', 1, 'Draft', '2026-10-01',
-          '', '', 18, 'draft', 'individual_stroke_play'),
+          NULL, '', NULL, '', 18, 'individual_stroke_play'),
          ('84000000-0000-0000-0000-000000000005',
           '84000000-0000-0000-0000-000000000003', 2, 'Open', '2026-10-02',
-          '', '', 18, 'open', 'individual_stroke_play');",
+          '84000000-0000-0000-0000-000000000021', 'Open Course',
+          '84000000-0000-0000-0000-000000000022', 'Open Tee', 1,
+          'individual_stroke_play');
+         INSERT INTO flights (id, round_id, tournament_id, name)
+         VALUES ('84000000-0000-0000-0000-000000000024',
+                 '84000000-0000-0000-0000-000000000005',
+                 '84000000-0000-0000-0000-000000000003', 'Open Flight');
+         INSERT INTO flight_memberships (flight_id, round_id, tournament_id, player_id)
+         VALUES ('84000000-0000-0000-0000-000000000024',
+                 '84000000-0000-0000-0000-000000000005',
+                 '84000000-0000-0000-0000-000000000003',
+                 '84000000-0000-0000-0000-000000000020');",
     )
     .execute(pool)
     .await
     .unwrap();
+    let mut admin_session_id = None;
     for (user, token) in [(ADMIN, ADMIN_TOKEN), (VIEWER, VIEWER_TOKEN)] {
-        auth::create_session(
+        let session = auth::create_session(
             pool,
             user,
             &hash_session_token(token),
@@ -66,19 +94,34 @@ async fn seed(pool: &PgPool) {
         )
         .await
         .unwrap();
+        if user == ADMIN {
+            admin_session_id = Some(session.session_id);
+        }
     }
+    let admin_session_id = admin_session_id.unwrap();
+    let updated_at = sqlx::query_scalar(
+        "SELECT updated_at FROM tournaments
+         WHERE id = '84000000-0000-0000-0000-000000000003'",
+    )
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    tournaments::start_authorized(
+        pool,
+        admin_session_id,
+        uuid!("84000000-0000-0000-0000-000000000003"),
+        updated_at,
+    )
+    .await
+    .unwrap();
+    round_lifecycle::open_authorized(pool, admin_session_id, OPEN)
+        .await
+        .unwrap();
 }
 
 async fn make_draft_round_openable(pool: &PgPool) {
     sqlx::raw_sql(
-        "UPDATE tournaments SET status = 'active'
-         WHERE id = '84000000-0000-0000-0000-000000000003';
-         INSERT INTO players (id, display_name, current_handicap_index)
-         VALUES ('84000000-0000-0000-0000-000000000011', 'Race Player', 8.0);
-         INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap)
-         VALUES ('84000000-0000-0000-0000-000000000003',
-                 '84000000-0000-0000-0000-000000000011', 8.0);
-         INSERT INTO courses (id, name)
+        "INSERT INTO courses (id, name)
          VALUES ('84000000-0000-0000-0000-000000000012', 'Existing Course');
          INSERT INTO tees (id, course_id, name, slope_rating, course_rating)
          VALUES ('84000000-0000-0000-0000-000000000013',
@@ -99,7 +142,7 @@ async fn make_draft_round_openable(pool: &PgPool) {
          VALUES ('84000000-0000-0000-0000-000000000015',
                  '84000000-0000-0000-0000-000000000004',
                  '84000000-0000-0000-0000-000000000003',
-                 '84000000-0000-0000-0000-000000000011');",
+                 '84000000-0000-0000-0000-000000000020');",
     )
     .execute(pool)
     .await

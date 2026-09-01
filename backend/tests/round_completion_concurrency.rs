@@ -11,7 +11,7 @@ use golf_api::{
     AppState, api,
     auth::{derive_csrf_token, hash_session_token},
     domain::scorecards::ScoreOwner,
-    repositories::{auth, round_completion, round_lifecycle, scorecards},
+    repositories::{auth, round_completion, round_lifecycle, scorecards, tournaments},
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -31,8 +31,8 @@ INSERT INTO users (id, username, display_name, role)
 VALUES ('70000000-0000-0000-0000-000000000001', 'race_admin', 'Admin', 'admin');
 INSERT INTO players (id, display_name, current_handicap_index)
 VALUES ('70000000-0000-0000-0000-000000000003', 'Player', 8.0);
-INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds, status)
-VALUES ('70000000-0000-0000-0000-000000000010', 'Race', '2026-01-01', '2026-01-01', 1, 'active');
+INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds)
+VALUES ('70000000-0000-0000-0000-000000000010', 'Race', '2026-01-01', '2026-01-01', 1);
 INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap)
 VALUES ('70000000-0000-0000-0000-000000000010', '70000000-0000-0000-0000-000000000003', 8.0);
 INSERT INTO courses (id, name)
@@ -59,6 +59,29 @@ async fn seed_ready_completed(pool: &PgPool) {
     .execute(pool)
     .await
     .unwrap();
+    let session = auth::create_session(
+        pool,
+        USER_ID,
+        &hash_session_token(SESSION_TOKEN),
+        Utc::now() + ChronoDuration::hours(1),
+    )
+    .await
+    .unwrap();
+    let updated_at = sqlx::query_scalar(
+        "SELECT updated_at FROM tournaments
+         WHERE id = '70000000-0000-0000-0000-000000000010'",
+    )
+    .fetch_one(pool)
+    .await
+    .unwrap();
+    tournaments::start_authorized(
+        pool,
+        session.session_id,
+        uuid!("70000000-0000-0000-0000-000000000010"),
+        updated_at,
+    )
+    .await
+    .unwrap();
     round_lifecycle::open(pool, ROUND_ID).await.unwrap();
     scorecards::save(
         pool,
@@ -81,14 +104,6 @@ async fn seed_ready_completed(pool: &PgPool) {
     .await
     .unwrap();
     round_completion::complete(pool, ROUND_ID).await.unwrap();
-    auth::create_session(
-        pool,
-        USER_ID,
-        &hash_session_token(SESSION_TOKEN),
-        Utc::now() + ChronoDuration::hours(1),
-    )
-    .await
-    .unwrap();
 }
 
 fn lock_request() -> Request<Body> {

@@ -8,7 +8,7 @@ use chrono::{Duration, Utc};
 use golf_api::{
     AppState, api,
     auth::{derive_csrf_token, hash_session_token},
-    repositories::{auth, round_lifecycle},
+    repositories::{auth, round_lifecycle, tournaments},
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -299,9 +299,6 @@ async fn tournament_handicap_correction_is_audited_then_locked_by_first_open(poo
     let future_round = uuid!("82000000-0000-0000-0000-000000000031");
     sqlx::raw_sql(
         r#"
-        UPDATE tournaments
-        SET status = 'active'
-        WHERE id = '82000000-0000-0000-0000-000000000002';
         INSERT INTO courses (id, name)
         VALUES ('82000000-0000-0000-0000-000000000021', 'Snapshot Course');
         INSERT INTO tees (id, course_id, name, slope_rating, course_rating)
@@ -341,6 +338,20 @@ async fn tournament_handicap_correction_is_audited_then_locked_by_first_open(poo
     .execute(&pool)
     .await
     .unwrap();
+    let admin_session = sqlx::query_scalar("SELECT id FROM user_sessions WHERE token_hash = $1")
+        .bind(hash_session_token("admin-b-token").as_slice())
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    let expected_updated_at =
+        sqlx::query_scalar("SELECT updated_at FROM tournaments WHERE id = $1")
+            .bind(TOURNAMENT_B)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    tournaments::start_authorized(&pool, admin_session, TOURNAMENT_B, expected_updated_at)
+        .await
+        .unwrap();
     let state = AppState::new(pool.clone());
     let mut events = state.live_events.subscribe();
     let app = api::router(state);
@@ -360,6 +371,7 @@ async fn tournament_handicap_correction_is_audited_then_locked_by_first_open(poo
     let editable_roster = body(editable_roster).await;
     assert_eq!(editable_roster["handicap_correction"]["state"], "editable");
     assert_eq!(editable_roster["players"].as_array().unwrap().len(), 1);
+    assert_eq!(editable_roster["players"][0]["player_active"], true);
 
     let blank_reason = app
         .clone()
@@ -401,6 +413,7 @@ async fn tournament_handicap_correction_is_audited_then_locked_by_first_open(poo
     assert_eq!(changed.status(), StatusCode::CREATED);
     let changed = body(changed).await;
     assert_eq!(changed["player"]["tournament_handicap"], 3.5);
+    assert_eq!(changed["player"]["player_active"], true);
     assert_eq!(changed["audit"]["handicap_index"], 3.5);
     assert_eq!(changed["audit"]["changed_by"], ADMIN_B.to_string());
     assert_eq!(events.try_recv().unwrap().id, TOURNAMENT_B);

@@ -10,7 +10,7 @@ use golf_api::{
     auth::{
         derive_csrf_token, generate_invitation_token, hash_invitation_token, hash_session_token,
     },
-    repositories::auth,
+    repositories::{auth, tournaments},
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -560,6 +560,39 @@ async fn redemption_guard_lifecycle_errors_keep_the_api_contract(pool: PgPool) {
     let seed = seed(&pool, None).await;
     sqlx::raw_sql(
         r#"
+        INSERT INTO players (id, display_name, current_handicap_index)
+        VALUES ('93000000-0000-0000-0000-000000000021', 'Existing entrant', 8.0);
+        INSERT INTO tournament_players
+          (tournament_id, player_id, tournament_handicap)
+        VALUES ('93000000-0000-0000-0000-000000000001',
+                '93000000-0000-0000-0000-000000000021', 8.0);
+        INSERT INTO rounds
+          (id, tournament_id, round_number, name, round_date, course_name,
+           tee_name, scoring_format)
+        VALUES ('93000000-0000-0000-0000-000000000030',
+                '93000000-0000-0000-0000-000000000001', 1, 'Invitation round',
+                '2026-09-01', '', '', 'individual_stroke_play');
+        "#,
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    let admin_session = sqlx::query_scalar("SELECT id FROM user_sessions WHERE token_hash = $1")
+        .bind(hash_session_token("admin-invitation-session").as_slice())
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    let expected_updated_at =
+        sqlx::query_scalar("SELECT updated_at FROM tournaments WHERE id = $1")
+            .bind(TOURNAMENT_ID)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    tournaments::start_authorized(&pool, admin_session, TOURNAMENT_ID, expected_updated_at)
+        .await
+        .unwrap();
+    sqlx::raw_sql(
+        r#"
         CREATE FUNCTION test_force_closed_before_redemption() RETURNS trigger
         LANGUAGE plpgsql AS $$
         BEGIN
@@ -607,7 +640,7 @@ async fn redemption_guard_lifecycle_errors_keep_the_api_contract(pool: PgPool) {
         .fetch_one(&pool)
         .await
         .unwrap(),
-        ("draft".to_owned(), 0, 0, 0)
+        ("active".to_owned(), 0, 0, 0)
     );
 }
 

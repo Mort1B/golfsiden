@@ -21,13 +21,25 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   `round_team_handicap_snapshots` preserves the final team Playing Handicap for
   each opened foursomes team and is immutable except for ancestor deletion.
 - Round opening locks the round and tournament, repeats readiness validation, and captures one immutable snapshot for each active entrant before changing status. A transaction-local opening context prevents direct status or snapshot bypasses.
+- Tournament start is a separate exact-admin lifecycle boundary. Its transaction
+  locks the stored round set deterministically before reauthorizing the session
+  and exact tournament membership, locking the tournament, and share-locking
+  entrants. A complete `1..=number_of_rounds` draft plan plus one effectively
+  active entrant is required for `draft -> active`; already-active retries are
+  read-only and idempotent. PostgreSQL independently verifies the transaction-
+  local tournament/actor context, exact admin membership, plan, and entrant,
+  while a separate insert trigger requires every new tournament to begin draft.
+  The general repository creation boundary is draft-only as defense in depth.
+  Round opening requires an active parent, but course and pairing configuration
+  remain independently editable while their individual rounds are draft.
 - `tournaments.counted_rounds` is a required cross-column bounded configuration
   fact. Existing tournaments were backfilled to count every configured round.
   Creator onboarding persists an explicit value; the admin mutation uses
   optimistic tournament time and the same round-before-tournament lock order as
   opening. A transaction-context trigger verifies exact admin membership and the
-  durable first-opening marker, so later deletion cannot make the setting
-  mutable again. Leaderboard selection does not yet consume this field.
+  durable first-opening marker, so tournament start or later deletion cannot
+  make the setting mutable again. Leaderboard selection consumes this field
+  independently for gross and net completed contributions.
 - Course handicap uses exact tenths and rational arithmetic for `index * slope / 113 + rating - par`. Individual allowance is applied to the unrounded result before final rounding. Scramble caps each registered index at `36.0` before tee conversion; its member snapshots retain that effective index and rounded course handicap for the later team formula.
 - One closed round-format policy is the application source of truth for score-
   owner kind, exact team size, snapshot-handicap treatment, and team playing-
@@ -225,6 +237,7 @@ Implemented resources:
 | `GET`, `POST` | `/api/players/{player_id}/handicaps` | Handicap history and changes |
 | `GET`, `POST` | `/api/tournaments` | List and create tournaments |
 | `GET` | `/api/tournaments/{tournament_id}` | Retrieve a tournament |
+| `POST` | `/api/tournaments/{tournament_id}/start` | Start a ready draft tournament as its exact admin without opening a round |
 | `GET`, `POST` | `/api/tournaments/{tournament_id}/players` | List the roster and correction state, or register entrants |
 | `POST` | `/api/tournaments/{tournament_id}/players/{player_id}/handicap-corrections` | Audit a pre-opening tournament handicap correction |
 | `GET`, `POST` | `/api/tournaments/{tournament_id}/rounds` | List and create rounds |
@@ -251,7 +264,7 @@ Implemented resources:
 | `GET` | `/api/auth/session` | Retrieve the current session and CSRF value |
 | `POST` | `/api/auth/logout` | Revoke and clear the current session |
 | `GET` | `/api/me/tournaments` | List the session user's tournament memberships and player links |
-| `PATCH` | `/api/tournaments/{tournament_id}/counted-rounds` | Update best-N round configuration before the first opening |
+| `PATCH` | `/api/tournaments/{tournament_id}/counted-rounds` | Update best-N round configuration before tournament start |
 | `GET` | `/api/tournaments/{tournament_id}/course-catalog` | Search the bundled curated course shortlist as a tournament admin |
 | `GET` | `/api/tournaments/{tournament_id}/course-provider/courses/{provider_course_id}` | Retrieve normalized provider tee and hole detail as a tournament admin |
 | `POST` | `/api/onboarding/tournaments` | Atomically create a first-time creator, draft tournament plan, invitation, and session |

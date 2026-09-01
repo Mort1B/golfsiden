@@ -386,57 +386,48 @@ async fn database_requires_admin_context_and_permanently_honors_opening_marker(p
 }
 
 #[sqlx::test(migrations = "../migrations")]
-async fn real_opening_and_configuration_race_serialize_before_the_permanent_lock(pool: PgPool) {
+async fn tournament_start_permanently_locks_configuration_before_round_opening(pool: PgPool) {
     seed(&pool).await;
     make_first_round_openable(&pool).await;
-    let expected = updated_at(&pool).await;
     let session_id =
         sqlx::query_scalar::<_, Uuid>("SELECT id FROM user_sessions WHERE token_hash = $1")
             .bind(hash_session_token(ADMIN_TOKEN).as_slice())
             .fetch_one(&pool)
             .await
             .unwrap();
-    let barrier = std::sync::Arc::new(tokio::sync::Barrier::new(3));
 
-    let opening_pool = pool.clone();
-    let opening_barrier = barrier.clone();
-    let opening = tokio::spawn(async move {
-        opening_barrier.wait().await;
-        round_lifecycle::open_authorized(
-            &opening_pool,
-            session_id,
-            uuid!("14000000-0000-0000-0000-000000000011"),
-        )
-        .await
-    });
-    let update_pool = pool.clone();
-    let update_barrier = barrier.clone();
-    let update = tokio::spawn(async move {
-        update_barrier.wait().await;
-        tournaments::update_counted_rounds_authorized(
-            &update_pool,
-            session_id,
-            TOURNAMENT,
-            2,
-            expected,
-        )
-        .await
-    });
-    barrier.wait().await;
-    opening.await.unwrap().unwrap();
-    let update = update.await.unwrap();
+    let started =
+        tournaments::start_authorized(&pool, session_id, TOURNAMENT, updated_at(&pool).await)
+            .await
+            .unwrap();
+    assert!(started.changed);
+
+    let update = tournaments::update_counted_rounds_authorized(
+        &pool,
+        session_id,
+        TOURNAMENT,
+        2,
+        updated_at(&pool).await,
+    )
+    .await;
     assert!(matches!(
         update,
-        Ok(tournaments::UpdateCountedRoundsResult { changed: true, .. })
-            | Err(tournaments::TournamentMutationError::ConfigurationLocked)
+        Err(tournaments::TournamentMutationError::ConfigurationLocked)
     ));
-    let counted = stored_counted_rounds(&pool).await;
-    assert!(counted == 2 || counted == 3);
+    assert_eq!(stored_counted_rounds(&pool).await, 3);
+
+    round_lifecycle::open_authorized(
+        &pool,
+        session_id,
+        uuid!("14000000-0000-0000-0000-000000000011"),
+    )
+    .await
+    .unwrap();
     let permanently_locked = tournaments::update_counted_rounds_authorized(
         &pool,
         session_id,
         TOURNAMENT,
-        if counted == 2 { 1 } else { 2 },
+        2,
         updated_at(&pool).await,
     )
     .await;

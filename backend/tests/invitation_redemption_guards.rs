@@ -177,6 +177,75 @@ async fn direct_sql_rejects_invalid_lifecycle_linkage_and_capacity(pool: PgPool)
         ("closed", "invitation_redemption_tournament_closed"),
     ] {
         let invitation_id = Uuid::new_v4();
+        let state_tournament_id = if state == "closed" {
+            let tournament_id = Uuid::new_v4();
+            sqlx::query(
+                "INSERT INTO tournaments
+                   (id, name, start_date, end_date, number_of_rounds)
+                 VALUES ($1, 'Closed guard trip', '2026-09-01', '2026-09-02', 1)",
+            )
+            .bind(tournament_id)
+            .execute(&pool)
+            .await
+            .unwrap();
+            sqlx::query(
+                "INSERT INTO tournament_memberships (tournament_id, user_id, role)
+                 VALUES ($1, $2, 'admin'), ($1, $3, 'player')",
+            )
+            .bind(tournament_id)
+            .bind(seed.admin_id)
+            .bind(second.0)
+            .execute(&pool)
+            .await
+            .unwrap();
+            sqlx::query(
+                "INSERT INTO tournament_players
+                   (tournament_id, player_id, tournament_handicap)
+                 VALUES ($1, $2, 10.0)",
+            )
+            .bind(tournament_id)
+            .bind(second.1)
+            .execute(&pool)
+            .await
+            .unwrap();
+            sqlx::query(
+                "INSERT INTO rounds
+                   (id, tournament_id, round_number, name, round_date, course_name,
+                    tee_name, scoring_format)
+                 VALUES ($1, $2, 1, 'Closed round', '2026-09-01', '', '',
+                         'individual_stroke_play')",
+            )
+            .bind(Uuid::new_v4())
+            .bind(tournament_id)
+            .execute(&pool)
+            .await
+            .unwrap();
+            let mut lifecycle = pool.begin().await.unwrap();
+            sqlx::query(
+                "SELECT
+                   set_config('app.tournament_start_tournament_id', $1::text, true),
+                   set_config('app.tournament_start_user_id', $2::text, true)",
+            )
+            .bind(tournament_id)
+            .bind(seed.admin_id)
+            .execute(&mut *lifecycle)
+            .await
+            .unwrap();
+            sqlx::query("UPDATE tournaments SET status = 'active' WHERE id = $1")
+                .bind(tournament_id)
+                .execute(&mut *lifecycle)
+                .await
+                .unwrap();
+            lifecycle.commit().await.unwrap();
+            sqlx::query("UPDATE tournaments SET status = 'completed' WHERE id = $1")
+                .bind(tournament_id)
+                .execute(&pool)
+                .await
+                .unwrap();
+            tournament_id
+        } else {
+            seed.tournament_id
+        };
         let (created_at, expires_at) = if state == "expired" {
             (
                 Utc::now() - Duration::days(2),
@@ -194,7 +263,7 @@ async fn direct_sql_rejects_invalid_lifecycle_linkage_and_capacity(pool: PgPool)
                      CASE WHEN $7 THEN $4 ELSE NULL END)",
         )
         .bind(invitation_id)
-        .bind(seed.tournament_id)
+        .bind(state_tournament_id)
         .bind(hash_invitation_token(state).as_slice())
         .bind(seed.admin_id)
         .bind(created_at)
@@ -203,31 +272,17 @@ async fn direct_sql_rejects_invalid_lifecycle_linkage_and_capacity(pool: PgPool)
         .execute(&pool)
         .await
         .unwrap();
-        if state == "closed" {
-            sqlx::query("UPDATE tournaments SET status = 'completed' WHERE id = $1")
-                .bind(seed.tournament_id)
-                .execute(&pool)
-                .await
-                .unwrap();
-        }
         let error = direct_redeem(
             &pool,
             invitation_id,
             invitation_id,
-            seed.tournament_id,
+            state_tournament_id,
             second.0,
             second.1,
         )
         .await
         .unwrap_err();
         assert_eq!(constraint(&error), Some(expected));
-        if state == "closed" {
-            sqlx::query("UPDATE tournaments SET status = 'draft' WHERE id = $1")
-                .bind(seed.tournament_id)
-                .execute(&pool)
-                .await
-                .unwrap();
-        }
     }
 
     let bad_link = direct_redeem(

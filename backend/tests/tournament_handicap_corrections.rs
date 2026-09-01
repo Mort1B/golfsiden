@@ -202,8 +202,20 @@ async fn direct_sql_is_guarded_and_correction_audit_is_exactly_once_and_immutabl
 }
 
 #[sqlx::test(migrations = "../migrations")]
-async fn correction_and_open_race_finishes_with_one_authoritative_snapshot(pool: PgPool) {
+async fn correction_and_open_race_after_start_has_one_authoritative_snapshot(pool: PgPool) {
     let session_id = seed(&pool).await;
+    let expected_updated_at =
+        sqlx::query_scalar("SELECT updated_at FROM tournaments WHERE id = $1")
+            .bind(TOURNAMENT_ID)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    let started =
+        tournaments::start_authorized(&pool, session_id, TOURNAMENT_ID, expected_updated_at)
+            .await
+            .unwrap();
+    assert!(started.changed);
+
     let correction_pool = pool.clone();
     let correction = tokio::spawn(async move {
         tournaments::change_player_handicap_authorized(
@@ -317,6 +329,11 @@ async fn scramble_snapshots_store_the_capped_effective_index_before_tee_conversi
           (id, name, start_date, end_date, number_of_rounds, status)
         VALUES ('98100000-0000-0000-0000-000000000010', 'Cap trip',
                 '2026-09-01', '2026-09-01', 1, 'draft');
+        INSERT INTO users (id, username, display_name, role)
+        VALUES ('98100000-0000-0000-0000-000000000017', 'cap_admin', 'Cap admin', 'player');
+        INSERT INTO tournament_memberships (tournament_id, user_id, role)
+        VALUES ('98100000-0000-0000-0000-000000000010',
+                '98100000-0000-0000-0000-000000000017', 'admin');
         INSERT INTO tournament_players
           (tournament_id, player_id, tournament_handicap) VALUES
         ('98100000-0000-0000-0000-000000000010', '98100000-0000-0000-0000-000000000001', 35.9),
@@ -371,9 +388,36 @@ async fn scramble_snapshots_store_the_capped_effective_index_before_tee_conversi
     .await
     .unwrap();
 
-    round_lifecycle::open(&pool, uuid!("98100000-0000-0000-0000-000000000013"))
-        .await
-        .unwrap();
+    let session = auth::create_session(
+        &pool,
+        uuid!("98100000-0000-0000-0000-000000000017"),
+        &hash_session_token("cap-admin-session"),
+        Utc::now() + Duration::hours(1),
+    )
+    .await
+    .unwrap();
+    let expected_updated_at = sqlx::query_scalar(
+        "SELECT updated_at FROM tournaments
+         WHERE id = '98100000-0000-0000-0000-000000000010'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    tournaments::start_authorized(
+        &pool,
+        session.session_id,
+        uuid!("98100000-0000-0000-0000-000000000010"),
+        expected_updated_at,
+    )
+    .await
+    .unwrap();
+    round_lifecycle::open_authorized(
+        &pool,
+        session.session_id,
+        uuid!("98100000-0000-0000-0000-000000000013"),
+    )
+    .await
+    .unwrap();
     let rows = sqlx::query_as::<_, (f64, f64, i16)>(
         "SELECT tp.tournament_handicap::float8, rhs.handicap_index::float8,
                 rhs.course_handicap

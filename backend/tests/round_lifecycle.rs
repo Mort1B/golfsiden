@@ -11,7 +11,7 @@ use golf_api::{
     AppState, api,
     auth::{derive_csrf_token, hash_session_token},
     domain::models::ReadinessIssueCode,
-    repositories::{auth, round_lifecycle, round_lifecycle::OpenRoundError},
+    repositories::{auth, round_lifecycle, round_lifecycle::OpenRoundError, tournaments},
 };
 use http_body_util::BodyExt;
 use serde_json::Value;
@@ -37,8 +37,8 @@ INSERT INTO players (id, display_name, current_handicap_index) VALUES
 ('20000000-0000-0000-0000-000000000011', 'Ada', 0.5),
 ('20000000-0000-0000-0000-000000000012', 'Bjorn', -0.5),
 ('20000000-0000-0000-0000-000000000013', 'Clara', 9.6);
-INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds, status)
-VALUES ('20000000-0000-0000-0000-000000000001', 'Lifecycle Cup', '2026-08-01', '2026-08-02', 2, 'active');
+INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds)
+VALUES ('20000000-0000-0000-0000-000000000001', 'Lifecycle Cup', '2026-08-01', '2026-08-02', 1);
 INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap) VALUES
 ('20000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000011', 0.5),
 ('20000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000012', -0.5),
@@ -81,23 +81,36 @@ async fn seed_ready(pool: &PgPool) {
     .await
     .unwrap();
     let token_hash = hash_session_token(SESSION_TOKEN);
-    let exists = sqlx::query_scalar::<_, bool>(
-        "SELECT EXISTS(SELECT 1 FROM user_sessions WHERE token_hash = $1)",
+    let session_id = match sqlx::query_scalar::<_, Uuid>(
+        "SELECT id FROM user_sessions
+         WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > now()",
     )
     .bind(token_hash.as_slice())
-    .fetch_one(pool)
+    .fetch_optional(pool)
     .await
-    .unwrap();
-    if !exists {
-        auth::create_session(
-            pool,
-            ADMIN_ID,
-            &token_hash,
-            Utc::now() + ChronoDuration::hours(1),
-        )
+    .unwrap()
+    {
+        Some(session_id) => session_id,
+        None => {
+            auth::create_session(
+                pool,
+                ADMIN_ID,
+                &token_hash,
+                Utc::now() + ChronoDuration::hours(1),
+            )
+            .await
+            .unwrap()
+            .session_id
+        }
+    };
+    let updated_at = sqlx::query_scalar("SELECT updated_at FROM tournaments WHERE id = $1")
+        .bind(TOURNAMENT_ID)
+        .fetch_one(pool)
         .await
         .unwrap();
-    }
+    tournaments::start_authorized(pool, session_id, TOURNAMENT_ID, updated_at)
+        .await
+        .unwrap();
 }
 
 #[sqlx::test(migrations = "../migrations")]
@@ -323,6 +336,124 @@ async fn api_opens_once_with_exact_snapshots_and_emits_only_after_success(pool: 
     .await
     .unwrap();
     assert_eq!(preserved, 9.6);
+}
+
+#[sqlx::test(migrations = "../migrations")]
+async fn draft_parent_rejects_repository_and_api_open_without_mutation_or_event(pool: PgPool) {
+    seed_ready(&pool).await;
+    let draft_tournament = Uuid::new_v4();
+    let draft_round = Uuid::new_v4();
+    let draft_flight = Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO tournaments
+           (id, name, start_date, end_date, number_of_rounds, status)
+         VALUES ($1, 'Draft parent', '2026-08-03', '2026-08-03', 1, 'draft')",
+    )
+    .bind(draft_tournament)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO tournament_memberships (tournament_id, user_id, role)
+         VALUES ($1, $2, 'admin')",
+    )
+    .bind(draft_tournament)
+    .bind(ADMIN_ID)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO tournament_players
+           (tournament_id, player_id, tournament_handicap)
+         VALUES ($1, $2, 0.5)",
+    )
+    .bind(draft_tournament)
+    .bind(PLAYER_A)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO rounds
+           (id, tournament_id, round_number, name, round_date, course_id,
+            course_name, tee_id, tee_name, number_of_holes,
+            handicap_allowance_percent, scoring_format)
+         VALUES ($1, $2, 1, 'Ready except parent', '2026-08-03',
+                 '20000000-0000-0000-0000-000000000002', 'Lifecycle Links',
+                 $3, 'Test', 2, 95, 'individual_stroke_play')",
+    )
+    .bind(draft_round)
+    .bind(draft_tournament)
+    .bind(TEE_ID)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO flights (id, round_id, tournament_id, name)
+         VALUES ($1, $2, $3, 'Draft flight')",
+    )
+    .bind(draft_flight)
+    .bind(draft_round)
+    .bind(draft_tournament)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO flight_memberships
+           (flight_id, round_id, tournament_id, player_id, display_order)
+         VALUES ($1, $2, $3, $4, 1)",
+    )
+    .bind(draft_flight)
+    .bind(draft_round)
+    .bind(draft_tournament)
+    .bind(PLAYER_A)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let repository_error = round_lifecycle::open_authorized(
+        &pool,
+        sqlx::query_scalar("SELECT id FROM user_sessions WHERE token_hash = $1")
+            .bind(hash_session_token(SESSION_TOKEN).as_slice())
+            .fetch_one(&pool)
+            .await
+            .unwrap(),
+        draft_round,
+    )
+    .await
+    .unwrap_err();
+    let OpenRoundError::NotReady(validation) = repository_error else {
+        panic!("draft parent should fail repository readiness")
+    };
+    assert!(issue_codes(&validation).contains(&ReadinessIssueCode::TournamentNotOpenable));
+
+    let state = AppState::new(pool.clone());
+    let mut events = state.live_events.subscribe();
+    let response = api::router(Arc::clone(&state))
+        .oneshot(
+            authorize(Request::post(format!("/api/rounds/{draft_round}/open")))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CONFLICT);
+    assert_eq!(
+        response_json(response).await,
+        serde_json::json!({
+            "error": {"code": "conflict", "message": "round is not ready to open"}
+        })
+    );
+    assert!(matches!(events.try_recv(), Err(TryRecvError::Empty)));
+    let preserved = sqlx::query_as::<_, (String, i64)>(
+        "SELECT r.status::text,
+                (SELECT count(*) FROM round_handicap_snapshots WHERE round_id = r.id)
+         FROM rounds r WHERE r.id = $1",
+    )
+    .bind(draft_round)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(preserved, ("draft".to_owned(), 0));
 }
 
 #[sqlx::test(migrations = "../migrations")]
@@ -714,7 +845,7 @@ async fn course_and_tee_pair_must_match_during_round_creation(pool: PgPool) {
             .header("content-type", "application/json")
             .body(Body::from(
                 serde_json::json!({
-                    "round_number": 2,
+                    "round_number": 1,
                     "name": "Second round",
                     "round_date": "2026-08-02",
                     "course_id": "20000000-0000-0000-0000-000000000002",

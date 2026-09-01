@@ -109,6 +109,7 @@ pub struct TournamentPlayer {
     pub tournament_id: Uuid,
     pub player_id: Uuid,
     pub display_name: String,
+    pub player_active: bool,
     pub tournament_handicap: f64,
     pub seed: Option<i16>,
     pub status: ParticipantStatus,

@@ -17,7 +17,7 @@ use crate::{
         auth::{AuthenticatedSession, MutationSession, PlatformAdminSession},
         authorization::map_authorization_error,
     },
-    domain::models::{ScoringMode, TournamentHandicapCorrection, TournamentStatus},
+    domain::models::{ScoringMode, TournamentHandicapCorrection},
     error::{ApiError, ApiResult, require_non_empty},
     repositories::tournaments::{self, TournamentMutationError},
 };
@@ -27,6 +27,10 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/api/tournaments", get(list).post(create))
         .route("/api/me/tournaments", get(list_mine))
         .route("/api/tournaments/{tournament_id}", get(get_one))
+        .route(
+            "/api/tournaments/{tournament_id}/start",
+            axum::routing::post(start),
+        )
         .route(
             "/api/tournaments/{tournament_id}/counted-rounds",
             axum::routing::patch(update_counted_rounds),
@@ -51,8 +55,6 @@ struct CreateTournament {
     end_date: NaiveDate,
     number_of_rounds: i16,
     counted_rounds: Option<i16>,
-    #[serde(default = "default_status")]
-    status: TournamentStatus,
     #[serde(default = "default_scoring_mode")]
     scoring_mode: ScoringMode,
 }
@@ -79,9 +81,12 @@ struct UpdateCountedRounds {
     expected_tournament_updated_at: DateTime<Utc>,
 }
 
-fn default_status() -> TournamentStatus {
-    TournamentStatus::Draft
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StartTournament {
+    expected_tournament_updated_at: DateTime<Utc>,
 }
+
 fn default_scoring_mode() -> ScoringMode {
     ScoringMode::Combined
 }
@@ -137,7 +142,6 @@ async fn create(
         input.end_date,
         input.number_of_rounds,
         counted_rounds,
-        input.status,
         input.scoring_mode,
     )
     .await
@@ -264,6 +268,32 @@ async fn update_counted_rounds(
     ))
 }
 
+async fn start(
+    State(state): State<Arc<AppState>>,
+    Path(tournament_id): Path<Uuid>,
+    MutationSession(authenticated): MutationSession,
+    input: Result<Json<StartTournament>, JsonRejection>,
+) -> ApiResult<impl IntoResponse> {
+    let Json(input) = input.map_err(|_| {
+        ApiError::BadRequest("request must contain only expected_tournament_updated_at".to_owned())
+    })?;
+    let result = tournaments::start_authorized(
+        &state.pool,
+        authenticated.principal.session_id,
+        tournament_id,
+        input.expected_tournament_updated_at,
+    )
+    .await
+    .map_err(map_mutation_error)?;
+    if result.changed {
+        state.notify("tournament", tournament_id);
+    }
+    Ok((
+        [(CACHE_CONTROL, "private, no-store")],
+        Json(result.tournament),
+    ))
+}
+
 fn map_mutation_error(error: TournamentMutationError) -> ApiError {
     match error {
         TournamentMutationError::NotFound => ApiError::NotFound,
@@ -285,6 +315,18 @@ fn map_mutation_error(error: TournamentMutationError) -> ApiError {
         TournamentMutationError::ConfigurationStale => ApiError::DomainConflict {
             code: "tournament_configuration_stale",
             message: "tournament configuration changed; refresh and try again",
+        },
+        TournamentMutationError::StartNotReady => ApiError::DomainConflict {
+            code: "tournament_start_not_ready",
+            message: "tournament requires a complete draft round plan and an active entrant",
+        },
+        TournamentMutationError::StartInvalidState => ApiError::DomainConflict {
+            code: "tournament_start_invalid_state",
+            message: "tournament cannot be started from its current state",
+        },
+        TournamentMutationError::StartStale => ApiError::DomainConflict {
+            code: "tournament_start_stale",
+            message: "tournament changed; refresh and try again",
         },
         TournamentMutationError::Authorization(error) => map_authorization_error(error),
         TournamentMutationError::Database(error) => ApiError::Database(error),

@@ -26,11 +26,18 @@ function round(number: number, status: Round['status']): Round {
 
 describe('counted rounds editor state', () => {
   it('enables presentation whenever every loaded round remains draft', () => {
-    expect(countedRoundsAreEditable([round(1, 'draft'), round(2, 'draft')])).toBe(true)
-    expect(countedRoundsAreEditable([round(1, 'draft')])).toBe(true)
-    expect(countedRoundsAreEditable([])).toBe(true)
-    expect(countedRoundsAreEditable([round(1, 'draft'), round(2, 'open')])).toBe(false)
-    expect(countedRoundsAreEditable(undefined)).toBe(false)
+    expect(countedRoundsAreEditable('draft', [round(1, 'draft'), round(2, 'draft')])).toBe(true)
+    expect(countedRoundsAreEditable('draft', [round(1, 'draft')])).toBe(true)
+    expect(countedRoundsAreEditable('draft', [])).toBe(true)
+    expect(countedRoundsAreEditable('draft', [round(1, 'draft'), round(2, 'open')])).toBe(false)
+    expect(countedRoundsAreEditable('draft', undefined)).toBe(false)
+  })
+
+  it('freezes the choice after tournament start even while all rounds remain draft', () => {
+    const draftRounds = [round(1, 'draft'), round(2, 'draft')]
+    expect(countedRoundsAreEditable('active', draftRounds)).toBe(false)
+    expect(countedRoundsAreEditable('completed', draftRounds)).toBe(false)
+    expect(countedRoundsAreEditable('archived', draftRounds)).toBe(false)
   })
 
   it('marks stale and locked failures for authoritative refetch', () => {

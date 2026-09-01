@@ -51,6 +51,7 @@ async fn list_players_in_transaction(
 ) -> Result<TournamentPlayerRoster, sqlx::Error> {
     let players = sqlx::query_as::<_, TournamentPlayer>(
         "SELECT tp.tournament_id, tp.player_id, p.display_name,
+                p.active AS player_active,
                 tp.tournament_handicap::float8 AS tournament_handicap,
                 tp.seed, tp.status, tp.created_at, tp.updated_at
          FROM tournament_players tp
@@ -127,6 +128,7 @@ pub async fn change_player_handicap_authorized(
          WHERE tp.tournament_id = $1 AND tp.player_id = $2
          RETURNING tp.tournament_id, tp.player_id,
            (SELECT p.display_name FROM players p WHERE p.id = tp.player_id) AS display_name,
+           (SELECT p.active FROM players p WHERE p.id = tp.player_id) AS player_active,
            tp.tournament_handicap::float8 AS tournament_handicap,
            tp.seed, tp.status, tp.created_at, tp.updated_at",
     )

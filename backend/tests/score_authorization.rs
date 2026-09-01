@@ -8,7 +8,7 @@ use chrono::{Duration as ChronoDuration, Utc};
 use golf_api::{
     AppState, api,
     auth::{derive_csrf_token, hash_session_token},
-    repositories::{auth, round_lifecycle},
+    repositories::{auth, round_lifecycle, tournaments},
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -53,8 +53,8 @@ INSERT INTO users (id, username, display_name, role, player_id) VALUES
 ('41000000-0000-0000-0000-000000000053', 'flight_player_1', 'Player 1', 'player', '41000000-0000-0000-0000-000000000041'),
 ('41000000-0000-0000-0000-000000000054', 'flight_player_5', 'Player 5', 'player', '41000000-0000-0000-0000-000000000045'),
 ('41000000-0000-0000-0000-000000000057', 'flight_player_3', 'Player 3', 'player', '41000000-0000-0000-0000-000000000043');
-INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds, status)
-VALUES ('41000000-0000-0000-0000-000000000001', 'Flight Score Cup', '2026-08-01', '2026-08-03', 3, 'active');
+INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds)
+VALUES ('41000000-0000-0000-0000-000000000001', 'Flight Score Cup', '2026-08-01', '2026-08-03', 3);
 INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap)
 SELECT '41000000-0000-0000-0000-000000000001', id, current_handicap_index FROM players;
 INSERT INTO tournament_memberships (tournament_id, user_id, role) VALUES
@@ -133,6 +133,22 @@ async fn seed_with_team_format(pool: &PgPool, foursomes: bool) {
         .await
         .unwrap();
     }
+    let admin = auth::create_session(
+        pool,
+        ADMIN,
+        &hash_session_token(token(ADMIN)),
+        Utc::now() + ChronoDuration::hours(1),
+    )
+    .await
+    .unwrap();
+    let updated_at = sqlx::query_scalar("SELECT updated_at FROM tournaments WHERE id = $1")
+        .bind(TOURNAMENT)
+        .fetch_one(pool)
+        .await
+        .unwrap();
+    tournaments::start_authorized(pool, admin.session_id, TOURNAMENT, updated_at)
+        .await
+        .unwrap();
     round_lifecycle::open(pool, INDIVIDUAL).await.unwrap();
     round_lifecycle::open(pool, SCRAMBLE).await.unwrap();
 
@@ -159,7 +175,7 @@ async fn seed_with_team_format(pool: &PgPool, foursomes: bool) {
     .unwrap();
     legacy.commit().await.unwrap();
 
-    for user in [ADMIN, SCORER, USER_1, USER_3, USER_5, VIEWER, UNLINKED] {
+    for user in [SCORER, USER_1, USER_3, USER_5, VIEWER, UNLINKED] {
         auth::create_session(
             pool,
             user,

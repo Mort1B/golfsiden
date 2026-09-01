@@ -8,7 +8,7 @@ use chrono::{DateTime, Duration, Utc};
 use golf_api::{
     AppState, api,
     auth::{derive_csrf_token, hash_session_token},
-    repositories::auth,
+    repositories::{auth, tournaments},
 };
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
@@ -45,8 +45,10 @@ async fn seed(pool: &PgPool) {
           ('b1000000-0000-0000-0000-000000000023', 'Cid', 12.0),
           ('b1000000-0000-0000-0000-000000000024', 'Dee', 13.0);
         UPDATE players SET active=FALSE WHERE id='b1000000-0000-0000-0000-000000000024';
-        INSERT INTO tournaments (id, name, start_date, end_date, number_of_rounds)
-          VALUES ('b1000000-0000-0000-0000-000000000001', 'Pairings', '2026-08-01', '2026-08-02', 1);
+        INSERT INTO tournaments
+          (id, name, start_date, end_date, number_of_rounds)
+          VALUES ('b1000000-0000-0000-0000-000000000001', 'Pairings',
+                  '2026-08-01', '2026-08-02', 1);
         INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap, status) VALUES
           ('b1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000021', 10.0, 'active'),
           ('b1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000022', 11.0, 'active'),
@@ -67,12 +69,13 @@ async fn seed(pool: &PgPool) {
     .execute(pool)
     .await
     .unwrap();
+    let mut admin_session_id = None;
     for (user, token) in [
         (ADMIN, ADMIN_TOKEN),
         (VIEWER, VIEWER_TOKEN),
         (OUTSIDER, OUTSIDER_TOKEN),
     ] {
-        auth::create_session(
+        let session = auth::create_session(
             pool,
             user,
             &hash_session_token(token),
@@ -80,7 +83,25 @@ async fn seed(pool: &PgPool) {
         )
         .await
         .unwrap();
+        if user == ADMIN {
+            admin_session_id = Some(session.session_id);
+        }
     }
+    let tournament_id = uuid!("b1000000-0000-0000-0000-000000000001");
+    let tournament_updated_at =
+        sqlx::query_scalar("SELECT updated_at FROM tournaments WHERE id = $1")
+            .bind(tournament_id)
+            .fetch_one(pool)
+            .await
+            .unwrap();
+    tournaments::start_authorized(
+        pool,
+        admin_session_id.unwrap(),
+        tournament_id,
+        tournament_updated_at,
+    )
+    .await
+    .unwrap();
 }
 
 async fn updated_at(pool: &PgPool) -> DateTime<Utc> {

@@ -1,8 +1,10 @@
 mod counted_rounds;
 mod handicaps;
+mod start;
 
 pub use counted_rounds::{UpdateCountedRoundsResult, update_counted_rounds_authorized};
 pub use handicaps::{change_player_handicap_authorized, list_players, list_players_for_member};
+pub use start::{StartTournamentResult, start_authorized};
 
 use chrono::NaiveDate;
 use sqlx::{FromRow, PgPool, Postgres, Transaction};
@@ -32,6 +34,12 @@ pub enum TournamentMutationError {
     ConfigurationLocked,
     #[error("tournament configuration has changed")]
     ConfigurationStale,
+    #[error("tournament is not ready to start")]
+    StartNotReady,
+    #[error("tournament cannot be started from its current state")]
+    StartInvalidState,
+    #[error("tournament has changed")]
+    StartStale,
     #[error(transparent)]
     Authorization(#[from] AuthorizationError),
     #[error("database operation failed")]
@@ -118,13 +126,12 @@ pub async fn create(
     end_date: NaiveDate,
     number_of_rounds: i16,
     counted_rounds: i16,
-    status: TournamentStatus,
     scoring_mode: ScoringMode,
 ) -> Result<Tournament, sqlx::Error> {
     let id = Uuid::new_v4();
-    sqlx::query("INSERT INTO tournaments (id, name, description, start_date, end_date, number_of_rounds, counted_rounds, status, scoring_mode) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)")
+    sqlx::query("INSERT INTO tournaments (id, name, description, start_date, end_date, number_of_rounds, counted_rounds, status, scoring_mode) VALUES ($1, $2, $3, $4, $5, $6, $7, 'draft', $8)")
         .bind(id).bind(name.trim()).bind(description.trim()).bind(start_date).bind(end_date)
-        .bind(number_of_rounds).bind(counted_rounds).bind(status).bind(scoring_mode).execute(pool).await?;
+        .bind(number_of_rounds).bind(counted_rounds).bind(scoring_mode).execute(pool).await?;
     get(pool, id).await?.ok_or(sqlx::Error::RowNotFound)
 }
 
@@ -138,7 +145,6 @@ pub async fn create_platform_authorized(
     end_date: NaiveDate,
     number_of_rounds: i16,
     counted_rounds: i16,
-    status: TournamentStatus,
     scoring_mode: ScoringMode,
 ) -> Result<Tournament, TournamentMutationError> {
     let mut transaction = pool.begin().await?;
@@ -152,7 +158,7 @@ pub async fn create_platform_authorized(
         end_date,
         number_of_rounds,
         counted_rounds,
-        status,
+        TournamentStatus::Draft,
         scoring_mode,
     )
     .await?;
@@ -197,7 +203,7 @@ pub async fn add_player(
 ) -> Result<TournamentPlayer, sqlx::Error> {
     sqlx::query("INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap, seed) SELECT $1, id, COALESCE($3, current_handicap_index), $4 FROM players WHERE id = $2")
         .bind(tournament_id).bind(player_id).bind(handicap).bind(seed).execute(pool).await?;
-    sqlx::query_as::<_, TournamentPlayer>("SELECT tp.tournament_id, tp.player_id, p.display_name, tp.tournament_handicap::float8 AS tournament_handicap, tp.seed, tp.status, tp.created_at, tp.updated_at FROM tournament_players tp JOIN players p ON p.id = tp.player_id WHERE tp.tournament_id = $1 AND tp.player_id = $2")
+    sqlx::query_as::<_, TournamentPlayer>("SELECT tp.tournament_id, tp.player_id, p.display_name, p.active AS player_active, tp.tournament_handicap::float8 AS tournament_handicap, tp.seed, tp.status, tp.created_at, tp.updated_at FROM tournament_players tp JOIN players p ON p.id = tp.player_id WHERE tp.tournament_id = $1 AND tp.player_id = $2")
         .bind(tournament_id).bind(player_id).fetch_one(pool).await
 }
 
@@ -293,6 +299,7 @@ async fn insert_player(
     .await?;
     sqlx::query_as::<_, TournamentPlayer>(
         "SELECT tp.tournament_id, tp.player_id, p.display_name,
+                p.active AS player_active,
                 tp.tournament_handicap::float8 AS tournament_handicap,
                 tp.seed, tp.status, tp.created_at, tp.updated_at
          FROM tournament_players tp JOIN players p ON p.id = tp.player_id
