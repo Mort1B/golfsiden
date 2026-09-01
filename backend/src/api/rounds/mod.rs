@@ -7,15 +7,21 @@ use std::sync::Arc;
 
 use axum::{
     Json, Router,
-    extract::{DefaultBodyLimit, Path, State},
-    http::{StatusCode, header::CACHE_CONTROL},
-    response::IntoResponse,
+    body::Body,
+    extract::{DefaultBodyLimit, Path, Request, State},
+    http::{
+        HeaderMap, StatusCode,
+        header::{CACHE_CONTROL, CONTENT_TYPE},
+    },
+    response::{IntoResponse, Response},
     routing::get,
 };
 
+const MAX_CREATE_ROUND_BODY_BYTES: usize = 32 * 1024;
 const MAX_ROUND_CONFIGURATION_BODY_BYTES: usize = 32 * 1024;
 const MAX_ROUND_PAIRINGS_BODY_BYTES: usize = 256 * 1024;
 use chrono::NaiveDate;
+use futures_util::StreamExt;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -132,8 +138,20 @@ async fn create(
     State(state): State<Arc<AppState>>,
     Path(tournament_id): Path<Uuid>,
     MutationSession(authenticated): MutationSession,
-    Json(input): Json<CreateRound>,
-) -> ApiResult<impl IntoResponse> {
+    request: Request,
+) -> Result<impl IntoResponse, CreateRoundApiError> {
+    rounds::preflight_create(
+        &state.pool,
+        authenticated.principal.session_id,
+        tournament_id,
+    )
+    .await
+    .map_err(map_authorization_error)?;
+    require_json_content_type(request.headers())?;
+    let body = read_create_body(request.into_body()).await?;
+    let input: CreateRound = serde_json::from_slice(&body).map_err(|_| {
+        ApiError::BadRequest("request body must contain valid round fields".to_owned())
+    })?;
     validate_create(&state, tournament_id, &input).await?;
     let round = rounds::create_authorized(
         &state.pool,
@@ -157,6 +175,72 @@ async fn create(
     .map_err(map_mutation_error)?;
     state.notify("round", round.tournament_id, round.id);
     Ok((StatusCode::CREATED, Json(round)))
+}
+
+enum CreateRoundApiError {
+    Api(ApiError),
+    PayloadTooLarge,
+}
+
+impl From<ApiError> for CreateRoundApiError {
+    fn from(error: ApiError) -> Self {
+        Self::Api(error)
+    }
+}
+
+impl IntoResponse for CreateRoundApiError {
+    fn into_response(self) -> Response {
+        match self {
+            Self::Api(error) => error.into_response(),
+            Self::PayloadTooLarge => (
+                StatusCode::PAYLOAD_TOO_LARGE,
+                Json(serde_json::json!({"error": {
+                    "code": "payload_too_large",
+                    "message": "request body is too large"
+                }})),
+            )
+                .into_response(),
+        }
+    }
+}
+
+async fn read_create_body(body: Body) -> Result<Vec<u8>, CreateRoundApiError> {
+    let mut stream = body.into_data_stream();
+    let mut bytes = Vec::new();
+    while let Some(chunk) = stream.next().await {
+        let chunk =
+            chunk.map_err(|_| ApiError::BadRequest("request body could not be read".to_owned()))?;
+        if chunk.len() > MAX_CREATE_ROUND_BODY_BYTES - bytes.len() {
+            return Err(CreateRoundApiError::PayloadTooLarge);
+        }
+        bytes.extend_from_slice(&chunk);
+    }
+    Ok(bytes)
+}
+
+fn require_json_content_type(headers: &HeaderMap) -> ApiResult<()> {
+    let is_json = headers
+        .get(CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.split(';').next())
+        .map(str::trim)
+        .and_then(|value| value.split_once('/'))
+        .is_some_and(|(kind, subtype)| {
+            kind.eq_ignore_ascii_case("application")
+                && (subtype.eq_ignore_ascii_case("json")
+                    || subtype.rsplit_once('+').is_some_and(|(prefix, suffix)| {
+                        !prefix.is_empty()
+                            && !prefix.contains('/')
+                            && suffix.eq_ignore_ascii_case("json")
+                    }))
+        });
+    if is_json {
+        Ok(())
+    } else {
+        Err(ApiError::BadRequest(
+            "content-type must be application/json".to_owned(),
+        ))
+    }
 }
 
 fn map_mutation_error(error: RoundMutationError) -> ApiError {

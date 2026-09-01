@@ -159,8 +159,10 @@ are discovered through private tournament rosters, while tournament creation is
 available through creator onboarding only. Scorecard reads and live invalidation
 streams also require exact tournament membership. Direct arbitrary-player roster
 registration is retired; creator onboarding and tournament invitations are the
-only supported participation entry points. The remaining round-creation and
-cross-tournament authorization audit must finish before production.
+only supported participation entry points. Direct round creation now resolves
+exact tournament-admin authority before request or target validation. The
+remaining exhaustive cross-tournament authorization audit must finish before
+production.
 
 Tournament creation now issues a reusable invitation secret, and admins can
 rotate or revoke links, but recovery from a lost one-time plaintext response

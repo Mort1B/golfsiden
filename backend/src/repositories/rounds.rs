@@ -96,6 +96,18 @@ pub struct CreateRoundParams<'a> {
     pub scoring_format: ScoringFormat,
 }
 
+pub async fn preflight_create(
+    pool: &PgPool,
+    session_id: Uuid,
+    tournament_id: Uuid,
+) -> Result<(), AuthorizationError> {
+    let mut transaction = read_transaction(pool).await?;
+    tournament_authorization::require_tournament_admin(&mut transaction, session_id, tournament_id)
+        .await?;
+    transaction.commit().await?;
+    Ok(())
+}
+
 pub async fn create(pool: &PgPool, input: CreateRoundParams<'_>) -> Result<Round, sqlx::Error> {
     let id = Uuid::new_v4();
     sqlx::query("INSERT INTO rounds (id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, handicap_enabled, handicap_allowance_percent, scoring_format) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)")

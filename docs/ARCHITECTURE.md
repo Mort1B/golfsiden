@@ -101,6 +101,10 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   round, or team identifiers and revalidate the active session plus membership
   inside the write transaction. A global administrator is not a cross-tournament
   authorization bypass.
+- Direct round creation performs an exact-admin preflight before inspecting
+  content type, body, schema, or target-dependent round/course facts. The insert
+  transaction then revalidates the active session and exact admin membership
+  under locks before writing; invalid or unauthorized requests emit no event.
 - Tournament workspace read repositories resolve the target trip from stored
   tournament or round relations and require any tournament membership. Multi-query
   reads use one repeatable-read transaction and hold that membership `FOR SHARE`

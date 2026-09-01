@@ -204,7 +204,12 @@ response in one repeatable-read transaction while holding the membership row
 
 Management and lifecycle mutations resolve the target tournament from the
 resource and lock/revalidate both the session and admin membership inside the
-write transaction. The former global player/profile/handicap routes and legacy
+write transaction. Direct round creation additionally performs an exact-admin
+preflight before content-type, JSON, unknown-field, round-count, or course/tee
+validation. Existing unauthorized targets therefore return `403` without
+revealing those facts; missing targets return `404`, and the insert transaction
+reauthorizes before writing and publishing its post-commit invalidation. The
+former global player/profile/handicap routes and legacy
 `POST /api/tournaments` platform-admin route are no longer registered. Player
 discovery is available only from a target tournament's private roster, and
 product-facing tournament creation uses creator onboarding. Direct `POST

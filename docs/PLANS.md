@@ -32,7 +32,10 @@ tournament-targeted live invalidation are membership-private and identity-owned.
 Direct arbitrary-player roster registration is also retired; creator onboarding
 and invitation redemption are the only HTTP participation entry points and keep
 membership, entrant, initial handicap audit, and redemption facts aligned.
-No active implementation step is approved.
+Direct round creation now revalidates the active session and exact tournament-
+admin membership before inspecting content type or polling its bounded request
+body, then reauthorizes in the insertion transaction. No active implementation
+step is approved.
 
 ## Product decisions
 
@@ -124,8 +127,6 @@ No active implementation step is approved.
 
 ### Tournament scope isolation audit
 
-- Authorize exact tournament administration before round-creation validation can
-  reveal target-specific state. A global account role remains no bypass.
 - Audit roster, pairing, scoring, scorecard, and leaderboard reads so a player is
   visible only through the target tournament's explicit membership and
   `tournament_players` registration. Reusing the same account in another
