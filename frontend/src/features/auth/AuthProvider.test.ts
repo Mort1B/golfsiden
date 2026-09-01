@@ -102,7 +102,7 @@ describe('AuthProvider private cache transitions', () => {
     unsubscribe()
   })
 
-  it('excludes private course catalog and provider detail from payload-free SSE invalidation', async () => {
+  it('excludes private course catalog and provider detail from identifier-free SSE invalidation', async () => {
     const queryClient = new QueryClient()
     const catalogKey = courseKeys.catalog('same-user', 'tour', '')
     const providerKey = courseKeys.provider('same-user', 'tour', 'provider-id')

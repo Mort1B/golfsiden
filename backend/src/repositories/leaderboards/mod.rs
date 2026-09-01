@@ -186,6 +186,12 @@ async fn tournament_read(
                 && final_projection.mode == VisibilityMode::FrontNine
         })
         .map(|row| row.round_id);
+    let current_projection = round_rows
+        .iter()
+        .filter(|row| row.status == crate::domain::models::RoundStatus::Open)
+        .max_by_key(|row| (row.round_number, row.round_id))
+        .map(|row| projection_for_round(row, role, observed_at))
+        .unwrap_or_else(|| unrestricted(observed_at));
     let rounds = round_rows.into_iter().map(round_from_row).collect();
     let rounds = load::related(&mut transaction, rounds).await?;
     let participants = sqlx::query_as::<_, ParticipantRow>(
@@ -214,6 +220,7 @@ async fn tournament_read(
             metric,
             final_projection,
             hidden_completed_round_id,
+            current_projection,
         )?,
         None => build_tournament_leaderboard(&facts, metric)?,
     };

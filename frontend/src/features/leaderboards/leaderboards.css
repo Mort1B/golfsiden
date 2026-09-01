@@ -24,13 +24,16 @@
 .leaderboard-position { align-self: start; padding-top: 3px; color: #176640; font-size: 1rem; font-weight: 850; text-align: center; }
 .leaderboard-identity { min-width: 0; }
 .leaderboard-identity h2 { overflow-wrap: anywhere; font-size: .94rem; line-height: 1.25; }
-.leaderboard-progress, .leaderboard-members { display: flex; align-items: flex-start; gap: 5px; margin-top: 5px; color: #68736c; font-size: .72rem; line-height: 1.35; overflow-wrap: anywhere; }
-.leaderboard-progress svg, .leaderboard-members svg { width: 14px; height: 14px; flex: 0 0 14px; }
+.leaderboard-progress, .leaderboard-members, .leaderboard-live { display: flex; align-items: flex-start; gap: 5px; margin-top: 5px; color: #68736c; font-size: .72rem; line-height: 1.35; overflow-wrap: anywhere; }
+.leaderboard-progress svg, .leaderboard-members svg, .leaderboard-live svg { width: 14px; height: 14px; flex: 0 0 14px; }
+.leaderboard-live { color: #176640; font-weight: 750; }
 .leaderboard-mandatory { display: flex; align-items: flex-start; gap: 5px; margin-top: 5px; color: #365f49; font-size: .72rem; line-height: 1.35; overflow-wrap: anywhere; }
 .leaderboard-mandatory svg { width: 14px; height: 14px; flex: 0 0 14px; }
 .leaderboard-score { display: grid; justify-items: end; min-width: 0; text-align: right; }
 .leaderboard-score strong { font-size: 1.2rem; line-height: 1.1; }
 .leaderboard-score span { margin-top: 5px; color: #68736c; font-size: .66rem; line-height: 1.2; overflow-wrap: anywhere; }
+.leaderboard-score.provisional strong { color: #176640; }
+.leaderboard-score.provisional span { color: #365f49; font-weight: 700; }
 
 @media (min-width: 700px) {
   .leaderboard-controls { grid-template-columns: minmax(170px, 1.35fr) repeat(2, minmax(150px, 1fr)); align-items: end; }
@@ -38,5 +41,5 @@
   .leaderboard-row { grid-template-columns: 52px minmax(0, 1fr) 110px; min-height: 88px; padding: 13px 16px; }
   .leaderboard-position { font-size: 1.1rem; }
   .leaderboard-identity h2 { font-size: 1rem; }
-  .leaderboard-progress, .leaderboard-members { font-size: .78rem; }
+  .leaderboard-progress, .leaderboard-members, .leaderboard-live { font-size: .78rem; }
 }

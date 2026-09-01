@@ -41,8 +41,10 @@ membership is also mandatory for score-access reads, and the backend
 participation boundary is covered by a two-tournament player/team isolation
 fixture. Frontend target-coherent runtime decoding and tournament-keyed transient
 state now prevent cross-target cache or UI reuse during same-account navigation.
-Phase 7B1 embargo-safe read projections are complete. There is no active
-implementation step; Phase 7B2 is the next bounded candidate.
+Phase 7B1 embargo-safe read projections and Phase 7B2a provisional open-round
+best-N standings are complete, including browser-dispatchable identifier-free
+live invalidation and authoritative 3-to-4-hole refresh validation. There is no
+active implementation step; Phase 7B2b is the next bounded candidate.
 
 ## Product decisions
 
@@ -132,24 +134,18 @@ implementation step; Phase 7B2 is the next bounded candidate.
 
 ## Upcoming work
 
-### Phase 7B2: Live best-N standings and scorecard drilldowns
+### Phase 7B2b: Membership-private result and scorecard drilldowns
 
-- Include the current open round as an explicitly provisional contribution in
-  both round and tournament standings, with holes played exposed so uneven live
-  progress is not presented as final. Re-evaluate the provisional best N whenever
-  an authoritative score change is received.
 - Add URL-backed, membership-scoped read-only player history and scorecard routes.
   Make round and tournament leaderboard rows navigable, label “Best N of M,” and
   visibly distinguish counted from discarded rounds. Preserve the completed
-  Phase 7B1 visibility and actor-free read boundaries in every drilldown.
-- Test unequal-progress provisional selection, metric-specific best N,
-  mandatory-round interaction, individual/team attribution, history ownership,
-  deep links, cache/session changes, and preserved final-nine redaction.
-- **Stop condition:** mixed individual/team rounds select the correct best N per
-  metric, live totals include the active round, incomplete competitors cannot gain
-  an advantage, final-round back-nine strokes are absent from every non-admin read
-  projection until 24 hours after the latest complete-and-confirmed final result,
-  and each visible contribution deep-links to its preserved gross/net card.
+  Phase 7B1 visibility, actor-free read boundaries, and Phase 7B2a provisional
+  contribution identity in every drilldown.
+- Use the existing tournament leaderboard and member scorecard read APIs; never
+  route a drilldown through `/score` or the writable `/scoring` projection.
+- **Stop condition:** every visible result opens exact URL-backed player history
+  and preserved tagged-owner scorecards, survives refresh and target/session
+  changes, and cannot reveal hidden facts or grant mutation authority.
 
 ### Later product work
 
@@ -157,6 +153,8 @@ implementation step; Phase 7B2 is the next bounded candidate.
   and missing-score alerts, configurable tie-breaks,
   share links, offline scoring, account recovery, rate limiting, deployment,
   backups, and production database roles.
+- Decide whether PostgreSQL should enforce at most one open round per tournament;
+  current reads deterministically select the highest-numbered open round.
 - After the remaining roadmap, performance optimization, and security review are
   complete, add four-ball/best ball only after deciding whether every individual
   ball is stored; then consider Stableford and match play as separate final-stage

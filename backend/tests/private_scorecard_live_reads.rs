@@ -143,7 +143,7 @@ async fn live_handshake_requires_exact_membership_for_every_role(pool: PgPool) {
 }
 
 #[sqlx::test(migrations = "../migrations")]
-async fn live_events_are_tournament_isolated_and_payload_free(pool: PgPool) {
+async fn live_events_are_tournament_isolated_and_carry_only_constant_data(pool: PgPool) {
     seed(&pool).await;
     let state = AppState::new(pool);
     let app = api::router(Arc::clone(&state));
@@ -164,7 +164,7 @@ async fn live_events_are_tournament_isolated_and_payload_free(pool: PgPool) {
         .expect("event frame should be valid");
     let bytes = frame.into_data().expect("event must be a data frame");
     let event = std::str::from_utf8(&bytes).unwrap();
-    assert_eq!(event, "event: score\n\n");
+    assert_eq!(event, "event: score\ndata: invalidate\n\n");
     assert!(!event.contains(&TOURNAMENT.to_string()));
     assert!(!event.contains(&OTHER_TOURNAMENT.to_string()));
     assert!(!event.contains(&target_id.to_string()));

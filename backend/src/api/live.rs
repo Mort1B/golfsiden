@@ -17,6 +17,8 @@ use crate::{
     repositories::live,
 };
 
+const INVALIDATION_DATA: &str = "invalidate";
+
 pub async fn events(
     State(state): State<Arc<AppState>>,
     Path(tournament_id): Path<Uuid>,
@@ -36,7 +38,11 @@ pub async fn events(
                     if live::authorize(&pool, session_id, tournament_id).await.is_err() {
                         break;
                     }
-                    yield Ok::<Event, Infallible>(Event::default().event(event.resource));
+                    yield Ok::<Event, Infallible>(
+                        Event::default()
+                            .event(event.resource)
+                            .data(INVALIDATION_DATA),
+                    );
                 }
                 Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => break,
                 Err(tokio::sync::broadcast::error::RecvError::Closed) => break,

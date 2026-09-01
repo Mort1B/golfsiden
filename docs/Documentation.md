@@ -215,7 +215,7 @@ response in one repeatable-read transaction while holding the membership row
 The backend isolation suite reuses one account/player across two tournaments with
 different tournament handicaps, round snapshots, flights, and player-versus-team
 score owners. It proves that rosters, pairings, teams, writable owners,
-scorecards, gross/net results, rejected mutations, and payload-free live events
+scorecards, gross/net results, rejected mutations, and identifier-free live events
 remain bound to the exact target.
 
 The strict frontend boundary independently verifies every target-bearing
@@ -363,7 +363,7 @@ pairing, and flight readiness are deliberately deferred to round opening.
 
 A successful start changes only the tournament from `draft` to `active`, returns
 the authoritative private/non-cacheable tournament, updates the identity-scoped
-query cache, and publishes one payload-free tournament invalidation after commit.
+query cache, and publishes one identifier-free tournament invalidation after commit.
 An already-active retry is idempotent and emits no event. Stale, not-ready, and
 invalid-state requests use `tournament_start_stale`,
 `tournament_start_not_ready`, and `tournament_start_invalid_state`; `401`, `403`,
@@ -531,7 +531,7 @@ membership display order.
 The final transaction locks the round, reauthorizes the active session and admin
 membership, repeats draft/version checks, validates identities and references,
 then replaces the roster and advances the round timestamp atomically. Only a
-successful commit emits one payload-free round event. Errors, including
+successful commit emits one identifier-free round event. Errors, including
 malformed, oversized, stale, opened, identity-conflict, conversion, and
 referenced-team failures, are private/non-cacheable and leave no partial rows or
 event.
@@ -658,36 +658,41 @@ preserved or calculated playing handicap by each scored hole's stroke index.
 
 Tournament leaderboards are available at
 `GET /api/tournaments/{tournament_id}/leaderboards/gross` and `/net`. They include
-all registered players, including withdrawn and zero-result entries, but aggregate
-only completed or locked rounds. Each metric independently selects the configured
-best N score-to-par contributions. When configured, the mandatory round always
-uses one of N slots. A completed mandatory result counts regardless of score;
-the metric selects only the best N - 1 other results. If it is missing, no extra
-optional result fills that slot and the player remains ineligible. With N = 1,
-only the mandatory result can be ranked. Players with fewer counted results rank behind
-players with more until they reach N; equal counted-result counts then compare
-only the selected metric's score-to-par total. Competition ties ignore names and
-the other metric, while case-insensitive name and UUID stabilize display order.
+all registered players, including withdrawn and zero-result entries. Each metric
+independently selects the displayed best N from completed or locked history plus
+the visible scored portion of the deterministic highest-numbered open round. An
+unstarted open card contributes nothing; partial and full-but-open cards remain
+explicitly provisional. When configured, the mandatory round always uses one of
+N slots once it has a visible result. A completed mandatory result counts
+regardless of score; if it is missing, no extra optional result fills that slot
+for qualification. With N = 1, only the mandatory result can qualify.
+
+Completed-only counted progress is the first ranking key until N. Equal progress
+then compares the requested metric's displayed score-to-par, which may include a
+selected provisional result. Provisional hole progress stabilizes display order
+inside a sporting tie but does not break the tie. Names, UUIDs, and the other
+metric never enter the sporting tie identity.
 
 The response returns `required_counted_rounds`, nullable `mandatory_round_id`, and every player's complete
 round-ordered contribution history. Each contribution preserves its round ID,
-tagged player or team owner, owner name, gross/net/par totals, metric
-score-to-par, counted state, and mandatory flag. Aggregate totals cover only the subset selected
-for that requested metric. `completed_rounds`, `counted_contributions`, and
-`eligible` distinguish provisional players from those with N results. Individual
+tagged player or team owner, owner name, provisional state, visible hole progress,
+gross/net/par totals, metric score-to-par, displayed-selection state, and
+mandatory flag. Aggregate totals cover only the selected subset.
+`completed_rounds`, `counted_contributions`, and `eligible` remain completed-only
+qualification facts even when a provisional result is selected. Individual
 results stay with their snapshot owner; scramble and foursomes results are
 attributed once to every frozen member of that exact round team. Current-team
-data still comes from the highest-numbered open round, but open-round scores are
-not contributions in this boundary.
+data and provisional contributions come only from the highest-numbered open
+round. `included_round_ids` remains completed/locked-only; provisional identities
+match the separate `current_round_id`.
 
-Completed status is authoritative for tournament totals. A completed-round score
-correction therefore updates the leaderboard immediately even though the changed
-card must be reconfirmed before locking. Current player handicaps are never read
+Completed status remains authoritative for qualification. A completed-round
+score correction updates its contribution immediately even though the changed
+card must be reconfirmed before locking; the selected open contribution remains
+provisional until lifecycle completion. Current player handicaps are never read
 for historical net totals. All leaderboard reads use one repeatable-read snapshot
-and bounded bulk queries; inconsistent completed-round or owner data fails closed
-instead of producing plausible partial standings. Supplied open-round facts also
-retain fail-closed validation even though they do not yet affect tournament
-totals.
+and bounded bulk queries; inconsistent completed or open-round owner data fails
+closed instead of producing plausible partial standings.
 Both round and tournament leaderboard routes require membership in the target
 tournament and are returned as private, non-cacheable responses.
 
@@ -696,8 +701,9 @@ Exact tournament admins receive full standings. For every other role, an open
 a null or future release deadline is omitted entirely from tournament best-N
 selection, totals, eligibility, positions, ties, and included-round identities.
 Round totals and ranks are recomputed after redaction while retaining the full
-18-hole handicap allocation denominator. Open-round provisional tournament
-contributions remain deferred to Phase 7B2.
+18-hole handicap allocation denominator. A non-admin provisional final result
+therefore contains at most holes 1–9, while the exact admin projection remains
+full.
 
 The React `/leaderboard` page stores tournament, round/tournament scope, round,
 and gross/net selection in URL search parameters. Invalid or stale selections
@@ -705,17 +711,23 @@ are replaced with a valid active/latest default before a leaderboard query is
 enabled, including validation that the selected round belongs to the selected
 tournament. Round rows distinguish unstarted, partial, complete, and confirmed
 cards; tournament rows retain registered players with zero completed rounds and
-label the named mandatory round as completed or missing in both metric views.
+label the named mandatory round as completed, open, awaiting final release, or
+missing without inferring a hidden player's result.
 
 Leaderboard responses cross a focused runtime decoder before entering TanStack
 Query. The decoder checks tagged owners, finite states, identifiers, nullability,
 numeric fields, response identity, and aggregate coherence across contribution
 counts, selected sums, metric score-to-par, eligibility, and current-round facts.
+The tournament page first refetches and awaits the exact rounds query, then loads
+and validates standings against that same lifecycle snapshot. This prevents an
+SSE open/completion transition from composing fresh standings with stale round
+status.
 Each protected page opens at most one EventSource for its selected tournament.
 It remains an invalidation signal only; clients refetch the selected authoritative
 state instead of calculating or merging score state in the browser. The stream
 requires exact membership, revalidates the active session and membership before
-each matching event, and emits only an event type with no identifiers or data.
+each matching event, and emits only an event type plus the fixed `invalidate`
+marker, with no identifiers or mutable state.
 Initial connection and every reconnect invalidate the current user's private
 workspace. A lagged server receiver closes the stream so native reconnection
 triggers that same authoritative resync instead of silently leaving stale state.
@@ -744,5 +756,4 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
   flight-aware opening readiness, and representative ready seed assignments
   exist together with membership-wide scoring authority. There is still no
   offline score queue or public leaderboard link.
-- Open-round provisional tournament contributions, contribution drilldowns, and
-  URL-backed player history remain Phase 7B2 work.
+- Contribution drilldowns and URL-backed player history remain Phase 7B2b work.

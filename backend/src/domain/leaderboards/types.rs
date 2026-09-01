@@ -190,8 +190,11 @@ pub struct TournamentLeaderboardEntry {
 pub struct TournamentContribution {
     pub round_id: Uuid,
     pub mandatory: bool,
+    pub provisional: bool,
     pub owner: LeaderboardOwner,
     pub owner_name: String,
+    pub holes_scored: usize,
+    pub number_of_holes: usize,
     pub gross_total: i32,
     pub net_total: i32,
     pub par_total: i32,

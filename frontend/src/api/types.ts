@@ -143,6 +143,9 @@ export interface TournamentContribution {
   round_id: string
   owner: LeaderboardOwner
   owner_name: string
+  provisional: boolean
+  holes_scored: number
+  number_of_holes: number
   gross_total: number
   net_total: number
   par_total: number

@@ -140,7 +140,7 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   active session and membership, rechecks status and version, inserts the
   immutable revision, and attaches its UUIDs before commit. This round-first lock
   order matches lifecycle mutations. Only a successful commit publishes one
-  payload-free round invalidation; every conflict or failure rolls back the new
+  identifier-free round invalidation; every conflict or failure rolls back the new
   hierarchy.
 - Round pairings use one aggregate read/write boundary. The member-readable GET
   authorizes and assembles entrants, teams, flights, and legacy individual
@@ -180,7 +180,7 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
 - A PostgreSQL two-tournament acceptance fixture reuses one global account/player
   with independent tournament handicaps and round snapshots, then combines an A
   player card with a B-only two-player foursomes team. It guards roster, flight,
-  team, score authority, card, gross/net leaderboard, mutation, and payload-free
+  team, score authority, card, gross/net leaderboard, mutation, and identifier-free
   event isolation without introducing a permanent tournament team.
 - Team results can be attributed back to every round member when tournament standings are calculated. There is no permanent tournament team.
 - Locked-round score protection lives in PostgreSQL as well as the domain service. A future correction transaction must explicitly set `app.admin_correction = 'true'`.
@@ -225,12 +225,13 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   expected integrity paths; they are not an authorization boundary. Runtime role
   separation and database privilege hardening belong with authentication work.
 - Round leaderboards calculate live gross/net score-to-par from the holes actually
-  scored. Tournament leaderboards aggregate only completed or locked rounds and
-  independently select each player's lowest configured N score-to-par results
-  for the requested metric. Contributions retain their tagged owner and are
-  attributed through frozen membership for that exact round. Counted-result
-  count ranks provisionally before selected score-to-par; separate gross and net
-  routes never use the other metric as a hidden tie-break.
+  scored. Tournament leaderboards independently select each player's displayed
+  best N from completed/locked history plus the visible scored portion of the
+  deterministic highest-numbered open round. Contributions retain tagged owner,
+  provisional state, and hole progress and are attributed through frozen
+  membership for that exact round. Completed-only qualification count ranks
+  before selected score-to-par and alone controls eligibility; separate gross
+  and net routes never use the other metric as a hidden tie-break.
 - Round-leaderboard owner construction is isolated from format-neutral stored-
   fact validation, score/confirmation assembly, totals, and ranking. One closed,
   exhaustive policy maps each current scoring format to snapshot-owned entries
@@ -244,13 +245,16 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   transaction. Pure domain assembly validates stored facts, calculates handicap
   results, attributes players, selects deterministic metric-specific best-N
   contributions, and applies competition ranking. Open-round facts are validated
-  fail-closed but are not counted yet.
+  fail-closed; only the deterministic highest-numbered open round may enter the
+  displayed selection provisionally, while completed-only qualification remains
+  unchanged.
 - Server-Sent Events carry invalidation notifications, not full mutable state. Clients refetch through TanStack Query.
 - Live events carry internal tournament scope from every post-commit producer.
   `/api/tournaments/{tournament_id}/live` authenticates and authorizes the exact
   membership at handshake, filters before emission, revalidates access for every
-  matching event, and serializes only the event type. The internal tournament and
-  resource identifiers never enter the SSE frame. A lagged receiver closes;
+  matching event, and serializes only the event type plus a fixed, non-sensitive
+  `invalidate` data marker required for browser dispatch. The internal tournament
+  and resource identifiers never enter the SSE frame. A lagged receiver closes;
   initial connection and native reconnection invalidate the user's private query
   root and refetch authoritative state.
 - Private workspace query keys are rooted by session user ID. Initial or changed
@@ -275,6 +279,11 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   of a client store. It validates round ownership before enabling hierarchical
   queries, and leaderboard responses pass focused runtime and aggregate-coherence
   decoding before entering the query cache.
+- Tournament standings refresh the exact rounds query before fetching and
+  composing a leaderboard response. This sequences SSE lifecycle transitions so
+  a new open/completed projection is never validated against stale round status;
+  the extra authoritative fetch is an explicit correctness cost for later
+  performance review.
 - The score route likewise owns tournament, round, tagged owner, hole, and view
   selection in canonical URL parameters. Completion validation is its owner
   authority, and exact runtime decoders protect scorecard state before caching.
@@ -324,7 +333,7 @@ Implemented resources:
 | `GET` | `/api/rounds/{round_id}/teams` | Compatibility read for round teams |
 | `GET` | `/api/tournaments/{tournament_id}/leaderboards/gross` | Retrieve individual tournament gross standings |
 | `GET` | `/api/tournaments/{tournament_id}/leaderboards/net` | Retrieve individual tournament net standings |
-| `GET` | `/api/tournaments/{tournament_id}/live` | Receive payload-free invalidations for one exact tournament membership |
+| `GET` | `/api/tournaments/{tournament_id}/live` | Receive identifier-free invalidations for one exact tournament membership |
 | `GET` | `/api/health` | Liveness response |
 | `POST` | `/api/auth/login` | Verify credentials and create a session |
 | `GET` | `/api/auth/session` | Retrieve the current session and CSRF value |

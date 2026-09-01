@@ -544,8 +544,10 @@ async fn reused_identity_keeps_target_participation_authority_and_results_isolat
     let event = std::str::from_utf8(&frame.into_data().unwrap())
         .unwrap()
         .to_owned();
-    assert_eq!(event, "event: target_scope\n\n");
+    assert_eq!(event, "event: target_scope\ndata: invalidate\n\n");
     assert!(!event.contains("foreign_scope"));
     assert!(!event.contains(&TOURNAMENT_A.to_string()));
     assert!(!event.contains(&TOURNAMENT_B.to_string()));
+    assert!(!event.contains(&ROUND_A.to_string()));
+    assert!(!event.contains(&ROUND_B.to_string()));
 }

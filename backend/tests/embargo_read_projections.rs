@@ -266,6 +266,64 @@ async fn open_final_round_redacts_reads_but_exact_scoring_projection_stays_full(
         .unwrap();
     assert_eq!(net_ada["net_total"], 4);
 
+    let tournament_path = format!("/api/tournaments/{TOURNAMENT}/leaderboards/gross");
+    let (_, restricted_tournament, _) = get(&app, &tournament_path, PLAYER_USER).await;
+    assert_eq!(restricted_tournament["visibility"]["mode"], "front_nine");
+    assert_eq!(restricted_tournament["current_round_id"], ROUND.to_string());
+    assert_eq!(
+        restricted_tournament["included_round_ids"],
+        serde_json::json!([])
+    );
+    let restricted_ada = restricted_tournament["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["player_id"] == PLAYER_A.to_string())
+        .unwrap();
+    assert_eq!(
+        (
+            restricted_ada["completed_rounds"].as_u64(),
+            restricted_ada["counted_contributions"].as_u64()
+        ),
+        (Some(0), Some(0))
+    );
+    assert_eq!(restricted_ada["eligible"], false);
+    let restricted_live = &restricted_ada["contributions"][0];
+    assert_eq!(restricted_live["round_id"], ROUND.to_string());
+    assert_eq!(restricted_live["provisional"], true);
+    assert_eq!(restricted_live["counted"], true);
+    assert_eq!(restricted_live["holes_scored"], 1);
+    assert_eq!(restricted_live["number_of_holes"], 18);
+    assert_eq!(restricted_live["gross_total"], 5);
+    assert_eq!(restricted_live["par_total"], 4);
+    assert_eq!(restricted_live["score_to_par"], 1);
+    let restricted_bob = restricted_tournament["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["player_id"] == PLAYER_B.to_string())
+        .unwrap();
+    assert!(
+        restricted_bob["contributions"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    assert!(restricted_bob["position"].is_null());
+
+    let (_, admin_tournament, _) = get(&app, &tournament_path, ADMIN).await;
+    assert_eq!(admin_tournament["visibility"]["mode"], "full");
+    let admin_live = &admin_tournament["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["player_id"] == PLAYER_A.to_string())
+        .unwrap()["contributions"][0];
+    assert_eq!(admin_live["holes_scored"], 2);
+    assert_eq!(admin_live["gross_total"], 7);
+    assert_eq!(admin_live["par_total"], 8);
+    assert_eq!(admin_live["score_to_par"], -1);
+
     let scoring_path = format!("{card_path}/scoring");
     let (status, scoring, cache) = get(&app, &scoring_path, PLAYER_USER).await;
     assert_eq!(status, StatusCode::OK);

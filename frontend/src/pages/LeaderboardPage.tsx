@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
-import { leaderboardKeys, validateTournamentLeaderboardRounds } from '../api/leaderboards'
+import { leaderboardKeys } from '../api/leaderboards'
 import { tournamentKeys } from '../api/tournaments'
 import { LeaderboardControls } from '../features/leaderboards/LeaderboardControls'
 import { RoundStandings } from '../features/leaderboards/RoundStandings'
@@ -17,10 +17,12 @@ import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 import { useAuth } from '../features/auth/authContext'
 import { useTournamentLive } from '../features/live/useTournamentLive'
 import { useVisibilityRefetch } from '../features/visibility/useVisibilityRefetch'
+import { loadTournamentLeaderboardAfterRounds } from '../features/leaderboards/tournamentLoader'
 
 export function LeaderboardPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const auth = useAuth()
+  const queryClient = useQueryClient()
   const userId = auth.session?.user_id ?? ''
   const tournamentsQuery = useQuery({ queryKey: tournamentKeys.list(userId), queryFn: api.tournaments })
   const tournaments = tournamentsQuery.data ?? []
@@ -38,6 +40,7 @@ export function LeaderboardPage() {
     queryFn: () => api.rounds(tournamentId),
     enabled: tournamentId.length > 0,
   })
+  const roundsQueryKey = tournamentKeys.rounds(userId, tournamentId)
   const rounds = roundsQuery.data ?? []
   const requestedRoundId = searchParams.get('round')
   const selectedRound = rounds.find((round) => round.id === requestedRoundId) ?? preferredRound(rounds)
@@ -49,12 +52,12 @@ export function LeaderboardPage() {
   })
   const tournamentLeaderboardQuery = useQuery({
     queryKey: leaderboardKeys.tournament(userId, tournamentId, metric),
-    queryFn: async () => {
-      const targetRounds = roundsQuery.data
-      if (targetRounds === undefined) throw new Error('Rundedata må lastes før turneringsresultater.')
-      const leaderboard = await api.tournamentLeaderboard(tournamentId, metric)
-      return validateTournamentLeaderboardRounds(leaderboard, targetRounds)
-    },
+    queryFn: () => loadTournamentLeaderboardAfterRounds({
+      queryClient,
+      roundsQueryKey,
+      loadRounds: () => api.rounds(tournamentId),
+      loadLeaderboard: () => api.tournamentLeaderboard(tournamentId, metric),
+    }),
     enabled: scope === 'tournament'
       && tournamentId.length > 0
       && roundsQuery.data !== undefined
@@ -158,7 +161,7 @@ export function LeaderboardPage() {
         <EmptyState>Ingen spillere er registrert i turneringen</EmptyState>
       )}
       {scope === 'tournament' && tournamentLeaderboardQuery.data?.visibility.mode === 'front_nine' && (
-        <p className="leaderboard-visibility-notice" role="status">Finalerunden er midlertidig utelatt fra sammenlagtresultatet.</p>
+        <p className="leaderboard-visibility-notice" role="status">Finalen viser bare synlige resultater. Hull 10–18 er skjult til frigivelse.</p>
       )}
       {scope === 'tournament' && !roundsQuery.isPending && !roundsQuery.error && tournamentLeaderboardQuery.data && tournamentLeaderboardQuery.data.entries.length > 0 && (
         <TournamentStandings leaderboard={tournamentLeaderboardQuery.data} rounds={rounds} />

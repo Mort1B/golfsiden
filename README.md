@@ -168,7 +168,9 @@ score-access read now returns `403` when the session lacks exact target
 membership, while exact viewers remain authorized with no writable owners. A
 two-tournament PostgreSQL fixture proves that a reused global player keeps
 separate handicaps, snapshots, flights, player/team cards, results, mutations,
-and payload-free event scope. The frontend rejects mismatched tournament, round,
+and identifier-free event scope. Each SSE frame carries only a fixed
+`invalidate` marker so browser EventSource dispatches it. The frontend rejects
+mismatched tournament, round,
 player, team, result, invitation, and course-configuration identities before
 caching or revealing them, and tournament-keyed workspaces discard drafts,
 mutation receipts, pending state, and one-time invitation secrets during SPA
@@ -200,6 +202,12 @@ reads expose only front-nine-derived facts. The separate `/scoring` scorecard
 projection returns a full card only after exact write authorization. The
 frontend keeps read and scoring projections in distinct session-owned caches and
 refetches after the server-provided release interval.
+
+Tournament gross and net standings now include the visible scored portion of the
+highest-numbered open round as an explicitly provisional best-N contribution.
+Completed-only qualification and mandatory-round eligibility remain separate,
+while the UI shows provisional hole progress and refetches authoritative rounds
+before validating a live standings update.
 
 Migration `0009` removes account email after deterministically deriving usernames
 for existing accounts. Back up production data and retain the generated username

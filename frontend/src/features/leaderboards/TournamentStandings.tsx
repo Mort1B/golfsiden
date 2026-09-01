@@ -1,6 +1,15 @@
-import { Flag, Users } from 'lucide-react'
+import { Flag, Radio, Users } from 'lucide-react'
 import type { LeaderboardMetric, Round, TournamentLeaderboard, TournamentLeaderboardEntry } from '../../api/types'
-import { bestRoundsProgressLabel, mandatoryRoundProgressLabel, metricLabel, positionLabel, roundsLabel, scoreToParLabel } from './format'
+import {
+  bestRoundsProgressLabel,
+  mandatoryRoundDisplayState,
+  mandatoryRoundProgressLabel,
+  metricLabel,
+  positionLabel,
+  provisionalProgressLabel,
+  scoreToParLabel,
+  selectedProvisional,
+} from './format'
 import { validateMandatoryRound } from '../../api/mandatoryRounds'
 
 function entryState(entry: TournamentLeaderboardEntry, requiredCount: number): string {
@@ -13,59 +22,79 @@ function TournamentRow({
   metric,
   hasCurrentRound,
   requiredCount,
-  mandatoryRoundName,
+  mandatoryRound,
+  rounds,
+  visibility,
 }: {
   entry: TournamentLeaderboardEntry
   metric: LeaderboardMetric
   hasCurrentRound: boolean
   requiredCount: number
-  mandatoryRoundName: string | null
+  mandatoryRound: Round | null
+  rounds: Round[]
+  visibility: TournamentLeaderboard['visibility']['mode']
 }) {
   const total = metric === 'gross' ? entry.gross_total : entry.net_total
-  const hasSelectedScore = entry.counted_contributions > 0
+  const hasSelectedScore = entry.contributions.some((contribution) => contribution.counted)
+  const provisional = selectedProvisional(entry)
+  const mandatory = entry.contributions.find((contribution) => contribution.mandatory)
+  const mandatoryState = mandatoryRound === null
+    ? null
+    : mandatoryRoundDisplayState(mandatoryRound, rounds, visibility, mandatory)
   return (
     <li className={`leaderboard-row${entry.status === 'withdrawn' ? ' withdrawn' : ''}`}>
-      <div className="leaderboard-position" aria-label={entry.tied && entry.position !== null ? `Delt plass ${entry.position}` : undefined}>
+      <div
+        className="leaderboard-position"
+        aria-label={entry.position === null
+          ? undefined
+          : `${provisional === null ? '' : 'Foreløpig '}${entry.tied ? 'delt ' : ''}plass ${entry.position}`}
+      >
         {positionLabel(entry.position, entry.tied)}
       </div>
       <div className="leaderboard-identity">
         <h2>{entry.display_name}</h2>
         <p className="leaderboard-progress">{entryState(entry, requiredCount)}</p>
-        {mandatoryRoundName !== null && (
+        {provisional !== null && (
+          <p className="leaderboard-live">
+            {provisional.owner.type === 'team' ? <Users aria-hidden="true" /> : <Radio aria-hidden="true" />}
+            {provisionalProgressLabel(provisional)}
+          </p>
+        )}
+        {mandatoryRound !== null && mandatoryState !== null && (
           <p className="leaderboard-mandatory">
             <Flag aria-hidden="true" />
             {mandatoryRoundProgressLabel(
-              mandatoryRoundName,
-              entry.contributions.some((contribution) => contribution.mandatory),
+              mandatoryRound.name,
+              mandatoryState,
+              mandatory?.provisional === true
+                ? { holesScored: mandatory.holes_scored, numberOfHoles: mandatory.number_of_holes }
+                : null,
             )}
           </p>
         )}
-        {hasCurrentRound && (
-          <p className="leaderboard-members">
-            <Users aria-hidden="true" />{entry.current_team?.team_name ?? 'Ikke satt i lag i aktiv runde'}
-          </p>
-        )}
       </div>
-      <div className="leaderboard-score">
+      <div className={`leaderboard-score${provisional === null ? '' : ' provisional'}`}>
         <strong>{hasSelectedScore ? scoreToParLabel(entry.score_to_par) : '–'}</strong>
-        <span>{hasSelectedScore ? `${total} ${metricLabel(metric).toLowerCase()}` : 'Ingen score'}</span>
+        <span>{hasSelectedScore
+          ? `${provisional === null ? '' : 'Foreløpig · '}${total} ${metricLabel(metric).toLowerCase()}`
+          : hasCurrentRound ? 'Ingen score ennå' : 'Ingen score'}</span>
       </div>
     </li>
   )
 }
 
 export function TournamentStandings({ leaderboard, rounds }: { leaderboard: TournamentLeaderboard; rounds: Round[] }) {
-  const mandatoryRoundName = validateMandatoryRound(
+  const mandatoryRound = validateMandatoryRound(
     leaderboard.mandatory_round_id,
     rounds,
     'resultatdata',
     'leaderboard.mandatory_round_id round identity',
-  )?.name ?? null
+  )
   return (
     <div className="standings-section">
       <div className="standings-heading">
         <div><p>Samlet</p><h2>{metricLabel(leaderboard.metric)} resultat</h2></div>
-        <span>Beste {leaderboard.required_counted_rounds} · {roundsLabel(leaderboard.included_round_ids.length)}</span>
+        <span>Beste {leaderboard.required_counted_rounds} av {rounds.length}</span>
       </div>
       <ol className="leaderboard-list" aria-label={`${metricLabel(leaderboard.metric)} resultat for turneringen`}>
         {leaderboard.entries.map((entry) => (
@@ -75,7 +104,9 @@ export function TournamentStandings({ leaderboard, rounds }: { leaderboard: Tour
             metric={leaderboard.metric}
             hasCurrentRound={leaderboard.current_round_id !== null}
             requiredCount={leaderboard.required_counted_rounds}
-            mandatoryRoundName={mandatoryRoundName}
+            mandatoryRound={mandatoryRound}
+            rounds={rounds}
+            visibility={leaderboard.visibility.mode}
           />
         ))}
       </ol>
