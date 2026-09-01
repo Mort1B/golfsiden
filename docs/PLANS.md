@@ -34,8 +34,10 @@ and invitation redemption are the only HTTP participation entry points and keep
 membership, entrant, initial handicap audit, and redemption facts aligned.
 Direct round creation now revalidates the active session and exact tournament-
 admin membership before inspecting content type or polling its bounded request
-body, then reauthorizes in the insertion transaction. No active implementation
-step is approved.
+body, then reauthorizes in the insertion transaction. Exact tournament
+membership is also mandatory for score-access reads, and the backend
+participation boundary is covered by a two-tournament player/team isolation
+fixture. No active implementation step is approved.
 
 ## Product decisions
 
@@ -125,17 +127,19 @@ step is approved.
 
 ## Upcoming work
 
-### Tournament scope isolation audit
+### Frontend tournament-target isolation
 
-- Audit roster, pairing, scoring, scorecard, and leaderboard reads so a player is
-  visible only through the target tournament's explicit membership and
-  `tournament_players` registration. Reusing the same account in another
-  tournament must create separate tournament participation facts; it must never
-  inherit roster presence, handicap, team/flight assignment, score authority, or
-  results.
-- **Stop condition:** two isolated tournaments expose only their own registered
-  participants through every product-facing read, event stream, and mutation;
-  unauthenticated callers receive no private scorecard or tournament event data.
+- Key tournament-local frontend editor, receipt, mutation, and invitation-token
+  state by tournament ID so navigation from tournament A to B cannot retain A's
+  drafts, success state, or one-time secret. Add target-aware response coherence
+  checks before caching tournament detail, roster, round, team, pairing, and
+  leaderboard payloads, splitting the mixed tournament decoder module first.
+- Validate same-account navigation between two tournaments at phone and desktop
+  widths, including roster, management, invitation, pairing, scoring, and
+  leaderboard states, plus loading/error/empty/long-content and a clean console.
+- **Stop condition:** tournament A state or a mismatched response can never render
+  or enter tournament B's cache after in-app navigation, including when the same
+  global player identity is registered independently in both tournaments.
 
 ### Mandatory counted round
 

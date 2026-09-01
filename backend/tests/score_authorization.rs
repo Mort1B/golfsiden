@@ -456,6 +456,7 @@ async fn exact_role_link_session_and_membership_remain_authoritative(pool: PgPoo
     }
     for denied in [VIEWER, UNLINKED] {
         let response = app.clone().oneshot(access(SCRAMBLE, denied)).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(body(response).await["writable_owners"], json!([]));
     }
 
@@ -488,7 +489,14 @@ async fn exact_role_link_session_and_membership_remain_authoritative(pool: PgPoo
         .await
         .unwrap();
     let revoked_membership = app.clone().oneshot(access(SCRAMBLE, USER_1)).await.unwrap();
-    assert_eq!(body(revoked_membership).await["writable_owners"], json!([]));
+    assert_eq!(revoked_membership.status(), StatusCode::FORBIDDEN);
+
+    let missing_round = app
+        .clone()
+        .oneshot(access(Uuid::new_v4(), ADMIN))
+        .await
+        .unwrap();
+    assert_eq!(missing_round.status(), StatusCode::NOT_FOUND);
 
     sqlx::query("UPDATE user_sessions SET revoked_at = now() WHERE user_id = $1")
         .bind(USER_5)

@@ -943,8 +943,7 @@ async fn tournament_membership_is_authoritative_for_privileged_score_access(pool
             .oneshot(access_request(INDIVIDUAL_ROUND_ID, user))
             .await
             .unwrap();
-        assert_eq!(access.status(), StatusCode::OK);
-        assert_eq!(response_json(access).await["writable_owners"], json!([]));
+        assert_eq!(access.status(), StatusCode::FORBIDDEN);
         let save = app
             .clone()
             .oneshot(save_request(

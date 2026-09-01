@@ -160,7 +160,10 @@ client score state. The same unresolved-save or confirmation navigation lock
 disables both selectors. The browser never reproduces role or membership policy.
 The private, non-cacheable access read revalidates and locks the active session/
 player link plus the exact tournament membership inside one repeatable-read
-transaction before it assembles the owner list.
+transaction before it assembles the owner list. An authenticated account without
+that target membership receives `403`; an exact viewer or exact player membership
+without a linked player remains authorized but receives an empty writable-owner
+list.
 
 ## Authentication and scoring access
 
@@ -201,6 +204,11 @@ return `403`, missing resources return `404`, and successful private reads use
 `Cache-Control: private, no-store`. Multi-query reads authorize and assemble the
 response in one repeatable-read transaction while holding the membership row
 `FOR SHARE`, so membership removal cannot commit partway through a response.
+The backend isolation suite reuses one account/player across two tournaments with
+different tournament handicaps, round snapshots, flights, and player-versus-team
+score owners. It proves that rosters, pairings, teams, writable owners,
+scorecards, gross/net results, rejected mutations, and payload-free live events
+remain bound to the exact target.
 
 Management and lifecycle mutations resolve the target tournament from the
 resource and lock/revalidate both the session and admin membership inside the

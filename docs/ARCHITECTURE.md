@@ -171,9 +171,16 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   ordering coincidences carry no authorization meaning.
 - The private score-access read re-locks the active session/user and exact
   tournament membership through deterministic owner assembly in a repeatable-
-  read transaction. Save and confirm invoke the same resolver under the existing
-  round, session, and membership locks, retaining the session user as audit actor
-  and preventing listing/mutation policy drift.
+  read transaction. Missing target membership is forbidden rather than
+  represented as an empty authorized owner set; exact viewers and exact unlinked
+  members retain the empty authorized result. Save and confirm invoke the same
+  resolver under the existing round, session, and membership locks, retaining
+  the session user as audit actor and preventing listing/mutation policy drift.
+- A PostgreSQL two-tournament acceptance fixture reuses one global account/player
+  with independent tournament handicaps and round snapshots, then combines an A
+  player card with a B-only two-player foursomes team. It guards roster, flight,
+  team, score authority, card, gross/net leaderboard, mutation, and payload-free
+  event isolation without introducing a permanent tournament team.
 - Team results can be attributed back to every round member when tournament standings are calculated. There is no permanent tournament team.
 - Locked-round score protection lives in PostgreSQL as well as the domain service. A future correction transaction must explicitly set `app.admin_correction = 'true'`.
 - Score changes are audited by a database trigger.

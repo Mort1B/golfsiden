@@ -37,8 +37,17 @@ pub async fn writable_owners(
         .await?
         .ok_or(ScoreAuthorizationError::Unauthenticated)?;
     let context = round_context(&mut transaction, round_id).await?;
-    let role = membership_role(&mut transaction, context.0, principal.user_id).await?;
-    let owners = resolve_owners(&mut transaction, &principal, role, round_id, context.1).await?;
+    let role = membership_role(&mut transaction, context.0, principal.user_id)
+        .await?
+        .ok_or(ScoreAuthorizationError::Forbidden)?;
+    let owners = resolve_owners(
+        &mut transaction,
+        &principal,
+        Some(role),
+        round_id,
+        context.1,
+    )
+    .await?;
     transaction.commit().await?;
     Ok(owners)
 }

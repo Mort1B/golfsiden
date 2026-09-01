@@ -1,60 +1,45 @@
 # Latest explanation
 
-## Round creation authorizes before interpreting the request
+## Score access now requires exact tournament membership
 
-`POST /api/tournaments/{tournament_id}/rounds` used to deserialize and validate
-the requested round before checking the caller's exact tournament role. An
-authenticated non-admin could therefore distinguish malformed fields, the
-tournament's configured round limit, or stored course/tee matches before the
-write transaction eventually returned `403`.
+`GET /api/rounds/{round_id}/score-access` previously treated a missing target
+membership like an authorized non-writing role and returned `200` with an empty
+owner list. That still confirmed the requested round existed and differed from
+the private-read contract used by scorecards, leaderboards, pairings, and live
+events.
 
-The handler receives the untouched request and performs a repeatable-read,
-active-session exact-admin preflight before it inspects headers or polls the
-body:
+The repository now holds the repeatable-read transaction and active-session lock,
+resolves the round, and requires the share-locked membership row before owner
+assembly:
 
 ```rust
-rounds::preflight_create(
-    &state.pool,
-    authenticated.principal.session_id,
-    tournament_id,
-).await?;
+let role = membership_role(&mut transaction, tournament_id, principal.user_id)
+    .await?
+    .ok_or(ScoreAuthorizationError::Forbidden)?;
 ```
 
-Only a successful preflight reaches content-type checking, JSON decoding with
-unknown-field rejection, or semantic validation. The post-authorization body
-read is explicitly limited to 32 KiB; supported content types remain
-`application/json` and `application/*+json`. An existing target without exact
-admin membership returns `403` without polling its body; a missing tournament
-returns `404`. Authentication and CSRF extraction remain earlier still, so an
-inactive session returns `401` and a missing or invalid CSRF token returns
-`403`. Global account role is never a tournament-authority bypass.
+A missing or revoked session remains `401`, a missing round remains `404`, and a
+session without exact membership now receives `403`. Exact viewers and exact
+player memberships without a usable player link remain authorized and receive an
+empty writable-owner list. Score save and confirmation continue using the same
+owner resolver and retain their existing denial behavior.
 
-## The write transaction remains authoritative
+## One identity still means separate tournament participation
 
-Preflight controls response ordering but does not grant durable write authority.
-`create_authorized` opens a separate transaction, revalidates the active session
-and exact admin membership under locks, inserts the round, and commits. A session
-revocation or membership change between preflight and insertion therefore
-prevents the write. The payload-free round invalidation is published only after
-the successful commit.
+The acceptance fixture registers one global account/player independently in two
+tournaments with different tournament handicaps. Opening creates distinct round
+snapshots and flight assignments. Tournament A uses a player-owned card;
+tournament B uses a B-only two-player foursomes team with its own membership and
+preserved team-handicap snapshot.
 
-Request-only failures, target validation failures, missing targets, and every
-unauthorized caller leave both round rows and live events unchanged. Existing
-round constraints, scoring-format rules, course/tee integrity, lifecycle facts,
-participants, teams, flights, handicaps, scores, and historical results are not
-changed by this authorization-order release.
+The fixture proves target-local rosters, pairings, teams, writable owners,
+player/team scorecards, and gross/net round and tournament results. An A-only
+admin is denied B reads, score saves, and confirmations; those rejections persist
+no score or confirmation and publish no invalidation event. The live stream first
+ignores a distinguishable B-only notification and then emits only the payload-free
+A notification.
 
-## Validation and remaining scope
-
-Focused PostgreSQL coverage includes anonymous, invalid and expired sessions,
-missing and invalid CSRF, scorer/player/viewer memberships, outsiders,
-cross-tournament admins, global-role admins, missing targets, malformed JSON,
-unknown fields, target-dependent validation, oversized and failed body streams,
-post-preflight session revocation and membership removal, and successful exact-
-admin creation. It proves forbidden bodies are not polled, error precedence,
-zero writes/events on every rejection, and exactly one persisted round plus one
-matching post-commit event on success.
-
-The next step remains the exhaustive two-tournament roster, pairing, scoring,
-scorecard, leaderboard, and event-stream isolation audit. No frontend caller or
-database migration changed in this release.
+No schema or frontend production code changed. The next bounded step is the
+frontend tournament-target isolation slice: reset tournament-local drafts,
+receipts, and invitation secrets on navigation, and reject mismatched target
+identities before responses enter the private query cache.
