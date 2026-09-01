@@ -48,9 +48,9 @@ export function useHoleScoreSync(input: HoleScoreSyncInput) {
       await api.saveScore(input.round.id, input.holeId, owner, value, input.csrfToken)
     },
     verify: async () => {
-      await invalidateScorecard(queryClient, input.round.id, owner)
+      await invalidateScorecard(queryClient, userId, input.round.id, owner)
       const card = await api.scorecard(input.round.id, owner)
-      queryClient.setQueryData(scoringKeys.scorecard(input.round.id, owner), card)
+      queryClient.setQueryData(scoringKeys.scorecard(userId, input.round.id, owner), card)
       await invalidateScoreDependents(queryClient, userId, input.round.id, input.tournamentId)
       verifiedRef.current(card)
       return holeValue(card, input.holeId)
@@ -64,7 +64,7 @@ export function useHoleScoreSync(input: HoleScoreSyncInput) {
       ])
       queryClient.setQueryData(tournamentKeys.round(userId, input.round.id), round)
       queryClient.setQueryData(privateWorkspaceKeys.completion(userId, input.round.id), completion)
-      queryClient.setQueryData(scoringKeys.scorecard(input.round.id, owner), card)
+      queryClient.setQueryData(scoringKeys.scorecard(userId, input.round.id, owner), card)
       await queryClient.invalidateQueries({
         queryKey: tournamentKeys.rounds(userId, input.tournamentId),
         exact: true,

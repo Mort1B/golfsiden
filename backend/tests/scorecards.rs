@@ -182,6 +182,20 @@ fn access_request(round_id: Uuid, user: Uuid) -> Request<Body> {
         .unwrap()
 }
 
+fn scorecard_request(
+    round_id: Uuid,
+    owner_type: &str,
+    owner_id: Uuid,
+    user: Uuid,
+) -> Request<Body> {
+    Request::get(format!(
+        "/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}"
+    ))
+    .header("cookie", format!("golf_session={}", token_for_user(user)))
+    .body(Body::empty())
+    .unwrap()
+}
+
 fn token_for_user(user_id: Uuid) -> &'static str {
     match user_id {
         USER_A => "score-test-user-a-token",
@@ -193,6 +207,89 @@ fn token_for_user(user_id: Uuid) -> &'static str {
         UNLINKED_PLAYER_USER => "score-test-unlinked-player-token",
         _ => "score-test-missing-user-token",
     }
+}
+
+#[sqlx::test(migrations = "../migrations")]
+async fn scorecard_reads_require_exact_membership_for_every_role_and_are_private(pool: PgPool) {
+    seed_open(&pool).await;
+    let outsider = Uuid::new_v4();
+    let outsider_token = "score-test-global-admin-outsider";
+    sqlx::query(
+        "INSERT INTO users (id, username, display_name, role)
+         VALUES ($1, 'score_outsider', 'Global admin outsider', 'admin')",
+    )
+    .bind(outsider)
+    .execute(&pool)
+    .await
+    .unwrap();
+    auth::create_session(
+        &pool,
+        outsider,
+        &hash_session_token(outsider_token),
+        Utc::now() + ChronoDuration::hours(1),
+    )
+    .await
+    .unwrap();
+    let app = api::router(AppState::new(pool));
+
+    for user in [USER_A, USER_B, PLAYER_USER_A, VIEWER_USER] {
+        let response = app
+            .clone()
+            .oneshot(scorecard_request(
+                INDIVIDUAL_ROUND_ID,
+                "player",
+                PLAYER_A,
+                user,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK, "user {user}");
+        assert_eq!(response.headers()["cache-control"], "private, no-store");
+    }
+
+    let unauthenticated = app
+        .clone()
+        .oneshot(
+            Request::get(format!(
+                "/api/rounds/{INDIVIDUAL_ROUND_ID}/scorecards/player/{PLAYER_A}"
+            ))
+            .body(Body::empty())
+            .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(
+        response_json(unauthenticated).await["error"]["code"],
+        "unauthenticated"
+    );
+
+    let forbidden = app
+        .clone()
+        .oneshot(
+            Request::get(format!(
+                "/api/rounds/{INDIVIDUAL_ROUND_ID}/scorecards/player/{PLAYER_A}"
+            ))
+            .header("cookie", format!("golf_session={outsider_token}"))
+            .body(Body::empty())
+            .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(forbidden.status(), StatusCode::FORBIDDEN);
+    assert_eq!(response_json(forbidden).await["error"]["code"], "forbidden");
+
+    let missing = app
+        .oneshot(scorecard_request(
+            Uuid::new_v4(),
+            "player",
+            PLAYER_A,
+            USER_A,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(missing.status(), StatusCode::NOT_FOUND);
+    assert_eq!(response_json(missing).await["error"]["code"], "not_found");
 }
 
 #[sqlx::test(migrations = "../migrations")]
@@ -217,7 +314,9 @@ async fn individual_api_saves_corrects_confirms_and_preserves_true_noops(pool: P
     assert_eq!(first.status(), StatusCode::OK);
     let first_body = response_json(first).await;
     assert_eq!(first_body["gross_strokes"], 5);
-    assert_eq!(events.try_recv().unwrap().id, INDIVIDUAL_ROUND_ID);
+    let event = events.try_recv().unwrap();
+    assert_eq!(event.id, INDIVIDUAL_ROUND_ID);
+    assert_eq!(event.tournament_id, TOURNAMENT_ID);
 
     let unchanged = app
         .clone()
@@ -307,13 +406,12 @@ async fn individual_api_saves_corrects_confirms_and_preserves_true_noops(pool: P
         .unwrap();
     let preserved = app
         .clone()
-        .oneshot(
-            Request::get(format!(
-                "/api/rounds/{INDIVIDUAL_ROUND_ID}/scorecards/player/{PLAYER_A}"
-            ))
-            .body(Body::empty())
-            .unwrap(),
-        )
+        .oneshot(scorecard_request(
+            INDIVIDUAL_ROUND_ID,
+            "player",
+            PLAYER_A,
+            VIEWER_USER,
+        ))
         .await
         .unwrap();
     assert_eq!(response_json(preserved).await["net_total"], 8);
@@ -340,13 +438,12 @@ async fn individual_api_saves_corrects_confirms_and_preserves_true_noops(pool: P
         .await
         .unwrap();
     let summary = app
-        .oneshot(
-            Request::get(format!(
-                "/api/rounds/{INDIVIDUAL_ROUND_ID}/scorecards/player/{PLAYER_A}"
-            ))
-            .body(Body::empty())
-            .unwrap(),
-        )
+        .oneshot(scorecard_request(
+            INDIVIDUAL_ROUND_ID,
+            "player",
+            PLAYER_A,
+            VIEWER_USER,
+        ))
         .await
         .unwrap();
     assert_eq!(response_json(summary).await["confirmed"], false);
@@ -371,13 +468,12 @@ async fn team_summary_and_api_conflicts_are_format_and_round_specific(pool: PgPo
     assert_eq!(saved.status(), StatusCode::OK);
     let summary = app
         .clone()
-        .oneshot(
-            Request::get(format!(
-                "/api/rounds/{SCRAMBLE_ROUND_ID}/scorecards/team/{SCRAMBLE_TEAM_ID}"
-            ))
-            .body(Body::empty())
-            .unwrap(),
-        )
+        .oneshot(scorecard_request(
+            SCRAMBLE_ROUND_ID,
+            "team",
+            SCRAMBLE_TEAM_ID,
+            VIEWER_USER,
+        ))
         .await
         .unwrap();
     let body = response_json(summary).await;

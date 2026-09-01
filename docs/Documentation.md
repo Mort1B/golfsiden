@@ -10,7 +10,7 @@ locking and live gross/net leaderboard APIs for individual stroke play,
 two-player scramble, and two-player foursomes. Signed-in tournament members can browse their tournaments,
 tournament players, rounds, round-specific teams, and gross/net standings. The
 mobile result view supports shareable selections and live refetch inside that
-private workspace. Global player reads remain a separate legacy surface.
+private workspace. Global player reads are retired.
 The mobile score view supports authenticated hole entry, correction,
 confirmation, locked read-only cards, and every writable card in the signed-in
 player's exact flight for all three scoring formats.
@@ -115,7 +115,11 @@ in order with partial gross/net totals, the preserved playing handicap,
 completeness, and current confirmation. Individual net uses the opening snapshot.
 Scramble net applies 35%/15% to the members' rounded course handicaps and applies
 the round allowance once. Foursomes net reads the immutable team Playing Handicap
-captured at opening; it never recalculates from rounded member snapshots.
+captured at opening; it never recalculates from rounded member snapshots. This
+read requires an active session plus any exact membership role in the round's
+tournament. Round lookup, session revalidation, membership `FOR SHARE`, and card
+assembly share one repeatable-read transaction; successful responses are
+`private, no-store`.
 
 `POST` to that scorecard path plus `/confirm` requires all holes and records the
 session actor as `confirmed_by` plus `confirmed_at`. Confirmation records represent current state;
@@ -149,8 +153,8 @@ the current hole when its semantic buttons switch cards. Rapid card switches
 replace browser history. The full owner selector remains available for browsing
 eligible read-only cards.
 
-The selected card and at most its two writable neighbors use the existing
-owner-scoped TanStack Query cache. Focus or pointer intent may prefetch one
+The selected card and at most its two writable neighbors use the user-, round-,
+and owner-scoped private TanStack Query cache. Focus or pointer intent may prefetch one
 additional chosen card; there is no eager all-flight fetch and no duplicate
 client score state. The same unresolved-save or confirmation navigation lock
 disables both selectors. The browser never reproduces role or membership policy.
@@ -189,9 +193,9 @@ hole, tee time, name, order, or a partial team overlap never implies authority.
 Viewers, unlinked accounts, cross-tournament roles, non-members, and players in
 another flight cannot write. Team identity remains specific to one round.
 
-Tournament detail, roster, round, team, readiness, completion-validation, and
-round/tournament leaderboard reads require an active session plus any membership
-role in the target tournament. The tournament collection is selected directly
+Tournament detail, roster, round, team, readiness, completion-validation,
+scorecard, and round/tournament leaderboard reads require an active session plus
+any membership role in the target tournament. The tournament collection is selected directly
 through the current user's memberships. Existing resources outside that scope
 return `403`, missing resources return `404`, and successful private reads use
 `Cache-Control: private, no-store`. Multi-query reads authorize and assemble the
@@ -619,9 +623,14 @@ Leaderboard responses cross a focused runtime decoder before entering TanStack
 Query. The decoder checks tagged owners, finite states, identifiers, nullability,
 numeric fields, response identity, and aggregate coherence across contribution
 counts, selected sums, metric score-to-par, eligibility, and current-round facts.
-The single application EventSource
-remains an invalidation signal only; clients refetch the selected authoritative
-leaderboard instead of calculating or merging score state in the browser.
+Each protected page opens at most one EventSource for its selected tournament.
+It remains an invalidation signal only; clients refetch the selected authoritative
+state instead of calculating or merging score state in the browser. The stream
+requires exact membership, revalidates the active session and membership before
+each matching event, and emits only an event type with no identifiers or data.
+Initial connection and every reconnect invalidate the current user's private
+workspace. A lagged server receiver closes the stream so native reconnection
+triggers that same authoritative resync instead of silently leaving stale state.
 
 ## Development workflow
 
@@ -633,9 +642,9 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 ## Known limitations
 
 - The legacy global player/profile/handicap directory and platform-admin
-  tournament creation are retired. Scorecard and SSE visibility still need the
-  broader tournament-isolation audit; later public tournament or leaderboard
-  access will use explicit share tokens.
+  tournament creation are retired. Scorecards and target-tournament SSE are
+  membership-private. Later public tournament, scorecard, or leaderboard access
+  requires an explicit share-token contract.
 - Request throttling is not implemented, so the public onboarding and
   registration endpoints are not ready for an internet-facing deployment.
 - Tournament settings currently edit only the pre-start counted-round value and

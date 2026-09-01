@@ -1,6 +1,6 @@
 import { decodeRoundLeaderboard, decodeTournamentLeaderboard } from './leaderboards'
 import { decodeAuthSession } from './auth'
-import { ApiHttpError, jsonRequest, liveUrl, requestDecoded, requestUnchecked } from './http'
+import { ApiHttpError, jsonRequest, requestDecoded, requestUnchecked, tournamentLiveUrl } from './http'
 import { decodeArray } from './decoder'
 import { decodeRound, decodeTournament, tournamentApi } from './tournaments'
 import {
@@ -68,5 +68,5 @@ export const api = {
   confirmScorecard: (roundId: string, owner: ScoreOwner, csrfToken: string) =>
     requestDecoded(`/api/rounds/${roundId}/scorecards/${owner.type}/${owner.id}/confirm`, (value) =>
       decodeScorecard(value, roundId, owner), jsonRequest('POST', {}, csrfToken)),
-  liveUrl,
+  tournamentLiveUrl,
 }

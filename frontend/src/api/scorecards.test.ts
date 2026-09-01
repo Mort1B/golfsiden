@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { decodeCompletionValidation, decodeScoreAccess, decodeScorecard } from './scorecards'
+import { decodeCompletionValidation, decodeScoreAccess, decodeScorecard, scoringKeys } from './scorecards'
 
 const roundId = '00000000-0000-0000-0000-000000004001'
 const playerId = '00000000-0000-0000-0000-000000001001'
@@ -9,6 +9,15 @@ const holeId = '00000000-0000-0000-0000-000000003201'
 const owner = { type: 'player' as const, id: playerId }
 
 describe('scorecard boundaries', () => {
+  it('owns scorecard caches by the current account', () => {
+    expect(scoringKeys.scorecard('user-one', roundId, owner)).toEqual([
+      'private-workspace', 'user-one', 'rounds', roundId, 'scorecards', 'player', playerId,
+    ])
+    expect(scoringKeys.scorecard('user-one', roundId, owner)).not.toEqual(
+      scoringKeys.scorecard('user-two', roundId, owner),
+    )
+  })
+
   it('accepts seed UUIDs and exact scorecard timestamps', () => {
     const card = decodeScorecard({
       round_id: roundId,

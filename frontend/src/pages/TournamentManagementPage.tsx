@@ -8,12 +8,14 @@ import { useAuth } from '../features/auth/authContext'
 import { MANAGEMENT_SECTIONS, managementSectionFromHash, resolveManagementAccess } from '../features/tournaments/managementWorkspace'
 import { TournamentManagementSections } from '../features/tournaments/TournamentManagementSections'
 import { ErrorState, LoadingState } from '../ui/AsyncState'
+import { useTournamentLive } from '../features/live/useTournamentLive'
 
 export function TournamentManagementPage() {
   const { tournamentId = '' } = useParams()
   const location = useLocation()
   const userId = useAuth().session?.user_id ?? ''
   const canonical = isCanonicalUuid(tournamentId)
+  useTournamentLive(canonical ? tournamentId : '')
   const memberships = useQuery({
     queryKey: tournamentKeys.mine(userId),
     queryFn: tournamentApi.mine,

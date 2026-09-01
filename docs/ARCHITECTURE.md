@@ -205,10 +205,18 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   contributions, and applies competition ranking. Open-round facts are validated
   fail-closed but are not counted yet.
 - Server-Sent Events carry invalidation notifications, not full mutable state. Clients refetch through TanStack Query.
+- Live events carry internal tournament scope from every post-commit producer.
+  `/api/tournaments/{tournament_id}/live` authenticates and authorizes the exact
+  membership at handshake, filters before emission, revalidates access for every
+  matching event, and serializes only the event type. The internal tournament and
+  resource identifiers never enter the SSE frame. A lagged receiver closes;
+  initial connection and native reconnection invalidate the user's private query
+  root and refetch authoritative state.
 - Private workspace query keys are rooted by session user ID. Initial or changed
   identities clear that root before publication; same-user refreshes preserve it.
-  SSE invalidation excludes the auth query so live events do not unmount protected
-  scoring state.
+  Scorecards use that same user-owned root. Tournament-live invalidation targets
+  only the active user's private queries and excludes provider/catalog queries,
+  so events cannot unmount authentication or expose a predecessor's card.
 - The global leaderboard route owns selection in canonical URL parameters instead
   of a client store. It validates round ownership before enabling hierarchical
   queries, and leaderboard responses pass focused runtime and aggregate-coherence
@@ -252,12 +260,12 @@ Implemented resources:
 | `GET` | `/api/rounds/{round_id}/leaderboards/gross` | Retrieve the live gross round leaderboard |
 | `GET` | `/api/rounds/{round_id}/leaderboards/net` | Retrieve the live net round leaderboard |
 | `PUT` | `/api/rounds/{round_id}/scores` | Save or correct one hole score |
-| `GET` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}` | Retrieve a gross/net scorecard summary |
+| `GET` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}` | Retrieve a private member-authorized gross/net scorecard summary |
 | `POST` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/confirm` | Confirm a complete scorecard |
 | `GET` | `/api/rounds/{round_id}/teams` | Compatibility read for round teams |
 | `GET` | `/api/tournaments/{tournament_id}/leaderboards/gross` | Retrieve individual tournament gross standings |
 | `GET` | `/api/tournaments/{tournament_id}/leaderboards/net` | Retrieve individual tournament net standings |
-| `GET` | `/api/live` | SSE invalidation events |
+| `GET` | `/api/tournaments/{tournament_id}/live` | Receive payload-free invalidations for one exact tournament membership |
 | `GET` | `/api/health` | Liveness response |
 | `POST` | `/api/auth/login` | Verify credentials and create a session |
 | `GET` | `/api/auth/session` | Retrieve the current session and CSRF value |
@@ -278,8 +286,8 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 
 ## Deferred decisions
 
-- Global player, scorecard, and live-event read visibility; production signup,
-  login, and invitation-registration rate limiting.
+- Public scorecard/share-link policy; production signup, login, and invitation-
+  registration rate limiting.
 - Faster phone switching among several writable flight cards.
 - Separate migration and runtime database roles plus production privilege policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.

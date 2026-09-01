@@ -6,12 +6,14 @@ import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 import { StatusBadge } from '../ui/StatusBadge'
 import { tournamentKeys } from '../api/tournaments'
 import { useAuth } from '../features/auth/authContext'
+import { useTournamentLive } from '../features/live/useTournamentLive'
 
 export function RoundPage() {
   const { roundId = '' } = useParams()
   const auth = useAuth()
   const userId = auth.session?.user_id ?? ''
   const round = useQuery({ queryKey: tournamentKeys.round(userId, roundId), queryFn: () => api.round(roundId) })
+  useTournamentLive(round.data?.tournament_id ?? '')
   const teams = useQuery({ queryKey: tournamentKeys.teams(userId, roundId), queryFn: () => api.teams(roundId) })
   if (round.isPending) return <section className="page"><LoadingState /></section>
   if (round.error) return <section className="page"><ErrorState error={round.error} /></section>

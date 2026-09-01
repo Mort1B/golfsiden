@@ -155,7 +155,7 @@ async fn create(
     )
     .await
     .map_err(map_mutation_error)?;
-    state.notify("round", round.id);
+    state.notify("round", round.tournament_id, round.id);
     Ok((StatusCode::CREATED, Json(round)))
 }
 

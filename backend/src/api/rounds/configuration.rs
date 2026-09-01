@@ -146,7 +146,7 @@ pub async fn put(
         &revision,
     )
     .await?;
-    state.notify("round", round_id);
+    state.notify("round", round.tournament_id, round_id);
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(round)).into_response())
 }
 

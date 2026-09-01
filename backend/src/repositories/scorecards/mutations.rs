@@ -18,6 +18,7 @@ use super::{
 pub struct MutationResult<T> {
     pub value: T,
     pub changed: bool,
+    pub tournament_id: Uuid,
 }
 
 pub struct SaveScore {
@@ -100,6 +101,7 @@ async fn save_with_actor(
         return Ok(MutationResult {
             value: score.clone(),
             changed: false,
+            tournament_id: context.tournament_id,
         });
     }
 
@@ -131,6 +133,7 @@ async fn save_with_actor(
     Ok(MutationResult {
         value: score_from_row(row)?,
         changed: true,
+        tournament_id: context.tournament_id,
     })
 }
 
@@ -202,6 +205,7 @@ async fn confirm_with_actor(
     Ok(MutationResult {
         value: build_summary(transaction, context, owner).await?,
         changed,
+        tournament_id: context.tournament_id,
     })
 }
 

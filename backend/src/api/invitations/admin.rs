@@ -85,7 +85,7 @@ pub(super) async fn issue(
         },
     )
     .await?;
-    state.notify("invitation", tournament_id);
+    state.notify("invitation", tournament_id, tournament_id);
     Ok((
         StatusCode::CREATED,
         Json(InvitationWithToken { invitation, token }),
@@ -115,7 +115,7 @@ pub(super) async fn rotate(
         },
     )
     .await?;
-    state.notify("invitation", tournament_id);
+    state.notify("invitation", tournament_id, tournament_id);
     Ok((
         StatusCode::CREATED,
         Json(InvitationWithToken { invitation, token }),
@@ -136,6 +136,6 @@ pub(super) async fn revoke(
         invitation_id,
     )
     .await?;
-    state.notify("invitation", tournament_id);
+    state.notify("invitation", tournament_id, tournament_id);
     Ok(StatusCode::NO_CONTENT)
 }

@@ -138,7 +138,7 @@ async fn add_player(
     )
     .await
     .map_err(map_mutation_error)?;
-    state.notify("tournament", id);
+    state.notify("tournament", id, id);
     Ok((StatusCode::CREATED, Json(player)))
 }
 
@@ -172,7 +172,7 @@ async fn change_player_handicap(
     )
     .await
     .map_err(map_mutation_error)?;
-    state.notify("tournament", tournament_id);
+    state.notify("tournament", tournament_id, tournament_id);
     Ok((StatusCode::CREATED, Json(correction)))
 }
 
@@ -203,7 +203,7 @@ async fn update_counted_rounds(
     .await
     .map_err(map_mutation_error)?;
     if result.changed {
-        state.notify("tournament", tournament_id);
+        state.notify("tournament", tournament_id, tournament_id);
     }
     Ok((
         [(CACHE_CONTROL, "private, no-store")],
@@ -229,7 +229,7 @@ async fn start(
     .await
     .map_err(map_mutation_error)?;
     if result.changed {
-        state.notify("tournament", tournament_id);
+        state.notify("tournament", tournament_id, tournament_id);
     }
     Ok((
         [(CACHE_CONTROL, "private, no-store")],

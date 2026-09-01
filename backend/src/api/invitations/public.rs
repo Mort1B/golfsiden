@@ -130,7 +130,7 @@ pub(super) async fn register(
     .await?;
     let session = created.session.response(derive_csrf_token(&session_token));
     let cookie = session_cookie(&state, session_token, session_expires_at);
-    state.notify("tournament", created.tournament_id);
+    state.notify("tournament", created.tournament_id, created.tournament_id);
     Ok((
         StatusCode::CREATED,
         jar.add(cookie),
@@ -161,7 +161,7 @@ pub(super) async fn accept(
     )
     .await?;
     if accepted.status == JoinStatus::Joined {
-        state.notify("tournament", accepted.tournament_id);
+        state.notify("tournament", accepted.tournament_id, accepted.tournament_id);
     }
     let status = if accepted.status == JoinStatus::Joined {
         StatusCode::CREATED

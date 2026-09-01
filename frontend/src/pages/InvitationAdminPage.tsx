@@ -24,6 +24,7 @@ import {
 } from '../features/invitations/adminState'
 import { useAuth } from '../features/auth/authContext'
 import { ErrorState, LoadingState } from '../ui/AsyncState'
+import { useTournamentLive } from '../features/live/useTournamentLive'
 
 interface ActionError { scope: 'issue' | 'list'; message: string }
 
@@ -41,6 +42,7 @@ export function InvitationAdminPage() {
   const auth = useAuth()
   const queryClient = useQueryClient()
   const userId = auth.session?.user_id ?? ''
+  useTournamentLive(isCanonicalUuid(tournamentId) ? tournamentId : '')
   const memberships = useQuery({ queryKey: tournamentKeys.mine(userId), queryFn: tournamentApi.mine, enabled: userId.length > 0 })
   const membership = memberships.data?.find((entry) => entry.tournament.id === tournamentId)
   const authorized = membership?.role === 'admin'

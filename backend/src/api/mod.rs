@@ -37,7 +37,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .merge(rounds::routes())
         .merge(scorecards::routes())
         .merge(teams::routes())
-        .route("/api/live", get(live::events))
+        .route("/api/tournaments/{tournament_id}/live", get(live::events))
         .layer(TraceLayer::new_for_http());
     let router = if let Some(origin) = cors_origin {
         router.layer(

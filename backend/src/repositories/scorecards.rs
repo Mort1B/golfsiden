@@ -10,6 +10,7 @@ use crate::domain::{
     scorecards::{ConfirmationState, ScoreEntry, ScoreOwner, ScorecardSummary, summarize},
     scoring::ScoringError,
 };
+use crate::repositories::auth;
 use handicaps::validate_owner;
 use rows::{
     ConfirmationRow, HoleScoreRow, RoundContext, ScoreRow, hole_source_from_row, score_from_row,
@@ -79,6 +80,37 @@ pub async fn get(
         .execute(&mut *transaction)
         .await?;
     let context = load_round(&mut transaction, round_id, false).await?;
+    let summary = build_summary(&mut transaction, &context, owner).await?;
+    transaction.commit().await?;
+    Ok(summary)
+}
+
+pub async fn get_authenticated(
+    pool: &PgPool,
+    session_id: Uuid,
+    round_id: Uuid,
+    owner: ScoreOwner,
+) -> Result<ScorecardSummary, ScorecardError> {
+    let mut transaction = pool.begin().await?;
+    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        .execute(&mut *transaction)
+        .await?;
+    let context = load_round(&mut transaction, round_id, false).await?;
+    let principal = auth::lock_active_session(&mut transaction, session_id)
+        .await?
+        .ok_or(ScorecardError::Unauthenticated)?;
+    let membership = sqlx::query_scalar::<_, bool>(
+        "SELECT true FROM tournament_memberships
+         WHERE tournament_id = $1 AND user_id = $2
+         FOR SHARE",
+    )
+    .bind(context.tournament_id)
+    .bind(principal.user_id)
+    .fetch_optional(&mut *transaction)
+    .await?;
+    if membership.is_none() {
+        return Err(ScorecardError::Forbidden);
+    }
     let summary = build_summary(&mut transaction, &context, owner).await?;
     transaction.commit().await?;
     Ok(summary)

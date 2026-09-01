@@ -2,6 +2,7 @@ pub mod auth;
 pub mod course_revisions;
 pub mod invitations;
 pub mod leaderboards;
+pub mod live;
 pub mod onboarding;
 pub mod round_completion;
 pub mod round_configuration;

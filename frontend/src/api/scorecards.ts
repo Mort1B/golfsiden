@@ -87,8 +87,8 @@ export interface RoundCompletionValidation {
 export const scoringKeys = {
   access: (roundId: string) => ['rounds', roundId, 'score-access'] as const,
   completion: (roundId: string) => ['rounds', roundId, 'completion-validation'] as const,
-  scorecard: (roundId: string, owner: ScoreOwner) =>
-    ['scorecards', roundId, owner.type, owner.id] as const,
+  scorecard: (userId: string, roundId: string, owner: ScoreOwner) =>
+    ['private-workspace', userId, 'rounds', roundId, 'scorecards', owner.type, owner.id] as const,
 }
 
 export function decodeScoreAccess(value: unknown, expectedRoundId: string): ScoreAccess {

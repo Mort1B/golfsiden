@@ -35,9 +35,9 @@ export function useScorecardConfirmation(input: ConfirmationInput) {
       return api.confirmScorecard(variables.round.id, variables.owner, variables.csrfToken)
     },
     onSuccess: async (card, variables) => {
-      queryClient.setQueryData(scoringKeys.scorecard(variables.round.id, variables.owner), card)
-      await invalidateScorecard(queryClient, variables.round.id, variables.owner)
-      queryClient.setQueryData(scoringKeys.scorecard(variables.round.id, variables.owner), card)
+      queryClient.setQueryData(scoringKeys.scorecard(userId, variables.round.id, variables.owner), card)
+      await invalidateScorecard(queryClient, userId, variables.round.id, variables.owner)
+      queryClient.setQueryData(scoringKeys.scorecard(userId, variables.round.id, variables.owner), card)
       await invalidateScoreDependents(queryClient, userId, variables.round.id, variables.tournamentId)
       variables.onConfirmed()
     },
@@ -51,7 +51,7 @@ export function useScorecardConfirmation(input: ConfirmationInput) {
       ])
       queryClient.setQueryData(tournamentKeys.round(userId, variables.round.id), round)
       queryClient.setQueryData(privateWorkspaceKeys.completion(userId, variables.round.id), completion)
-      queryClient.setQueryData(scoringKeys.scorecard(variables.round.id, variables.owner), card)
+      queryClient.setQueryData(scoringKeys.scorecard(userId, variables.round.id, variables.owner), card)
       await queryClient.invalidateQueries({ queryKey: tournamentKeys.rounds(userId, variables.tournamentId), exact: true })
     },
   })

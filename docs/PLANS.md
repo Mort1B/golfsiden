@@ -27,8 +27,9 @@ The exact-admin tournament-start lifecycle and hosted management action are also
 complete, including draft-only creation and concurrent lifecycle coverage.
 
 The legacy global player/profile/handicap HTTP and frontend directory plus the
-platform-admin tournament-creation route are retired. No active implementation
-step is approved.
+platform-admin tournament-creation route are retired. Scorecard reads and
+tournament-targeted live invalidation are membership-private and identity-owned.
+No active implementation step is approved.
 
 ## Product decisions
 
@@ -120,9 +121,6 @@ step is approved.
 
 ### Tournament scope isolation audit
 
-- Require an authenticated target-tournament membership for scorecard and live-
-  event reads, retaining `private, no-store` and identity-owned frontend caches.
-  Later public scorecards or standings require an explicit share-token contract.
 - Replace the exact-admin roster mutation's arbitrary global `player_id` input
   with a tournament-safe participation flow that also creates or verifies the
   matching tournament membership; preserve onboarding and invitation joining.

@@ -20,10 +20,11 @@ pub struct AppState {
     pub course_provider: course_provider::CourseProviderClient,
 }
 
-#[derive(Clone, Debug, serde::Serialize)]
+#[derive(Clone, Debug)]
 pub struct LiveEvent {
     pub resource: &'static str,
     pub id: uuid::Uuid,
+    pub tournament_id: uuid::Uuid,
 }
 
 impl AppState {
@@ -53,7 +54,11 @@ impl AppState {
         })
     }
 
-    pub fn notify(&self, resource: &'static str, id: uuid::Uuid) {
-        let _ = self.live_events.send(LiveEvent { resource, id });
+    pub fn notify(&self, resource: &'static str, tournament_id: uuid::Uuid, id: uuid::Uuid) {
+        let _ = self.live_events.send(LiveEvent {
+            resource,
+            id,
+            tournament_id,
+        });
     }
 }

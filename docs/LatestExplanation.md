@@ -1,53 +1,66 @@
 # Latest explanation
 
-## Global player discovery is retired
+## Scorecards are private tournament reads
 
-The web product no longer exposes a global player, profile, or handicap-history
-directory. Every former method under `/api/players` is unrouted, the `/players`
-page and navigation item are gone, and the frontend no longer contains a global
-player client or DTO. Preserved `players` and handicap-history rows remain in
-PostgreSQL because accounts, invitations, tournament registrations, snapshots,
-and historical results still reference them.
-
-Tournament discovery did not become global as a replacement. The remaining
-collection route keeps its authenticated membership filter:
+Reading a scorecard now requires an active session and any exact membership role
+in the round's tournament. The repository resolves the round first, revalidates
+the session, locks the membership `FOR SHARE`, and assembles the complete card in
+one repeatable-read transaction. Missing rounds return `404`, existing rounds
+outside the account's memberships return `403`, and successful responses use
+`Cache-Control: private, no-store`.
 
 ```rust
-let tournaments = tournaments::list_for_member(
+let summary = scorecards::get_authenticated(
     &state.pool,
-    authenticated.principal.user_id,
+    authenticated.principal.session_id,
+    round_id,
+    owner,
 ).await?;
-Ok(([(CACHE_CONTROL, "private, no-store")], Json(tournaments)))
 ```
 
-The legacy `POST /api/tournaments` route and its platform-admin extractor and
-repository path are also removed. Creator onboarding is the product-facing
-tournament creation boundary and atomically grants only the new tournament's
-admin membership. A global account role grants no tournament listing or
-administration access, and it cannot use a separate legacy creation path.
+This changes read visibility only. Player/team ownership, flight-wide write
+authority, preserved handicap snapshots, confirmation, audit, and locked-round
+rules remain unchanged.
 
-## Frontend and compatibility boundaries
+## Live invalidation has an exact tournament boundary
 
-The application now has three primary navigation items. Mobile and desktop CSS
-explicitly lays out that three-item navigation, and an old `/players` bookmark
-falls through to the established router error page without issuing an API
-request. Tournament management continues to use the identity- and tournament-
-scoped private roster query; roster loading, correction, and invalidation
-semantics were not changed.
+The public global `/api/live` feed is gone. A protected page connects only to
+`/api/tournaments/{tournament_id}/live`. The handshake distinguishes inactive
+sessions, missing tournaments, and absent memberships with `401`, `404`, and
+`403`. Every internal post-commit notification now carries its tournament scope;
+the stream filters by that scope and revalidates the active session and exact
+membership immediately before emitting a matching event.
 
-No migration was needed. This release removes transport surfaces rather than
-stored identity or history, and existing tournament/player composite keys remain
-the database isolation boundary.
+Only the SSE event type is serialized. Tournament IDs, resource IDs, players,
+owners, and scores remain server-internal, so a frame is simply:
 
-## Validation and remaining audit
+```text
+event: score
+```
 
-Regression coverage checks every retired player method for anonymous, member,
-and global-admin sessions, proves legacy tournament creation cannot mutate the
-database or emit SSE, and confirms authenticated tournament lists and rosters
-remain membership-scoped and `private, no-store`. Rust formatting, default and
-PostgreSQL tests, strict Clippy, frontend tests, typecheck, lint, build, and Chrome
-checks at 375px and 1440px cover the release.
+The React application shares one credentialed stream for the current account and
+selected tournament, including across Strict Mode cleanup/remount. Route or
+selection changes release the old stream. Initial connection and every native
+reconnect invalidate the current user's private workspace, while a lagged server
+receiver closes so that reconnect performs the same authoritative resync.
+Scorecard query keys now live below
+`private-workspace/<user>`, so logout or a changed identity removes every prior
+card before the next account is published; a same-user session refresh preserves
+the active scoring workspace.
 
-The next isolation slice must address the remaining scorecard/live-event read
-policy, arbitrary global player IDs in the admin roster mutation, authorization
-ordering in round creation, and the complete two-tournament read/mutation audit.
+## Validation and remaining scope
+
+Focused PostgreSQL tests cover all four tournament roles, global-role non-bypass,
+`401`/`403`/`404`, private cache headers, two-tournament event isolation,
+payload-free frames, session revocation, membership removal, and retirement of
+the old live route. Channel-overflow coverage proves a lagged stream closes for
+resynchronization. Frontend tests cover user-owned scorecard keys, identity
+cleanup, same-user continuity, one shared target stream, all event types,
+connection/reconnection invalidation, target changes, and cleanup. The full
+Rust/PostgreSQL and frontend ladders plus real browser scoring and live-refetch
+checks complete the release gate.
+
+The next isolation slice remains the admin roster mutation, round-creation
+authorization ordering, and the exhaustive two-tournament read/mutation audit.
+Public scorecards, actor-field minimization, and final-round visibility remain
+explicit Phase 7 work.

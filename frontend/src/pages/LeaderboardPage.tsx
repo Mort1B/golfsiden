@@ -15,6 +15,7 @@ import {
 import { TournamentStandings } from '../features/leaderboards/TournamentStandings'
 import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 import { useAuth } from '../features/auth/authContext'
+import { useTournamentLive } from '../features/live/useTournamentLive'
 
 export function LeaderboardPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -27,6 +28,7 @@ export function LeaderboardPage() {
     ?? tournaments.find((item) => item.status === 'active')
     ?? tournaments[0]
   const tournamentId = selectedTournament?.id ?? ''
+  useTournamentLive(tournamentId)
   const scope = parseScope(searchParams.get('scope'))
   const metric = parseMetric(searchParams.get('metric'))
 

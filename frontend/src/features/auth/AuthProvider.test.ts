@@ -6,6 +6,7 @@ import { tournamentKeys } from '../../api/tournaments'
 import { courseKeys } from '../../api/courses'
 import { invalidateLiveQueries } from '../../api/liveInvalidation'
 import { privateWorkspaceKeys } from '../../api/privateWorkspace'
+import { scoringKeys } from '../../api/scorecards'
 import { publishSessionTransition, resolveSessionTransition } from './sessionTransition'
 
 const session = (userId: string): AuthSession => ({
@@ -45,10 +46,13 @@ describe('AuthProvider private cache transitions', () => {
     queryClient.setQueryData(authKeys.session, session('old-user'))
     queryClient.setQueryData(tournamentKeys.list('old-user'), [{ id: 'old-tour' }])
     queryClient.setQueryData(tournamentKeys.round('new-user', 'stale-round'), { id: 'stale-round' })
+    const oldScorecard = scoringKeys.scorecard('old-user', 'round-one', { type: 'player', id: 'player-one' })
+    queryClient.setQueryData(oldScorecard, { gross_total: 72 })
 
     publishSessionTransition(queryClient, session('new-user'))
 
     expect(queryClient.getQueriesData({ queryKey: ['private-workspace'] })).toEqual([])
+    expect(queryClient.getQueryData(oldScorecard)).toBeUndefined()
     expect(queryClient.getQueryData<AuthSession>(authKeys.session)?.user_id).toBe('new-user')
   })
 
@@ -56,8 +60,13 @@ describe('AuthProvider private cache transitions', () => {
     const queryClient = new QueryClient()
     const current = session('same-user')
     const protectedKey = privateWorkspaceKeys.completion(current.user_id, 'current-round')
+    const scorecardKey = scoringKeys.scorecard(current.user_id, 'current-round', {
+      type: 'player',
+      id: 'current-player',
+    })
     queryClient.setQueryData(authKeys.session, current)
     queryClient.setQueryData(protectedKey, { name: 'Current' })
+    queryClient.setQueryData(scorecardKey, { gross_total: 70 })
     let authFetches = 0
     let protectedFetches = 0
     const authObserver = new QueryObserver(queryClient, {
@@ -81,9 +90,10 @@ describe('AuthProvider private cache transitions', () => {
 
     const refreshed = await resolveSessionTransition(queryClient, async () => session('same-user'))
     queryClient.setQueryData(authKeys.session, refreshed)
-    await invalidateLiveQueries(queryClient)
+    await invalidateLiveQueries(queryClient, current.user_id)
 
     expect(queryClient.getQueryData(protectedKey)).toEqual({ name: 'Current' })
+    expect(queryClient.getQueryData(scorecardKey)).toEqual({ gross_total: 70 })
     expect(queryClient.getQueryCache().find({ queryKey: protectedKey })?.getObserversCount()).toBe(1)
     expect(observer.getCurrentResult().status).toBe('success')
     expect(authFetches).toBe(0)
@@ -99,10 +109,23 @@ describe('AuthProvider private cache transitions', () => {
     queryClient.setQueryData(catalogKey, [{ display_name: 'Catalog course' }])
     queryClient.setQueryData(providerKey, { course_name: 'Provider course' })
 
-    await invalidateLiveQueries(queryClient)
+    await invalidateLiveQueries(queryClient, 'same-user')
 
     expect(queryClient.getQueryState(catalogKey)?.isInvalidated).toBe(false)
     expect(queryClient.getQueryState(providerKey)?.isInvalidated).toBe(false)
+  })
+
+  it('invalidates only the current account private workspace', async () => {
+    const queryClient = new QueryClient()
+    const currentKey = tournamentKeys.detail('current-user', 'tour-one')
+    const otherKey = tournamentKeys.detail('other-user', 'tour-two')
+    queryClient.setQueryData(currentKey, { name: 'Current' })
+    queryClient.setQueryData(otherKey, { name: 'Other' })
+
+    await invalidateLiveQueries(queryClient, 'current-user')
+
+    expect(queryClient.getQueryState(currentKey)?.isInvalidated).toBe(true)
+    expect(queryClient.getQueryState(otherKey)?.isInvalidated).toBe(false)
   })
 
   it('clears private data before publishing a null session', () => {

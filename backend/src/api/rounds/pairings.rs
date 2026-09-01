@@ -115,7 +115,7 @@ pub async fn put(
         &command,
     )
     .await?;
-    state.notify("round", round_id);
+    state.notify("round", model.tournament_id, round_id);
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(model)).into_response())
 }
 

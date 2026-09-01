@@ -1,25 +1,51 @@
 use std::{convert::Infallible, sync::Arc};
 
 use axum::{
-    extract::State,
-    response::sse::{Event, KeepAlive, Sse},
+    extract::{Path, State},
+    http::header::CACHE_CONTROL,
+    response::{
+        IntoResponse, Response,
+        sse::{Event, KeepAlive, Sse},
+    },
 };
-use futures_util::stream::Stream;
+use uuid::Uuid;
 
-use crate::AppState;
+use crate::{
+    AppState,
+    api::{auth::AuthenticatedSession, authorization::map_authorization_error},
+    error::ApiResult,
+    repositories::live,
+};
 
 pub async fn events(
     State(state): State<Arc<AppState>>,
-) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
+    Path(tournament_id): Path<Uuid>,
+    authenticated: AuthenticatedSession,
+) -> ApiResult<Response> {
+    let session_id = authenticated.principal.session_id;
+    live::authorize(&state.pool, session_id, tournament_id)
+        .await
+        .map_err(map_authorization_error)?;
     let mut receiver = state.live_events.subscribe();
+    let pool = state.pool.clone();
     let stream = async_stream::stream! {
         loop {
             match receiver.recv().await {
-                Ok(event) => yield Ok(Event::default().event(event.resource).json_data(event).expect("serialize live event")),
-                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => continue,
+                Ok(event) if event.tournament_id != tournament_id => continue,
+                Ok(event) => {
+                    if live::authorize(&pool, session_id, tournament_id).await.is_err() {
+                        break;
+                    }
+                    yield Ok::<Event, Infallible>(Event::default().event(event.resource));
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => break,
                 Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
             }
         }
     };
-    Sse::new(stream).keep_alive(KeepAlive::default())
+    Ok((
+        [(CACHE_CONTROL, "private, no-store")],
+        Sse::new(stream).keep_alive(KeepAlive::default()),
+    )
+        .into_response())
 }

@@ -20,11 +20,12 @@ export async function invalidateScoreDependents(
 
 export async function invalidateScorecard(
   queryClient: QueryClient,
+  userId: string,
   roundId: string,
   owner: ScoreOwner,
 ): Promise<void> {
   await queryClient.invalidateQueries({
-    queryKey: scoringKeys.scorecard(roundId, owner),
+    queryKey: scoringKeys.scorecard(userId, roundId, owner),
     exact: true,
     refetchType: 'none',
   })

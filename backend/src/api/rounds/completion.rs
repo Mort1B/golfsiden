@@ -49,7 +49,7 @@ pub async fn complete(
     )
     .await
     .map_err(map_error)?;
-    state.notify("round", round_id);
+    state.notify("round", round.tournament_id, round_id);
     Ok(Json(round))
 }
 
@@ -65,7 +65,7 @@ pub async fn lock(
     )
     .await
     .map_err(map_error)?;
-    state.notify("round", round_id);
+    state.notify("round", round.tournament_id, round_id);
     Ok(Json(round))
 }
 

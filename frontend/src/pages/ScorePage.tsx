@@ -23,6 +23,7 @@ import {
 } from '../features/scoring/selection'
 import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 import { useAuth } from '../features/auth/authContext'
+import { useTournamentLive } from '../features/live/useTournamentLive'
 
 export function ScorePage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -34,6 +35,7 @@ export function ScorePage() {
   const tournament = tournaments.find((item) => item.id === searchParams.get('tournament'))
     ?? tournaments.find((item) => item.status === 'active')
     ?? tournaments[0]
+  useTournamentLive(tournament?.id ?? '')
   const roundsQuery = useQuery({
     queryKey: tournamentKeys.rounds(userId, tournament?.id ?? ''),
     queryFn: () => api.rounds(tournament?.id ?? ''),
@@ -64,7 +66,7 @@ export function ScorePage() {
   const canWrite = owner !== undefined
     && writableOwners.some((writable) => ownerEquals(writable, owner.owner))
   const cardQuery = useQuery({
-    queryKey: scoringKeys.scorecard(round?.id ?? '', owner?.owner ?? { type: 'player', id: '' }),
+    queryKey: scoringKeys.scorecard(userId, round?.id ?? '', owner?.owner ?? { type: 'player', id: '' }),
     queryFn: () => api.scorecard(round?.id ?? '', owner?.owner ?? { type: 'player', id: '' }),
     enabled: round !== undefined && owner !== undefined,
   })
@@ -76,10 +78,10 @@ export function ScorePage() {
   const prefetchOwner = useCallback((nextOwner: NonNullable<typeof owner>['owner']) => {
     if (!round) return
     void queryClient.prefetchQuery({
-      queryKey: scoringKeys.scorecard(round.id, nextOwner),
+      queryKey: scoringKeys.scorecard(userId, round.id, nextOwner),
       queryFn: () => api.scorecard(round.id, nextOwner),
     })
-  }, [queryClient, round])
+  }, [queryClient, round, userId])
 
   useEffect(() => {
     if (!owner) return

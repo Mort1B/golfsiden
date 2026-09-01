@@ -1,13 +1,13 @@
 import type { QueryClient } from '@tanstack/react-query'
-import { authKeys } from './auth'
+import { privateWorkspaceKeys } from './privateWorkspace'
 
-export function isLiveInvalidationTarget(queryKey: readonly unknown[]): boolean {
-  if (queryKey[0] === authKeys.session[0]) return false
+export function isLiveInvalidationTarget(queryKey: readonly unknown[], userId: string): boolean {
+  if (queryKey[0] !== privateWorkspaceKeys.root[0] || queryKey[1] !== userId) return false
   return queryKey[2] !== 'course-catalog' && queryKey[2] !== 'course-provider'
 }
 
-export function invalidateLiveQueries(queryClient: QueryClient): Promise<void> {
+export function invalidateLiveQueries(queryClient: QueryClient, userId: string): Promise<void> {
   return queryClient.invalidateQueries({
-    predicate: (query) => isLiveInvalidationTarget(query.queryKey),
+    predicate: (query) => isLiveInvalidationTarget(query.queryKey, userId),
   })
 }

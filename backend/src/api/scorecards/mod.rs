@@ -78,7 +78,7 @@ async fn save(
     .await
     .map_err(map_error)?;
     if result.changed {
-        state.notify("score", round_id);
+        state.notify("score", result.tournament_id, round_id);
     }
     Ok(Json(result.value))
 }
@@ -113,14 +113,19 @@ async fn score_access(
 
 async fn get_one(
     State(state): State<Arc<AppState>>,
+    authenticated: AuthenticatedSession,
     Path((round_id, owner_type, owner_id)): Path<(Uuid, String, Uuid)>,
-) -> ApiResult<Json<ScorecardSummary>> {
+) -> ApiResult<Response> {
     let owner = parse_owner(&owner_type, owner_id)?;
-    Ok(Json(
-        scorecards::get(&state.pool, round_id, owner)
-            .await
-            .map_err(map_error)?,
-    ))
+    let summary = scorecards::get_authenticated(
+        &state.pool,
+        authenticated.principal.session_id,
+        round_id,
+        owner,
+    )
+    .await
+    .map_err(map_error)?;
+    Ok(([(CACHE_CONTROL, "private, no-store")], Json(summary)).into_response())
 }
 
 async fn confirm(
@@ -141,7 +146,7 @@ async fn confirm(
     .await
     .map_err(map_error)?;
     if result.changed {
-        state.notify("score", round_id);
+        state.notify("score", result.tournament_id, round_id);
     }
     Ok(Json(result.value))
 }

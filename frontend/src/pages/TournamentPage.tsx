@@ -7,11 +7,13 @@ import { StatusBadge } from '../ui/StatusBadge'
 import { tournamentKeys } from '../api/tournaments'
 import { useAuth } from '../features/auth/authContext'
 import { TournamentPlayerSection } from '../features/tournaments/TournamentPlayerSection'
+import { useTournamentLive } from '../features/live/useTournamentLive'
 
 export function TournamentPage() {
   const { tournamentId = '' } = useParams()
   const auth = useAuth()
   const userId = auth.session?.user_id ?? ''
+  useTournamentLive(tournamentId)
   const tournament = useQuery({ queryKey: tournamentKeys.detail(userId, tournamentId), queryFn: () => api.tournament(tournamentId) })
   const players = useQuery({ queryKey: tournamentKeys.players(userId, tournamentId), queryFn: () => api.tournamentPlayers(tournamentId) })
   const rounds = useQuery({ queryKey: tournamentKeys.rounds(userId, tournamentId), queryFn: () => api.rounds(tournamentId) })

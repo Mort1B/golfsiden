@@ -1,9 +1,6 @@
-import { useEffect, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { BarChart3, ClipboardPen, LogIn, LogOut, Trophy } from 'lucide-react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { api } from '../api/client'
-import { invalidateLiveQueries } from '../api/liveInvalidation'
 import { useAuth } from '../features/auth/authContext'
 import { useScoringGuard } from '../features/scoring/scoringGuardContext'
 
@@ -14,20 +11,10 @@ const baseNavItems = [
 ]
 
 export function AppShell() {
-  const queryClient = useQueryClient()
   const auth = useAuth()
   const scoringGuard = useScoringGuard()
   const [signOutError, setSignOutError] = useState<string | null>(null)
   const navItems = baseNavItems
-
-  useEffect(() => {
-    const events = new EventSource(api.liveUrl, { withCredentials: true })
-    const invalidate = () => void invalidateLiveQueries(queryClient)
-    for (const type of ['tournament', 'round', 'team', 'score']) {
-      events.addEventListener(type, invalidate)
-    }
-    return () => events.close()
-  }, [queryClient])
 
   return (
     <div className="app-shell">

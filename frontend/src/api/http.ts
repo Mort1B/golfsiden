@@ -69,4 +69,6 @@ export function jsonRequest(method: 'POST' | 'PUT', body: unknown, csrfToken?: s
   }
 }
 
-export const liveUrl = `${apiUrl}/api/live`
+export function tournamentLiveUrl(tournamentId: string): string {
+  return `${apiUrl}/api/tournaments/${tournamentId}/live`
+}

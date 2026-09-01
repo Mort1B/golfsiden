@@ -176,7 +176,7 @@ async fn create(
     };
     let tournament_id = response.tournament.id;
     let cookie = session_cookie(&state, session_token, session_expires_at);
-    state.notify("tournament", tournament_id);
+    state.notify("tournament", tournament_id, tournament_id);
     Ok((StatusCode::CREATED, jar.add(cookie), Json(response)))
 }
 
