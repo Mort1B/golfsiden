@@ -1,8 +1,7 @@
 import { decodeRoundLeaderboard, decodeTournamentLeaderboard } from './leaderboards'
 import { decodeAuthSession } from './auth'
 import { ApiHttpError, jsonRequest, requestDecoded, requestUnchecked, tournamentLiveUrl } from './http'
-import { decodeArray } from './decoder'
-import { decodeRound, decodeTournament, tournamentApi } from './tournaments'
+import { decodeExpectedRound, decodeTournamentList, tournamentApi } from './tournaments'
 import {
   decodeCompletionValidation,
   decodeSavedScore,
@@ -11,12 +10,9 @@ import {
   ownerTypeForFormat,
   type ScoreOwner,
 } from './scorecards'
-import type { LeaderboardMetric, ScoringFormat, Team } from './types'
+import type { LeaderboardMetric, ScoringFormat } from './types'
 import { roundLifecycleApi } from './roundLifecycle'
-
-async function get<T>(path: string): Promise<T> {
-  return requestUnchecked<T>(path)
-}
+import { teamApi } from './teams'
 
 export const api = {
   login: (username: string, password: string) => requestDecoded('/api/auth/login', decodeAuthSession,
@@ -33,20 +29,19 @@ export const api = {
     method: 'POST',
     headers: { 'x-csrf-token': csrfToken },
   }),
-  tournaments: () => requestDecoded('/api/tournaments', (value) =>
-    decodeArray(value, 'tournaments', decodeTournament, 'turneringsdata')),
+  tournaments: () => requestDecoded('/api/tournaments', decodeTournamentList),
   myTournaments: tournamentApi.mine,
   tournament: tournamentApi.detail,
   tournamentPlayers: tournamentApi.players,
   correctTournamentHandicap: tournamentApi.correctHandicap,
   rounds: tournamentApi.rounds,
-  round: (id: string) => requestDecoded(`/api/rounds/${id}`, (value) => decodeRound(value)),
+  round: (id: string) => requestDecoded(`/api/rounds/${id}`, (value) => decodeExpectedRound(value, id)),
   pairingValidation: roundLifecycleApi.validation,
   openRound: roundLifecycleApi.open,
-  teams: (id: string) => get<Team[]>(`/api/rounds/${id}/teams`),
-  roundLeaderboard: (id: string, metric: LeaderboardMetric) =>
+  teams: teamApi.list,
+  roundLeaderboard: (id: string, tournamentId: string, metric: LeaderboardMetric) =>
     requestDecoded(`/api/rounds/${id}/leaderboards/${metric}`, (value) =>
-      decodeRoundLeaderboard(value, id, metric)),
+      decodeRoundLeaderboard(value, id, tournamentId, metric)),
   tournamentLeaderboard: (id: string, metric: LeaderboardMetric) =>
     requestDecoded(`/api/tournaments/${id}/leaderboards/${metric}`, (value) =>
       decodeTournamentLeaderboard(value, id, metric)),

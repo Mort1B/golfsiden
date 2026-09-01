@@ -44,7 +44,7 @@ describe('pairing API', () => {
       flights: [], legacy_conversions: [],
     }
 
-    await pairingApi.replace(roundId, replacement, 'csrf-value')
+    await pairingApi.replace(roundId, tournamentId, replacement, 'csrf-value')
 
     expect(pairingKeys.detail('user-one', roundId).slice(0, 2)).toEqual(['private-workspace', 'user-one'])
     expect(fetchMock.mock.calls[0]?.[0]).toBe(`/api/rounds/${roundId}/pairings`)
@@ -58,6 +58,19 @@ describe('pairing API', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
       ...response, round_id: '00000000-0000-0000-0000-000000000099',
     }), { status: 200 })))
-    await expect(pairingApi.get(roundId)).rejects.toThrow('identity')
+    await expect(pairingApi.get(roundId, tournamentId)).rejects.toThrow('identity')
+  })
+
+  it('rejects cross-tournament and duplicate participant data before caching', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        ...response, tournament_id: '00000000-0000-0000-0000-000000000099',
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        ...response, active_entrants: [...response.active_entrants, ...response.active_entrants],
+      }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(pairingApi.get(roundId, tournamentId)).rejects.toThrow('identity')
+    await expect(pairingApi.get(roundId, tournamentId)).rejects.toThrow('duplicate')
   })
 })

@@ -40,31 +40,54 @@ function adminError(error: unknown): string {
 export function InvitationAdminPage() {
   const { tournamentId = '' } = useParams()
   const auth = useAuth()
-  const queryClient = useQueryClient()
   const userId = auth.session?.user_id ?? ''
   useTournamentLive(isCanonicalUuid(tournamentId) ? tournamentId : '')
   const memberships = useQuery({ queryKey: tournamentKeys.mine(userId), queryFn: tournamentApi.mine, enabled: userId.length > 0 })
   const membership = memberships.data?.find((entry) => entry.tournament.id === tournamentId)
   const authorized = membership?.role === 'admin'
+  if (!isCanonicalUuid(tournamentId)) return <AdminState title="Ugyldig turnering" />
+  if (memberships.isPending) return <section className="page"><LoadingState /></section>
+  if (memberships.error) return <section className="page"><ErrorState error={memberships.error} onRetry={() => void memberships.refetch()} /></section>
+  if (!authorized || !membership) return <AdminState title="Ingen tilgang" message="Bare turneringsadministratorer kan administrere invitasjoner." />
+
+  return (
+    <InvitationAdminWorkspace
+      key={tournamentId}
+      tournamentId={tournamentId}
+      tournamentName={membership.tournament.name}
+      userId={userId}
+      csrfToken={auth.session?.csrf_token ?? ''}
+    />
+  )
+}
+
+interface WorkspaceProps {
+  tournamentId: string
+  tournamentName: string
+  userId: string
+  csrfToken: string
+}
+
+function InvitationAdminWorkspace({ tournamentId, tournamentName, userId, csrfToken }: WorkspaceProps) {
+  const queryClient = useQueryClient()
   const invitations = useQuery({
     queryKey: privateWorkspaceKeys.invitations(userId, tournamentId),
     queryFn: () => listInvitations(tournamentId),
-    enabled: authorized && isCanonicalUuid(tournamentId),
   })
   const [revealed, setRevealed] = useState<RevealedInvitation | null>(null)
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [actionError, setActionError] = useState<ActionError | null>(null)
 
   const issue = useMutation({
-    mutationFn: (input: InvitationIssueInput) => issueInvitation(tournamentId, input, auth.session?.csrf_token ?? ''),
+    mutationFn: (input: InvitationIssueInput) => issueInvitation(tournamentId, input, csrfToken),
     gcTime: 0,
   })
   const rotate = useMutation({
-    mutationFn: (invitationId: string) => rotateInvitation(tournamentId, invitationId, auth.session?.csrf_token ?? ''),
+    mutationFn: (invitationId: string) => rotateInvitation(tournamentId, invitationId, csrfToken),
     gcTime: 0,
   })
   const revoke = useMutation({
-    mutationFn: (invitationId: string) => revokeInvitation(tournamentId, invitationId, auth.session?.csrf_token ?? ''),
+    mutationFn: (invitationId: string) => revokeInvitation(tournamentId, invitationId, csrfToken),
   })
 
   const refreshList = () => queryClient.invalidateQueries({
@@ -113,16 +136,11 @@ export function InvitationAdminPage() {
     }
   }
 
-  if (!isCanonicalUuid(tournamentId)) return <AdminState title="Ugyldig turnering" />
-  if (memberships.isPending) return <section className="page"><LoadingState /></section>
-  if (memberships.error) return <section className="page"><ErrorState error={memberships.error} onRetry={() => void memberships.refetch()} /></section>
-  if (!authorized || !membership) return <AdminState title="Ingen tilgang" message="Bare turneringsadministratorer kan administrere invitasjoner." />
-
   return (
     <section className="page invitation-admin-page">
       <header className="detail-header">
         <Link replace to={`/manage/tournaments/${tournamentId}#invitations`} className="back-button" aria-label="Tilbake til administrasjon"><ChevronLeft /></Link>
-        <div><p className="brand">{membership.tournament.name}</p><h1>Invitasjoner</h1></div>
+        <div><p className="brand">{tournamentName}</p><h1>Invitasjoner</h1></div>
       </header>
       {revealed && <OneTimeInvitationLink key={revealedInvitationKey(revealed)} url={buildInvitationUrl(window.location.origin, revealed.invitationId, revealed.token)} onDismiss={() => setRevealed(null)} />}
       <InvitationIssueForm disabled={issue.isPending || pendingId !== null} error={actionError?.scope === 'issue' ? actionError.message : null} onIssue={handleIssue} />

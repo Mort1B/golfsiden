@@ -8,7 +8,7 @@ import {
 } from './decoder'
 import { jsonRequest, requestDecoded } from './http'
 import { privateWorkspaceKeys } from './privateWorkspace'
-import { decodeRound } from './tournaments'
+import { decodeExpectedRound } from './tournaments'
 import type { Round } from './types'
 
 export type TeeCategory = 'female' | 'male'
@@ -207,12 +207,18 @@ export const courseApi = {
     `/api/tournaments/${tournamentId}/course-provider/courses/${encodeURIComponent(providerCourseId)}`,
     (value) => decodeProviderCourse(value, providerCourseId),
   ),
-  configure: (roundId: string, expectedRoundUpdatedAt: string, selection: CourseSelection, csrfToken: string) =>
+  configure: (
+    roundId: string,
+    tournamentId: string,
+    expectedRoundUpdatedAt: string,
+    selection: CourseSelection,
+    csrfToken: string,
+  ) =>
     requestDecoded(
       `/api/rounds/${roundId}/course-configuration`,
       (value): Round => {
-        const round = decodeRound(value)
-        if (round.id !== roundId) invalidData('rundedata', 'round.id')
+        const round = decodeExpectedRound(value, roundId)
+        if (round.tournament_id !== tournamentId) invalidData('rundedata', 'round.tournament_id identity')
         return round
       },
       jsonRequest('PUT', { expected_round_updated_at: expectedRoundUpdatedAt, selection }, csrfToken),

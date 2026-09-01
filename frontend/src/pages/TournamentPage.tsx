@@ -11,6 +11,10 @@ import { useTournamentLive } from '../features/live/useTournamentLive'
 
 export function TournamentPage() {
   const { tournamentId = '' } = useParams()
+  return <TournamentWorkspace key={tournamentId} tournamentId={tournamentId} />
+}
+
+function TournamentWorkspace({ tournamentId }: { tournamentId: string }) {
   const auth = useAuth()
   const userId = auth.session?.user_id ?? ''
   useTournamentLive(tournamentId)

@@ -10,11 +10,19 @@ import { useTournamentLive } from '../features/live/useTournamentLive'
 
 export function RoundPage() {
   const { roundId = '' } = useParams()
+  return <RoundWorkspace key={roundId} roundId={roundId} />
+}
+
+function RoundWorkspace({ roundId }: { roundId: string }) {
   const auth = useAuth()
   const userId = auth.session?.user_id ?? ''
   const round = useQuery({ queryKey: tournamentKeys.round(userId, roundId), queryFn: () => api.round(roundId) })
   useTournamentLive(round.data?.tournament_id ?? '')
-  const teams = useQuery({ queryKey: tournamentKeys.teams(userId, roundId), queryFn: () => api.teams(roundId) })
+  const teams = useQuery({
+    queryKey: tournamentKeys.teams(userId, roundId),
+    queryFn: () => api.teams(roundId, round.data?.tournament_id ?? ''),
+    enabled: round.data !== undefined,
+  })
   if (round.isPending) return <section className="page"><LoadingState /></section>
   if (round.error) return <section className="page"><ErrorState error={round.error} /></section>
   return (

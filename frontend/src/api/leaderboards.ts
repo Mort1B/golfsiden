@@ -147,8 +147,11 @@ function validateTournamentCoherence(leaderboard: TournamentLeaderboard): void {
   if (leaderboard.current_round_id !== null && includedRoundIds.has(leaderboard.current_round_id)) {
     invalid('leaderboard.current_round_id')
   }
+  const playerIds = new Set<string>()
   leaderboard.entries.forEach((entry, entryIndex) => {
     const path = `leaderboard.entries[${entryIndex}]`
+    if (playerIds.has(entry.player_id)) invalid(`${path}.player_id`)
+    playerIds.add(entry.player_id)
     if (entry.current_team !== null
       && (leaderboard.current_round_id === null
         || entry.current_team.round_id !== leaderboard.current_round_id)) {
@@ -200,6 +203,7 @@ function validateTournamentCoherence(leaderboard: TournamentLeaderboard): void {
 export function decodeRoundLeaderboard(
   value: unknown,
   expectedRoundId: string,
+  expectedTournamentId: string,
   expectedMetric: LeaderboardMetric,
 ): RoundLeaderboard {
   const data = decodeObject(value, 'leaderboard', 'resultatdata')
@@ -212,7 +216,33 @@ export function decodeRoundLeaderboard(
     number_of_holes: decodeInteger(data.number_of_holes, 'leaderboard.number_of_holes', 1, undefined, 'resultatdata'),
     entries: decodeArray(data.entries, 'leaderboard.entries', roundEntry, 'resultatdata'),
   }
-  if (decoded.round_id !== expectedRoundId || decoded.metric !== expectedMetric) invalid('leaderboard.identity')
+  if (decoded.round_id !== expectedRoundId
+    || decoded.tournament_id !== expectedTournamentId
+    || decoded.metric !== expectedMetric) invalid('leaderboard.identity')
+  const ownerIds = new Set<string>()
+  decoded.entries.forEach((entry, entryIndex) => {
+    const path = `leaderboard.entries[${entryIndex}]`
+    const ownerId = `${entry.owner.type}:${entry.owner.id}`
+    if (ownerIds.has(ownerId)) invalid(`${path}.owner`)
+    ownerIds.add(ownerId)
+    const expectedOwnerType = decoded.scoring_format === 'individual_stroke_play' ? 'player' : 'team'
+    if (entry.owner.type !== expectedOwnerType) invalid(`${path}.owner.type`)
+    if (entry.owner.type === 'player' && entry.members.length !== 0) invalid(`${path}.members`)
+    if (entry.owner.type === 'team' && entry.members.length !== 2) invalid(`${path}.members`)
+    if (entry.number_of_holes !== decoded.number_of_holes || entry.holes_scored > entry.number_of_holes) {
+      invalid(`${path}.number_of_holes`)
+    }
+    if (entry.complete !== (entry.holes_scored === entry.number_of_holes) || (entry.confirmed && !entry.complete)) {
+      invalid(`${path}.complete`)
+    }
+    const selectedTotal = decoded.metric === 'gross' ? entry.gross_total : entry.net_total
+    if (entry.score_to_par !== selectedTotal - entry.par_played) invalid(`${path}.score_to_par`)
+    const memberIds = new Set<string>()
+    entry.members.forEach((member, memberIndex) => {
+      if (memberIds.has(member.player_id)) invalid(`${path}.members[${memberIndex}].player_id`)
+      memberIds.add(member.player_id)
+    })
+  })
   return decoded
 }
 

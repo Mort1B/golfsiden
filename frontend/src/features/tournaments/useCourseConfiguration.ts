@@ -42,7 +42,7 @@ export function useCourseConfiguration({ tournamentId, round, providerCourseId, 
     mutationFn: (selection: CourseSelection) => {
       const csrfToken = auth.session?.csrf_token
       if (!csrfToken) throw new Error('Økten mangler. Logg inn på nytt.')
-      return courseApi.configure(round.id, round.updated_at, selection, csrfToken)
+      return courseApi.configure(round.id, tournamentId, round.updated_at, selection, csrfToken)
     },
   })
 

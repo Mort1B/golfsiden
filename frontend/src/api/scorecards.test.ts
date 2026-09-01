@@ -19,7 +19,7 @@ describe('scorecard boundaries', () => {
   })
 
   it('accepts seed UUIDs and exact scorecard timestamps', () => {
-    const card = decodeScorecard({
+    const response = {
       round_id: roundId,
       owner,
       holes: [{
@@ -48,8 +48,14 @@ describe('scorecard boundaries', () => {
       confirmed: false,
       confirmed_by: null,
       confirmed_at: null,
-    }, roundId, owner)
+    }
+    const card = decodeScorecard(response, roundId, owner)
     expect(card.holes[0]?.score?.gross_strokes).toBe(5)
+    expect(() => decodeScorecard({ ...response, round_id: secondPlayerId }, roundId, owner)).toThrow('identity')
+    expect(() => decodeScorecard({
+      ...response,
+      owner: { type: 'player', id: secondPlayerId },
+    }, roundId, owner)).toThrow('identity')
   })
 
   it('decodes completion owners and rejects a format mismatch', () => {

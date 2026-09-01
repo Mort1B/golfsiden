@@ -23,7 +23,7 @@ describe('leaderboard decoders', () => {
       metric: 'net',
       number_of_holes: 18,
       entries: [],
-    }, seedRoundId, 'net')
+    }, seedRoundId, seedTournamentId, 'net')
 
     const tournament = decodeTournamentLeaderboard({
       tournament_id: seedTournamentId,
@@ -380,7 +380,16 @@ describe('leaderboard decoders', () => {
       metric: 'gross',
       number_of_holes: 18,
       entries: [],
-    }, seedRoundId, 'gross')).toThrow('leaderboard.identity')
+    }, seedRoundId, seedTournamentId, 'gross')).toThrow('leaderboard.identity')
+    expect(() => decodeRoundLeaderboard({
+      round_id: seedRoundId,
+      tournament_id: '00000000-0000-0000-0000-000000002099',
+      status: 'open',
+      scoring_format: 'individual_stroke_play',
+      metric: 'gross',
+      number_of_holes: 18,
+      entries: [],
+    }, seedRoundId, seedTournamentId, 'gross')).toThrow('leaderboard.identity')
   })
 
   it('accepts foursomes and rejects unknown scoring formats', () => {
@@ -393,9 +402,43 @@ describe('leaderboard decoders', () => {
       number_of_holes: 18,
       entries: [],
     }
-    expect(decodeRoundLeaderboard(response, seedRoundId, 'gross').scoring_format)
+    expect(decodeRoundLeaderboard(response, seedRoundId, seedTournamentId, 'gross').scoring_format)
       .toBe('two_player_foursomes')
-    expect(() => decodeRoundLeaderboard({ ...response, scoring_format: 'greensomes' }, seedRoundId, 'gross'))
+    expect(() => decodeRoundLeaderboard({ ...response, scoring_format: 'greensomes' }, seedRoundId, seedTournamentId, 'gross'))
       .toThrow('scoring_format')
+  })
+
+  it('rejects duplicate or format-incoherent round result identities', () => {
+    const entry = {
+      position: 1,
+      tied: false,
+      owner: { type: 'player', id: '00000000-0000-0000-0000-000000001001' },
+      owner_name: 'Spiller',
+      members: [],
+      holes_scored: 1,
+      number_of_holes: 1,
+      complete: true,
+      confirmed: true,
+      playing_handicap: 0,
+      gross_total: 4,
+      net_total: 4,
+      par_played: 4,
+      score_to_par: 0,
+    }
+    const response = {
+      round_id: seedRoundId,
+      tournament_id: seedTournamentId,
+      status: 'open',
+      scoring_format: 'individual_stroke_play',
+      metric: 'gross',
+      number_of_holes: 1,
+      entries: [entry],
+    }
+    expect(() => decodeRoundLeaderboard({ ...response, entries: [entry, entry] }, seedRoundId, seedTournamentId, 'gross'))
+      .toThrow('owner')
+    expect(() => decodeRoundLeaderboard({
+      ...response,
+      scoring_format: 'team_scramble',
+    }, seedRoundId, seedTournamentId, 'gross')).toThrow('owner.type')
   })
 })

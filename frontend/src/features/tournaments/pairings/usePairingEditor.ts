@@ -61,13 +61,13 @@ export function usePairingEditor({ tournamentId, round, expanded }: Input) {
   const [reloadConflict, setReloadConflict] = useState(false)
   const query = useQuery({
     queryKey: pairingKeys.detail(userId, round.id),
-    queryFn: () => pairingApi.get(round.id),
+    queryFn: () => pairingApi.get(round.id, tournamentId),
     enabled: expanded && userId.length > 0,
   })
   const mutation = useMutation({ mutationFn: (replacement: PairingReplacement) => {
     const csrfToken = auth.session?.csrf_token
     if (!csrfToken) throw new Error('Økten mangler. Logg inn på nytt.')
-    return pairingApi.replace(round.id, replacement, csrfToken)
+    return pairingApi.replace(round.id, tournamentId, replacement, csrfToken)
   } })
 
   useEffect(() => {

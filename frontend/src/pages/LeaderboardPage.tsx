@@ -43,7 +43,7 @@ export function LeaderboardPage() {
 
   const roundLeaderboardQuery = useQuery({
     queryKey: leaderboardKeys.round(userId, selectedRound?.id ?? '', metric),
-    queryFn: () => api.roundLeaderboard(selectedRound?.id ?? '', metric),
+    queryFn: () => api.roundLeaderboard(selectedRound?.id ?? '', tournamentId, metric),
     enabled: scope === 'round' && selectedRound !== undefined,
   })
   const tournamentLeaderboardQuery = useQuery({
@@ -87,7 +87,7 @@ export function LeaderboardPage() {
   const activeQuery = scope === 'round' ? roundLeaderboardQuery : tournamentLeaderboardQuery
 
   return (
-    <section className="page leaderboard-page">
+    <section className="page leaderboard-page" key={tournamentId}>
       <header className="page-header leaderboard-header">
         <div><p className="brand">Guttas Golf</p><h1>Resultater</h1></div>
         {activeQuery.isFetching && !activeQuery.isPending && <span role="status">Oppdaterer …</span>}

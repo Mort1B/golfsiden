@@ -232,6 +232,16 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   Scorecards use that same user-owned root. Tournament-live invalidation targets
   only the active user's private queries and excludes provider/catalog queries,
   so events cannot unmount authentication or expose a predecessor's card.
+- Target-bearing frontend DTOs are decoded against the requested tournament,
+  round, player, owner, metric, invitation predecessor, and course-configuration
+  identities before cache insertion. Roster, round, team, pairing, invitation,
+  and leaderboard collections also reject duplicate or internally incoherent
+  identities. Runtime validation is a fail-closed cache boundary, not an
+  authorization substitute.
+- Route shells key tournament, management, round, leaderboard, and invitation
+  workspaces by their target identity. This makes correction/count drafts,
+  mutation receipts and errors, and one-time invitation tokens target-local even
+  when React Router reuses the page component or an old request completes late.
 - The global leaderboard route owns selection in canonical URL parameters instead
   of a client store. It validates round ownership before enabling hierarchical
   queries, and leaderboard responses pass focused runtime and aggregate-coherence

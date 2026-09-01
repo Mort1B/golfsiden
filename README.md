@@ -165,8 +165,12 @@ score-access read now returns `403` when the session lacks exact target
 membership, while exact viewers remain authorized with no writable owners. A
 two-tournament PostgreSQL fixture proves that a reused global player keeps
 separate handicaps, snapshots, flights, player/team cards, results, mutations,
-and payload-free event scope. The remaining frontend target-state and response-
-coherence audit must finish before production.
+and payload-free event scope. The frontend rejects mismatched tournament, round,
+player, team, result, invitation, and course-configuration identities before
+caching or revealing them, and tournament-keyed workspaces discard drafts,
+mutation receipts, pending state, and one-time invitation secrets during SPA
+target changes. The optional mandatory counted-round rule is the next product
+milestone.
 
 Tournament creation now issues a reusable invitation secret, and admins can
 rotate or revoke links, but recovery from a lost one-time plaintext response

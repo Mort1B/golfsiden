@@ -75,16 +75,25 @@ describe('tournament memberships', () => {
   })
 
   it('decodes editable and locked tournament handicap states', () => {
-    expect(decodeTournamentPlayerRoster({ handicap_correction: { state: 'editable' }, players: [player] }))
+    expect(decodeTournamentPlayerRoster({ handicap_correction: { state: 'editable' }, players: [player] }, tournament.id))
       .toEqual({ handicap_correction: { state: 'editable' }, players: [player] })
-    expect(decodeTournamentPlayerRoster({ handicap_correction: { state: 'locked', reason: 'round_opened' }, players: [] }))
+    expect(decodeTournamentPlayerRoster({ handicap_correction: { state: 'locked', reason: 'round_opened' }, players: [] }, tournament.id))
       .toEqual({ handicap_correction: { state: 'locked', reason: 'round_opened' }, players: [] })
-    expect(() => decodeTournamentPlayerRoster({ handicap_correction: { state: 'locked', reason: 'round_completed' }, players: [] }))
+    expect(() => decodeTournamentPlayerRoster({ handicap_correction: { state: 'locked', reason: 'round_completed' }, players: [] }, tournament.id))
       .toThrow('handicap_correction')
     expect(() => decodeTournamentPlayerRoster({
       handicap_correction: { state: 'editable' },
       players: [{ ...player, player_active: undefined }],
-    })).toThrow('player_active')
+    }, tournament.id)).toThrow('player_active')
+
+    expect(() => decodeTournamentPlayerRoster({
+      handicap_correction: { state: 'editable' },
+      players: [{ ...player, tournament_id: '00000000-0000-0000-0000-000000000099' }],
+    }, tournament.id)).toThrow('identity')
+    expect(() => decodeTournamentPlayerRoster({
+      handicap_correction: { state: 'editable' },
+      players: [player, player],
+    }, tournament.id)).toThrow('duplicate')
   })
 
   it('posts an audited correction and validates its response', async () => {
@@ -101,7 +110,7 @@ describe('tournament memberships', () => {
         created_at: '2026-08-16T13:00:00Z',
       },
     }
-    expect(decodeTournamentHandicapCorrection(correction)).toEqual(correction)
+    expect(decodeTournamentHandicapCorrection(correction, tournament.id, player.player_id)).toEqual(correction)
     const fetchMock = vi.fn(async () => new Response(JSON.stringify(correction), { status: 201 }))
     vi.stubGlobal('fetch', fetchMock)
 
@@ -119,6 +128,15 @@ describe('tournament memberships', () => {
         body: JSON.stringify({ handicap_index: 13.8, reason: 'Feil ved påmelding' }),
       },
     )
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
+      ...correction,
+      player: { ...correction.player, player_id: '00000000-0000-0000-0000-000000000099' },
+    }), { status: 201 }))
+    await expect(tournamentApi.correctHandicap(tournament.id, player.player_id, {
+      handicap_index: 13.8,
+      reason: 'Feil ved påmelding',
+    }, 'csrf-token')).rejects.toThrow('identity')
   })
 
   it('patches counted rounds with the optimistic tournament timestamp', async () => {
@@ -140,6 +158,14 @@ describe('tournament memberships', () => {
         expected_tournament_updated_at: tournament.updated_at,
       }),
     })
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
+      ...updated, id: '00000000-0000-0000-0000-000000000099',
+    }), { status: 200 }))
+    await expect(tournamentApi.updateCountedRounds(tournament.id, {
+      counted_rounds: 2,
+      expected_tournament_updated_at: tournament.updated_at,
+    }, 'csrf-token')).rejects.toThrow('identity')
   })
 
   it('starts a tournament with CSRF, the optimistic timestamp, and strict decoding', async () => {
@@ -162,5 +188,41 @@ describe('tournament memberships', () => {
     await expect(tournamentApi.start(tournament.id, {
       expected_tournament_updated_at: tournament.updated_at,
     }, 'csrf-token')).rejects.toThrow('counted_rounds')
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
+      ...started, id: '00000000-0000-0000-0000-000000000099',
+    }), { status: 200 }))
+    await expect(tournamentApi.start(tournament.id, {
+      expected_tournament_updated_at: tournament.updated_at,
+    }, 'csrf-token')).rejects.toThrow('identity')
+  })
+
+  it('rejects detail and round-list responses for another tournament target', async () => {
+    const otherTournamentId = '00000000-0000-0000-0000-000000000099'
+    const round = {
+      id: '00000000-0000-0000-0000-000000000010',
+      tournament_id: otherTournamentId,
+      round_number: 1,
+      name: 'Runde 1',
+      round_date: '2026-09-01',
+      course_id: null,
+      course_name: '',
+      tee_id: null,
+      tee_name: '',
+      number_of_holes: 18,
+      status: 'draft',
+      handicap_enabled: true,
+      handicap_allowance_percent: 100,
+      scoring_format: 'individual_stroke_play',
+      created_at: tournament.created_at,
+      updated_at: tournament.updated_at,
+    }
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...tournament, id: otherTournamentId }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([round]), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(tournamentApi.detail(tournament.id)).rejects.toThrow('identity')
+    await expect(tournamentApi.rounds(tournament.id)).rejects.toThrow('identity')
   })
 })

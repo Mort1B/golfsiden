@@ -210,6 +210,21 @@ score owners. It proves that rosters, pairings, teams, writable owners,
 scorecards, gross/net results, rejected mutations, and payload-free live events
 remain bound to the exact target.
 
+The strict frontend boundary independently verifies every target-bearing
+tournament detail, roster, round list/detail, team, pairing, leaderboard,
+handicap correction, counted-round, start, course-configuration, and invitation
+response before TanStack Query or transient UI receives it. Duplicate resource
+identities and mismatched tournament, round, player, team, metric, or invitation
+predecessor facts fail closed as invalid server data. Query keys remain rooted by
+session user and target resource; decoder checks supplement those keys instead of
+replacing backend authorization.
+
+Tournament, management, round, leaderboard, and invitation workspaces remount on
+route target changes. Unsaved handicap/count configuration, mutation state,
+errors, receipts, and revealed one-time invitation secrets therefore belong only
+to the tournament where they originated. A late invitation completion may update
+its original private query, but cannot render its token after navigation.
+
 Management and lifecycle mutations resolve the target tournament from the
 resource and lock/revalidate both the session and admin membership inside the
 write transaction. Direct round creation additionally performs an exact-admin

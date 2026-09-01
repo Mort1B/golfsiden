@@ -159,6 +159,34 @@ export function decodeInvitationSecret(value: unknown): InvitationSecretResult {
   }
 }
 
+export function decodeExpectedInvitationList(value: unknown, expectedTournamentId: string): InvitationMetadata[] {
+  const invitations = decodeArray(value, 'invitations', decodeInvitationMetadata, 'invitasjonsdata')
+  const invitationIds = new Set<string>()
+  invitations.forEach((invitation, index) => {
+    if (invitation.tournament_id !== expectedTournamentId) {
+      invalidData('invitasjonsdata', `invitations[${index}].tournament_id identity`)
+    }
+    if (invitationIds.has(invitation.id)) invalidData('invitasjonsdata', `invitations[${index}].id duplicate`)
+    invitationIds.add(invitation.id)
+  })
+  return invitations
+}
+
+export function decodeExpectedInvitationSecret(
+  value: unknown,
+  expectedTournamentId: string,
+  expectedPredecessorId?: string,
+): InvitationSecretResult {
+  const invitation = decodeInvitationSecret(value)
+  if (invitation.tournament_id !== expectedTournamentId) {
+    invalidData('invitasjonsdata', 'invitation.tournament_id identity')
+  }
+  if (expectedPredecessorId !== undefined && invitation.predecessor_id !== expectedPredecessorId) {
+    invalidData('invitasjonsdata', 'invitation.predecessor_id identity')
+  }
+  return invitation
+}
+
 export const invitationKeys = {
   preview: (invitationId: string) => ['invitations', invitationId, 'preview'] as const,
   list: (tournamentId: string) => ['tournaments', tournamentId, 'invitations'] as const,
@@ -199,7 +227,7 @@ export function acceptInvitation(
 export function listInvitations(tournamentId: string): Promise<InvitationMetadata[]> {
   return requestDecoded(
     `/api/tournaments/${tournamentId}/invitations`,
-    (value) => decodeArray(value, 'invitations', decodeInvitationMetadata, 'invitasjonsdata'),
+    (value) => decodeExpectedInvitationList(value, tournamentId),
   )
 }
 
@@ -210,7 +238,7 @@ export function issueInvitation(
 ): Promise<InvitationSecretResult> {
   return requestDecoded(
     `/api/tournaments/${tournamentId}/invitations`,
-    decodeInvitationSecret,
+    (value) => decodeExpectedInvitationSecret(value, tournamentId),
     jsonRequest('POST', input, csrfToken),
   )
 }
@@ -222,7 +250,7 @@ export function rotateInvitation(
 ): Promise<InvitationSecretResult> {
   return requestDecoded(
     `/api/tournaments/${tournamentId}/invitations/${invitationId}/rotate`,
-    decodeInvitationSecret,
+    (value) => decodeExpectedInvitationSecret(value, tournamentId, invitationId),
     jsonRequest('POST', {}, csrfToken),
   )
 }

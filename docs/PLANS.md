@@ -37,7 +37,9 @@ admin membership before inspecting content type or polling its bounded request
 body, then reauthorizes in the insertion transaction. Exact tournament
 membership is also mandatory for score-access reads, and the backend
 participation boundary is covered by a two-tournament player/team isolation
-fixture. No active implementation step is approved.
+fixture. Frontend target-coherent runtime decoding and tournament-keyed transient
+state now prevent cross-target cache or UI reuse during same-account navigation.
+No active implementation step is approved.
 
 ## Product decisions
 
@@ -126,20 +128,6 @@ fixture. No active implementation step is approved.
   format begins before roadmap completion, optimization, and security review.
 
 ## Upcoming work
-
-### Frontend tournament-target isolation
-
-- Key tournament-local frontend editor, receipt, mutation, and invitation-token
-  state by tournament ID so navigation from tournament A to B cannot retain A's
-  drafts, success state, or one-time secret. Add target-aware response coherence
-  checks before caching tournament detail, roster, round, team, pairing, and
-  leaderboard payloads, splitting the mixed tournament decoder module first.
-- Validate same-account navigation between two tournaments at phone and desktop
-  widths, including roster, management, invitation, pairing, scoring, and
-  leaderboard states, plus loading/error/empty/long-content and a clean console.
-- **Stop condition:** tournament A state or a mismatched response can never render
-  or enter tournament B's cache after in-app navigation, including when the same
-  global player identity is registered independently in both tournaments.
 
 ### Mandatory counted round
 

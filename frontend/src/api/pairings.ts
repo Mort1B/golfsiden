@@ -78,8 +78,9 @@ const timePattern = /^([01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?$/
 
 function decodeEnum<T extends string>(value: unknown, allowed: readonly T[], path: string): T {
   const decoded = decodeString(value, path, 'spillegruppedata')
-  if (!allowed.some((item) => item === decoded)) invalidData('spillegruppedata', path)
-  return decoded as T
+  const matched = allowed.find((item) => item === decoded)
+  if (matched === undefined) return invalidData('spillegruppedata', path)
+  return matched
 }
 
 function decodeNullable<T>(value: unknown, decode: (item: unknown) => T): T | null {
@@ -142,9 +143,39 @@ export function decodeRoundPairings(value: unknown): RoundPairings {
   }
 }
 
-function decodeExpectedRoundPairings(value: unknown, roundId: string): RoundPairings {
+function validatePairingCoherence(pairings: RoundPairings): void {
+  const entrantIds = new Set<string>()
+  const entrants = [...pairings.active_entrants, ...pairings.inactive_entrants]
+  entrants.forEach((entrant, index) => {
+    if (entrantIds.has(entrant.player_id)) invalidData('spillegruppedata', `pairings.entrants[${index}].player_id duplicate`)
+    entrantIds.add(entrant.player_id)
+  })
+  const groupCollections = [pairings.teams, pairings.flights, pairings.legacy_individual_groups]
+  groupCollections.forEach((groups, collectionIndex) => {
+    const groupIds = new Set<string>()
+    const assignedMemberIds = new Set<string>()
+    groups.forEach((group, groupIndex) => {
+      const path = `pairings.groups[${collectionIndex}][${groupIndex}]`
+      if (groupIds.has(group.id)) invalidData('spillegruppedata', `${path}.id duplicate`)
+      groupIds.add(group.id)
+      const memberIds = new Set<string>()
+      group.members.forEach((member, memberIndex) => {
+        if (!entrantIds.has(member.player_id)) invalidData('spillegruppedata', `${path}.members[${memberIndex}].player_id identity`)
+        if (memberIds.has(member.player_id)) invalidData('spillegruppedata', `${path}.members[${memberIndex}].player_id duplicate`)
+        if (assignedMemberIds.has(member.player_id)) invalidData('spillegruppedata', `${path}.members[${memberIndex}].player_id assigned twice`)
+        memberIds.add(member.player_id)
+        assignedMemberIds.add(member.player_id)
+      })
+    })
+  })
+}
+
+function decodeExpectedRoundPairings(value: unknown, roundId: string, tournamentId: string): RoundPairings {
   const decoded = decodeRoundPairings(value)
-  if (decoded.round_id !== roundId) invalidData('spillegruppedata', 'pairings.round_id identity')
+  if (decoded.round_id !== roundId || decoded.tournament_id !== tournamentId) {
+    invalidData('spillegruppedata', 'pairings.identity')
+  }
+  validatePairingCoherence(decoded)
   return decoded
 }
 
@@ -154,14 +185,14 @@ export const pairingKeys = {
 }
 
 export const pairingApi = {
-  get: (roundId: string) => requestDecoded(
+  get: (roundId: string, tournamentId: string) => requestDecoded(
     `/api/rounds/${roundId}/pairings`,
-    (value) => decodeExpectedRoundPairings(value, roundId),
+    (value) => decodeExpectedRoundPairings(value, roundId, tournamentId),
   ),
-  replace: (roundId: string, replacement: PairingReplacement, csrfToken: string) =>
+  replace: (roundId: string, tournamentId: string, replacement: PairingReplacement, csrfToken: string) =>
     requestDecoded(
       `/api/rounds/${roundId}/pairings`,
-      (value) => decodeExpectedRoundPairings(value, roundId),
+      (value) => decodeExpectedRoundPairings(value, roundId, tournamentId),
       jsonRequest('PUT', replacement, csrfToken),
     ),
 }

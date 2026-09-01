@@ -52,7 +52,7 @@ describe('course API decoders', () => {
     vi.stubGlobal('fetch', fetchMock)
     const selection = { source: 'golf_course_api' as const, provider_course_id: providerId, tee: { category: 'male' as const, name: 'Hvit' } }
 
-    await courseApi.configure(roundId, '2026-08-23T12:00:00Z', selection, 'csrf')
+    await courseApi.configure(roundId, tournamentId, '2026-08-23T12:00:00Z', selection, 'csrf')
 
     expect(courseKeys.catalog('user-one', tournamentId, 'oslo').slice(0, 2)).toEqual(['private-workspace', 'user-one'])
     expect(courseKeys.provider('user-two', tournamentId, providerId).slice(0, 2)).toEqual(['private-workspace', 'user-two'])
@@ -61,6 +61,20 @@ describe('course API decoders', () => {
       method: 'PUT', headers: { 'content-type': 'application/json', 'x-csrf-token': 'csrf' },
       body: JSON.stringify({ expected_round_updated_at: '2026-08-23T12:00:00Z', selection }),
     })
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
+      ...response, id: '00000000-0000-0000-0000-000000000099',
+    }), { status: 200 }))
+    await expect(courseApi.configure(
+      roundId, tournamentId, '2026-08-23T12:00:00Z', selection, 'csrf',
+    )).rejects.toThrow('identity')
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({
+      ...response, tournament_id: '00000000-0000-0000-0000-000000000099',
+    }), { status: 200 }))
+    await expect(courseApi.configure(
+      roundId, tournamentId, '2026-08-23T12:00:00Z', selection, 'csrf',
+    )).rejects.toThrow('tournament_id')
   })
 
   it('encodes a normalized catalog search as q and keeps it in the private key', async () => {

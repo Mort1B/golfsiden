@@ -3,6 +3,8 @@ import {
   acceptInvitation,
   buildInvitationUrl,
   decodeInvitationAcceptance,
+  decodeExpectedInvitationList,
+  decodeExpectedInvitationSecret,
   decodeInvitationMetadata,
   decodeInvitationPreview,
   decodeInvitationRegistration,
@@ -72,6 +74,19 @@ describe('invitation decoders', () => {
     expect(() => decodeInvitationMetadata({ ...metadata, redemption_count: -1 })).toThrow('redemption_count')
     expect(() => decodeInvitationMetadata({ ...metadata, revocation_actor_known: 'false' })).toThrow('revocation_actor_known')
     expect(() => decodeInvitationSecret({ ...metadata, token: 'raw-secret' })).toThrow('invitation.token')
+    expect(decodeExpectedInvitationList([metadata], tournamentId)).toEqual([metadata])
+    expect(() => decodeExpectedInvitationList([
+      metadata,
+      { ...metadata, tournament_id: invitationId },
+    ], tournamentId)).toThrow('identity')
+    expect(() => decodeExpectedInvitationList([metadata, metadata], tournamentId)).toThrow('duplicate')
+    expect(() => decodeExpectedInvitationSecret({ ...metadata, token }, invitationId)).toThrow('identity')
+    expect(() => decodeExpectedInvitationSecret({
+      ...metadata,
+      id: playerId,
+      predecessor_id: seriesId,
+      token,
+    }, tournamentId, invitationId)).toThrow('predecessor_id')
   })
 })
 
@@ -144,5 +159,28 @@ describe('invitation administration requests', () => {
     expect(fetchMock.mock.calls[1]?.[1]?.body).toBe(JSON.stringify({ expires_at: metadata.expires_at, max_uses: 10 }))
     expect(fetchMock.mock.calls[2]?.[1]?.body).toBe('{}')
     expect(fetchMock.mock.calls[3]?.[1]).toMatchObject({ method: 'DELETE', headers: { 'x-csrf-token': 'csrf' } })
+  })
+
+  it('rejects mismatched list, issue, and rotation targets before returning secrets', async () => {
+    const otherTournamentId = '00000000-0000-0000-0000-000000000099'
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([
+        { ...metadata, tournament_id: otherTournamentId },
+      ]), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        ...metadata, tournament_id: otherTournamentId, token,
+      }), { status: 201 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        ...metadata, id: playerId, predecessor_id: seriesId, token,
+      }), { status: 201 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(listInvitations(tournamentId)).rejects.toThrow('identity')
+    await expect(issueInvitation(
+      tournamentId,
+      { expires_at: metadata.expires_at, max_uses: 10 },
+      'csrf',
+    )).rejects.toThrow('identity')
+    await expect(rotateInvitation(tournamentId, invitationId, 'csrf')).rejects.toThrow('predecessor_id')
   })
 })

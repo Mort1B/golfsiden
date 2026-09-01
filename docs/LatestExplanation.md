@@ -1,45 +1,57 @@
 # Latest explanation
 
-## Score access now requires exact tournament membership
+## Tournament targets are verified before frontend caching
 
-`GET /api/rounds/{round_id}/score-access` previously treated a missing target
-membership like an authorized non-writing role and returned `200` with an empty
-owner list. That still confirmed the requested round existed and differed from
-the private-read contract used by scorecards, leaderboards, pairings, and live
-events.
+User-owned query keys already separated sessions and resource IDs, but several
+frontend decoders trusted the server's embedded tournament or round identity.
+That meant a mismatched response could be cached under the requested target even
+though backend authorization was correct. Tournament-local React state could also
+survive an A-to-B route change because React Router reused the page component.
 
-The repository now holds the repeatable-read transaction and active-session lock,
-resolves the round, and requires the share-locked membership row before owner
-assembly:
+The API boundary now validates every relevant response against the requested
+tournament, round, player, owner, metric, invitation predecessor, and course-
+configuration target. Collections reject duplicate and internally incoherent
+identities. The former mixed tournament API module was split so decoding remains
+a focused responsibility, and the unchecked team assertion became a runtime
+decoder:
 
-```rust
-let role = membership_role(&mut transaction, tournament_id, principal.user_id)
-    .await?
-    .ok_or(ScoreAuthorizationError::Forbidden)?;
+```ts
+const round = decodeExpectedRound(value, roundId)
+if (round.tournament_id !== tournamentId) {
+  invalidData('rundedata', 'round.tournament_id identity')
+}
 ```
 
-A missing or revoked session remains `401`, a missing round remains `404`, and a
-session without exact membership now receives `403`. Exact viewers and exact
-player memberships without a usable player link remain authorized and receive an
-empty writable-owner list. Score save and confirmation continue using the same
-owner resolver and retain their existing denial behavior.
+This applies to tournament detail and settings mutations, rosters, round lists
+and detail, teams, pairings, scorecards, round/tournament leaderboards, course
+configuration, and invitation administration. Invitation issue/rotation tokens
+are returned only after exact tournament validation; rotations additionally bind
+the returned predecessor to the requested invitation.
 
-## One identity still means separate tournament participation
+## Transient state belongs to one route target
 
-The acceptance fixture registers one global account/player independently in two
-tournaments with different tournament handicaps. Opening creates distinct round
-snapshots and flight assignments. Tournament A uses a player-owned card;
-tournament B uses a B-only two-player foursomes team with its own membership and
-preserved team-handicap snapshot.
+Tournament, management, round, leaderboard, and invitation pages now use keyed
+workspace components. Navigating within the SPA therefore remounts target-local
+handicap and counted-round drafts, mutation errors/receipts, pending invitation
+actions, and revealed one-time secrets. A request started in tournament A may
+finish after navigation, but its token cannot render in tournament B or reappear
+when returning to A.
 
-The fixture proves target-local rosters, pairings, teams, writable owners,
-player/team scorecards, and gross/net round and tournament results. An A-only
-admin is denied B reads, score saves, and confirmations; those rejections persist
-no score or confirmation and publish no invalidation event. The live stream first
-ignores a distinguishable B-only notification and then emits only the payload-free
-A notification.
+Query ownership and authentication behavior remain unchanged: private keys are
+still rooted by session user, same-user background refreshes stay mounted, and
+SSE carries only invalidation signals for the exact live target. Client checks
+reject invalid data but never grant authority; the backend remains authoritative.
 
-No schema or frontend production code changed. The next bounded step is the
-frontend tournament-target isolation slice: reset tournament-local drafts,
-receipts, and invitation secrets on navigation, and reject mismatched target
-identities before responses enter the private query cache.
+## Validation
+
+Focused and full frontend tests, strict typecheck, lint, production build, the
+Rust baseline, strict Clippy, and the full PostgreSQL suite passed. Chrome at
+375x812 and 1440x1000 used the same account independently registered in two
+tournaments and verified distinct rosters, handicaps, rounds, teams, cards,
+leaderboards, live targets, reset drafts, and delayed invitation completion.
+Loading, empty, populated, deliberate error, long-content, and keyboard-focus
+states were exercised without cross-target rendering or normal-run console and
+network failures.
+
+No backend, schema, or scoring behavior changed. The next bounded product step is
+the optional mandatory counted round within best-N tournament standings.

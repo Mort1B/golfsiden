@@ -12,6 +12,10 @@ import { useTournamentLive } from '../features/live/useTournamentLive'
 
 export function TournamentManagementPage() {
   const { tournamentId = '' } = useParams()
+  return <TournamentManagementWorkspace key={tournamentId} tournamentId={tournamentId} />
+}
+
+function TournamentManagementWorkspace({ tournamentId }: { tournamentId: string }) {
   const location = useLocation()
   const userId = useAuth().session?.user_id ?? ''
   const canonical = isCanonicalUuid(tournamentId)
