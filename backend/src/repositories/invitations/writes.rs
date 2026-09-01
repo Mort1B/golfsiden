@@ -37,6 +37,37 @@ pub(super) async fn insert_entrant(
     Ok(())
 }
 
+pub(super) async fn insert_missing_initial_handicap_history(
+    transaction: &mut Transaction<'_, Postgres>,
+    tournament_id: Uuid,
+    player_id: Uuid,
+    user_id: Uuid,
+) -> Result<(), InvitationError> {
+    // Acceptance holds the entrant row FOR UPDATE, so concurrent repairs cannot
+    // both observe a missing initial history before either transaction commits.
+    sqlx::query(
+        "INSERT INTO tournament_handicap_history
+           (id, tournament_id, player_id, handicap_index, changed_by, reason)
+         SELECT $1, tp.tournament_id, tp.player_id, tp.tournament_handicap,
+                $4, 'invitation acceptance initial handicap repair'
+         FROM tournament_players tp
+         WHERE tp.tournament_id = $2 AND tp.player_id = $3
+           AND NOT EXISTS (
+             SELECT 1 FROM tournament_handicap_history history
+             WHERE history.tournament_id = tp.tournament_id
+               AND history.player_id = tp.player_id
+           )",
+    )
+    .bind(Uuid::new_v4())
+    .bind(tournament_id)
+    .bind(player_id)
+    .bind(user_id)
+    .execute(&mut **transaction)
+    .await
+    .map_err(classify_database)?;
+    Ok(())
+}
+
 pub(super) async fn insert_redemption(
     transaction: &mut Transaction<'_, Postgres>,
     invitation: &LockedInvitation,

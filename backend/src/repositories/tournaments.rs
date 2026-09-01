@@ -7,14 +7,12 @@ pub use handicaps::{change_player_handicap_authorized, list_players, list_player
 pub use start::{StartTournamentResult, start_authorized};
 
 use chrono::NaiveDate;
-use sqlx::{FromRow, PgPool, Postgres, Transaction};
+use sqlx::{FromRow, PgPool};
 use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
-    domain::models::{
-        MyTournament, ScoringMode, Tournament, TournamentPlayer, TournamentRole, TournamentStatus,
-    },
+    domain::models::{MyTournament, ScoringMode, Tournament, TournamentRole, TournamentStatus},
     repositories::tournament_authorization::{self, AuthorizationError},
 };
 
@@ -153,93 +151,6 @@ pub async fn list_for_user(pool: &PgPool, user_id: Uuid) -> Result<Vec<MyTournam
     .fetch_all(pool)
     .await?;
     Ok(rows.into_iter().map(MyTournamentRow::into_model).collect())
-}
-
-pub async fn add_player(
-    pool: &PgPool,
-    tournament_id: Uuid,
-    player_id: Uuid,
-    handicap: Option<f64>,
-    seed: Option<i16>,
-) -> Result<TournamentPlayer, sqlx::Error> {
-    sqlx::query("INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap, seed) SELECT $1, id, COALESCE($3, current_handicap_index), $4 FROM players WHERE id = $2")
-        .bind(tournament_id).bind(player_id).bind(handicap).bind(seed).execute(pool).await?;
-    sqlx::query_as::<_, TournamentPlayer>("SELECT tp.tournament_id, tp.player_id, p.display_name, p.active AS player_active, tp.tournament_handicap::float8 AS tournament_handicap, tp.seed, tp.status, tp.created_at, tp.updated_at FROM tournament_players tp JOIN players p ON p.id = tp.player_id WHERE tp.tournament_id = $1 AND tp.player_id = $2")
-        .bind(tournament_id).bind(player_id).fetch_one(pool).await
-}
-
-pub async fn add_player_authorized(
-    pool: &PgPool,
-    session_id: Uuid,
-    tournament_id: Uuid,
-    player_id: Uuid,
-    handicap: Option<f64>,
-    seed: Option<i16>,
-) -> Result<TournamentPlayer, TournamentMutationError> {
-    let mut transaction = pool.begin().await?;
-    let actor = tournament_authorization::require_tournament_admin(
-        &mut transaction,
-        session_id,
-        tournament_id,
-    )
-    .await?;
-    let player = insert_player(
-        &mut transaction,
-        tournament_id,
-        player_id,
-        handicap,
-        seed,
-        actor,
-    )
-    .await?;
-    transaction.commit().await?;
-    Ok(player)
-}
-
-async fn insert_player(
-    transaction: &mut Transaction<'_, Postgres>,
-    tournament_id: Uuid,
-    player_id: Uuid,
-    handicap: Option<f64>,
-    seed: Option<i16>,
-    actor: Uuid,
-) -> Result<TournamentPlayer, sqlx::Error> {
-    let handicap = sqlx::query_scalar::<_, f64>(
-        "INSERT INTO tournament_players (tournament_id, player_id, tournament_handicap, seed)
-         SELECT $1, id, COALESCE($3, current_handicap_index), $4
-         FROM players WHERE id = $2
-         RETURNING tournament_handicap::float8",
-    )
-    .bind(tournament_id)
-    .bind(player_id)
-    .bind(handicap)
-    .bind(seed)
-    .fetch_one(&mut **transaction)
-    .await?;
-    sqlx::query(
-        "INSERT INTO tournament_handicap_history
-           (id, tournament_id, player_id, handicap_index, changed_by, reason)
-         VALUES ($1, $2, $3, $4, $5, 'initial tournament handicap')",
-    )
-    .bind(Uuid::new_v4())
-    .bind(tournament_id)
-    .bind(player_id)
-    .bind(handicap)
-    .bind(actor)
-    .execute(&mut **transaction)
-    .await?;
-    sqlx::query_as::<_, TournamentPlayer>(
-        "SELECT tp.tournament_id, tp.player_id, p.display_name,
-                p.active AS player_active,
-                tp.tournament_handicap::float8 AS tournament_handicap,
-                tp.seed, tp.status, tp.created_at, tp.updated_at
-         FROM tournament_players tp JOIN players p ON p.id = tp.player_id
-         WHERE tp.tournament_id = $1 AND tp.player_id = $2",
-    )
-    .bind(tournament_id)
-    .bind(player_id)
-    .fetch_one(&mut **transaction)
-    .await
 }
 
 impl MyTournamentRow {

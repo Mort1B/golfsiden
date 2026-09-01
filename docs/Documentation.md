@@ -207,7 +207,10 @@ resource and lock/revalidate both the session and admin membership inside the
 write transaction. The former global player/profile/handicap routes and legacy
 `POST /api/tournaments` platform-admin route are no longer registered. Player
 discovery is available only from a target tournament's private roster, and
-product-facing tournament creation uses creator onboarding. `GET
+product-facing tournament creation uses creator onboarding. Direct `POST
+/api/tournaments/{tournament_id}/players` registration is also retired: admins
+enroll players through tournament invitations, never by submitting a global
+player identifier. `GET
 /api/me/tournaments` returns only the active user's tournament roles and linked
 entrant identities.
 
@@ -255,6 +258,12 @@ Argon2, then atomically creates the account, player, both handicap histories,
 entrant, player membership, append-only redemption, and session. Authenticated
 visitors use the CSRF-protected `/accept` route, which relies only on the exact
 session-linked player and never infers identity from email.
+
+Together with creator onboarding, these are the only HTTP participation entry
+points. Registration or acceptance creates or verifies the membership and
+entrant in the same target tournament and records the initial tournament
+handicap and redemption atomically. There is no admin account/player lookup or
+direct roster insertion endpoint.
 
 Complete active participation is idempotent even after a link is later expired,
 revoked, rotated, or exhausted. Viewer memberships are promoted to player;

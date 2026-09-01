@@ -37,20 +37,12 @@ pub fn routes() -> Router<Arc<AppState>> {
         )
         .route(
             "/api/tournaments/{tournament_id}/players",
-            get(list_players).post(add_player),
+            get(list_players),
         )
         .route(
             "/api/tournaments/{tournament_id}/players/{player_id}/handicap-corrections",
             axum::routing::post(change_player_handicap),
         )
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct AddTournamentPlayer {
-    player_id: Uuid,
-    tournament_handicap: Option<f64>,
-    seed: Option<i16>,
 }
 
 #[derive(Deserialize)]
@@ -113,33 +105,6 @@ async fn list_players(
             .await
             .map_err(map_authorization_error)?;
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(roster)))
-}
-
-async fn add_player(
-    State(state): State<Arc<AppState>>,
-    Path(id): Path<Uuid>,
-    MutationSession(authenticated): MutationSession,
-    Json(input): Json<AddTournamentPlayer>,
-) -> ApiResult<impl IntoResponse> {
-    if let Some(handicap) = input.tournament_handicap
-        && (!handicap.is_finite() || !(-10.0..=54.0).contains(&handicap))
-    {
-        return Err(ApiError::BadRequest(
-            "tournament_handicap must be between -10.0 and 54.0".to_owned(),
-        ));
-    }
-    let player = tournaments::add_player_authorized(
-        &state.pool,
-        authenticated.principal.session_id,
-        id,
-        input.player_id,
-        input.tournament_handicap,
-        input.seed,
-    )
-    .await
-    .map_err(map_mutation_error)?;
-    state.notify("tournament", id, id);
-    Ok((StatusCode::CREATED, Json(player)))
 }
 
 async fn change_player_handicap(

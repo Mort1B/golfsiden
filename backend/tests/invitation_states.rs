@@ -243,6 +243,17 @@ async fn acceptance_completes_missing_halves_and_preserves_roles(pool: PgPool) {
         )
         .await;
         assert_eq!(response.status(), status, "{label}");
+        if entrant.is_some() {
+            let retry = accept(
+                app.clone(),
+                base.invitation_id,
+                &base.invitation_token,
+                &user.session_token,
+            )
+            .await;
+            assert_eq!(retry.status(), StatusCode::OK, "{label} retry");
+            assert_eq!(body(retry).await["status"], "already_joined");
+        }
         let stored = sqlx::query_as::<_, (String, String)>(
             "SELECT tm.role::text, tp.status::text
              FROM tournament_memberships tm
@@ -257,17 +268,50 @@ async fn acceptance_completes_missing_halves_and_preserves_roles(pool: PgPool) {
         .await
         .unwrap();
         assert_eq!(stored, (expected_role.to_owned(), "active".to_owned()));
+        let history = sqlx::query_as::<_, (f64, Option<Uuid>, Option<String>)>(
+            "SELECT handicap_index::float8, changed_by, reason
+             FROM tournament_handicap_history
+             WHERE tournament_id = $1 AND player_id = $2
+             ORDER BY effective_from, id",
+        )
+        .bind(base.tournament_id)
+        .bind(user.player_id)
+        .fetch_all(&pool)
+        .await
+        .unwrap();
         assert_eq!(
-            sqlx::query_scalar::<_, i64>(
-                "SELECT count(*) FROM tournament_handicap_history
-                 WHERE tournament_id = $1 AND player_id = $2",
-            )
-            .bind(base.tournament_id)
-            .bind(user.player_id)
-            .fetch_one(&pool)
-            .await
-            .unwrap(),
-            if entrant.is_some() { 0 } else { 1 }
+            history,
+            vec![(
+                10.0,
+                Some(user.user_id),
+                Some(
+                    if entrant.is_some() {
+                        "invitation acceptance initial handicap repair"
+                    } else {
+                        "invitation join snapshot"
+                    }
+                    .to_owned()
+                ),
+            )],
+            "{label}"
+        );
+        let redemption = sqlx::query_as::<_, (Uuid, Uuid, Uuid, String)>(
+            "SELECT tournament_id, user_id, player_id, mode::text
+             FROM invitation_redemptions WHERE user_id = $1",
+        )
+        .bind(user.user_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(
+            redemption,
+            (
+                base.tournament_id,
+                user.user_id,
+                user.player_id,
+                "acceptance".to_owned(),
+            ),
+            "{label}"
         );
     }
 
@@ -294,6 +338,13 @@ async fn acceptance_completes_missing_halves_and_preserves_roles(pool: PgPool) {
     );
     assert_eq!(
         sqlx::query_scalar::<_, i64>("SELECT count(*) FROM team_memberships")
+            .fetch_one(&pool)
+            .await
+            .unwrap(),
+        0
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM flight_memberships")
             .fetch_one(&pool)
             .await
             .unwrap(),

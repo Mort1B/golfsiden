@@ -29,6 +29,9 @@ complete, including draft-only creation and concurrent lifecycle coverage.
 The legacy global player/profile/handicap HTTP and frontend directory plus the
 platform-admin tournament-creation route are retired. Scorecard reads and
 tournament-targeted live invalidation are membership-private and identity-owned.
+Direct arbitrary-player roster registration is also retired; creator onboarding
+and invitation redemption are the only HTTP participation entry points and keep
+membership, entrant, initial handicap audit, and redemption facts aligned.
 No active implementation step is approved.
 
 ## Product decisions
@@ -121,9 +124,6 @@ No active implementation step is approved.
 
 ### Tournament scope isolation audit
 
-- Replace the exact-admin roster mutation's arbitrary global `player_id` input
-  with a tournament-safe participation flow that also creates or verifies the
-  matching tournament membership; preserve onboarding and invitation joining.
 - Authorize exact tournament administration before round-creation validation can
   reveal target-specific state. A global account role remains no bypass.
 - Audit roster, pairing, scoring, scorecard, and leaderboard reads so a player is

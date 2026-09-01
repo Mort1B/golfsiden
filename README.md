@@ -157,8 +157,10 @@ operations. The global player/profile/handicap HTTP directory, its `/players`
 page, and legacy platform-admin tournament creation have been retired. Players
 are discovered through private tournament rosters, while tournament creation is
 available through creator onboarding only. Scorecard reads and live invalidation
-streams also require exact tournament membership. The remaining roster-mutation
-and cross-tournament authorization audit must finish before production.
+streams also require exact tournament membership. Direct arbitrary-player roster
+registration is retired; creator onboarding and tournament invitations are the
+only supported participation entry points. The remaining round-creation and
+cross-tournament authorization audit must finish before production.
 
 Tournament creation now issues a reusable invitation secret, and admins can
 rotate or revoke links, but recovery from a lost one-time plaintext response

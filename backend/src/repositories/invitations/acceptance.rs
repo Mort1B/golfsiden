@@ -88,6 +88,14 @@ pub async fn accept(
             player.handicap_index,
         )
         .await?;
+    } else {
+        writes::insert_missing_initial_handicap_history(
+            &mut transaction,
+            invitation.tournament_id,
+            player_id,
+            principal.user_id,
+        )
+        .await?;
     }
     writes::insert_redemption(
         &mut transaction,

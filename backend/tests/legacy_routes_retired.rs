@@ -96,10 +96,16 @@ async fn legacy_player_and_tournament_creation_methods_are_unrouted_for_every_se
     let state = AppState::new(pool.clone());
     let mut events = state.live_events.subscribe();
     let app = api::router(state);
-    let initial_tournament_count = sqlx::query_scalar::<_, i64>("SELECT count(*) FROM tournaments")
-        .fetch_one(&pool)
-        .await
-        .unwrap();
+    let initial_counts = sqlx::query_as::<_, (i64, i64, i64, i64, i64)>(
+        "SELECT (SELECT count(*) FROM tournaments),
+                (SELECT count(*) FROM tournament_memberships),
+                (SELECT count(*) FROM tournament_players),
+                (SELECT count(*) FROM tournament_handicap_history),
+                (SELECT count(*) FROM invitation_redemptions)",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
     let player_id = PLAYER.to_string();
     let retired = [
         (Method::GET, "/api/players".to_owned()),
@@ -126,14 +132,30 @@ async fn legacy_player_and_tournament_creation_methods_are_unrouted_for_every_se
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+        let response = app
+            .clone()
+            .oneshot(request(
+                Method::POST,
+                &format!("/api/tournaments/{TOURNAMENT}/players"),
+                token,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
     }
 
     assert_eq!(
-        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM tournaments")
-            .fetch_one(&pool)
-            .await
-            .unwrap(),
-        initial_tournament_count
+        sqlx::query_as::<_, (i64, i64, i64, i64, i64)>(
+            "SELECT (SELECT count(*) FROM tournaments),
+                    (SELECT count(*) FROM tournament_memberships),
+                    (SELECT count(*) FROM tournament_players),
+                    (SELECT count(*) FROM tournament_handicap_history),
+                    (SELECT count(*) FROM invitation_redemptions)",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap(),
+        initial_counts
     );
     assert!(events.try_recv().is_err());
 }

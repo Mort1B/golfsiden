@@ -102,11 +102,6 @@ async fn cross_tournament_admin_is_denied_through_every_resource_shape(pool: PgP
     let app = api::router(AppState::new(pool));
     let requests = vec![
         json_request(
-            Request::post(format!("/api/tournaments/{TOURNAMENT_B}/players")),
-            "admin-a-token",
-            json!({"player_id": PLAYER_NEW}),
-        ),
-        json_request(
             Request::post(format!(
                 "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicap-corrections"
             )),
@@ -150,21 +145,82 @@ async fn cross_tournament_admin_is_denied_through_every_resource_shape(pool: PgP
 }
 
 #[sqlx::test(migrations = "../migrations")]
+async fn direct_roster_registration_is_retired_without_writes_or_events(pool: PgPool) {
+    seed(&pool).await;
+    let initial_counts = sqlx::query_as::<_, (i64, i64, i64, i64)>(
+        "SELECT (SELECT count(*) FROM tournament_memberships),
+                (SELECT count(*) FROM tournament_players),
+                (SELECT count(*) FROM tournament_handicap_history),
+                (SELECT count(*) FROM invitation_redemptions)",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let state = AppState::new(pool.clone());
+    let mut events = state.live_events.subscribe();
+    let app = api::router(state);
+    let path = format!("/api/tournaments/{TOURNAMENT_B}/players");
+    let requests = [
+        Request::post(&path)
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(json!({"player_id": PLAYER_NEW}).to_string()))
+            .unwrap(),
+        json_request(
+            Request::post(&path),
+            "unknown-session-token",
+            json!({"player_id": PLAYER_NEW}),
+        ),
+        json_request(
+            Request::post(&path),
+            "admin-a-token",
+            json!({"player_id": PLAYER_NEW}),
+        ),
+        json_request(
+            Request::post(&path),
+            "admin-b-token",
+            json!({"player_id": PLAYER_NEW, "tournament_handicap": 12.3}),
+        ),
+        json_request(
+            Request::post(&path),
+            "scorer-b-token",
+            json!({"player_id": PLAYER_NEW}),
+        ),
+        json_request(
+            Request::post(&path),
+            "player-b-token",
+            json!({"player_id": PLAYER_NEW}),
+        ),
+        json_request(
+            Request::post(&path),
+            "viewer-b-token",
+            json!({"player_id": PLAYER_NEW}),
+        ),
+    ];
+
+    for request in requests {
+        let response = app.clone().oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+    }
+
+    let final_counts = sqlx::query_as::<_, (i64, i64, i64, i64)>(
+        "SELECT (SELECT count(*) FROM tournament_memberships),
+                (SELECT count(*) FROM tournament_players),
+                (SELECT count(*) FROM tournament_handicap_history),
+                (SELECT count(*) FROM invitation_redemptions)",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(final_counts, initial_counts);
+    assert!(events.try_recv().is_err());
+}
+
+#[sqlx::test(migrations = "../migrations")]
 async fn tournament_roles_sessions_csrf_and_me_read_model_are_authoritative(pool: PgPool) {
     seed(&pool).await;
     let app = api::router(AppState::new(pool.clone()));
     for token in ["scorer-b-token", "player-b-token", "viewer-b-token"] {
         let response = app
-            .clone()
-            .oneshot(json_request(
-                Request::post(format!("/api/tournaments/{TOURNAMENT_B}/players")),
-                token,
-                json!({"player_id": PLAYER_NEW}),
-            ))
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::FORBIDDEN);
-        let handicap_response = app
             .clone()
             .oneshot(json_request(
                 Request::post(format!(
@@ -175,15 +231,17 @@ async fn tournament_roles_sessions_csrf_and_me_read_model_are_authoritative(pool
             ))
             .await
             .unwrap();
-        assert_eq!(handicap_response.status(), StatusCode::FORBIDDEN);
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
     }
     let no_session = app
         .clone()
         .oneshot(
-            Request::post(format!("/api/tournaments/{TOURNAMENT_B}/players"))
-                .header(header::CONTENT_TYPE, "application/json")
-                .body(Body::from("{}"))
-                .unwrap(),
+            Request::post(format!(
+                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicap-corrections"
+            ))
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from("{}"))
+            .unwrap(),
         )
         .await
         .unwrap();
@@ -191,9 +249,11 @@ async fn tournament_roles_sessions_csrf_and_me_read_model_are_authoritative(pool
     let invalid_session = app
         .clone()
         .oneshot(json_request(
-            Request::post(format!("/api/tournaments/{TOURNAMENT_B}/players")),
+            Request::post(format!(
+                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicap-corrections"
+            )),
             "unknown-session-token",
-            json!({"player_id": PLAYER_NEW}),
+            json!({"handicap_index": 5.0, "reason": "review"}),
         ))
         .await
         .unwrap();
@@ -201,11 +261,15 @@ async fn tournament_roles_sessions_csrf_and_me_read_model_are_authoritative(pool
     let no_csrf = app
         .clone()
         .oneshot(
-            Request::post(format!("/api/tournaments/{TOURNAMENT_B}/players"))
-                .header(header::COOKIE, "golf_session=admin-b-token")
-                .header(header::CONTENT_TYPE, "application/json")
-                .body(Body::from(json!({"player_id": PLAYER_NEW}).to_string()))
-                .unwrap(),
+            Request::post(format!(
+                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicap-corrections"
+            ))
+            .header(header::COOKIE, "golf_session=admin-b-token")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                json!({"handicap_index": 5.0, "reason": "review"}).to_string(),
+            ))
+            .unwrap(),
         )
         .await
         .unwrap();
@@ -230,9 +294,11 @@ async fn tournament_roles_sessions_csrf_and_me_read_model_are_authoritative(pool
     let expired_response = app
         .clone()
         .oneshot(json_request(
-            Request::post(format!("/api/tournaments/{TOURNAMENT_B}/players")),
+            Request::post(format!(
+                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicap-corrections"
+            )),
             "expired-admin-token",
-            json!({"player_id": PLAYER_NEW}),
+            json!({"handicap_index": 5.0, "reason": "review"}),
         ))
         .await
         .unwrap();
@@ -252,28 +318,15 @@ async fn tournament_roles_sessions_csrf_and_me_read_model_are_authoritative(pool
     let revoked_response = app
         .clone()
         .oneshot(json_request(
-            Request::post(format!("/api/tournaments/{TOURNAMENT_B}/players")),
+            Request::post(format!(
+                "/api/tournaments/{TOURNAMENT_B}/players/{PLAYER_LINKED}/handicap-corrections"
+            )),
             "revoked-admin-token",
-            json!({"player_id": PLAYER_NEW}),
+            json!({"handicap_index": 5.0, "reason": "review"}),
         ))
         .await
         .unwrap();
     assert_eq!(revoked_response.status(), StatusCode::UNAUTHORIZED);
-
-    let added = app
-        .clone()
-        .oneshot(json_request(
-            Request::post(format!("/api/tournaments/{TOURNAMENT_B}/players")),
-            "admin-b-token",
-            json!({"player_id": PLAYER_NEW, "tournament_handicap": 12.3}),
-        ))
-        .await
-        .unwrap();
-    assert_eq!(added.status(), StatusCode::CREATED);
-    let audit_actor = sqlx::query_scalar::<_, Uuid>(
-        "SELECT changed_by FROM tournament_handicap_history WHERE tournament_id = $1 AND player_id = $2",
-    ).bind(TOURNAMENT_B).bind(PLAYER_NEW).fetch_one(&pool).await.unwrap();
-    assert_eq!(audit_actor, ADMIN_B);
 
     let mine = app
         .oneshot(

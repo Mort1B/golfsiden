@@ -86,6 +86,10 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   active membership/entrant pair is idempotent before lifecycle checks; partial
   compatible state is repaired, while inactive or withdrawn identities fail
   closed. Joining never creates team or flight membership.
+- Direct `POST /api/tournaments/{tournament_id}/players` registration is retired.
+  Creator onboarding and invitation registration/acceptance are the only HTTP
+  paths that establish participation, so no product route accepts an arbitrary
+  global player ID or exposes a global player search.
 - Public invitation handlers authenticate an extractable token before strict
   secondary-field decoding. Registration hashes outside the transaction after a
   cheap link preflight, then revalidates with database time after row-lock waits.
@@ -245,7 +249,7 @@ Implemented resources:
 | `GET` | `/api/tournaments` | List only the authenticated account's tournament memberships |
 | `GET` | `/api/tournaments/{tournament_id}` | Retrieve a tournament |
 | `POST` | `/api/tournaments/{tournament_id}/start` | Start a ready draft tournament as its exact admin without opening a round |
-| `GET`, `POST` | `/api/tournaments/{tournament_id}/players` | List the roster and correction state, or register entrants |
+| `GET` | `/api/tournaments/{tournament_id}/players` | List the private roster and handicap-correction state |
 | `POST` | `/api/tournaments/{tournament_id}/players/{player_id}/handicap-corrections` | Audit a pre-opening tournament handicap correction |
 | `GET`, `POST` | `/api/tournaments/{tournament_id}/rounds` | List and create rounds |
 | `GET` | `/api/rounds/{round_id}` | Retrieve a round |
