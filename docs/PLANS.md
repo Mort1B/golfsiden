@@ -31,6 +31,17 @@ active implementation step is approved.
   registration and login. Account requests and UI contain no email. Existing
   account email data may be used once for collision-safe username migration, but
   is not retained as a credential, recovery requirement, or identity link.
+- Administration is tournament-scoped. Creating a tournament grants that creator
+  the `admin` membership only for that tournament. It grants no authority to
+  view or mutate another tournament, and a global account role is never an
+  administration bypass. Any future additional-admin or ownership-transfer flow
+  requires a separate explicit product decision.
+- A player participates only through an explicit registration in each tournament.
+  The account/player identity may persist for login and later registrations, but
+  it must not appear in another tournament's roster, pairings, score access,
+  handicaps, or results until a separate `tournament_players` registration and
+  tournament membership exist there. There is no member-visible global player
+  directory.
 - The handicap registered when a player joins a tournament becomes the fixed
   tournament handicap. A tournament admin may make an audited correction only
   while every round is still draft and no round snapshot has ever been captured.
@@ -58,6 +69,16 @@ active implementation step is approved.
 - A tournament stores one `counted_rounds` value from 1 through its configured
   round count. Each leaderboard selects a player's best N completed results for
   its own metric, so gross and net may count different rounds.
+- A tournament admin may optionally designate one tournament round as mandatory
+  before the tournament starts. That round consumes one of the configured N
+  counted slots for both gross and net; each metric independently chooses its
+  remaining best `N - 1` contributions. A player who does not complete the
+  mandatory round is not finally eligible merely by completing other rounds.
+- Starting a tournament is an explicit exact-admin action in the management
+  workspace. It moves the tournament from `draft` to `active` after authoritative
+  readiness checks and freezes pre-start tournament configuration. Starting the
+  tournament does not itself open or score an individual round; round opening
+  remains a separate admin action.
 - Tournament players and round teams remain separate. Team membership can change
   every round, and team results continue to be attributed to the exact members
   of that round for individual tournament standings.
@@ -91,6 +112,54 @@ active implementation step is approved.
   format begins before roadmap completion, optimization, and security review.
 
 ## Upcoming work
+
+### Tournament scope and start lifecycle
+
+- Audit every tournament admin read and mutation to prove that only an exact
+  `tournament_memberships.role = 'admin'` relation grants authority. Remove or
+  retire remaining global-role tournament bypasses and platform-admin creation
+  assumptions without changing account login. Test two creators and two
+  tournaments in both directions: each creator can administer only the
+  tournament they created and receives `403` for the other's existing resources.
+- Audit roster, pairing, scoring, scorecard, and leaderboard reads so a player is
+  visible only through the target tournament's explicit membership and
+  `tournament_players` registration. Reusing the same account in another
+  tournament must create separate tournament participation facts; it must never
+  inherit roster presence, handicap, team/flight assignment, score authority, or
+  results. Remove member-facing global player discovery if any remains.
+- Add an exact-admin, CSRF-protected tournament-start mutation with deterministic
+  locking, an authoritative readiness response, stable conflict codes, and one
+  payload-free tournament invalidation after commit. Add a clear management
+  action for `draft -> active`, with pending, readiness-error, retry, and success
+  states. Starting is idempotent only for the already-active tournament and does
+  not open a round. Validate the hosted path in real Chrome so an eligible admin
+  is no longer stuck at “Kladd.”
+- **Stop condition:** two isolated tournament creators have no cross-tournament
+  authority or player leakage; a ready draft tournament can be started from the
+  hosted management UI and becomes authoritatively active; invalid or
+  unauthorized starts cannot mutate state or emit SSE; individual rounds remain
+  draft until explicitly opened.
+
+### Mandatory counted round
+
+- Extend the pre-start counted-round configuration with one optional mandatory
+  round that must belong to the same tournament. The exact admin can select,
+  replace, or clear it only while tournament configuration is mutable; tournament
+  start or first round opening freezes it under PostgreSQL and repository guards.
+- Best-N selection always includes a completed mandatory contribution and fills
+  only the remaining `N - 1` slots by the requested metric. Gross and net may
+  still choose different remaining rounds. For `N = 1`, the mandatory round is
+  the sole counted contribution. A missing mandatory result keeps the player
+  provisionally behind eligible competitors and prevents final eligibility.
+- Expose the selection in onboarding and tournament settings with the configured
+  round names, and label the mandatory contribution in strict API/frontend
+  contracts. Cover invalid cross-tournament IDs, deletion/configuration races,
+  zero/one/many remaining slots, gross/net independence, changing team
+  attribution, and deterministic ties.
+- **Stop condition:** in a four-round tournament with `counted_rounds = 3`, an
+  admin can require round four before start; every eligible final aggregate counts
+  round four plus the metric-specific best two of rounds one through three, and
+  no player can replace a missing round-four result with another round.
 
 ### Phase 7: Live best-N standings, final-nine blackout, and scorecards
 
