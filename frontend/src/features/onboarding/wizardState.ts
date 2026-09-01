@@ -28,6 +28,7 @@ export interface WizardDraft {
   rounds: RoundDraft[]
   countedRounds: number
   countedRoundsMode: 'all' | 'custom'
+  mandatoryRoundKey: string | null
   creator: CreatorDraft
   nextRoundKey: number
 }
@@ -45,6 +46,7 @@ export function createInitialDraft(today = localDateString()): WizardDraft {
     rounds: [{ key: 'round-1', name: 'Runde 1', date: today, scoringFormat: 'individual_stroke_play' }],
     countedRounds: 1,
     countedRoundsMode: 'all',
+    mandatoryRoundKey: null,
     creator: { displayName: '', username: '', password: '', handicap: '' },
     nextRoundKey: 2,
   }
@@ -73,7 +75,17 @@ export function addRound(draft: WizardDraft): WizardDraft {
 export function removeRound(draft: WizardDraft, key: string): WizardDraft {
   if (draft.rounds.length === 1) return draft
   const rounds = draft.rounds.filter((round) => round.key !== key)
-  return { ...draft, rounds, countedRounds: Math.min(draft.countedRounds, rounds.length) }
+  return {
+    ...draft,
+    rounds,
+    countedRounds: Math.min(draft.countedRounds, rounds.length),
+    mandatoryRoundKey: draft.mandatoryRoundKey === key ? null : draft.mandatoryRoundKey,
+  }
+}
+
+export function updateMandatoryRound(draft: WizardDraft, key: string | null): WizardDraft {
+  if (key !== null && !draft.rounds.some((round) => round.key === key)) return draft
+  return { ...draft, mandatoryRoundKey: key }
 }
 
 export function updateCountedRounds(draft: WizardDraft, countedRounds: number): WizardDraft {
@@ -111,6 +123,9 @@ export function toOnboardingRequest(draft: WizardDraft): OnboardingRequest {
       start_date: draft.tournament.startDate,
       end_date: draft.tournament.endDate,
       counted_rounds: draft.countedRounds,
+      mandatory_round_number: draft.mandatoryRoundKey === null
+        ? null
+        : draft.rounds.findIndex((round) => round.key === draft.mandatoryRoundKey) + 1,
     },
     rounds: draft.rounds.map((round, index) => ({
       round_number: index + 1,

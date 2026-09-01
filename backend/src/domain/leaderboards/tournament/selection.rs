@@ -5,6 +5,7 @@ use super::super::{LeaderboardMetric, TournamentContribution, TournamentLeaderbo
 pub(super) fn select_best(
     contributions: &mut [CandidateContribution],
     required: usize,
+    mandatory_round_id: Option<uuid::Uuid>,
     metric: LeaderboardMetric,
 ) {
     contributions.sort_by(|left, right| {
@@ -13,7 +14,22 @@ pub(super) fn select_best(
             .then(left.round_number.cmp(&right.round_number))
             .then(left.value.round_id.cmp(&right.value.round_id))
     });
-    for candidate in contributions.iter_mut().take(required) {
+    let optional_slots = if let Some(mandatory_round_id) = mandatory_round_id {
+        if let Some(mandatory) = contributions
+            .iter_mut()
+            .find(|candidate| candidate.value.round_id == mandatory_round_id)
+        {
+            mandatory.value.counted = true;
+        }
+        required.saturating_sub(1)
+    } else {
+        required
+    };
+    for candidate in contributions
+        .iter_mut()
+        .filter(|candidate| !candidate.value.mandatory)
+        .take(optional_slots)
+    {
         candidate.value.counted = true;
     }
     contributions.sort_by(|left, right| {
@@ -24,8 +40,11 @@ pub(super) fn select_best(
 }
 
 pub(super) fn rank_entries(entries: &mut [TournamentLeaderboardEntry]) {
-    entries.sort_by(
-        |left, right| match (left.completed_rounds > 0, right.completed_rounds > 0) {
+    entries.sort_by(|left, right| {
+        match (
+            left.counted_contributions > 0,
+            right.counted_contributions > 0,
+        ) {
             (true, true) => right
                 .counted_contributions
                 .cmp(&left.counted_contributions)
@@ -40,12 +59,12 @@ pub(super) fn rank_entries(entries: &mut [TournamentLeaderboardEntry]) {
                 super::super::round::name_cmp(&left.display_name, &right.display_name)
                     .then(left.player_id.cmp(&right.player_id))
             }
-        },
-    );
+        }
+    });
 
     let ranked = entries
         .iter()
-        .take_while(|entry| entry.completed_rounds > 0)
+        .take_while(|entry| entry.counted_contributions > 0)
         .count();
     for index in 0..ranked {
         let tied_previous = index > 0 && rank_key(&entries[index - 1]) == rank_key(&entries[index]);

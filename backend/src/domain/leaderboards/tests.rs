@@ -285,6 +285,7 @@ fn tournament_aggregates_changing_team_attribution_and_ranks_round_count_first()
         &TournamentLeaderboardFacts {
             tournament_id: id(100),
             counted_rounds: 2,
+            mandatory_round_id: None,
             participants: vec![
                 participant(1, "Ada"),
                 participant(2, "bob"),
@@ -360,6 +361,7 @@ fn tournament_ties_use_only_completed_rounds_and_selected_total() {
         &TournamentLeaderboardFacts {
             tournament_id: id(100),
             counted_rounds: 1,
+            mandatory_round_id: None,
             participants: vec![
                 participant(2, "bob"),
                 participant(1, "Ada"),
@@ -410,6 +412,7 @@ fn case_insensitive_name_ties_fall_directly_to_uuid() {
         &TournamentLeaderboardFacts {
             tournament_id: id(100),
             counted_rounds: 1,
+            mandatory_round_id: None,
             participants: vec![participant(2, "ZED"), participant(1, "zed")],
             rounds: Vec::new(),
         },

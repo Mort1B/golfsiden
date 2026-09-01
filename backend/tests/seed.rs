@@ -143,6 +143,14 @@ async fn assert_representative_pairings(pool: &PgPool) {
 #[sqlx::test(migrations = "../migrations")]
 async fn development_seed_has_ready_idempotent_representative_pairings(pool: PgPool) {
     run_seed(&pool).await;
+    let mandatory_round_id = sqlx::query_scalar::<_, Option<Uuid>>(
+        "SELECT mandatory_round_id FROM tournaments WHERE id = $1",
+    )
+    .bind(SEEDED_TOURNAMENT)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(mandatory_round_id, Some(SEEDED_ROUNDS[4]));
     let round_four_updated_at = sqlx::query_scalar::<_, chrono::DateTime<chrono::Utc>>(
         "SELECT updated_at FROM rounds WHERE id = $1",
     )
@@ -151,6 +159,14 @@ async fn development_seed_has_ready_idempotent_representative_pairings(pool: PgP
     .await
     .unwrap();
     run_seed(&pool).await;
+    let mandatory_after_rerun = sqlx::query_scalar::<_, Option<Uuid>>(
+        "SELECT mandatory_round_id FROM tournaments WHERE id = $1",
+    )
+    .bind(SEEDED_TOURNAMENT)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(mandatory_after_rerun, Some(SEEDED_ROUNDS[4]));
     let round_four_after_rerun = sqlx::query_scalar::<_, chrono::DateTime<chrono::Utc>>(
         "SELECT updated_at FROM rounds WHERE id = $1",
     )

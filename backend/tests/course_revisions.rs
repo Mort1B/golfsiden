@@ -406,6 +406,18 @@ async fn upgraded_deterministic_seed_is_backfilled_and_idempotently_finalized(po
     for migration in CURRENT_MIGRATIONS_AFTER_10 {
         sqlx::raw_sql(migration).execute(&pool).await.unwrap();
     }
+    let has_mandatory_round = sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS (
+           SELECT 1 FROM information_schema.columns
+           WHERE table_schema = current_schema()
+             AND table_name = 'tournaments'
+             AND column_name = 'mandatory_round_id'
+         )",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert!(!has_mandatory_round);
 
     for _ in 0..2 {
         sqlx::raw_sql(include_str!("../seed.sql"))

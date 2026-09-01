@@ -139,6 +139,31 @@ INSERT INTO rounds (id, tournament_id, round_number, name, round_date, course_id
 ('00000000-0000-0000-0000-000000004005', '00000000-0000-0000-0000-000000002001', 5, 'Finalen', '2026-09-14', '00000000-0000-0000-0000-000000003001', 'Fjord Golfklubb', '00000000-0000-0000-0000-000000003101', 'Gul', 'individual_stroke_play')
 ON CONFLICT (id) DO NOTHING;
 
+DO $seed_mandatory_round$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = 'tournaments'
+          AND column_name = 'mandatory_round_id'
+    ) THEN
+        PERFORM set_config('app.tournament_configuration_tournament_id',
+                           '00000000-0000-0000-0000-000000002001', true);
+        PERFORM set_config('app.tournament_configuration_user_id',
+                           '00000000-0000-0000-0000-000000000001', true);
+        EXECUTE $seed_sql$
+            UPDATE tournaments
+            SET mandatory_round_id = '00000000-0000-0000-0000-000000004005'
+            WHERE id = '00000000-0000-0000-0000-000000002001'
+              AND status = 'draft'
+              AND mandatory_round_id IS DISTINCT FROM
+                  '00000000-0000-0000-0000-000000004005'
+        $seed_sql$;
+    END IF;
+END;
+$seed_mandatory_round$;
+
 UPDATE rounds
 SET scoring_format = 'two_player_foursomes', handicap_allowance_percent = 50
 WHERE id = '00000000-0000-0000-0000-000000004004'

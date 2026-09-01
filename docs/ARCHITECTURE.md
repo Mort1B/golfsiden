@@ -33,13 +33,14 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   Round opening requires an active parent, but course and pairing configuration
   remain independently editable while their individual rounds are draft.
 - `tournaments.counted_rounds` is a required cross-column bounded configuration
-  fact. Existing tournaments were backfilled to count every configured round.
-  Creator onboarding persists an explicit value; the admin mutation uses
-  optimistic tournament time and the same round-before-tournament lock order as
-  opening. A transaction-context trigger verifies exact admin membership and the
-  durable first-opening marker, so tournament start or later deletion cannot
-  make the setting mutable again. Leaderboard selection consumes this field
-  independently for gross and net completed contributions.
+  fact. Nullable `mandatory_round_id` has a deferred composite foreign key to a
+  round in that same tournament. Creator onboarding preallocates round UUIDs so
+  both facts persist atomically; the admin mutation uses optimistic tournament
+  time and the same round-before-tournament lock order as opening. One database
+  trigger protects both fields with exact-admin context and the permanent
+  start/open/snapshot freeze. A mandatory round reserves one of N slots even
+  when its result is missing; gross and net independently select the remaining
+  completed contributions.
 - Course handicap uses exact tenths and rational arithmetic for `index * slope / 113 + rating - par`. Individual allowance is applied to the unrounded result before final rounding. Scramble caps each registered index at `36.0` before tee conversion; its member snapshots retain that effective index and rounded course handicap for the later team formula.
 - One closed round-format policy is the application source of truth for score-
   owner kind, exact team size, snapshot-handicap treatment, and team playing-
@@ -238,6 +239,9 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   and leaderboard collections also reject duplicate or internally incoherent
   identities. Runtime validation is a fail-closed cache boundary, not an
   authorization substitute.
+- A non-null mandatory-round identity is also composed with the exact decoded
+  tournament round collection before settings or leaderboard data enters the
+  query cache. Unknown or cross-target round identities fail closed.
 - Route shells key tournament, management, round, leaderboard, and invitation
   workspaces by their target identity. This makes correction/count drafts,
   mutation receipts and errors, and one-time invitation tokens target-local even
@@ -296,7 +300,7 @@ Implemented resources:
 | `GET` | `/api/auth/session` | Retrieve the current session and CSRF value |
 | `POST` | `/api/auth/logout` | Revoke and clear the current session |
 | `GET` | `/api/me/tournaments` | List the session user's tournament memberships and player links |
-| `PATCH` | `/api/tournaments/{tournament_id}/counted-rounds` | Update best-N round configuration before tournament start |
+| `PATCH` | `/api/tournaments/{tournament_id}/counted-rounds` | Atomically update best-N and optional mandatory-round configuration before tournament start |
 | `GET` | `/api/tournaments/{tournament_id}/course-catalog` | Search the bundled curated course shortlist as a tournament admin |
 | `GET` | `/api/tournaments/{tournament_id}/course-provider/courses/{provider_course_id}` | Retrieve normalized provider tee and hole detail as a tournament admin |
 | `POST` | `/api/onboarding/tournaments` | Atomically create a first-time creator, draft tournament plan, invitation, and session |

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { decodeRoundLeaderboard, decodeTournamentLeaderboard, leaderboardKeys } from './leaderboards'
+import { decodeRoundLeaderboard, decodeTournamentLeaderboard, leaderboardKeys, validateTournamentLeaderboardRounds } from './leaderboards'
 
 const seedTournamentId = '00000000-0000-0000-0000-000000002001'
 const seedRoundId = '00000000-0000-0000-0000-000000004001'
@@ -29,6 +29,7 @@ describe('leaderboard decoders', () => {
       tournament_id: seedTournamentId,
       metric: 'gross',
       required_counted_rounds: 3,
+      mandatory_round_id: null,
       current_round_id: null,
       included_round_ids: [],
       entries: [],
@@ -36,6 +37,11 @@ describe('leaderboard decoders', () => {
 
     expect(round.round_id).toBe(seedRoundId)
     expect(tournament.tournament_id).toBe(seedTournamentId)
+    expect(validateTournamentLeaderboardRounds(tournament, [])).toBe(tournament)
+    expect(() => validateTournamentLeaderboardRounds({
+      ...tournament,
+      mandatory_round_id: seedRoundId,
+    }, [])).toThrow('mandatory_round_id round identity')
   })
 
   it('decodes the complete best-N tournament contribution contract', () => {
@@ -48,6 +54,7 @@ describe('leaderboard decoders', () => {
       tournament_id: seedTournamentId,
       metric: 'net',
       required_counted_rounds: 2,
+      mandatory_round_id: seedRoundId,
       current_round_id: currentRoundId,
       included_round_ids: [seedRoundId, secondRoundId, thirdRoundId],
       entries: [{
@@ -72,6 +79,7 @@ describe('leaderboard decoders', () => {
           par_total: 72,
           score_to_par: -2,
           counted: true,
+          mandatory: true,
         }, {
           round_id: secondRoundId,
           owner: { type: 'player', id: playerId },
@@ -81,6 +89,7 @@ describe('leaderboard decoders', () => {
           par_total: 72,
           score_to_par: -1,
           counted: true,
+          mandatory: false,
         }, {
           round_id: thirdRoundId,
           owner: { type: 'player', id: playerId },
@@ -90,6 +99,7 @@ describe('leaderboard decoders', () => {
           par_total: 72,
           score_to_par: 1,
           counted: false,
+          mandatory: false,
         }],
         current_team: {
           round_id: currentRoundId,
@@ -115,6 +125,7 @@ describe('leaderboard decoders', () => {
       par_total: 72,
       score_to_par: -2,
       counted: true,
+      mandatory: true,
     })
   })
 
@@ -128,6 +139,7 @@ describe('leaderboard decoders', () => {
       par_total: 72,
       score_to_par: 0,
       counted: true,
+      mandatory: true,
     }
     const leaderboardEntry = {
       position: null,
@@ -149,6 +161,7 @@ describe('leaderboard decoders', () => {
       tournament_id: seedTournamentId,
       metric: 'gross',
       required_counted_rounds: 1,
+      mandatory_round_id: seedRoundId,
       current_round_id: null,
       included_round_ids: [seedRoundId],
       entries: [leaderboardEntry],
@@ -163,6 +176,17 @@ describe('leaderboard decoders', () => {
       ...base,
       entries: [{ ...leaderboardEntry, eligible: undefined }],
     }, seedTournamentId, 'gross')).toThrow('eligible')
+    expect(() => decodeTournamentLeaderboard({
+      ...base,
+      mandatory_round_id: undefined,
+    }, seedTournamentId, 'gross')).toThrow('mandatory_round_id')
+    expect(() => decodeTournamentLeaderboard({
+      ...base,
+      entries: [{
+        ...leaderboardEntry,
+        contributions: [{ ...contribution, mandatory: undefined }],
+      }],
+    }, seedTournamentId, 'gross')).toThrow('mandatory')
     expect(() => decodeTournamentLeaderboard({
       ...base,
       entries: [{
@@ -183,6 +207,7 @@ describe('leaderboard decoders', () => {
       par_total: 72,
       score_to_par: 0,
       counted: true,
+      mandatory: false,
     }
     const entry = {
       position: 1,
@@ -204,6 +229,7 @@ describe('leaderboard decoders', () => {
       tournament_id: seedTournamentId,
       metric: 'gross',
       required_counted_rounds: 1,
+      mandatory_round_id: null,
       current_round_id: null,
       included_round_ids: [seedRoundId],
       entries: [entry],
@@ -223,6 +249,19 @@ describe('leaderboard decoders', () => {
     }, seedTournamentId, 'gross')).toThrow('eligible')
     expect(() => decodeTournamentLeaderboard({
       ...base,
+      mandatory_round_id: seedRoundId,
+      entries: [{
+        ...entry,
+        contributions: [{ ...contribution, mandatory: true, counted: false }],
+        counted_contributions: 0,
+        eligible: false,
+        gross_total: 0,
+        net_total: 0,
+        par_total: 0,
+      }],
+    }, seedTournamentId, 'gross')).toThrow('counted_contributions')
+    expect(() => decodeTournamentLeaderboard({
+      ...base,
       entries: [{
         ...entry,
         contributions: [contribution, { ...contribution, counted: false }],
@@ -236,6 +275,17 @@ describe('leaderboard decoders', () => {
         contributions: [{ ...contribution, round_id: '00000000-0000-0000-0000-000000004099' }],
       }],
     }, seedTournamentId, 'gross')).toThrow('round_id')
+
+    expect(decodeTournamentLeaderboard({
+      ...base,
+      required_counted_rounds: 2,
+      mandatory_round_id: '00000000-0000-0000-0000-000000004002',
+      entries: [{
+        ...entry,
+        counted_contributions: 1,
+        eligible: false,
+      }],
+    }, seedTournamentId, 'gross').entries[0]?.eligible).toBe(false)
   })
 
   it('rejects incoherent included, current-round, and player-owner identities', () => {
@@ -251,6 +301,7 @@ describe('leaderboard decoders', () => {
       par_total: 72,
       score_to_par: 0,
       counted: true,
+      mandatory: false,
     }
     const entry = {
       position: 1,
@@ -272,6 +323,7 @@ describe('leaderboard decoders', () => {
       tournament_id: seedTournamentId,
       metric: 'gross',
       required_counted_rounds: 1,
+      mandatory_round_id: null,
       current_round_id: currentRoundId,
       included_round_ids: [seedRoundId],
       entries: [entry],
@@ -320,6 +372,7 @@ describe('leaderboard decoders', () => {
       par_total: 72,
       score_to_par: 0,
       counted: true,
+      mandatory: false,
     }
     const entry = {
       position: 1,
@@ -341,6 +394,7 @@ describe('leaderboard decoders', () => {
       tournament_id: seedTournamentId,
       metric: 'gross',
       required_counted_rounds: 1,
+      mandatory_round_id: null,
       current_round_id: null,
       included_round_ids: [seedRoundId],
       entries: [entry],

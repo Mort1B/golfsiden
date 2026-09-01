@@ -65,6 +65,7 @@ pub fn build_tournament_leaderboard(
                 round_number: round.round.round_number,
                 value: TournamentContribution {
                     round_id: round.round.round_id,
+                    mandatory: facts.mandatory_round_id == Some(round.round.round_id),
                     owner: entry.owner,
                     owner_name: entry.owner_name,
                     gross_total: entry.gross_total,
@@ -104,7 +105,12 @@ pub fn build_tournament_leaderboard(
             let mut candidates = contributions
                 .remove(&participant.player_id)
                 .unwrap_or_default();
-            select_best(&mut candidates, facts.counted_rounds, metric);
+            select_best(
+                &mut candidates,
+                facts.counted_rounds,
+                facts.mandatory_round_id,
+                metric,
+            );
             let completed_rounds = candidates.len();
             let counted_contributions = candidates.iter().filter(|item| item.value.counted).count();
             let (gross_total, net_total, par_total) = candidates
@@ -129,7 +135,7 @@ pub fn build_tournament_leaderboard(
                 status: participant.status,
                 completed_rounds,
                 counted_contributions,
-                eligible: completed_rounds >= facts.counted_rounds,
+                eligible: counted_contributions == facts.counted_rounds,
                 gross_total,
                 net_total,
                 par_total,
@@ -144,6 +150,7 @@ pub fn build_tournament_leaderboard(
         tournament_id: facts.tournament_id,
         metric,
         required_counted_rounds: facts.counted_rounds,
+        mandatory_round_id: facts.mandatory_round_id,
         current_round_id: current_round.map(|round| round.round.round_id),
         included_round_ids: included.iter().map(|round| round.round.round_id).collect(),
         entries,

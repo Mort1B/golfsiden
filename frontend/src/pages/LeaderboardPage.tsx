@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
-import { leaderboardKeys } from '../api/leaderboards'
+import { leaderboardKeys, validateTournamentLeaderboardRounds } from '../api/leaderboards'
 import { tournamentKeys } from '../api/tournaments'
 import { LeaderboardControls } from '../features/leaderboards/LeaderboardControls'
 import { RoundStandings } from '../features/leaderboards/RoundStandings'
@@ -48,8 +48,16 @@ export function LeaderboardPage() {
   })
   const tournamentLeaderboardQuery = useQuery({
     queryKey: leaderboardKeys.tournament(userId, tournamentId, metric),
-    queryFn: () => api.tournamentLeaderboard(tournamentId, metric),
-    enabled: scope === 'tournament' && tournamentId.length > 0,
+    queryFn: async () => {
+      const targetRounds = roundsQuery.data
+      if (targetRounds === undefined) throw new Error('Rundedata må lastes før turneringsresultater.')
+      const leaderboard = await api.tournamentLeaderboard(tournamentId, metric)
+      return validateTournamentLeaderboardRounds(leaderboard, targetRounds)
+    },
+    enabled: scope === 'tournament'
+      && tournamentId.length > 0
+      && roundsQuery.data !== undefined
+      && !roundsQuery.error,
   })
 
   if (tournamentsQuery.isPending) return <section className="page leaderboard-page"><LoadingState /></section>
@@ -116,11 +124,15 @@ export function LeaderboardPage() {
       )}
 
       {scope === 'round' && !roundsQuery.error && roundsQuery.isPending && <LoadingState />}
+      {scope === 'tournament' && roundsQuery.isPending && !activeQuery.isPending && <LoadingState />}
       {scope === 'round' && !roundsQuery.error && !roundsQuery.isPending && rounds.length === 0 && (
         <EmptyState>Turneringen har ingen runder ennå</EmptyState>
       )}
 
-      {activeQuery.isPending && !(scope === 'round' && (roundsQuery.isPending || rounds.length === 0)) && <LoadingState />}
+      {activeQuery.isPending
+        && !(scope === 'round' && (roundsQuery.isPending || rounds.length === 0))
+        && !(scope === 'tournament' && roundsQuery.error)
+        && <LoadingState />}
       {activeQuery.error && (
         <ErrorState error={activeQuery.error} onRetry={() => void activeQuery.refetch()} />
       )}
@@ -136,11 +148,11 @@ export function LeaderboardPage() {
         <RoundStandings leaderboard={roundLeaderboardQuery.data} />
       )}
 
-      {scope === 'tournament' && tournamentLeaderboardQuery.data?.entries.length === 0 && (
+      {scope === 'tournament' && !roundsQuery.isPending && !roundsQuery.error && tournamentLeaderboardQuery.data?.entries.length === 0 && (
         <EmptyState>Ingen spillere er registrert i turneringen</EmptyState>
       )}
-      {scope === 'tournament' && tournamentLeaderboardQuery.data && tournamentLeaderboardQuery.data.entries.length > 0 && (
-        <TournamentStandings leaderboard={tournamentLeaderboardQuery.data} />
+      {scope === 'tournament' && !roundsQuery.isPending && !roundsQuery.error && tournamentLeaderboardQuery.data && tournamentLeaderboardQuery.data.entries.length > 0 && (
+        <TournamentStandings leaderboard={tournamentLeaderboardQuery.data} rounds={rounds} />
       )}
     </section>
   )

@@ -56,7 +56,16 @@ struct ChangeTournamentHandicap {
 #[serde(deny_unknown_fields)]
 struct UpdateCountedRounds {
     counted_rounds: i16,
+    #[serde(deserialize_with = "deserialize_nullable_uuid")]
+    mandatory_round_id: Option<Uuid>,
     expected_tournament_updated_at: DateTime<Utc>,
+}
+
+fn deserialize_nullable_uuid<'de, D>(deserializer: D) -> Result<Option<Uuid>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<Uuid>::deserialize(deserializer)
 }
 
 #[derive(Deserialize)]
@@ -149,7 +158,7 @@ async fn update_counted_rounds(
 ) -> ApiResult<impl IntoResponse> {
     let Json(input) = input.map_err(|_| {
         ApiError::BadRequest(
-            "request must contain only counted_rounds and expected_tournament_updated_at"
+            "request must contain only counted_rounds, mandatory_round_id, and expected_tournament_updated_at"
                 .to_owned(),
         )
     })?;
@@ -163,6 +172,7 @@ async fn update_counted_rounds(
         authenticated.principal.session_id,
         tournament_id,
         input.counted_rounds,
+        input.mandatory_round_id,
         input.expected_tournament_updated_at,
     )
     .await
@@ -216,9 +226,12 @@ fn map_mutation_error(error: TournamentMutationError) -> ApiError {
         TournamentMutationError::CountedRoundsInvalid => ApiError::BadRequest(
             "counted_rounds must be between 1 and the tournament round count".to_owned(),
         ),
+        TournamentMutationError::MandatoryRoundInvalid => ApiError::BadRequest(
+            "mandatory_round_id must identify a round in the tournament".to_owned(),
+        ),
         TournamentMutationError::ConfigurationLocked => ApiError::DomainConflict {
             code: "tournament_configuration_locked",
-            message: "tournament configuration is locked after round opening",
+            message: "tournament configuration is locked after tournament start or round opening",
         },
         TournamentMutationError::ConfigurationStale => ApiError::DomainConflict {
             code: "tournament_configuration_stale",

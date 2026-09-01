@@ -76,6 +76,15 @@
   color: #17201c;
 }
 
+.mandatory-round-choice label {
+  grid-template-columns: 1fr;
+}
+
+.mandatory-round-choice select {
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
 .counted-rounds-choice p {
   color: #68736c;
   font-size: .78rem;

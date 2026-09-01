@@ -18,6 +18,7 @@ pub async fn update_counted_rounds_authorized(
     session_id: Uuid,
     tournament_id: Uuid,
     counted_rounds: i16,
+    mandatory_round_id: Option<Uuid>,
     expected_updated_at: DateTime<Utc>,
 ) -> Result<UpdateCountedRoundsResult, TournamentMutationError> {
     let likely_admin = sqlx::query_scalar::<_, bool>(
@@ -49,7 +50,7 @@ pub async fn update_counted_rounds_authorized(
 
     let mut transaction = pool.begin().await?;
 
-    sqlx::query_scalar::<_, Uuid>(
+    let round_ids = sqlx::query_scalar::<_, Uuid>(
         "SELECT id FROM rounds
          WHERE tournament_id = $1
          ORDER BY id
@@ -77,6 +78,9 @@ pub async fn update_counted_rounds_authorized(
     if counted_rounds < 1 || counted_rounds > tournament.number_of_rounds {
         return Err(TournamentMutationError::CountedRoundsInvalid);
     }
+    if mandatory_round_id.is_some_and(|id| !round_ids.contains(&id)) {
+        return Err(TournamentMutationError::MandatoryRoundInvalid);
+    }
     let locked = tournament.status != TournamentStatus::Draft
         || sqlx::query_scalar::<_, bool>(
             "SELECT EXISTS (
@@ -98,7 +102,9 @@ pub async fn update_counted_rounds_authorized(
     if tournament.updated_at != expected_updated_at {
         return Err(TournamentMutationError::ConfigurationStale);
     }
-    if tournament.counted_rounds == counted_rounds {
+    if tournament.counted_rounds == counted_rounds
+        && tournament.mandatory_round_id == mandatory_round_id
+    {
         transaction.commit().await?;
         return Ok(UpdateCountedRoundsResult {
             tournament,
@@ -117,12 +123,13 @@ pub async fn update_counted_rounds_authorized(
     .await?;
 
     let tournament = sqlx::query_as::<_, Tournament>(&format!(
-        "UPDATE tournaments SET counted_rounds = $2
+        "UPDATE tournaments SET counted_rounds = $2, mandatory_round_id = $3
          WHERE id = $1
          RETURNING {COLUMNS}"
     ))
     .bind(tournament_id)
     .bind(counted_rounds)
+    .bind(mandatory_round_id)
     .fetch_one(&mut *transaction)
     .await?;
     transaction.commit().await?;

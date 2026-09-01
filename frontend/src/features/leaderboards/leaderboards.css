@@ -25,6 +25,8 @@
 .leaderboard-identity h2 { overflow-wrap: anywhere; font-size: .94rem; line-height: 1.25; }
 .leaderboard-progress, .leaderboard-members { display: flex; align-items: flex-start; gap: 5px; margin-top: 5px; color: #68736c; font-size: .72rem; line-height: 1.35; overflow-wrap: anywhere; }
 .leaderboard-progress svg, .leaderboard-members svg { width: 14px; height: 14px; flex: 0 0 14px; }
+.leaderboard-mandatory { display: flex; align-items: flex-start; gap: 5px; margin-top: 5px; color: #365f49; font-size: .72rem; line-height: 1.35; overflow-wrap: anywhere; }
+.leaderboard-mandatory svg { width: 14px; height: 14px; flex: 0 0 14px; }
 .leaderboard-score { display: grid; justify-items: end; min-width: 0; text-align: right; }
 .leaderboard-score strong { font-size: 1.2rem; line-height: 1.1; }
 .leaderboard-score span { margin-top: 5px; color: #68736c; font-size: .66rem; line-height: 1.2; overflow-wrap: anywhere; }

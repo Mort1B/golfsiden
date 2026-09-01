@@ -12,7 +12,7 @@ use crate::{
     repositories::auth,
 };
 
-const TOURNAMENT_COLUMNS: &str = "id, name, description, start_date, end_date, number_of_rounds, counted_rounds, status, scoring_mode, created_at, updated_at";
+const TOURNAMENT_COLUMNS: &str = "id, name, description, start_date, end_date, number_of_rounds, counted_rounds, mandatory_round_id, status, scoring_mode, created_at, updated_at";
 const ROUND_COLUMNS: &str = "id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, status, handicap_enabled, handicap_allowance_percent, scoring_format, created_at, updated_at";
 
 #[derive(Debug, Error)]
@@ -87,10 +87,28 @@ pub async fn create(
     .map_err(classify_error)?;
 
     let tournament_id = Uuid::new_v4();
+    let round_ids = input
+        .rounds
+        .iter()
+        .map(|round| (round.round_number, Uuid::new_v4()))
+        .collect::<Vec<_>>();
+    let mandatory_round_id = match input.mandatory_round_number {
+        Some(required) => Some(
+            round_ids
+                .iter()
+                .find_map(|(number, id)| (*number == required).then_some(*id))
+                .ok_or_else(|| {
+                    OnboardingRepositoryError::Database(sqlx::Error::Protocol(
+                        "validated mandatory round was absent from the round plan".to_owned(),
+                    ))
+                })?,
+        ),
+        None => None,
+    };
     let tournament = sqlx::query_as::<_, Tournament>(&format!(
         "INSERT INTO tournaments
-           (id, name, description, start_date, end_date, number_of_rounds, counted_rounds, status, scoring_mode)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 'draft', $8)
+           (id, name, description, start_date, end_date, number_of_rounds, counted_rounds, mandatory_round_id, status, scoring_mode)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', $9)
          RETURNING {TOURNAMENT_COLUMNS}"
     ))
     .bind(tournament_id)
@@ -104,6 +122,7 @@ pub async fn create(
         ))
     })?)
     .bind(input.counted_rounds)
+    .bind(mandatory_round_id)
     .bind(input.scoring_mode)
     .fetch_one(&mut *transaction)
     .await
@@ -144,7 +163,7 @@ pub async fn create(
     .map_err(classify_error)?;
 
     let mut rounds = Vec::with_capacity(input.rounds.len());
-    for input_round in &input.rounds {
+    for (input_round, (_, round_id)) in input.rounds.iter().zip(round_ids) {
         let allowance =
             crate::domain::round_formats::RoundFormatPolicy::for_format(input_round.scoring_format)
                 .required_allowance_percent()
@@ -158,7 +177,7 @@ pub async fn create(
                      'draft', TRUE, $6, $7)
              RETURNING {ROUND_COLUMNS}"
         ))
-        .bind(Uuid::new_v4())
+        .bind(round_id)
         .bind(tournament_id)
         .bind(input_round.round_number)
         .bind(&input_round.name)

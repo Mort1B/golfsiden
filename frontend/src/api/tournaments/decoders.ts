@@ -142,6 +142,9 @@ export function decodeTournament(value: unknown, path = 'tournament'): Tournamen
     end_date: decodeDate(data.end_date, `${path}.end_date`, 'turneringsdata'),
     number_of_rounds: numberOfRounds,
     counted_rounds: decodeInteger(data.counted_rounds, `${path}.counted_rounds`, 1, numberOfRounds, 'turneringsdata'),
+    mandatory_round_id: data.mandatory_round_id === null
+      ? null
+      : decodeUuid(data.mandatory_round_id, `${path}.mandatory_round_id`, 'turneringsdata'),
     status: tournamentStatus(data.status, `${path}.status`),
     scoring_mode: scoringMode(data.scoring_mode, `${path}.scoring_mode`),
     created_at: decodeTimestamp(data.created_at, `${path}.created_at`, 'turneringsdata'),

@@ -177,6 +177,7 @@ fn facts(rounds: Vec<RoundLeaderboardFacts>, counted_rounds: usize) -> Tournamen
     TournamentLeaderboardFacts {
         tournament_id: id(1),
         counted_rounds,
+        mandatory_round_id: None,
         participants: vec![
             ParticipantFact {
                 player_id: id(1),
@@ -234,6 +235,91 @@ fn gross_and_net_select_independently_and_return_round_order() {
             .collect::<Vec<_>>(),
         vec![(id(101), false), (id(102), true), (id(103), true)]
     );
+}
+
+#[test]
+fn mandatory_round_reserves_a_slot_for_each_metric() {
+    let mut input = facts(
+        vec![
+            completed_round(1, &[(1, 4)]),
+            completed_round(2, &[(1, 3)]),
+            completed_round(3, &[(1, 5)]),
+        ],
+        2,
+    );
+    input.mandatory_round_id = Some(id(101));
+
+    let gross = build_tournament_leaderboard(&input, LeaderboardMetric::Gross).unwrap();
+    let net = build_tournament_leaderboard(&input, LeaderboardMetric::Net).unwrap();
+    for result in [&gross, &net] {
+        assert_eq!(result.mandatory_round_id, Some(id(101)));
+        let entry = &result.entries[0];
+        assert_eq!(entry.counted_contributions, 2);
+        assert!(entry.eligible);
+        let mandatory = entry
+            .contributions
+            .iter()
+            .find(|contribution| contribution.round_id == id(101))
+            .unwrap();
+        assert!(mandatory.mandatory && mandatory.counted);
+    }
+    assert_ne!(
+        gross.entries[0]
+            .contributions
+            .iter()
+            .find(|contribution| !contribution.mandatory && contribution.counted)
+            .map(|contribution| contribution.round_id),
+        net.entries[0]
+            .contributions
+            .iter()
+            .find(|contribution| !contribution.mandatory && contribution.counted)
+            .map(|contribution| contribution.round_id)
+    );
+}
+
+#[test]
+fn missing_mandatory_round_reserves_slot_and_n_one_counts_only_mandatory() {
+    let mut missing = facts(
+        vec![completed_round(1, &[(1, 4)]), completed_round(2, &[(1, 3)])],
+        2,
+    );
+    missing.mandatory_round_id = Some(id(103));
+    let result = build_tournament_leaderboard(&missing, LeaderboardMetric::Gross).unwrap();
+    assert_eq!(result.entries[0].counted_contributions, 1);
+    assert!(!result.entries[0].eligible);
+
+    let mut only_mandatory = facts(
+        vec![completed_round(1, &[(1, 3)]), completed_round(2, &[(1, 5)])],
+        1,
+    );
+    only_mandatory.mandatory_round_id = Some(id(102));
+    let result = build_tournament_leaderboard(&only_mandatory, LeaderboardMetric::Gross).unwrap();
+    let counted = result.entries[0]
+        .contributions
+        .iter()
+        .filter(|contribution| contribution.counted)
+        .collect::<Vec<_>>();
+    assert_eq!(counted.len(), 1);
+    assert_eq!(counted[0].round_id, id(102));
+    assert!(counted[0].mandatory);
+}
+
+#[test]
+fn n_one_missing_mandatory_with_optional_result_is_unranked() {
+    let mut input = facts(vec![completed_round(1, &[(1, 3)])], 1);
+    input.mandatory_round_id = Some(id(102));
+
+    let result = build_tournament_leaderboard(&input, LeaderboardMetric::Gross).unwrap();
+    let entry = result
+        .entries
+        .iter()
+        .find(|entry| entry.player_id == id(1))
+        .unwrap();
+    assert_eq!(entry.completed_rounds, 1);
+    assert_eq!(entry.counted_contributions, 0);
+    assert!(!entry.eligible);
+    assert_eq!(entry.position, None);
+    assert!(!entry.tied);
 }
 
 #[test]
@@ -306,11 +392,9 @@ fn duplicate_player_round_attribution_is_rejected() {
 
 #[test]
 fn foursomes_contribution_preserves_tagged_team_owner_for_each_frozen_member() {
-    let result = build_tournament_leaderboard(
-        &facts(vec![completed_foursomes_round(1)], 1),
-        LeaderboardMetric::Net,
-    )
-    .unwrap();
+    let mut input = facts(vec![completed_foursomes_round(1)], 1);
+    input.mandatory_round_id = Some(id(201));
+    let result = build_tournament_leaderboard(&input, LeaderboardMetric::Net).unwrap();
     for player_id in [id(1), id(2)] {
         let entry = result
             .entries
@@ -325,6 +409,7 @@ fn foursomes_contribution_preserves_tagged_team_owner_for_each_frozen_member() {
         assert_eq!(contribution.owner_name, "Frozen pair");
         assert_eq!((contribution.gross_total, contribution.net_total), (10, 8));
         assert!(contribution.counted);
+        assert!(contribution.mandatory);
     }
 }
 

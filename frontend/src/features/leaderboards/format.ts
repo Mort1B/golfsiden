@@ -33,3 +33,7 @@ export function bestRoundsProgressLabel(entry: TournamentLeaderboardEntry, requi
   const eligibility = entry.eligible ? 'Kvalifisert' : 'Ikke kvalifisert ennå'
   return `Beste ${requiredCount} · ${entry.counted_contributions} av ${requiredCount} tellende · ${completed} · ${eligibility}`
 }
+
+export function mandatoryRoundProgressLabel(roundName: string, completed: boolean): string {
+  return `${roundName}: ${completed ? 'fullført' : 'mangler'}`
+}

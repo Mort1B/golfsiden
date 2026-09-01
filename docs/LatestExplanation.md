@@ -1,57 +1,56 @@
 # Latest explanation
 
-## Tournament targets are verified before frontend caching
+## A mandatory round reserves one of best N
 
-User-owned query keys already separated sessions and resource IDs, but several
-frontend decoders trusted the server's embedded tournament or round identity.
-That meant a mismatched response could be cached under the requested target even
-though backend authorization was correct. Tournament-local React state could also
-survive an A-to-B route change because React Router reused the page component.
+A tournament admin can now combine a normal best-N rule with one optional round
+that must count. In a four-round tournament using best three, selecting round
+four means every eligible gross or net total contains round four plus that
+metric's best two results from rounds one through three. If a player misses round
+four, only two optional results can count and the player remains ineligible.
 
-The API boundary now validates every relevant response against the requested
-tournament, round, player, owner, metric, invitation predecessor, and course-
-configuration target. Collections reject duplicate and internally incoherent
-identities. The former mixed tournament API module was split so decoding remains
-a focused responsibility, and the unchecked team assertion became a runtime
-decoder:
+The same rule covers the edge case where N is one: only the mandatory result can
+be ranked. Gross and net still choose their optional contributions independently,
+and team-owned results remain attributed to the exact frozen members of that
+round.
 
-```ts
-const round = decodeExpectedRound(value, roundId)
-if (round.tournament_id !== tournamentId) {
-  invalidData('rundedata', 'round.tournament_id identity')
-}
+```rust
+let optional_slots = if mandatory_round_id.is_some() {
+    required.saturating_sub(1)
+} else {
+    required
+};
 ```
 
-This applies to tournament detail and settings mutations, rosters, round lists
-and detail, teams, pairings, scorecards, round/tournament leaderboards, course
-configuration, and invitation administration. Invitation issue/rotation tokens
-are returned only after exact tournament validation; rotations additionally bind
-the returned predecessor to the requested invitation.
+## Configuration is atomic and permanently scoped
 
-## Transient state belongs to one route target
+Migration `0016` adds nullable `tournaments.mandatory_round_id` with a deferred
+same-tournament foreign key. The deferred constraint lets onboarding preallocate
+round UUIDs and create the tournament and its selected future round in one
+transaction, while rejecting cross-tournament IDs and direct deletion of a
+selected round.
 
-Tournament, management, round, leaderboard, and invitation pages now use keyed
-workspace components. Navigating within the SPA therefore remounts target-local
-handicap and counted-round drafts, mutation errors/receipts, pending invitation
-actions, and revealed one-time secrets. A request started in tournament A may
-finish after navigation, but its token cannot render in tournament B or reappear
-when returning to A.
+The existing configuration PATCH now requires counted N and an explicit UUID or
+JSON `null`. It locks the tournament's rounds first, reauthorizes the exact
+tournament admin, applies optimistic concurrency, and changes both facts or
+neither. Start, opening, or a captured handicap snapshot freezes the pair
+permanently. No-op requests preserve the timestamp and send no live event.
 
-Query ownership and authentication behavior remain unchanged: private keys are
-still rooted by session user, same-user background refreshes stay mounted, and
-SSE carries only invalidation signals for the exact live target. Client checks
-reject invalid data but never grant authority; the backend remains authoritative.
+The frontend mirrors that contract in creator onboarding and tournament
+settings. Stable draft keys keep the onboarding choice attached to the intended
+round and clear it when that round is removed. Settings and standings validate a
+non-null mandatory UUID against the exact decoded tournament round collection
+before caching it. Standings show the selected round by name as completed or
+missing in both gross and net views.
 
 ## Validation
 
-Focused and full frontend tests, strict typecheck, lint, production build, the
-Rust baseline, strict Clippy, and the full PostgreSQL suite passed. Chrome at
-375x812 and 1440x1000 used the same account independently registered in two
-tournaments and verified distinct rosters, handicaps, rounds, teams, cards,
-leaderboards, live targets, reset drafts, and delayed invitation completion.
-Loading, empty, populated, deliberate error, long-content, and keyboard-focus
-states were exercised without cross-target rendering or normal-run console and
-network failures.
+Automated backend, PostgreSQL, and frontend checks cover set, replace, clear,
+no-op, cross-target rejection, selection-versus-deletion races,
+start/open/snapshot freezing, onboarding removal, N=1, metric-specific selection,
+and both missing and completed label contracts. Chrome at phone and desktop sizes
+verified onboarding removal, an atomic settings save, a locked tournament, long
+names, gross/net switching, and the missing label with a clean console/network.
 
-No backend, schema, or scoring behavior changed. The next bounded product step is
-the optional mandatory counted round within best-N tournament standings.
+The next bounded roadmap step remains Phase 7 live best-N standings, final-nine
+blackout, and scorecard drilldowns. Additional play modes remain deferred until
+the roadmap, optimization, and security review are complete.

@@ -17,7 +17,7 @@ export function countedRoundsFailure(error: Error | null): CountedRoundsFailure 
     }
     if (error.code === 'tournament_configuration_locked') {
       return {
-        message: 'Valget er permanent låst fordi en runde har vært åpnet. Oppdaterte turneringsfakta er hentet.',
+        message: 'Valget er permanent låst fordi turneringen er startet, eller en runde har vært åpnet og konfigurasjonen er fryst. Oppdaterte turneringsfakta er hentet.',
         refetch: true,
       }
     }

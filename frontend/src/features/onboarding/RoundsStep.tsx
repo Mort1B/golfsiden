@@ -9,11 +9,13 @@ interface RoundsStepProps {
   tournament: TournamentDraft
   rounds: RoundDraft[]
   countedRounds: number
+  mandatoryRoundKey: string | null
   errors: FieldErrors
   onAdd: () => void
   onRemove: (key: string) => void
   onChange: (key: string, value: Partial<Omit<RoundDraft, 'key'>>) => void
   onCountedRounds: (value: number) => void
+  onMandatoryRound: (key: string | null) => void
   onBack: () => void
   onNext: () => void
   headingRef: RefObject<HTMLHeadingElement | null>
@@ -38,6 +40,23 @@ export function RoundsStep(props: RoundsStepProps) {
         </label>
         <p id="counted-rounds-help">Beste {props.countedRounds} av {props.rounds.length} runder teller i turneringen.</p>
         <FieldError id="counted-rounds-error">{props.errors['rounds.countedRounds']}</FieldError>
+      </div>
+      <div className="counted-rounds-choice mandatory-round-choice">
+        <label htmlFor="mandatory-round">
+          <span>Obligatorisk runde (valgfritt)</span>
+          <select
+            id="mandatory-round"
+            value={props.mandatoryRoundKey ?? ''}
+            aria-describedby="mandatory-round-help"
+            onChange={(event) => props.onMandatoryRound(event.target.value || null)}
+          >
+            <option value="">Ingen obligatorisk runde</option>
+            {props.rounds.map((round, index) => (
+              <option key={round.key} value={round.key}>Runde {index + 1}: {round.name || 'Uten navn'}</option>
+            ))}
+          </select>
+        </label>
+        <p id="mandatory-round-help">Den valgte runden bruker én av de {props.countedRounds} tellende plassene.</p>
       </div>
       <div className="round-editor-list">
         {props.rounds.map((round, index) => {

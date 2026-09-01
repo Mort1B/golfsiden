@@ -121,12 +121,13 @@ async fn tournament_read(
     sqlx::query(transaction_mode)
         .execute(&mut *transaction)
         .await?;
-    let counted_rounds =
-        sqlx::query_scalar::<_, i16>("SELECT counted_rounds FROM tournaments WHERE id = $1")
-            .bind(tournament_id)
-            .fetch_optional(&mut *transaction)
-            .await?
-            .ok_or(LeaderboardError::NotFound)?;
+    let (counted_rounds, mandatory_round_id) = sqlx::query_as::<_, (i16, Option<Uuid>)>(
+        "SELECT counted_rounds, mandatory_round_id FROM tournaments WHERE id = $1",
+    )
+    .bind(tournament_id)
+    .fetch_optional(&mut *transaction)
+    .await?
+    .ok_or(LeaderboardError::NotFound)?;
     let counted_rounds = usize::try_from(counted_rounds)
         .ok()
         .filter(|count| *count > 0)
@@ -164,6 +165,7 @@ async fn tournament_read(
         &TournamentLeaderboardFacts {
             tournament_id,
             counted_rounds,
+            mandatory_round_id,
             participants,
             rounds,
         },

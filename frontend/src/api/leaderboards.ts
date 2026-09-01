@@ -4,6 +4,7 @@ import type {
   LeaderboardMetric,
   LeaderboardOwner,
   ParticipantStatus,
+  Round,
   RoundLeaderboard,
   RoundLeaderboardEntry,
   RoundStatus,
@@ -23,6 +24,7 @@ import {
 } from './decoder'
 import { privateWorkspaceKeys } from './privateWorkspace'
 import { isScoringFormat } from './scoringFormats'
+import { validateMandatoryRound } from './mandatoryRounds'
 
 export const leaderboardKeys = {
   round: (userId: string, roundId: string, metric: LeaderboardMetric) =>
@@ -116,6 +118,7 @@ function tournamentContribution(value: unknown, path: string): TournamentContrib
     par_total: decodeInteger(data.par_total, `${path}.par_total`, undefined, undefined, 'resultatdata'),
     score_to_par: decodeInteger(data.score_to_par, `${path}.score_to_par`, undefined, undefined, 'resultatdata'),
     counted: decodeBoolean(data.counted, `${path}.counted`, 'resultatdata'),
+    mandatory: decodeBoolean(data.mandatory, `${path}.mandatory`, 'resultatdata'),
   }
 }
 
@@ -164,7 +167,14 @@ function validateTournamentCoherence(leaderboard: TournamentLeaderboard): void {
       || entry.counted_contributions > leaderboard.required_counted_rounds) {
       invalid(`${path}.counted_contributions`)
     }
-    if (entry.eligible !== (entry.completed_rounds >= leaderboard.required_counted_rounds)) {
+    const mandatoryContribution = entry.contributions.find((contribution) => contribution.mandatory)
+    if ((mandatoryContribution !== undefined && !mandatoryContribution.counted)
+      || (leaderboard.mandatory_round_id !== null
+        && mandatoryContribution === undefined
+        && entry.counted_contributions >= leaderboard.required_counted_rounds)) {
+      invalid(`${path}.counted_contributions`)
+    }
+    if (entry.eligible !== (entry.counted_contributions === leaderboard.required_counted_rounds)) {
       invalid(`${path}.eligible`)
     }
 
@@ -174,6 +184,9 @@ function validateTournamentCoherence(leaderboard: TournamentLeaderboard): void {
       if (contributionRoundIds.has(contribution.round_id)) invalid(`${contributionPath}.round_id`)
       contributionRoundIds.add(contribution.round_id)
       if (!includedRoundIds.has(contribution.round_id)) invalid(`${contributionPath}.round_id`)
+      if (contribution.mandatory !== (contribution.round_id === leaderboard.mandatory_round_id)) {
+        invalid(`${contributionPath}.mandatory`)
+      }
       if (contribution.owner.type === 'player' && contribution.owner.id !== entry.player_id) {
         invalid(`${contributionPath}.owner.id`)
       }
@@ -256,6 +269,9 @@ export function decodeTournamentLeaderboard(
     tournament_id: decodeUuid(data.tournament_id, 'leaderboard.tournament_id', 'resultatdata'),
     metric: metric(data.metric, 'leaderboard.metric'),
     required_counted_rounds: decodeInteger(data.required_counted_rounds, 'leaderboard.required_counted_rounds', 1, undefined, 'resultatdata'),
+    mandatory_round_id: data.mandatory_round_id === null
+      ? null
+      : decodeUuid(data.mandatory_round_id, 'leaderboard.mandatory_round_id', 'resultatdata'),
     current_round_id: data.current_round_id === null ? null : decodeUuid(data.current_round_id, 'leaderboard.current_round_id', 'resultatdata'),
     included_round_ids: decodeArray(data.included_round_ids, 'leaderboard.included_round_ids', (item, path) => decodeUuid(item, path, 'resultatdata'), 'resultatdata'),
     entries: decodeArray(data.entries, 'leaderboard.entries', tournamentEntry, 'resultatdata'),
@@ -263,4 +279,17 @@ export function decodeTournamentLeaderboard(
   if (decoded.tournament_id !== expectedTournamentId || decoded.metric !== expectedMetric) invalid('leaderboard.identity')
   validateTournamentCoherence(decoded)
   return decoded
+}
+
+export function validateTournamentLeaderboardRounds(
+  leaderboard: TournamentLeaderboard,
+  rounds: Round[],
+): TournamentLeaderboard {
+  validateMandatoryRound(
+    leaderboard.mandatory_round_id,
+    rounds,
+    'resultatdata',
+    'leaderboard.mandatory_round_id round identity',
+  )
+  return leaderboard
 }

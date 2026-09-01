@@ -143,6 +143,7 @@ fn patch(token: &str, counted_rounds: i16, expected: chrono::DateTime<Utc>) -> R
         .body(Body::from(
             json!({
                 "counted_rounds": counted_rounds,
+                "mandatory_round_id": null,
                 "expected_tournament_updated_at": expected,
             })
             .to_string(),
@@ -264,6 +265,7 @@ async fn patch_rejects_range_unknown_fields_and_missing_csrf_without_events(pool
         .body(Body::from(
             json!({
                 "counted_rounds": 2,
+                "mandatory_round_id": null,
                 "expected_tournament_updated_at": expected,
                 "extra": true,
             })
@@ -281,6 +283,7 @@ async fn patch_rejects_range_unknown_fields_and_missing_csrf_without_events(pool
         .body(Body::from(
             json!({
                 "counted_rounds": 2,
+                "mandatory_round_id": null,
                 "expected_tournament_updated_at": expected,
             })
             .to_string(),
@@ -361,6 +364,31 @@ async fn database_requires_admin_context_and_permanently_honors_opening_marker(p
     .execute(&pool)
     .await
     .unwrap();
+    let mut locked_direct = pool.begin().await.unwrap();
+    sqlx::query(
+        "SELECT
+           set_config('app.tournament_configuration_tournament_id', $1::text, true),
+           set_config('app.tournament_configuration_user_id', $2::text, true)",
+    )
+    .bind(TOURNAMENT)
+    .bind(ADMIN)
+    .execute(&mut *locked_direct)
+    .await
+    .unwrap();
+    let mandatory_denied =
+        sqlx::query("UPDATE tournaments SET mandatory_round_id = $2 WHERE id = $1")
+            .bind(TOURNAMENT)
+            .bind(uuid!("14000000-0000-0000-0000-000000000011"))
+            .execute(&mut *locked_direct)
+            .await
+            .unwrap_err();
+    assert_eq!(
+        mandatory_denied
+            .as_database_error()
+            .and_then(|error| error.constraint()),
+        Some("tournament_configuration_locked")
+    );
+    locked_direct.rollback().await.unwrap();
     sqlx::query("DELETE FROM rounds WHERE tournament_id = $1")
         .bind(TOURNAMENT)
         .execute(&pool)
@@ -402,11 +430,38 @@ async fn tournament_start_permanently_locks_configuration_before_round_opening(p
             .unwrap();
     assert!(started.changed);
 
+    let mut direct = pool.begin().await.unwrap();
+    sqlx::query(
+        "SELECT
+           set_config('app.tournament_configuration_tournament_id', $1::text, true),
+           set_config('app.tournament_configuration_user_id', $2::text, true)",
+    )
+    .bind(TOURNAMENT)
+    .bind(ADMIN)
+    .execute(&mut *direct)
+    .await
+    .unwrap();
+    let direct_mandatory =
+        sqlx::query("UPDATE tournaments SET mandatory_round_id = $2 WHERE id = $1")
+            .bind(TOURNAMENT)
+            .bind(uuid!("14000000-0000-0000-0000-000000000011"))
+            .execute(&mut *direct)
+            .await
+            .unwrap_err();
+    assert_eq!(
+        direct_mandatory
+            .as_database_error()
+            .and_then(|error| error.constraint()),
+        Some("tournament_configuration_locked")
+    );
+    direct.rollback().await.unwrap();
+
     let update = tournaments::update_counted_rounds_authorized(
         &pool,
         session_id,
         TOURNAMENT,
         2,
+        None,
         updated_at(&pool).await,
     )
     .await;
@@ -423,11 +478,37 @@ async fn tournament_start_permanently_locks_configuration_before_round_opening(p
     )
     .await
     .unwrap();
+    let mut after_open = pool.begin().await.unwrap();
+    sqlx::query(
+        "SELECT
+           set_config('app.tournament_configuration_tournament_id', $1::text, true),
+           set_config('app.tournament_configuration_user_id', $2::text, true)",
+    )
+    .bind(TOURNAMENT)
+    .bind(ADMIN)
+    .execute(&mut *after_open)
+    .await
+    .unwrap();
+    let direct_after_open =
+        sqlx::query("UPDATE tournaments SET mandatory_round_id = $2 WHERE id = $1")
+            .bind(TOURNAMENT)
+            .bind(uuid!("14000000-0000-0000-0000-000000000012"))
+            .execute(&mut *after_open)
+            .await
+            .unwrap_err();
+    assert_eq!(
+        direct_after_open
+            .as_database_error()
+            .and_then(|error| error.constraint()),
+        Some("tournament_configuration_locked")
+    );
+    after_open.rollback().await.unwrap();
     let permanently_locked = tournaments::update_counted_rounds_authorized(
         &pool,
         session_id,
         TOURNAMENT,
         2,
+        None,
         updated_at(&pool).await,
     )
     .await;

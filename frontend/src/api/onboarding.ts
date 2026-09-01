@@ -4,6 +4,7 @@ import { jsonRequest, requestDecoded } from './http'
 import { decodeRound, decodeTournament } from './tournaments'
 import type { Round, ScoringFormat, Tournament } from './types'
 import { defaultHandicapAllowanceForFormat, isTeamScoringFormat } from './scoringFormats'
+import { validateMandatoryRound } from './mandatoryRounds'
 
 export interface OnboardingRequest {
   creator: {
@@ -16,6 +17,7 @@ export interface OnboardingRequest {
     start_date: string
     end_date: string
     counted_rounds: number
+    mandatory_round_number: number | null
   }
   rounds: Array<{
     round_number: number
@@ -93,6 +95,12 @@ export function decodeOnboardingResponse(value: unknown): OnboardingResponse {
     invalidData('opprettingsdata', 'onboarding.creator.session_identity')
   }
   validateCreatedDefaults(tournament, rounds, session)
+  validateMandatoryRound(
+    tournament.mandatory_round_id,
+    rounds,
+    'opprettingsdata',
+    'onboarding.tournament.mandatory_round_id',
+  )
   return {
     tournament,
     rounds,

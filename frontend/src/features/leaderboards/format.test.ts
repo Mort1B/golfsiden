@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TournamentLeaderboardEntry } from '../../api/types'
-import { bestRoundsProgressLabel, scoreToParLabel, scoringFormatLabel } from './format'
+import { bestRoundsProgressLabel, mandatoryRoundProgressLabel, scoreToParLabel, scoringFormatLabel } from './format'
 
 const entry: TournamentLeaderboardEntry = {
   position: 1,
@@ -41,5 +41,11 @@ describe('leaderboard format labels', () => {
       completed_rounds: 0,
       counted_contributions: 0,
     }, 3)).toContain('Ingen fullførte runder')
+  })
+
+  it('labels completed and missing mandatory rounds without truncating the name', () => {
+    const name = 'Finalerunden med et svært langt banenavn'
+    expect(mandatoryRoundProgressLabel(name, true)).toBe(`${name}: fullført`)
+    expect(mandatoryRoundProgressLabel(name, false)).toBe(`${name}: mangler`)
   })
 })

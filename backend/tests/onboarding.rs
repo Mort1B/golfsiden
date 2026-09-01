@@ -48,7 +48,8 @@ fn valid_request(username: &str) -> Value {
             "description": "Private tournament",
             "start_date": start,
             "end_date": end,
-            "counted_rounds": 1
+            "counted_rounds": 1,
+            "mandatory_round_number": 2
         },
         "rounds": [
             {
@@ -80,6 +81,7 @@ fn repository_input(username: &str, tournament_name: &str) -> ValidatedOnboardin
             start_date,
             end_date,
             counted_rounds: 1,
+            mandatory_round_number: None,
             rounds: vec![RoundInput {
                 round_number: 1,
                 name: "Opening round".to_owned(),
@@ -158,6 +160,10 @@ async fn onboarding_atomically_links_creator_rounds_invite_and_session(pool: PgP
 
     assert_eq!(body["tournament"]["number_of_rounds"], 2);
     assert_eq!(body["tournament"]["counted_rounds"], 1);
+    assert_eq!(
+        body["tournament"]["mandatory_round_id"],
+        body["rounds"][1]["id"]
+    );
     assert_eq!(body["tournament"]["scoring_mode"], "combined");
     assert_eq!(body["tournament"]["status"], "draft");
     assert_eq!(body["creator"]["tournament_role"], "admin");

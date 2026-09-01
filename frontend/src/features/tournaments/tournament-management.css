@@ -20,7 +20,9 @@
 .counted-rounds-editor h3 { font-size: .96rem; }
 .counted-rounds-editor > div:first-child p, .counted-rounds-state { margin-top: 3px; color: #68736c; font-size: .78rem; line-height: 1.45; }
 .counted-rounds-editor label { display: grid; gap: 5px; color: #4f5b54; font-size: .76rem; font-weight: 750; }
-.counted-rounds-editor select { min-width: 88px; min-height: 44px; padding: 7px 30px 7px 10px; border: 1px solid #aeb8b1; border-radius: 6px; background: #fff; color: #17201c; }
+.counted-rounds-fields { display: grid; grid-column: 1 / -1; grid-template-columns: minmax(100px, .55fr) minmax(0, 1.45fr); gap: 14px; }
+.counted-rounds-fields select { width: 100%; }
+.counted-rounds-editor select { min-width: 88px; max-width: min(100%, 320px); min-height: 44px; padding: 7px 30px 7px 10px; border: 1px solid #aeb8b1; border-radius: 6px; background: #fff; color: #17201c; text-overflow: ellipsis; }
 .counted-rounds-save, .counted-rounds-message button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 7px; padding: 8px 12px; border: 1px solid #176640; border-radius: 6px; background: #176640; color: #fff; font-weight: 800; }
 .counted-rounds-save:disabled { cursor: not-allowed; opacity: .58; }
 .counted-rounds-save svg, .counted-rounds-message svg, .counted-rounds-receipt svg { width: 17px; flex: 0 0 auto; }
@@ -81,7 +83,8 @@
 
 @media (max-width: 420px) {
   .counted-rounds-editor { grid-template-columns: 1fr; align-items: stretch; }
-  .counted-rounds-editor label { grid-template-columns: minmax(0, 1fr) 88px; align-items: center; }
+  .counted-rounds-editor label { grid-template-columns: 1fr; align-items: stretch; }
+  .counted-rounds-fields { grid-template-columns: 1fr; }
   .counted-rounds-save { width: 100%; }
   .tournament-start-action { width: 100%; }
 }

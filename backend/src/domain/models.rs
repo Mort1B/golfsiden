@@ -68,6 +68,7 @@ pub struct Tournament {
     pub end_date: NaiveDate,
     pub number_of_rounds: i16,
     pub counted_rounds: i16,
+    pub mandatory_round_id: Option<Uuid>,
     pub status: TournamentStatus,
     pub scoring_mode: ScoringMode,
     pub created_at: DateTime<Utc>,

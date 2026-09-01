@@ -13,6 +13,7 @@ export interface Tournament {
   end_date: string
   number_of_rounds: number
   counted_rounds: number
+  mandatory_round_id: string | null
   status: TournamentStatus
   scoring_mode: ScoringMode
   created_at: string
@@ -143,6 +144,7 @@ export interface TournamentContribution {
   par_total: number
   score_to_par: number
   counted: boolean
+  mandatory: boolean
 }
 
 export interface TournamentLeaderboardEntry {
@@ -166,6 +168,7 @@ export interface TournamentLeaderboard {
   tournament_id: string
   metric: LeaderboardMetric
   required_counted_rounds: number
+  mandatory_round_id: string | null
   current_round_id: string | null
   included_round_ids: string[]
   entries: TournamentLeaderboardEntry[]

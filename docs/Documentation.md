@@ -254,9 +254,12 @@ One transaction creates the linked player and global `player` account, both
 initial handicap histories, draft tournament, tournament-admin membership,
 entrant, all draft rounds, hashed invitation, and hashed session. The server
 derives round count and the individual/team/combined tournament scoring mode.
-The creator chooses how many rounds count; the wizard defaults to all configured
-rounds, preserves a smaller explicit best-N choice while rounds are edited, and
-submits `counted_rounds` within `1..=number_of_rounds`.
+The creator chooses how many rounds count and may select one optional mandatory
+round. The wizard defaults to all configured rounds, preserves a smaller
+explicit best-N choice while rounds are edited, clears a mandatory selection if
+that draft round is removed, and submits `counted_rounds` plus the selected
+`mandatory_round_number`. The backend maps that number to a preallocated round
+UUID inside the creation transaction.
 Individual and scramble rounds retain their existing default allowance. A
 foursomes round is created with the required 50% allowance; no separate allowance
 editor is exposed by onboarding.
@@ -330,15 +333,17 @@ read and invitation mutation remains protected by backend membership policy.
 The workspace provides semantic anchors for settings, entrants, invitations,
 rounds, courses, pairings, and lifecycle. Most sections report only facts already
 preserved by the existing private APIs and link to the invitation and round
-surfaces. Settings exposes “Tellende runder” while the tournament and every
-existing round remain draft. `PATCH /api/tournaments/{tournament_id}/counted-rounds` requires the
-current tournament timestamp, CSRF, and exact tournament-admin membership. It
-locks the round set before the tournament, rejects stale writes, and permanently
-freezes the value when the tournament starts or a legacy round has already
+surfaces. Settings exposes “Tellende runder” and an optional mandatory-round
+selector while the tournament and every existing round remain draft. `PATCH
+/api/tournaments/{tournament_id}/counted-rounds` requires an explicit
+`mandatory_round_id` UUID or JSON `null` together with counted N, the current
+tournament timestamp, CSRF, and exact tournament-admin membership. It locks the
+round set before the tournament, rejects cross-tournament IDs and stale writes,
+and permanently freezes both values when the tournament starts or a round has
 opened. PostgreSQL independently requires the admin workflow context and uses
-the durable opening marker even if child rows are later removed. Success returns
-the authoritative private tournament and publishes one payload-free invalidation
-after commit.
+durable opening/snapshot markers even if later data is removed. An unchanged
+pair preserves `updated_at` and emits no event; a real change returns the
+authoritative private tournament and publishes one post-commit invalidation.
 
 The Lifecycle section exposes `Start turneringen` only to the exact tournament
 admin. `POST /api/tournaments/{tournament_id}/start` requires CSRF plus the
@@ -622,15 +627,19 @@ Tournament leaderboards are available at
 `GET /api/tournaments/{tournament_id}/leaderboards/gross` and `/net`. They include
 all registered players, including withdrawn and zero-result entries, but aggregate
 only completed or locked rounds. Each metric independently selects the configured
-best N score-to-par contributions. Players with fewer counted results rank behind
+best N score-to-par contributions. When configured, the mandatory round always
+uses one of N slots. A completed mandatory result counts regardless of score;
+the metric selects only the best N - 1 other results. If it is missing, no extra
+optional result fills that slot and the player remains ineligible. With N = 1,
+only the mandatory result can be ranked. Players with fewer counted results rank behind
 players with more until they reach N; equal counted-result counts then compare
 only the selected metric's score-to-par total. Competition ties ignore names and
 the other metric, while case-insensitive name and UUID stabilize display order.
 
-The response returns `required_counted_rounds` and every player's complete
+The response returns `required_counted_rounds`, nullable `mandatory_round_id`, and every player's complete
 round-ordered contribution history. Each contribution preserves its round ID,
 tagged player or team owner, owner name, gross/net/par totals, metric
-score-to-par, and counted state. Aggregate totals cover only the subset selected
+score-to-par, counted state, and mandatory flag. Aggregate totals cover only the subset selected
 for that requested metric. `completed_rounds`, `counted_contributions`, and
 `eligible` distinguish provisional players from those with N results. Individual
 results stay with their snapshot owner; scramble and foursomes results are
@@ -654,7 +663,8 @@ and gross/net selection in URL search parameters. Invalid or stale selections
 are replaced with a valid active/latest default before a leaderboard query is
 enabled, including validation that the selected round belongs to the selected
 tournament. Round rows distinguish unstarted, partial, complete, and confirmed
-cards; tournament rows retain registered players with zero completed rounds.
+cards; tournament rows retain registered players with zero completed rounds and
+label the named mandatory round as completed or missing in both metric views.
 
 Leaderboard responses cross a focused runtime decoder before entering TanStack
 Query. The decoder checks tagged owners, finite states, identifiers, nullability,
@@ -684,8 +694,9 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
   requires an explicit share-token contract.
 - Request throttling is not implemented, so the public onboarding and
   registration endpoints are not ready for an internet-facing deployment.
-- Tournament settings currently edit only the pre-start counted-round value and
-  expose the explicit tournament-start action; general tournament editing and
+- Tournament settings currently edit only the atomic pre-start best-N and
+  optional mandatory-round configuration and expose the explicit
+  tournament-start action; general tournament editing and
   later completion/archive controls remain unimplemented. The Courses section
   supports draft-round configuration; non-draft rounds are deliberately read-only.
 - Pairing roster reads, atomic admin replacement, the mobile draft editor,

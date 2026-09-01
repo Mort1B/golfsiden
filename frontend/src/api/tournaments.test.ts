@@ -18,6 +18,7 @@ const tournament: Tournament = {
   end_date: '2026-09-02',
   number_of_rounds: 2,
   counted_rounds: 1,
+  mandatory_round_id: null,
   status: 'draft',
   scoring_mode: 'combined',
   created_at: '2026-08-16T12:00:00Z',
@@ -56,6 +57,8 @@ describe('tournament memberships', () => {
     expect(() => decodeTournament({ ...tournament, counted_rounds: 0 })).toThrow('counted_rounds')
     expect(() => decodeTournament({ ...tournament, counted_rounds: 3 })).toThrow('counted_rounds')
     expect(() => decodeTournament({ ...tournament, counted_rounds: undefined })).toThrow('counted_rounds')
+    expect(() => decodeTournament({ ...tournament, mandatory_round_id: undefined })).toThrow('mandatory_round_id')
+    expect(() => decodeTournament({ ...tournament, mandatory_round_id: 'not-a-uuid' })).toThrow('mandatory_round_id')
   })
 
   it('uses stable hierarchical cache keys', () => {
@@ -140,12 +143,14 @@ describe('tournament memberships', () => {
   })
 
   it('patches counted rounds with the optimistic tournament timestamp', async () => {
-    const updated = { ...tournament, counted_rounds: 2, updated_at: '2026-08-16T13:00:00Z' }
+    const mandatoryRoundId = '00000000-0000-0000-0000-000000000010'
+    const updated = { ...tournament, counted_rounds: 2, mandatory_round_id: mandatoryRoundId, updated_at: '2026-08-16T13:00:00Z' }
     const fetchMock = vi.fn(async () => new Response(JSON.stringify(updated), { status: 200 }))
     vi.stubGlobal('fetch', fetchMock)
 
     await expect(tournamentApi.updateCountedRounds(tournament.id, {
       counted_rounds: 2,
+      mandatory_round_id: mandatoryRoundId,
       expected_tournament_updated_at: tournament.updated_at,
     }, 'csrf-token')).resolves.toEqual(updated)
 
@@ -155,6 +160,7 @@ describe('tournament memberships', () => {
       headers: { 'content-type': 'application/json', 'x-csrf-token': 'csrf-token' },
       body: JSON.stringify({
         counted_rounds: 2,
+        mandatory_round_id: mandatoryRoundId,
         expected_tournament_updated_at: tournament.updated_at,
       }),
     })
@@ -164,6 +170,7 @@ describe('tournament memberships', () => {
     }), { status: 200 }))
     await expect(tournamentApi.updateCountedRounds(tournament.id, {
       counted_rounds: 2,
+      mandatory_round_id: null,
       expected_tournament_updated_at: tournament.updated_at,
     }, 'csrf-token')).rejects.toThrow('identity')
   })

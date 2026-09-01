@@ -14,6 +14,7 @@ const response = {
     end_date: '2026-09-03',
     number_of_rounds: 1,
     counted_rounds: 1,
+    mandatory_round_id: null,
     status: 'draft',
     scoring_mode: 'individual',
     created_at: '2026-08-16T12:00:00Z',
@@ -68,6 +69,17 @@ describe('creator onboarding API', () => {
       ...response,
       creator: { ...response.creator, player_id: '00000000-0000-0000-0000-000000000099' },
     })).toThrow('session_identity')
+  })
+
+  it('requires a mandatory round id to identify a returned round', () => {
+    expect(decodeOnboardingResponse({
+      ...response,
+      tournament: { ...response.tournament, mandatory_round_id: response.rounds[0]?.id },
+    }).tournament.mandatory_round_id).toBe(response.rounds[0]?.id)
+    expect(() => decodeOnboardingResponse({
+      ...response,
+      tournament: { ...response.tournament, mandatory_round_id: '00000000-0000-0000-0000-000000000099' },
+    })).toThrow('mandatory_round_id')
   })
 
   it('rejects counted rounds outside the tournament range', () => {
@@ -153,7 +165,7 @@ describe('creator onboarding API', () => {
         account: { username: 'morten', password: 'et langt passord' },
         player: { display_name: 'Morten', handicap_index: 12.3 },
       },
-      tournament: { name: 'Høsttur', description: '', start_date: '2026-09-01', end_date: '2026-09-03', counted_rounds: 1 },
+      tournament: { name: 'Høsttur', description: '', start_date: '2026-09-01', end_date: '2026-09-03', counted_rounds: 1, mandatory_round_number: null },
       rounds: [{ round_number: 1, name: 'Åpningsrunde', round_date: '2026-09-01', scoring_format: 'individual_stroke_play' }],
     }
 

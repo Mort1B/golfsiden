@@ -19,6 +19,7 @@ pub struct OnboardingInput {
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
     pub counted_rounds: i16,
+    pub mandatory_round_number: Option<i16>,
     pub rounds: Vec<RoundInput>,
 }
 
@@ -41,6 +42,7 @@ pub struct ValidatedOnboarding {
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
     pub counted_rounds: i16,
+    pub mandatory_round_number: Option<i16>,
     pub scoring_mode: ScoringMode,
     pub invitation_expires_at: DateTime<Utc>,
     pub rounds: Vec<ValidatedRound>,
@@ -86,6 +88,12 @@ pub fn validate(
     let round_count = i16::try_from(input.rounds.len()).map_err(|_| "too many rounds")?;
     if input.counted_rounds < 1 || input.counted_rounds > round_count {
         return Err("tournament.counted_rounds must be between 1 and the round count");
+    }
+    if input
+        .mandatory_round_number
+        .is_some_and(|round_number| !(1..=round_count).contains(&round_number))
+    {
+        return Err("tournament.mandatory_round_number must identify a configured round");
     }
 
     input.rounds.sort_by_key(|round| round.round_number);
@@ -143,6 +151,7 @@ pub fn validate(
         start_date: input.start_date,
         end_date: input.end_date,
         counted_rounds: input.counted_rounds,
+        mandatory_round_number: input.mandatory_round_number,
         scoring_mode,
         invitation_expires_at: DateTime::from_naive_utc_and_offset(expiry_naive, Utc),
         rounds,
@@ -171,6 +180,7 @@ mod tests {
             start_date: NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
             end_date: NaiveDate::from_ymd_opt(2026, 9, 3).unwrap(),
             counted_rounds: 2,
+            mandatory_round_number: None,
             rounds: vec![
                 RoundInput {
                     round_number: 2,
@@ -195,6 +205,7 @@ mod tests {
         assert_eq!(validated.username, "creator_1");
         assert_eq!(validated.scoring_mode, ScoringMode::Combined);
         assert_eq!(validated.counted_rounds, 2);
+        assert_eq!(validated.mandatory_round_number, None);
         assert_eq!(validated.rounds[0].round_number, 1);
         assert_eq!(
             validated.invitation_expires_at.to_rfc3339(),
@@ -210,6 +221,10 @@ mod tests {
 
         let mut input = valid_input();
         input.counted_rounds = 3;
+        assert!(validate(input, NaiveDate::from_ymd_opt(2026, 8, 16).unwrap()).is_err());
+
+        let mut input = valid_input();
+        input.mandatory_round_number = Some(3);
         assert!(validate(input, NaiveDate::from_ymd_opt(2026, 8, 16).unwrap()).is_err());
 
         let mut input = valid_input();

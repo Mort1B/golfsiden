@@ -60,7 +60,8 @@ cargo run -p golf-api --bin seed
 ```
 
 The seed creates one admin identity, eight linked player accounts, one course
-with 18 holes, and a five-round draft tournament that is ready to start. After
+with 18 holes, and a five-round draft tournament whose final round is mandatory
+within its best-three standings. It is ready to start. After
 the admin starts the tournament in its management workspace, every seeded
 round's pairings are ready to open.
 Each round has two four-player flights starting on holes 1 and 10. Scramble
@@ -169,8 +170,9 @@ and payload-free event scope. The frontend rejects mismatched tournament, round,
 player, team, result, invitation, and course-configuration identities before
 caching or revealing them, and tournament-keyed workspaces discard drafts,
 mutation receipts, pending state, and one-time invitation secrets during SPA
-target changes. The optional mandatory counted-round rule is the next product
-milestone.
+target changes. Tournament admins can atomically choose both best N and an
+optional mandatory round before start. That round permanently consumes one of N
+slots; a player who misses it cannot replace it with another result.
 
 Tournament creation now issues a reusable invitation secret, and admins can
 rotate or revoke links, but recovery from a lost one-time plaintext response

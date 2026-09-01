@@ -21,8 +21,9 @@ complete, as is the exhaustive round lifecycle, pairing, completion, authorizati
 and scorecard format-policy boundary, and the complete two-player foursomes
 format with preserved WHS team handicaps, and the phone-first writable-card
 selector optimization, and the persisted draft-only `counted_rounds`
-configuration boundary, and metric-specific completed best-N tournament
-contributions and the strict-Clippy lifecycle error-size repair are complete.
+configuration boundary, metric-specific completed best-N tournament
+contributions, the strict-Clippy lifecycle error-size repair, and the optional
+mandatory-round configuration and reserved best-N selection are complete.
 The exact-admin tournament-start lifecycle and hosted management action are also
 complete, including draft-only creation and concurrent lifecycle coverage.
 
@@ -39,7 +40,8 @@ membership is also mandatory for score-access reads, and the backend
 participation boundary is covered by a two-tournament player/team isolation
 fixture. Frontend target-coherent runtime decoding and tournament-keyed transient
 state now prevent cross-target cache or UI reuse during same-account navigation.
-No active implementation step is approved.
+There is no active implementation step. Phase 7 is the next bounded milestone
+and requires explicit approval before implementation.
 
 ## Product decisions
 
@@ -128,27 +130,6 @@ No active implementation step is approved.
   format begins before roadmap completion, optimization, and security review.
 
 ## Upcoming work
-
-### Mandatory counted round
-
-- Extend the pre-start counted-round configuration with one optional mandatory
-  round that must belong to the same tournament. The exact admin can select,
-  replace, or clear it only while tournament configuration is mutable; tournament
-  start or first round opening freezes it under PostgreSQL and repository guards.
-- Best-N selection always includes a completed mandatory contribution and fills
-  only the remaining `N - 1` slots by the requested metric. Gross and net may
-  still choose different remaining rounds. For `N = 1`, the mandatory round is
-  the sole counted contribution. A missing mandatory result keeps the player
-  provisionally behind eligible competitors and prevents final eligibility.
-- Expose the selection in onboarding and tournament settings with the configured
-  round names, and label the mandatory contribution in strict API/frontend
-  contracts. Cover invalid cross-tournament IDs, deletion/configuration races,
-  zero/one/many remaining slots, gross/net independence, changing team
-  attribution, and deterministic ties.
-- **Stop condition:** in a four-round tournament with `counted_rounds = 3`, an
-  admin can require round four before start; every eligible final aggregate counts
-  round four plus the metric-specific best two of rounds one through three, and
-  no player can replace a missing round-four result with another round.
 
 ### Phase 7: Live best-N standings, final-nine blackout, and scorecards
 

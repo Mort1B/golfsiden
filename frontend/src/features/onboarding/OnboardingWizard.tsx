@@ -5,7 +5,7 @@ import { ReviewStep } from './ReviewStep'
 import { RoundsStep } from './RoundsStep'
 import { TournamentStep } from './TournamentStep'
 import { hasErrors, validateAll, validateCreator, validateRounds, validateTournament, type FieldErrors } from './validation'
-import { addRound, createInitialDraft, localDateString, removeRound, updateCountedRounds, updateRound, type WizardDraft } from './wizardState'
+import { addRound, createInitialDraft, localDateString, removeRound, updateCountedRounds, updateMandatoryRound, updateRound, type WizardDraft } from './wizardState'
 import { useOnboardingSubmission } from './useOnboardingSubmission'
 
 type WizardStep = 0 | 1 | 2 | 3
@@ -82,7 +82,7 @@ export function OnboardingWizard({ onCreated }: { onCreated: () => void }) {
         {submission.state.error && <div className="submission-error" role="alert" tabIndex={-1} ref={submissionAlert}>{submission.state.error}</div>}
         <form ref={form} onSubmit={(event) => void submit(event)} noValidate>
           {step === 0 && <TournamentStep headingRef={heading} value={draft.tournament} errors={errors} onChange={(tournament) => setDraft({ ...draft, tournament })} onNext={() => advance(1)} />}
-          {step === 1 && <RoundsStep headingRef={heading} tournament={draft.tournament} rounds={draft.rounds} countedRounds={draft.countedRounds} errors={errors} onAdd={() => setDraft(addRound(draft))} onRemove={(key) => setDraft(removeRound(draft, key))} onChange={(key, value) => setDraft(updateRound(draft, key, value))} onCountedRounds={(value) => setDraft(updateCountedRounds(draft, value))} onBack={() => setStep(0)} onNext={() => advance(2)} />}
+          {step === 1 && <RoundsStep headingRef={heading} tournament={draft.tournament} rounds={draft.rounds} countedRounds={draft.countedRounds} mandatoryRoundKey={draft.mandatoryRoundKey} errors={errors} onAdd={() => setDraft(addRound(draft))} onRemove={(key) => setDraft(removeRound(draft, key))} onChange={(key, value) => setDraft(updateRound(draft, key, value))} onCountedRounds={(value) => setDraft(updateCountedRounds(draft, value))} onMandatoryRound={(key) => setDraft(updateMandatoryRound(draft, key))} onBack={() => setStep(0)} onNext={() => advance(2)} />}
           {step === 2 && <CreatorStep headingRef={heading} value={draft.creator} errors={errors} onChange={(creator) => setDraft({ ...draft, creator })} onBack={() => setStep(1)} onNext={() => advance(3)} />}
           {step === 3 && <ReviewStep headingRef={heading} draft={draft} onBack={() => setStep(2)} submitting={submission.state.status === 'submitting'} />}
         </form>

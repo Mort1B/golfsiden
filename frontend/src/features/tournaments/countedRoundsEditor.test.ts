@@ -44,7 +44,7 @@ describe('counted rounds editor state', () => {
     expect(countedRoundsFailure(new ApiHttpError(409, 'tournament_configuration_stale', 'stale')))
       .toMatchObject({ refetch: true, message: expect.stringContaining('endret et annet sted') })
     expect(countedRoundsFailure(new ApiHttpError(409, 'tournament_configuration_locked', 'locked')))
-      .toMatchObject({ refetch: true, message: expect.stringContaining('permanent låst') })
+      .toMatchObject({ refetch: true, message: expect.stringContaining('turneringen er startet') })
     expect(countedRoundsFailure(new ApiHttpError(500, 'internal_error', 'Serverfeil')))
       .toEqual({ refetch: false, message: 'Serverfeil' })
   })

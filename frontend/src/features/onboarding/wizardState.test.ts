@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addRound, createInitialDraft, removeRound, toOnboardingRequest, updateCountedRounds, updateRound } from './wizardState'
+import { addRound, createInitialDraft, removeRound, toOnboardingRequest, updateCountedRounds, updateMandatoryRound, updateRound } from './wizardState'
 import { hasErrors, validateAll } from './validation'
 
 describe('onboarding wizard state', () => {
@@ -42,6 +42,20 @@ describe('onboarding wizard state', () => {
     draft = removeRound(draft, removedKey)
     expect(draft.countedRounds).toBe(2)
     expect(draft.countedRoundsMode).toBe('all')
+  })
+
+  it('serializes a mandatory stable round key and clears it when removed', () => {
+    let draft = addRound(addRound(createInitialDraft('2026-09-01')))
+    const selectedKey = draft.rounds[1]?.key ?? ''
+    draft = updateMandatoryRound(draft, selectedKey)
+    expect(toOnboardingRequest({ ...draft, creator: { ...draft.creator, handicap: '0' } }).tournament.mandatory_round_number).toBe(2)
+
+    draft = removeRound(draft, draft.rounds[0]?.key ?? '')
+    expect(toOnboardingRequest({ ...draft, creator: { ...draft.creator, handicap: '0' } }).tournament.mandatory_round_number).toBe(1)
+
+    draft = removeRound(draft, selectedKey)
+    expect(draft.mandatoryRoundKey).toBeNull()
+    expect(toOnboardingRequest({ ...draft, creator: { ...draft.creator, handicap: '0' } }).tournament.mandatory_round_number).toBeNull()
   })
 
   it('serializes the exact nested contract without trimming the password', () => {

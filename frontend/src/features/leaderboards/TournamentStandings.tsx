@@ -1,6 +1,7 @@
-import { Users } from 'lucide-react'
-import type { LeaderboardMetric, TournamentLeaderboard, TournamentLeaderboardEntry } from '../../api/types'
-import { bestRoundsProgressLabel, metricLabel, positionLabel, roundsLabel, scoreToParLabel } from './format'
+import { Flag, Users } from 'lucide-react'
+import type { LeaderboardMetric, Round, TournamentLeaderboard, TournamentLeaderboardEntry } from '../../api/types'
+import { bestRoundsProgressLabel, mandatoryRoundProgressLabel, metricLabel, positionLabel, roundsLabel, scoreToParLabel } from './format'
+import { validateMandatoryRound } from '../../api/mandatoryRounds'
 
 function entryState(entry: TournamentLeaderboardEntry, requiredCount: number): string {
   const progress = bestRoundsProgressLabel(entry, requiredCount)
@@ -12,11 +13,13 @@ function TournamentRow({
   metric,
   hasCurrentRound,
   requiredCount,
+  mandatoryRoundName,
 }: {
   entry: TournamentLeaderboardEntry
   metric: LeaderboardMetric
   hasCurrentRound: boolean
   requiredCount: number
+  mandatoryRoundName: string | null
 }) {
   const total = metric === 'gross' ? entry.gross_total : entry.net_total
   const hasSelectedScore = entry.counted_contributions > 0
@@ -28,6 +31,15 @@ function TournamentRow({
       <div className="leaderboard-identity">
         <h2>{entry.display_name}</h2>
         <p className="leaderboard-progress">{entryState(entry, requiredCount)}</p>
+        {mandatoryRoundName !== null && (
+          <p className="leaderboard-mandatory">
+            <Flag aria-hidden="true" />
+            {mandatoryRoundProgressLabel(
+              mandatoryRoundName,
+              entry.contributions.some((contribution) => contribution.mandatory),
+            )}
+          </p>
+        )}
         {hasCurrentRound && (
           <p className="leaderboard-members">
             <Users aria-hidden="true" />{entry.current_team?.team_name ?? 'Ikke satt i lag i aktiv runde'}
@@ -42,7 +54,13 @@ function TournamentRow({
   )
 }
 
-export function TournamentStandings({ leaderboard }: { leaderboard: TournamentLeaderboard }) {
+export function TournamentStandings({ leaderboard, rounds }: { leaderboard: TournamentLeaderboard; rounds: Round[] }) {
+  const mandatoryRoundName = validateMandatoryRound(
+    leaderboard.mandatory_round_id,
+    rounds,
+    'resultatdata',
+    'leaderboard.mandatory_round_id round identity',
+  )?.name ?? null
   return (
     <div className="standings-section">
       <div className="standings-heading">
@@ -57,6 +75,7 @@ export function TournamentStandings({ leaderboard }: { leaderboard: TournamentLe
             metric={leaderboard.metric}
             hasCurrentRound={leaderboard.current_round_id !== null}
             requiredCount={leaderboard.required_counted_rounds}
+            mandatoryRoundName={mandatoryRoundName}
           />
         ))}
       </ol>

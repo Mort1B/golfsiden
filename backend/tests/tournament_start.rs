@@ -345,6 +345,7 @@ async fn start_and_counted_round_update_serialize_without_deadlock(pool: PgPool)
             session_id,
             TOURNAMENT_A,
             2,
+            Some(uuid!("15000000-0000-0000-0000-000000000032")),
             expected,
         )
         .await
@@ -373,14 +374,23 @@ async fn start_and_counted_round_update_serialize_without_deadlock(pool: PgPool)
         }
         _ => panic!("unexpected start/configuration race result"),
     }
-    let stored = sqlx::query_as::<_, (String, i16)>(
-        "SELECT status::text, counted_rounds FROM tournaments WHERE id = $1",
+    let stored = sqlx::query_as::<_, (String, i16, Option<Uuid>)>(
+        "SELECT status::text, counted_rounds, mandatory_round_id
+         FROM tournaments WHERE id = $1",
     )
     .bind(TOURNAMENT_A)
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert!(stored == ("active".to_owned(), 1) || stored == ("draft".to_owned(), 2));
+    assert!(
+        stored == ("active".to_owned(), 1, None)
+            || stored
+                == (
+                    "draft".to_owned(),
+                    2,
+                    Some(uuid!("15000000-0000-0000-0000-000000000032")),
+                )
+    );
 }
 
 #[sqlx::test(migrations = "../migrations")]
