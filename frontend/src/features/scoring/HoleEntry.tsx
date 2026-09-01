@@ -1,9 +1,9 @@
 import { Check, ChevronLeft, ChevronRight, Minus, Plus, RefreshCw, RotateCcw } from 'lucide-react'
-import type { ScorecardHole, ScorecardSummary } from '../../api/scorecards'
+import type { ScorecardHole, ScoringScorecard } from '../../api/scorecards'
 import type { ScoreSyncSnapshot } from './scoreCoordinator'
 
 interface HoleEntryProps {
-  card: ScorecardSummary
+  card: ScoringScorecard
   hole: ScorecardHole
   sync: ScoreSyncSnapshot
   canEdit: boolean
@@ -68,7 +68,7 @@ export function HoleEntry(props: HoleEntryProps) {
       <footer>
         <button type="button" disabled={props.navigationLocked || props.hole.hole_number === 1} onClick={props.onPrevious}><ChevronLeft aria-hidden="true" />Forrige</button>
         <span>{props.card.holes_scored} av {props.card.number_of_holes} registrert</span>
-        <button type="button" disabled={props.navigationLocked || props.hole.hole_number === props.card.number_of_holes} onClick={props.onNext}>Neste<ChevronRight aria-hidden="true" /></button>
+        <button type="button" disabled={props.navigationLocked || props.hole.hole_number === props.card.holes.length} onClick={props.onNext}>Neste<ChevronRight aria-hidden="true" /></button>
       </footer>
     </section>
   )

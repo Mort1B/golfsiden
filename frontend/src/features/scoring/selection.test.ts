@@ -10,6 +10,8 @@ import {
   scoreableRounds,
   selectedOwner,
   writableOwnerProgress,
+  canonicalVisibleHole,
+  ownerProgressLabel,
 } from './selection'
 
 function round(number: number, status: RoundStatus, format: ScoringFormat = 'individual_stroke_play'): Round {
@@ -88,6 +90,16 @@ describe('scoring selection', () => {
     ])
   })
 
+  it('labels restricted progress without inferring completion or confirmation', () => {
+    expect(ownerProgressLabel({
+      ...owner('player', 'hidden-player'),
+      holes_scored: 9,
+      required_holes: 9,
+      complete: null,
+      confirmed: null,
+    })).toBe('9/9 synlige hull')
+  })
+
   it('limits post-selection prefetch candidates to adjacent writable cards', () => {
     const owners = [owner('team', 'team-a'), owner('team', 'team-b'), owner('team', 'team-c')]
 
@@ -125,5 +137,12 @@ describe('scoring selection', () => {
     for (const action of ['tournament', 'round', 'owner', 'hole', 'view'] as const) {
       expect(replaceScoreHistory(action)).toBe(false)
     }
+  })
+
+  it('canonicalizes hidden or malformed hole targets into the visible prefix', () => {
+    expect(canonicalVisibleHole([1, 2, 3, 4, 5, 6, 7, 8, 9], 18)).toBe(9)
+    expect(canonicalVisibleHole([1, 2, 3, 4, 5, 6, 7, 8, 9], 6)).toBe(6)
+    expect(canonicalVisibleHole([1, 2, 3], undefined)).toBe(1)
+    expect(canonicalVisibleHole([], 10)).toBeUndefined()
   })
 })

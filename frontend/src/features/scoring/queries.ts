@@ -24,9 +24,8 @@ export async function invalidateScorecard(
   roundId: string,
   owner: ScoreOwner,
 ): Promise<void> {
-  await queryClient.invalidateQueries({
-    queryKey: scoringKeys.scorecard(userId, roundId, owner),
-    exact: true,
-    refetchType: 'none',
-  })
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: scoringKeys.read(userId, roundId, owner), exact: true, refetchType: 'none' }),
+    queryClient.invalidateQueries({ queryKey: scoringKeys.scoring(userId, roundId, owner), exact: true, refetchType: 'none' }),
+  ])
 }

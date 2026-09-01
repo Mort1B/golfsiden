@@ -1,7 +1,12 @@
 use serde::Serialize;
+use std::collections::HashMap;
 use uuid::Uuid;
 
-use super::{models::RoundStatus, scorecards::ScoreOwner};
+use super::{
+    models::RoundStatus,
+    score_visibility::{VisibilityMetadata, VisibilityMode},
+    scorecards::ScoreOwner,
+};
 
 #[derive(Debug, Clone)]
 pub struct OwnerProgressFact {
@@ -53,6 +58,64 @@ pub struct RoundCompletionValidation {
     pub ready_to_complete: bool,
     pub ready_to_lock: bool,
     pub issues: Vec<CompletionIssue>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct OwnerCompletionReadProgress {
+    pub owner: ScoreOwner,
+    pub owner_name: String,
+    pub holes_scored: i64,
+    pub required_holes: i16,
+    pub complete: Option<bool>,
+    pub confirmed: Option<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct RoundCompletionReadProjection {
+    pub round_id: Uuid,
+    pub status: RoundStatus,
+    pub owners: Vec<OwnerCompletionReadProgress>,
+    pub ready_to_complete: Option<bool>,
+    pub ready_to_lock: Option<bool>,
+    pub issues: Vec<CompletionIssue>,
+    pub visibility: VisibilityMetadata,
+}
+
+pub fn read_projection(
+    validation: RoundCompletionValidation,
+    visibility: VisibilityMetadata,
+    visible_holes: &HashMap<ScoreOwner, i64>,
+) -> RoundCompletionReadProjection {
+    let restricted = visibility.mode == VisibilityMode::FrontNine;
+    let owners = validation
+        .owners
+        .into_iter()
+        .map(|owner| OwnerCompletionReadProgress {
+            holes_scored: if restricted {
+                visible_holes.get(&owner.owner).copied().unwrap_or_default()
+            } else {
+                owner.holes_scored
+            },
+            required_holes: if restricted { 9 } else { owner.required_holes },
+            complete: (!restricted).then_some(owner.complete),
+            confirmed: (!restricted).then_some(owner.confirmed),
+            owner: owner.owner,
+            owner_name: owner.owner_name,
+        })
+        .collect();
+    RoundCompletionReadProjection {
+        round_id: validation.round_id,
+        status: validation.status,
+        owners,
+        ready_to_complete: (!restricted).then_some(validation.ready_to_complete),
+        ready_to_lock: (!restricted).then_some(validation.ready_to_lock),
+        issues: if restricted {
+            Vec::new()
+        } else {
+            validation.issues
+        },
+        visibility,
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

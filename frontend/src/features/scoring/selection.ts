@@ -48,6 +48,13 @@ export function writableOwnerProgress(
   })
 }
 
+export function ownerProgressLabel(owner: OwnerCompletionProgress): string {
+  if (owner.complete === null || owner.confirmed === null) return `${owner.holes_scored}/${owner.required_holes} synlige hull`
+  if (owner.confirmed) return 'Bekreftet'
+  if (owner.complete) return 'Klar for bekreftelse'
+  return `${owner.holes_scored}/${owner.required_holes} hull`
+}
+
 export function adjacentWritableOwners(
   owners: OwnerCompletionProgress[],
   selected: ScoreOwner,
@@ -71,6 +78,17 @@ export function parseHoleNumber(value: string | null): number | undefined {
   if (!value || !/^\d+$/.test(value)) return undefined
   const parsed = Number(value)
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined
+}
+
+export function canonicalVisibleHole(
+  visibleHoleNumbers: number[],
+  requested: number | undefined,
+): number | undefined {
+  const first = visibleHoleNumbers[0]
+  const last = visibleHoleNumbers[visibleHoleNumbers.length - 1]
+  if (first === undefined || last === undefined) return undefined
+  if (requested !== undefined && visibleHoleNumbers.includes(requested)) return requested
+  return requested !== undefined && requested > last ? last : first
 }
 
 export function scoringSearch(selection: ScoreSelection): URLSearchParams {

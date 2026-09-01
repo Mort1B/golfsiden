@@ -1,4 +1,4 @@
-import type { OwnerCompletionProgress, ScoreOwner, ScorecardHole, ScorecardSummary } from '../../api/scorecards'
+import type { OwnerCompletionProgress, ScoreOwner, ScorecardHole, ScoringScorecard } from '../../api/scorecards'
 import type { Round, Tournament } from '../../api/types'
 import { useAuth } from '../auth/authContext'
 import { useScoringGuard } from './scoringGuardContext'
@@ -19,7 +19,7 @@ interface ScoringExperienceProps {
   owners: OwnerCompletionProgress[]
   writableOwners: ScoreOwner[]
   selectedOwner: OwnerCompletionProgress
-  card: ScorecardSummary
+  card: ScoringScorecard
   hole: ScorecardHole
   view: ScoreView
   onTournament: (id: string) => void

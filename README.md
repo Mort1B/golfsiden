@@ -4,7 +4,9 @@ Mobile-first tournament software for a private annual golf trip. The current
 milestone includes atomic self-service tournament creation, revocable sessions,
 round-specific teams and flights, transactional draft pairing rosters, audited
 individual/scramble scorecards, deterministic round lifecycle operations, and
-live gross/net leaderboards.
+live gross/net leaderboards. Final-round holes 10–18 are hidden from every
+non-admin read projection until the database-owned release policy permits them;
+authorized scoring views remain available only for the exact writable card.
 
 ## Prerequisites
 
@@ -190,6 +192,14 @@ deferred. Every linked tournament player can score all eligible individual or
 team cards in their exact round flight; admins and scorers retain their full-
 tournament override. Flights are explicit and are never inferred from matching
 tee times or starting holes.
+
+Final-round read confidentiality is enforced across round standings, tournament
+standings, scorecards, and completion progress. Non-admin tournament standings
+omit a completed or locked final round while it is hidden, and member scorecard
+reads expose only front-nine-derived facts. The separate `/scoring` scorecard
+projection returns a full card only after exact write authorization. The
+frontend keeps read and scoring projections in distinct session-owned caches and
+refetches after the server-provided release interval.
 
 Migration `0009` removes account email after deterministically deriving usernames
 for existing accounts. Back up production data and retain the generated username

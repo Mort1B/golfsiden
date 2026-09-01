@@ -3,7 +3,11 @@ mod owners;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 
-use crate::domain::{models::RoundStatus, scoring::hole_net_score};
+use crate::domain::{
+    models::RoundStatus,
+    score_visibility::{VisibilityMetadata, VisibilityMode, unrestricted},
+    scoring::hole_net_score,
+};
 
 use self::owners::{OwnerSeed, build_owner_seeds};
 use super::{
@@ -14,6 +18,14 @@ use super::{
 pub fn build_round_leaderboard(
     facts: &RoundLeaderboardFacts,
     metric: LeaderboardMetric,
+) -> Result<RoundLeaderboard, LeaderboardError> {
+    build_round_leaderboard_projected(facts, metric, unrestricted(chrono::DateTime::UNIX_EPOCH))
+}
+
+pub fn build_round_leaderboard_projected(
+    facts: &RoundLeaderboardFacts,
+    metric: LeaderboardMetric,
+    visibility: VisibilityMetadata,
 ) -> Result<RoundLeaderboard, LeaderboardError> {
     let round = &facts.round;
     if round.number_of_holes < 1 {
@@ -33,6 +45,8 @@ pub fn build_round_leaderboard(
             scoring_format: round.scoring_format,
             metric,
             number_of_holes: round.number_of_holes as usize,
+            visible_hole_count: round.number_of_holes as usize,
+            visibility,
             entries: Vec::new(),
         });
     }
@@ -40,12 +54,22 @@ pub fn build_round_leaderboard(
     let holes = validated_holes(facts)?;
     let snapshots = validated_snapshots(facts)?;
     let owners = build_owner_seeds(facts, &snapshots)?;
-    let mut entries = assemble_entries(facts, &holes, owners)?;
+    let visible_hole_count = match visibility.mode {
+        VisibilityMode::Full => round.number_of_holes as usize,
+        VisibilityMode::FrontNine => 9,
+    };
+    let visible_hole_ids = facts
+        .holes
+        .iter()
+        .filter(|hole| usize::try_from(hole.hole_number).is_ok_and(|n| n <= visible_hole_count))
+        .map(|hole| hole.hole_id)
+        .collect::<HashSet<_>>();
+    let mut entries = assemble_entries(facts, &holes, &visible_hole_ids, owners, visibility.mode)?;
     if entries.is_empty() {
         return Err(LeaderboardError::InvalidStoredData);
     }
     if matches!(round.status, RoundStatus::Completed | RoundStatus::Locked)
-        && entries.iter().any(|entry| !entry.complete)
+        && entries.iter().any(|entry| entry.complete == Some(false))
     {
         return Err(LeaderboardError::InvalidStoredData);
     }
@@ -57,6 +81,8 @@ pub fn build_round_leaderboard(
         scoring_format: round.scoring_format,
         metric,
         number_of_holes: round.number_of_holes as usize,
+        visible_hole_count,
+        visibility,
         entries,
     })
 }
@@ -104,7 +130,9 @@ fn validated_snapshots(
 fn assemble_entries(
     facts: &RoundLeaderboardFacts,
     holes: &HashMap<uuid::Uuid, (i16, i16)>,
+    visible_hole_ids: &HashSet<uuid::Uuid>,
     owners: Vec<OwnerSeed<'_>>,
+    visibility: VisibilityMode,
 ) -> Result<Vec<RoundLeaderboardEntry>, LeaderboardError> {
     let owner_set = owners
         .iter()
@@ -138,6 +166,22 @@ fn assemble_entries(
         .into_iter()
         .map(|owner_seed| {
             let owner_scores = scores.remove(&owner_seed.owner).unwrap_or_default();
+            let full_holes_scored = owner_scores.len();
+            let full_complete = full_holes_scored == facts.round.number_of_holes as usize;
+            if confirmed.contains(&owner_seed.owner) && !full_complete {
+                return Err(LeaderboardError::InvalidStoredData);
+            }
+            if matches!(
+                facts.round.status,
+                RoundStatus::Completed | RoundStatus::Locked
+            ) && !full_complete
+            {
+                return Err(LeaderboardError::InvalidStoredData);
+            }
+            let owner_scores = owner_scores
+                .into_iter()
+                .filter(|score| visible_hole_ids.contains(&score.hole_id))
+                .collect::<Vec<_>>();
             let mut gross_total = 0;
             let mut net_total = 0;
             let mut par_played = 0;
@@ -155,10 +199,7 @@ fn assemble_entries(
                 par_played += i32::from(*par);
             }
             let holes_scored = owner_scores.len();
-            let complete = holes_scored == facts.round.number_of_holes as usize;
-            if confirmed.contains(&owner_seed.owner) && !complete {
-                return Err(LeaderboardError::InvalidStoredData);
-            }
+            let restricted = visibility == VisibilityMode::FrontNine;
             Ok(RoundLeaderboardEntry {
                 position: None,
                 tied: false,
@@ -167,8 +208,9 @@ fn assemble_entries(
                 members: owner_seed.members,
                 holes_scored,
                 number_of_holes: facts.round.number_of_holes as usize,
-                complete,
-                confirmed: complete && confirmed.contains(&owner_seed.owner),
+                complete: (!restricted).then_some(full_complete),
+                confirmed: (!restricted)
+                    .then_some(full_complete && confirmed.contains(&owner_seed.owner)),
                 playing_handicap: owner_seed.playing_handicap,
                 gross_total,
                 net_total,

@@ -77,6 +77,28 @@ pub async fn authorize_mutation(
     }
 }
 
+pub async fn authorize_scoring_read(
+    transaction: &mut Transaction<'_, Postgres>,
+    session_id: Uuid,
+    tournament_id: Uuid,
+    round_id: Uuid,
+    format: ScoringFormat,
+    owner: ScoreOwner,
+) -> Result<(), ScoreAuthorizationError> {
+    let principal = auth::lock_active_session(transaction, session_id)
+        .await?
+        .ok_or(ScoreAuthorizationError::Unauthenticated)?;
+    let role = membership_role(transaction, tournament_id, principal.user_id)
+        .await?
+        .ok_or(ScoreAuthorizationError::Forbidden)?;
+    let owners = resolve_owners(transaction, &principal, Some(role), round_id, format).await?;
+    if owners.contains(&owner) {
+        Ok(())
+    } else {
+        Err(ScoreAuthorizationError::Forbidden)
+    }
+}
+
 async fn round_context(
     connection: &mut PgConnection,
     round_id: Uuid,

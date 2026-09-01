@@ -46,7 +46,7 @@ describe('AuthProvider private cache transitions', () => {
     queryClient.setQueryData(authKeys.session, session('old-user'))
     queryClient.setQueryData(tournamentKeys.list('old-user'), [{ id: 'old-tour' }])
     queryClient.setQueryData(tournamentKeys.round('new-user', 'stale-round'), { id: 'stale-round' })
-    const oldScorecard = scoringKeys.scorecard('old-user', 'round-one', { type: 'player', id: 'player-one' })
+    const oldScorecard = scoringKeys.scoring('old-user', 'round-one', { type: 'player', id: 'player-one' })
     queryClient.setQueryData(oldScorecard, { gross_total: 72 })
 
     publishSessionTransition(queryClient, session('new-user'))
@@ -60,7 +60,7 @@ describe('AuthProvider private cache transitions', () => {
     const queryClient = new QueryClient()
     const current = session('same-user')
     const protectedKey = privateWorkspaceKeys.completion(current.user_id, 'current-round')
-    const scorecardKey = scoringKeys.scorecard(current.user_id, 'current-round', {
+    const scorecardKey = scoringKeys.read(current.user_id, 'current-round', {
       type: 'player',
       id: 'current-player',
     })

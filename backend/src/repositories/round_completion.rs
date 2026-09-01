@@ -1,15 +1,20 @@
+use std::collections::HashMap;
+
+use chrono::{DateTime, Utc};
 use sqlx::{FromRow, PgConnection, PgPool, Postgres, Transaction};
 use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
     domain::{
-        models::{Round, RoundStatus, ScoringFormat},
+        models::{Round, RoundStatus, ScoringFormat, TournamentRole},
         round_completion::{
-            CompletionFacts, OwnerProgressFact, RoundCompletionValidation, TransitionAction,
-            TransitionBlocker, transition_blocker, validate,
+            CompletionFacts, OwnerProgressFact, RoundCompletionReadProjection,
+            RoundCompletionValidation, TransitionAction, TransitionBlocker, read_projection,
+            transition_blocker, validate,
         },
         round_formats::{RoundFormatPolicy, ScoreOwnerKind},
+        score_visibility::{VisibilityFacts, visibility},
         scorecards::ScoreOwner,
     },
     repositories::tournament_authorization::{self, AuthorizationError},
@@ -48,6 +53,23 @@ struct OwnerProgressRow {
     confirmed: bool,
 }
 
+#[derive(Debug, FromRow)]
+struct ReadVisibilityRow {
+    tournament_id: Uuid,
+    round_number: i16,
+    status: RoundStatus,
+    number_of_holes: i16,
+    final_scores_hidden_until: Option<DateTime<Utc>>,
+    tournament_round_count: i16,
+}
+
+#[derive(Debug, FromRow)]
+struct VisibleScoreRow {
+    player_id: Option<Uuid>,
+    team_id: Option<Uuid>,
+    holes_scored: i64,
+}
+
 pub async fn validation(
     pool: &PgPool,
     round_id: Uuid,
@@ -66,19 +88,86 @@ pub async fn validation_for_member(
     pool: &PgPool,
     user_id: Uuid,
     round_id: Uuid,
-) -> Result<RoundCompletionValidation, AuthorizationError> {
+) -> Result<RoundCompletionReadProjection, AuthorizationError> {
     let mut transaction = pool.begin().await?;
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
         .execute(&mut *transaction)
         .await?;
-    tournament_authorization::require_round_member_read(&mut transaction, user_id, round_id)
-        .await?;
+    let context = sqlx::query_as::<_, ReadVisibilityRow>(
+        "SELECT r.tournament_id, r.round_number, r.status, r.number_of_holes,
+                r.final_scores_hidden_until, t.number_of_rounds AS tournament_round_count
+         FROM rounds r JOIN tournaments t ON t.id = r.tournament_id WHERE r.id = $1",
+    )
+    .bind(round_id)
+    .fetch_optional(&mut *transaction)
+    .await?
+    .ok_or(AuthorizationError::NotFound)?;
+    tournament_authorization::require_tournament_member_read(
+        &mut transaction,
+        user_id,
+        context.tournament_id,
+    )
+    .await?;
+    let role = sqlx::query_scalar::<_, TournamentRole>(
+        "SELECT role FROM tournament_memberships WHERE tournament_id = $1 AND user_id = $2 FOR SHARE",
+    )
+    .bind(context.tournament_id)
+    .bind(user_id)
+    .fetch_optional(&mut *transaction)
+    .await?
+    .ok_or(AuthorizationError::Forbidden)?;
     let validation = load_facts(&mut transaction, round_id, false)
         .await?
         .map(validate)
         .ok_or(AuthorizationError::NotFound)?;
+    let observed_at = sqlx::query_scalar("SELECT transaction_timestamp()")
+        .fetch_one(&mut *transaction)
+        .await?;
+    let metadata = completion_visibility(&context, role, observed_at);
+    let visible_holes = load_visible_holes(&mut transaction, round_id).await?;
+    let projection = read_projection(validation, metadata, &visible_holes);
     transaction.commit().await?;
-    Ok(validation)
+    Ok(projection)
+}
+
+fn completion_visibility(
+    context: &ReadVisibilityRow,
+    role: TournamentRole,
+    observed_at: DateTime<Utc>,
+) -> crate::domain::score_visibility::VisibilityMetadata {
+    visibility(VisibilityFacts {
+        role,
+        is_final_round: context.round_number == context.tournament_round_count,
+        status: context.status,
+        number_of_holes: context.number_of_holes,
+        hidden_until: context.final_scores_hidden_until,
+        observed_at,
+    })
+}
+
+async fn load_visible_holes(
+    connection: &mut PgConnection,
+    round_id: Uuid,
+) -> Result<HashMap<ScoreOwner, i64>, sqlx::Error> {
+    let rows = sqlx::query_as::<_, VisibleScoreRow>(
+        "SELECT s.player_id, s.team_id, count(*) AS holes_scored
+         FROM scores s
+         JOIN rounds r ON r.id = s.round_id
+         JOIN holes h ON h.id = s.hole_id AND h.tee_id = r.tee_id
+         WHERE s.round_id = $1 AND h.hole_number <= 9
+         GROUP BY s.player_id, s.team_id",
+    )
+    .bind(round_id)
+    .fetch_all(connection)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .filter_map(|row| match (row.player_id, row.team_id) {
+            (Some(id), None) => Some((ScoreOwner::Player { id }, row.holes_scored)),
+            (None, Some(id)) => Some((ScoreOwner::Team { id }, row.holes_scored)),
+            _ => None,
+        })
+        .collect())
 }
 
 pub async fn complete(pool: &PgPool, round_id: Uuid) -> Result<Round, RoundCompletionError> {
@@ -255,4 +344,34 @@ async fn load_team_owners(
             confirmed: row.confirmed,
         })
         .collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::TimeZone;
+
+    use super::*;
+    use crate::domain::score_visibility::VisibilityMode;
+
+    #[test]
+    fn completion_read_wiring_reveals_at_exact_database_deadline() {
+        let observed_at = Utc.with_ymd_and_hms(2026, 9, 2, 12, 0, 0).unwrap();
+        let mut context = ReadVisibilityRow {
+            tournament_id: Uuid::from_u128(1),
+            round_number: 4,
+            status: RoundStatus::Completed,
+            number_of_holes: 18,
+            final_scores_hidden_until: Some(observed_at),
+            tournament_round_count: 4,
+        };
+        assert_eq!(
+            completion_visibility(&context, TournamentRole::Player, observed_at).mode,
+            VisibilityMode::Full
+        );
+        context.final_scores_hidden_until = Some(observed_at + chrono::Duration::nanoseconds(1));
+        assert_eq!(
+            completion_visibility(&context, TournamentRole::Player, observed_at).mode,
+            VisibilityMode::FrontNine
+        );
+    }
 }

@@ -196,6 +196,15 @@ fn scorecard_request(
     .unwrap()
 }
 
+fn scoring_request(round_id: Uuid, owner_type: &str, owner_id: Uuid, user: Uuid) -> Request<Body> {
+    Request::get(format!(
+        "/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/scoring"
+    ))
+    .header("cookie", format!("golf_session={}", token_for_user(user)))
+    .body(Body::empty())
+    .unwrap()
+}
+
 fn token_for_user(user_id: Uuid) -> &'static str {
     match user_id {
         USER_A => "score-test-user-a-token",
@@ -479,6 +488,40 @@ async fn team_summary_and_api_conflicts_are_format_and_round_specific(pool: PgPo
     let body = response_json(summary).await;
     assert_eq!(body["playing_handicap"], 2);
     assert_eq!(body["net_total"], 3);
+
+    for user in [USER_B, PLAYER_USER_A, PLAYER_USER_B] {
+        let scoring = app
+            .clone()
+            .oneshot(scoring_request(
+                SCRAMBLE_ROUND_ID,
+                "team",
+                SCRAMBLE_TEAM_ID,
+                user,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(scoring.status(), StatusCode::OK, "user {user}");
+        assert_eq!(scoring.headers()["cache-control"], "private, no-store");
+        assert!(
+            response_json(scoring)
+                .await
+                .to_string()
+                .contains("submitted_by")
+        );
+    }
+    for user in [PLAYER_USER_C, VIEWER_USER] {
+        let forbidden = app
+            .clone()
+            .oneshot(scoring_request(
+                SCRAMBLE_ROUND_ID,
+                "team",
+                SCRAMBLE_TEAM_ID,
+                user,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(forbidden.status(), StatusCode::FORBIDDEN, "user {user}");
+    }
 
     let wrong_format = app
         .clone()

@@ -2,14 +2,15 @@ import { CheckCircle2, Clock3, Users } from 'lucide-react'
 import type { LeaderboardMetric, RoundLeaderboard, RoundLeaderboardEntry } from '../../api/types'
 import { metricLabel, positionLabel, scoreToParLabel, scoringFormatLabel } from './format'
 
-function progressLabel(entry: RoundLeaderboardEntry): string {
+function progressLabel(entry: RoundLeaderboardEntry, visibleHoleCount: number): string {
+  if (entry.complete === null) return `Synlig score · ${entry.holes_scored} av ${visibleHoleCount} hull`
   if (entry.holes_scored === 0) return `Ikke startet · 0 av ${entry.number_of_holes} hull`
   if (!entry.complete) return `Pågår · ${entry.holes_scored} av ${entry.number_of_holes} hull`
   if (entry.confirmed) return `Bekreftet · ${entry.number_of_holes} av ${entry.number_of_holes} hull`
   return `Fullført · venter på bekreftelse`
 }
 
-function RoundRow({ entry, metric }: { entry: RoundLeaderboardEntry; metric: LeaderboardMetric }) {
+function RoundRow({ entry, metric, visibleHoleCount }: { entry: RoundLeaderboardEntry; metric: LeaderboardMetric; visibleHoleCount: number }) {
   const total = metric === 'gross' ? entry.gross_total : entry.net_total
   const hasScore = entry.holes_scored > 0
   return (
@@ -24,7 +25,7 @@ function RoundRow({ entry, metric }: { entry: RoundLeaderboardEntry; metric: Lea
         )}
         <p className="leaderboard-progress">
           {entry.confirmed ? <CheckCircle2 aria-hidden="true" /> : <Clock3 aria-hidden="true" />}
-          {progressLabel(entry)}
+          {progressLabel(entry, visibleHoleCount)}
         </p>
       </div>
       <div className="leaderboard-score">
@@ -46,7 +47,7 @@ export function RoundStandings({ leaderboard }: { leaderboard: RoundLeaderboard 
         <span>{leaderboard.status === 'draft' ? 'Kladd' : leaderboard.status === 'open' ? 'Åpen' : leaderboard.status === 'locked' ? 'Låst' : 'Fullført'}</span>
       </div>
       <ol className="leaderboard-list" aria-label={`${metricLabel(leaderboard.metric)} resultat for runden`}>
-        {leaderboard.entries.map((entry) => <RoundRow key={`${entry.owner.type}-${entry.owner.id}`} entry={entry} metric={leaderboard.metric} />)}
+        {leaderboard.entries.map((entry) => <RoundRow key={`${entry.owner.type}-${entry.owner.id}`} entry={entry} metric={leaderboard.metric} visibleHoleCount={leaderboard.visible_hole_count} />)}
       </ol>
     </div>
   )

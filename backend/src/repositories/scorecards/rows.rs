@@ -22,6 +22,13 @@ pub(super) struct RoundContext {
 }
 
 #[derive(FromRow)]
+pub(super) struct ReadVisibilityContext {
+    pub round_number: i16,
+    pub tournament_round_count: i16,
+    pub final_scores_hidden_until: Option<DateTime<Utc>>,
+}
+
+#[derive(FromRow)]
 pub(super) struct ScoreRow {
     pub id: Uuid,
     pub round_id: Uuid,

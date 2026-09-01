@@ -206,6 +206,21 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   both `tournaments.number_of_rounds` and each child `rounds.round_number` across
   the start boundary. Round-number checks lock round then parent tournament,
   matching lifecycle lock order and serializing start-versus-renumber races.
+- One pure visibility policy consumes the exact tournament role, authoritative
+  final-round identity, round state, configured hole count, stored deadline, and
+  one PostgreSQL observation timestamp. Exact admins receive full reads. Other
+  members receive only holes 1–9 while an 18-hole final is open or while its
+  completed/locked deadline is null or in the future; equality reveals a
+  non-open round.
+- Round standings and member scorecards validate the complete stored fact set
+  before redaction, then recompute every visible total, progress value, rank,
+  and tie from visible facts. Completion reads likewise count actual front-nine
+  scores and null completion, confirmation, and readiness. Tournament standings
+  omit a hidden completed/locked final round before best-N selection and ranking.
+- Member scorecard reads are actor-free projections. A separate `/scoring` GET
+  repeats exact writable-owner authorization and returns the full mutation DTO;
+  it is non-locking and unavailable once the round is locked. Read and scoring
+  projections have separate session-owned frontend cache keys.
 - Transaction-local lifecycle settings route application writes through the
   expected integrity paths; they are not an authorization boundary. Runtime role
   separation and database privilege hardening belong with authentication work.
@@ -267,6 +282,10 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   score access, preserves the hole on quick switches, and replaces rapid switch
   history. The route prefetches only adjacent writable owner keys; TanStack Query
   remains the sole owner of authoritative scorecard reads.
+- Visibility deadlines schedule a cleaned-up authoritative refetch using the
+  server interval `hidden_until - observed_at`. Browser time never changes
+  authorization or locally reveals cached facts, and restricted hole URLs are
+  canonicalized to the visible prefix.
 - Hole mutation intent stays outside TanStack Query in one round/owner/hole
   coordinator. It serializes writes, coalesces rapid input, and requires an
   authoritative refetch match before reporting synchronization. Route and unload
@@ -292,7 +311,7 @@ Implemented resources:
 | `GET`, `PUT` | `/api/rounds/{round_id}/pairings` | Read or atomically replace the private draft team/flight roster |
 | `GET` | `/api/rounds/{round_id}/pairing-validation` | Validate assignments and course readiness |
 | `POST` | `/api/rounds/{round_id}/open` | Atomically open a ready draft round |
-| `GET` | `/api/rounds/{round_id}/completion-validation` | Inspect per-owner completion and lock readiness |
+| `GET` | `/api/rounds/{round_id}/completion-validation` | Inspect role-aware visible per-owner progress and lifecycle readiness |
 | `GET` | `/api/rounds/{round_id}/score-access` | Retrieve writable score owners for the session |
 | `POST` | `/api/rounds/{round_id}/complete` | Complete a ready open round atomically |
 | `POST` | `/api/rounds/{round_id}/lock` | Lock a ready completed round atomically |
@@ -300,6 +319,7 @@ Implemented resources:
 | `GET` | `/api/rounds/{round_id}/leaderboards/net` | Retrieve the live net round leaderboard |
 | `PUT` | `/api/rounds/{round_id}/scores` | Save or correct one hole score |
 | `GET` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}` | Retrieve a private member-authorized gross/net scorecard summary |
+| `GET` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/scoring` | Retrieve the full card after exact writable-owner authorization |
 | `POST` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/confirm` | Confirm a complete scorecard |
 | `GET` | `/api/rounds/{round_id}/teams` | Compatibility read for round teams |
 | `GET` | `/api/tournaments/{tournament_id}/leaderboards/gross` | Retrieve individual tournament gross standings |

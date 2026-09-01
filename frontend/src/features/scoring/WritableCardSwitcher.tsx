@@ -1,4 +1,5 @@
 import type { OwnerCompletionProgress, ScoreOwner } from '../../api/scorecards'
+import { ownerProgressLabel } from './selection'
 
 interface WritableCardSwitcherProps {
   owners: OwnerCompletionProgress[]
@@ -6,12 +7,6 @@ interface WritableCardSwitcherProps {
   disabled: boolean
   onSelect: (owner: ScoreOwner) => void
   onPrefetch: (owner: ScoreOwner) => void
-}
-
-function progressLabel(owner: OwnerCompletionProgress): string {
-  if (owner.confirmed) return 'Bekreftet'
-  if (owner.complete) return 'Klar for bekreftelse'
-  return `${owner.holes_scored}/${owner.required_holes} hull`
 }
 
 export function WritableCardSwitcher(props: WritableCardSwitcherProps) {
@@ -39,7 +34,7 @@ export function WritableCardSwitcher(props: WritableCardSwitcherProps) {
               }}
             >
               <strong>{owner.owner_name}</strong>
-              <span>{selected ? 'Valgt · ' : ''}{progressLabel(owner)}</span>
+              <span>{selected ? 'Valgt · ' : ''}{ownerProgressLabel(owner)}</span>
             </button>
           )
         })}

@@ -1,10 +1,14 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use uuid::Uuid;
 
 use super::scoring::{ScoringError, hole_net_score};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+mod projection;
+pub use projection::{ScorecardReadProjection, read_projection};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ScoreOwner {
     Player { id: Uuid },
@@ -84,10 +88,15 @@ pub fn summarize(
     round_id: Uuid,
     owner: ScoreOwner,
     playing_handicap: i32,
+    expected_number_of_holes: i16,
     sources: Vec<ScorecardHoleSource>,
     confirmation: Option<ConfirmationState>,
 ) -> Result<ScorecardSummary, ScoringError> {
-    let number_of_holes = sources.len();
+    let number_of_holes = usize::try_from(expected_number_of_holes)
+        .ok()
+        .filter(|count| *count > 0)
+        .ok_or(ScoringError::InvalidHole)?;
+    validate_sources(round_id, owner, number_of_holes, &sources)?;
     let mut gross_total = 0;
     let mut net_total = 0;
     let mut holes_scored = 0;
@@ -139,9 +148,42 @@ pub fn summarize(
     })
 }
 
+fn validate_sources(
+    round_id: Uuid,
+    owner: ScoreOwner,
+    expected: usize,
+    sources: &[ScorecardHoleSource],
+) -> Result<(), ScoringError> {
+    if sources.len() != expected {
+        return Err(ScoringError::InvalidHole);
+    }
+    let mut hole_ids = HashSet::new();
+    let mut stroke_indexes = HashSet::new();
+    for (index, source) in sources.iter().enumerate() {
+        let expected_number = i16::try_from(index + 1).map_err(|_| ScoringError::InvalidHole)?;
+        let valid_score = source.score.as_ref().is_none_or(|score| {
+            score.round_id == round_id && score.hole_id == source.hole_id && score.owner == owner
+        });
+        if source.hole_number != expected_number
+            || !(1..=expected_number_of_holes(expected)?).contains(&source.stroke_index)
+            || !hole_ids.insert(source.hole_id)
+            || !stroke_indexes.insert(source.stroke_index)
+            || !valid_score
+        {
+            return Err(ScoringError::InvalidHole);
+        }
+    }
+    Ok(())
+}
+
+fn expected_number_of_holes(expected: usize) -> Result<i16, ScoringError> {
+    i16::try_from(expected).map_err(|_| ScoringError::InvalidHole)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::score_visibility::{VisibilityMetadata, VisibilityMode};
 
     fn source(hole_number: i16, stroke_index: i16, gross: Option<i16>) -> ScorecardHoleSource {
         let round_id = Uuid::from_u128(1);
@@ -173,6 +215,7 @@ mod tests {
             Uuid::from_u128(1),
             owner,
             1,
+            2,
             vec![source(1, 1, Some(5)), source(2, 2, None)],
             None,
         )
@@ -188,6 +231,7 @@ mod tests {
             Uuid::from_u128(1),
             owner,
             1,
+            2,
             vec![source(1, 1, Some(5)), source(2, 2, Some(4))],
             Some(confirmation),
         )
@@ -204,10 +248,75 @@ mod tests {
                 id: Uuid::from_u128(2),
             },
             -1,
+            2,
             vec![source(1, 1, Some(4)), source(2, 2, Some(4))],
             None,
         )
         .unwrap();
         assert_eq!((summary.gross_total, summary.net_total), (8, 9));
+    }
+
+    #[test]
+    fn restricted_read_projection_recomputes_visible_totals_and_removes_actor_facts() {
+        let owner = ScoreOwner::Player {
+            id: Uuid::from_u128(2),
+        };
+        let mut sources = (1..=18)
+            .map(|hole| source(hole, hole, None))
+            .collect::<Vec<_>>();
+        sources[0] = source(1, 1, Some(5));
+        sources[9] = source(10, 10, Some(2));
+        let summary = summarize(Uuid::from_u128(1), owner, 0, 18, sources, None).unwrap();
+        let observed_at = Utc::now();
+        let projected = read_projection(
+            summary,
+            VisibilityMetadata {
+                mode: VisibilityMode::FrontNine,
+                observed_at,
+                hidden_until: Some(observed_at + chrono::Duration::hours(1)),
+            },
+        );
+        assert_eq!(projected.holes.len(), 9);
+        assert_eq!((projected.gross_total, projected.net_total), (5, 5));
+        assert_eq!(projected.holes_scored, 1);
+        assert_eq!((projected.complete, projected.confirmed), (None, None));
+    }
+
+    #[test]
+    fn summary_rejects_incomplete_misordered_and_cross_context_hole_facts() {
+        let round = Uuid::from_u128(1);
+        let owner = ScoreOwner::Player {
+            id: Uuid::from_u128(2),
+        };
+        assert!(matches!(
+            summarize(round, owner, 0, 2, vec![source(1, 1, None)], None),
+            Err(ScoringError::InvalidHole)
+        ));
+        assert!(matches!(
+            summarize(
+                round,
+                owner,
+                0,
+                2,
+                vec![source(2, 1, None), source(1, 2, None)],
+                None,
+            ),
+            Err(ScoringError::InvalidHole)
+        ));
+        let mut cross_context = source(1, 1, Some(4));
+        if let Some(score) = &mut cross_context.score {
+            score.round_id = Uuid::from_u128(99);
+        }
+        assert!(matches!(
+            summarize(
+                round,
+                owner,
+                0,
+                2,
+                vec![cross_context, source(2, 2, None)],
+                None,
+            ),
+            Err(ScoringError::InvalidHole)
+        ));
     }
 }

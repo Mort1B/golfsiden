@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../api/client'
 import { ApiHttpError } from '../../api/http'
-import { scoringKeys, type ScoreOwner, type ScorecardSummary } from '../../api/scorecards'
+import { scoringKeys, type ScoreOwner, type ScoringScorecard } from '../../api/scorecards'
 import { tournamentKeys } from '../../api/tournaments'
 import { privateWorkspaceKeys } from '../../api/privateWorkspace'
 import type { Round } from '../../api/types'
@@ -13,7 +13,7 @@ interface ConfirmationInput {
   round: Round
   tournamentId: string
   owner: ScoreOwner
-  card: ScorecardSummary
+  card: ScoringScorecard
   csrfToken: string | null
   onConfirmed: () => void
   onTerminal: () => void
@@ -35,23 +35,36 @@ export function useScorecardConfirmation(input: ConfirmationInput) {
       return api.confirmScorecard(variables.round.id, variables.owner, variables.csrfToken)
     },
     onSuccess: async (card, variables) => {
-      queryClient.setQueryData(scoringKeys.scorecard(userId, variables.round.id, variables.owner), card)
+      queryClient.setQueryData(scoringKeys.scoring(userId, variables.round.id, variables.owner), card)
       await invalidateScorecard(queryClient, userId, variables.round.id, variables.owner)
-      queryClient.setQueryData(scoringKeys.scorecard(userId, variables.round.id, variables.owner), card)
+      queryClient.setQueryData(scoringKeys.scoring(userId, variables.round.id, variables.owner), card)
       await invalidateScoreDependents(queryClient, userId, variables.round.id, variables.tournamentId)
       variables.onConfirmed()
     },
     onError: async (error, variables) => {
+      if (error instanceof ApiHttpError && (error.status === 401 || error.status === 403)) {
+        variables.onTerminal()
+        queryClient.removeQueries({ queryKey: scoringKeys.scoring(userId, variables.round.id, variables.owner), exact: true })
+        await queryClient.invalidateQueries({ queryKey: privateWorkspaceKeys.scoreAccess(userId, variables.round.id), exact: true })
+        return
+      }
       if (!(error instanceof ApiHttpError) || error.code !== 'round_not_editable') return
       variables.onTerminal()
-      const [round, completion, card] = await Promise.all([
+      const [round, completion] = await Promise.all([
         api.round(variables.round.id),
         api.completionValidation(variables.round.id, variables.round.scoring_format),
-        api.scorecard(variables.round.id, variables.owner),
       ])
+      const card = completion.status === 'locked'
+        ? await api.scorecardRead(variables.round.id, variables.owner)
+        : await api.scorecardScoring(variables.round.id, variables.owner)
       queryClient.setQueryData(tournamentKeys.round(userId, variables.round.id), round)
       queryClient.setQueryData(privateWorkspaceKeys.completion(userId, variables.round.id), completion)
-      queryClient.setQueryData(scoringKeys.scorecard(userId, variables.round.id, variables.owner), card)
+      if (card.projection === 'scoring') {
+        queryClient.setQueryData(scoringKeys.scoring(userId, variables.round.id, variables.owner), card)
+      } else {
+        queryClient.removeQueries({ queryKey: scoringKeys.scoring(userId, variables.round.id, variables.owner), exact: true })
+        queryClient.setQueryData(scoringKeys.read(userId, variables.round.id, variables.owner), card)
+      }
       await queryClient.invalidateQueries({ queryKey: tournamentKeys.rounds(userId, variables.tournamentId), exact: true })
     },
   })

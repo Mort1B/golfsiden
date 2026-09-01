@@ -41,8 +41,8 @@ membership is also mandatory for score-access reads, and the backend
 participation boundary is covered by a two-tournament player/team isolation
 fixture. Frontend target-coherent runtime decoding and tournament-keyed transient
 state now prevent cross-target cache or UI reuse during same-account navigation.
-There is no active implementation step. Phase 7B role-aware visibility and live
-standings are next and require explicit approval before implementation.
+Phase 7B1 embargo-safe read projections are complete. There is no active
+implementation step; Phase 7B2 is the next bounded candidate.
 
 ## Product decisions
 
@@ -132,34 +132,19 @@ standings are next and require explicit approval before implementation.
 
 ## Upcoming work
 
-### Phase 7B: Live best-N standings, final-nine blackout, and scorecards
+### Phase 7B2: Live best-N standings and scorecard drilldowns
 
 - Include the current open round as an explicitly provisional contribution in
   both round and tournament standings, with holes played exposed so uneven live
   progress is not presented as final. Re-evaluate the provisional best N whenever
   an authoritative score change is received.
-- Apply a role-aware visibility policy in the backend domain/repository boundary.
-  For non-admins, remove holes 10-18 of the final round before gross, net,
-  position, tie, and tournament aggregate calculations while that round is open
-  and throughout its 24-hour final-score embargo. Tournament admins receive the
-  complete projection. SSE remains payload-free invalidation and cannot leak
-  hidden strokes.
-- Mark role-dependent leaderboard and scorecard responses private/non-cacheable;
-  include session identity in client query ownership and clear privileged cached
-  projections when the session changes.
 - Add URL-backed, membership-scoped read-only player history and scorecard routes.
   Make round and tournament leaderboard rows navigable, label “Best N of M,” and
-  visibly distinguish counted from discarded rounds. Read DTOs must omit score
-  mutation actor identifiers that viewers do not need. Non-admin read-only cards
-  obey the same final-nine redaction; authorized scoring views still show the
-  flight member's writable cards so those scores can be entered and corrected.
-- Test tournament-admin versus scorer/player/viewer projections, both metrics,
-  round and tournament APIs, direct scorecard reads, cache/session changes,
-  completion and locking without reveal, correction/reconfirmation clock reset,
-  exact before/at/after deadline behavior with controlled time, and attempts to
-  infer hidden totals from response fields. Return the visibility deadline so the
-  client can show availability and schedule an authoritative refetch at expiry
-  without a background reveal job.
+  visibly distinguish counted from discarded rounds. Preserve the completed
+  Phase 7B1 visibility and actor-free read boundaries in every drilldown.
+- Test unequal-progress provisional selection, metric-specific best N,
+  mandatory-round interaction, individual/team attribution, history ownership,
+  deep links, cache/session changes, and preserved final-nine redaction.
 - **Stop condition:** mixed individual/team rounds select the correct best N per
   metric, live totals include the active round, incomplete competitors cannot gain
   an advantage, final-round back-nine strokes are absent from every non-admin read

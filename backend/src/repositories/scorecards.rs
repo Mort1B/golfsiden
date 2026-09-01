@@ -7,13 +7,19 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use crate::domain::{
-    scorecards::{ConfirmationState, ScoreEntry, ScoreOwner, ScorecardSummary, summarize},
+    models::{RoundStatus, TournamentRole},
+    score_visibility::{VisibilityFacts, visibility},
+    scorecards::{
+        ConfirmationState, ScoreEntry, ScoreOwner, ScorecardReadProjection, ScorecardSummary,
+        read_projection, summarize,
+    },
     scoring::ScoringError,
 };
-use crate::repositories::auth;
+use crate::repositories::{auth, score_authorization};
 use handicaps::validate_owner;
 use rows::{
-    ConfirmationRow, HoleScoreRow, RoundContext, ScoreRow, hole_source_from_row, score_from_row,
+    ConfirmationRow, HoleScoreRow, ReadVisibilityContext, RoundContext, ScoreRow,
+    hole_source_from_row, score_from_row,
 };
 
 pub use mutations::{
@@ -85,7 +91,47 @@ pub async fn get(
     Ok(summary)
 }
 
-pub async fn get_authenticated(
+pub async fn get_read_authenticated(
+    pool: &PgPool,
+    session_id: Uuid,
+    round_id: Uuid,
+    owner: ScoreOwner,
+) -> Result<ScorecardReadProjection, ScorecardError> {
+    let mut transaction = pool.begin().await?;
+    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        .execute(&mut *transaction)
+        .await?;
+    let context = load_round(&mut transaction, round_id, false).await?;
+    let principal = auth::lock_active_session(&mut transaction, session_id)
+        .await?
+        .ok_or(ScorecardError::Unauthenticated)?;
+    let role = membership_role(&mut transaction, context.tournament_id, principal.user_id)
+        .await?
+        .ok_or(ScorecardError::Forbidden)?;
+    let read_context = sqlx::query_as::<_, ReadVisibilityContext>(
+        "SELECT r.round_number, t.number_of_rounds AS tournament_round_count, r.final_scores_hidden_until FROM rounds r JOIN tournaments t ON t.id = r.tournament_id WHERE r.id = $1",
+    )
+    .bind(round_id)
+    .fetch_one(&mut *transaction)
+    .await?;
+    let observed_at = sqlx::query_scalar("SELECT transaction_timestamp()")
+        .fetch_one(&mut *transaction)
+        .await?;
+    let metadata = visibility(VisibilityFacts {
+        role,
+        is_final_round: read_context.round_number == read_context.tournament_round_count,
+        status: context.status,
+        number_of_holes: context.number_of_holes,
+        hidden_until: read_context.final_scores_hidden_until,
+        observed_at,
+    });
+    let summary = build_summary(&mut transaction, &context, owner).await?;
+    let result = read_projection(summary, metadata);
+    transaction.commit().await?;
+    Ok(result)
+}
+
+pub async fn get_scoring_authenticated(
     pool: &PgPool,
     session_id: Uuid,
     round_id: Uuid,
@@ -96,24 +142,45 @@ pub async fn get_authenticated(
         .execute(&mut *transaction)
         .await?;
     let context = load_round(&mut transaction, round_id, false).await?;
-    let principal = auth::lock_active_session(&mut transaction, session_id)
-        .await?
-        .ok_or(ScorecardError::Unauthenticated)?;
-    let membership = sqlx::query_scalar::<_, bool>(
-        "SELECT true FROM tournament_memberships
-         WHERE tournament_id = $1 AND user_id = $2
-         FOR SHARE",
-    )
-    .bind(context.tournament_id)
-    .bind(principal.user_id)
-    .fetch_optional(&mut *transaction)
-    .await?;
-    if membership.is_none() {
+    if !matches!(context.status, RoundStatus::Open | RoundStatus::Completed) {
         return Err(ScorecardError::Forbidden);
     }
+    score_authorization::authorize_scoring_read(
+        &mut transaction,
+        session_id,
+        context.tournament_id,
+        round_id,
+        context.scoring_format,
+        owner,
+    )
+    .await
+    .map_err(|error| match error {
+        score_authorization::ScoreAuthorizationError::NotFound => ScorecardError::NotFound,
+        score_authorization::ScoreAuthorizationError::Unauthenticated => {
+            ScorecardError::Unauthenticated
+        }
+        score_authorization::ScoreAuthorizationError::Forbidden => ScorecardError::Forbidden,
+        score_authorization::ScoreAuthorizationError::Database(error) => {
+            ScorecardError::Database(error)
+        }
+    })?;
     let summary = build_summary(&mut transaction, &context, owner).await?;
     transaction.commit().await?;
     Ok(summary)
+}
+
+async fn membership_role(
+    connection: &mut PgConnection,
+    tournament_id: Uuid,
+    user_id: Uuid,
+) -> Result<Option<TournamentRole>, sqlx::Error> {
+    sqlx::query_scalar(
+        "SELECT role FROM tournament_memberships WHERE tournament_id = $1 AND user_id = $2 FOR SHARE",
+    )
+    .bind(tournament_id)
+    .bind(user_id)
+    .fetch_optional(connection)
+    .await
 }
 
 async fn load_round(
@@ -201,6 +268,13 @@ async fn build_summary(
             confirmed_by: row.confirmed_by,
             confirmed_at: row.confirmed_at,
         });
-    summarize(context.id, owner, playing_handicap, sources, confirmation)
-        .map_err(ScorecardError::from)
+    summarize(
+        context.id,
+        owner,
+        playing_handicap,
+        context.number_of_holes,
+        sources,
+        confirmation,
+    )
+    .map_err(ScorecardError::from)
 }

@@ -13,9 +13,12 @@ interface ScorecardSummaryViewProps {
 }
 
 export function ScorecardSummaryView(props: ScorecardSummaryViewProps) {
+  const visibleHoleCount = props.card.projection === 'read'
+    ? props.card.visible_hole_count
+    : props.card.number_of_holes
   return (
     <section className="scorecard-summary" aria-labelledby="summary-heading">
-      <header><div><p>Scorekort</p><h2 id="summary-heading">Oppsummering</h2></div><strong>{props.card.holes_scored}/{props.card.number_of_holes}</strong></header>
+      <header><div><p>Scorekort</p><h2 id="summary-heading">Oppsummering</h2></div><strong>{props.card.holes_scored}/{visibleHoleCount}</strong></header>
       <dl className="score-totals">
         <div><dt>Brutto</dt><dd>{props.card.holes_scored > 0 ? props.card.gross_total : '–'}</dd></div>
         <div><dt>Netto</dt><dd>{props.card.holes_scored > 0 ? props.card.net_total : '–'}</dd></div>

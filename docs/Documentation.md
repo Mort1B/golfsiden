@@ -110,9 +110,9 @@ from the authenticated session. Same-value retries preserve the original
 submitter, timestamp, confirmation, audit count, and SSE state. Changed strokes
 append an audit row and invalidate any current scorecard confirmation.
 
-`GET /api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}` returns every hole
-in order with partial gross/net totals, the preserved playing handicap,
-completeness, and current confirmation. Individual net uses the opening snapshot.
+`GET /api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}` returns an
+actor-free member read projection with ordered holes, visible gross/net totals,
+and the preserved playing handicap. Individual net uses the opening snapshot.
 Scramble net applies 35%/15% to the members' rounded course handicaps and applies
 the round allowance once. Foursomes net reads the immutable team Playing Handicap
 captured at opening; it never recalculates from rounded member snapshots. This
@@ -120,6 +120,14 @@ read requires an active session plus any exact membership role in the round's
 tournament. Round lookup, session revalidation, membership `FOR SHARE`, and card
 assembly share one repeatable-read transaction; successful responses are
 `private, no-store`.
+
+For an applicable final-round blackout, non-admin member reads contain only
+holes 1–9 and totals derived from those holes; authoritative completeness,
+confirmation, and confirmation time are null. The full card is available at the
+same path plus `/scoring` only after exact admin/scorer/flight-owner write
+authorization. That read is non-locking, remains private/non-cacheable, and
+rejects locked rounds. Database audit actors remain preserved but are absent
+from member read projections.
 
 `POST` to that scorecard path plus `/confirm` requires all holes and records the
 session actor as `confirmed_by` plus `confirmed_at`. Confirmation records represent current state;
@@ -595,9 +603,11 @@ commas.
 ## Round completion and locking
 
 `GET /api/rounds/{round_id}/completion-validation` returns a repeatable-read,
-deterministically ordered view of every required player or team scorecard. It
-reports holes scored, required holes, confirmation state, and separate
-`ready_to_complete` and `ready_to_lock` flags for every existing round state.
+deterministically ordered view of every required player or team scorecard. Exact
+admins receive authoritative progress, confirmation, and lifecycle readiness.
+During a non-admin final-nine blackout it counts only actual scores on holes
+1–9, reports nine visible required holes, nulls completion, confirmation, and
+readiness, and omits issue codes derived from hidden state.
 
 `POST /api/rounds/{round_id}/complete` accepts only an open round, and
 `POST /api/rounds/{round_id}/lock` accepts only a completed round. Both serialize
@@ -631,10 +641,10 @@ round count and child round numbers are frozen when start commits, so direct SQL
 cannot redefine the final round afterward; concurrent start and renumbering
 serialize in the existing round-before-tournament lock order.
 
-This migration persists the trusted clock only. Current leaderboard and
-scorecard responses remain unchanged and are not yet redacted by role or hole.
-Phase 7B must apply one shared read policy to leaderboard calculations and direct
-scorecard projections before the final-nine blackout is considered enforced.
+The read boundary now consumes this clock through one shared policy using a
+single PostgreSQL observation time. Exact deadline equality reveals a completed
+or locked round, while an open final remains restricted. The client uses the
+server-provided interval only to schedule an authoritative refetch.
 
 ## Leaderboards
 
@@ -681,6 +691,14 @@ totals.
 Both round and tournament leaderboard routes require membership in the target
 tournament and are returned as private, non-cacheable responses.
 
+Exact tournament admins receive full standings. For every other role, an open
+18-hole final is calculated from holes 1–9 only. A completed or locked final with
+a null or future release deadline is omitted entirely from tournament best-N
+selection, totals, eligibility, positions, ties, and included-round identities.
+Round totals and ranks are recomputed after redaction while retaining the full
+18-hole handicap allocation denominator. Open-round provisional tournament
+contributions remain deferred to Phase 7B2.
+
 The React `/leaderboard` page stores tournament, round/tournament scope, round,
 and gross/net selection in URL search parameters. Invalid or stale selections
 are replaced with a valid active/latest default before a leaderboard query is
@@ -726,6 +744,5 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
   flight-aware opening readiness, and representative ready seed assignments
   exist together with membership-wide scoring authority. There is still no
   offline score queue or public leaderboard link.
-- The trusted final-score embargo deadline is persisted, reset, and protected,
-  but existing leaderboard and scorecard reads do not enforce final-nine
-  redaction yet. That projection work remains Phase 7B.
+- Open-round provisional tournament contributions, contribution drilldowns, and
+  URL-backed player history remain Phase 7B2 work.

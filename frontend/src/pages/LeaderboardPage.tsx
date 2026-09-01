@@ -16,6 +16,7 @@ import { TournamentStandings } from '../features/leaderboards/TournamentStanding
 import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 import { useAuth } from '../features/auth/authContext'
 import { useTournamentLive } from '../features/live/useTournamentLive'
+import { useVisibilityRefetch } from '../features/visibility/useVisibilityRefetch'
 
 export function LeaderboardPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -59,6 +60,8 @@ export function LeaderboardPage() {
       && roundsQuery.data !== undefined
       && !roundsQuery.error,
   })
+  useVisibilityRefetch(roundLeaderboardQuery.data?.visibility, roundLeaderboardQuery.refetch)
+  useVisibilityRefetch(tournamentLeaderboardQuery.data?.visibility, tournamentLeaderboardQuery.refetch)
 
   if (tournamentsQuery.isPending) return <section className="page leaderboard-page"><LoadingState /></section>
   if (tournamentsQuery.error && tournaments.length === 0) {
@@ -144,12 +147,18 @@ export function LeaderboardPage() {
             : 'Runden har ingen resultatlinjer ennå.'}
         </EmptyState>
       )}
+      {scope === 'round' && roundLeaderboardQuery.data?.visibility.mode === 'front_nine' && (
+        <p className="leaderboard-visibility-notice" role="status">Hull 10–18 er skjult til finaleresultatene frigis.</p>
+      )}
       {scope === 'round' && roundLeaderboardQuery.data && roundLeaderboardQuery.data.entries.length > 0 && (
         <RoundStandings leaderboard={roundLeaderboardQuery.data} />
       )}
 
       {scope === 'tournament' && !roundsQuery.isPending && !roundsQuery.error && tournamentLeaderboardQuery.data?.entries.length === 0 && (
         <EmptyState>Ingen spillere er registrert i turneringen</EmptyState>
+      )}
+      {scope === 'tournament' && tournamentLeaderboardQuery.data?.visibility.mode === 'front_nine' && (
+        <p className="leaderboard-visibility-notice" role="status">Finalerunden er midlertidig utelatt fra sammenlagtresultatet.</p>
       )}
       {scope === 'tournament' && !roundsQuery.isPending && !roundsQuery.error && tournamentLeaderboardQuery.data && tournamentLeaderboardQuery.data.entries.length > 0 && (
         <TournamentStandings leaderboard={tournamentLeaderboardQuery.data} rounds={rounds} />

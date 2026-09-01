@@ -1,56 +1,54 @@
 # Latest explanation
 
-## PostgreSQL now owns the final-score embargo clock
+## Final-nine confidentiality is enforced at the read boundary
 
-Phase 7A adds the persistence boundary needed before hiding the final nine from
-non-admin reads. Only the round whose `round_number` equals its tournament's
-configured round count can receive `final_scores_hidden_until`. When insertion
-of the last required confirmation makes that round ready, PostgreSQL records one
-deadline from its own clock:
+Phase 7B1 applies one backend-owned policy to round standings, tournament
+standings, scorecards, and completion progress. It combines exact tournament
+role, authoritative final-round identity, round state, hole count, the persisted
+deadline, and one PostgreSQL observation timestamp. Exact admins receive full
+reads. Other members receive only holes 1–9 while an 18-hole final is open or
+while a completed or locked final has a null or future deadline. Equality
+reveals a non-open round.
 
-```sql
-SET final_scores_hidden_until = workflow_time + INTERVAL '24 hours'
-WHERE final_scores_hidden_until IS NULL
-  AND round_scorecards_ready(id);
+Stored facts are validated in full before projection. Restricted round
+standings and scorecards then recompute totals and progress from visible holes,
+using the full 18-hole denominator for handicap allocation. Completion progress
+counts actual front-nine scores and exposes no authoritative completion,
+confirmation, readiness, or hidden-derived issue state. A hidden completed or
+locked final is omitted before tournament best-N selection and ranking.
+
+```rust
+let restricted = visibility.mode == VisibilityMode::FrontNine;
+let visible = holes.iter().filter(|hole| !restricted || hole.hole_number <= 9);
+// Totals, progress, positions, and ties are derived only after this boundary.
 ```
 
-The same readiness function already understands individual snapshot owners,
-scramble teams, and foursomes teams with preserved handicap snapshots. An
-intermediate or duplicate confirmation does nothing, so retries cannot extend
-the embargo or change the round timestamp.
+## Reading and scoring are separate capabilities
 
-## Corrections reset only an unexpired embargo
+The existing member scorecard GET is now an actor-free read projection. The new
+`/scoring` suffix returns the full mutation-oriented card only after exact admin,
+scorer, or flight-owner authorization succeeds. It does not take an exclusive
+round lock and rejects locked rounds. Corrupt hole counts, ordering, identities,
+stroke-index permutations, or score ownership fail before either projection is
+produced.
 
-A real score correction already removes that owner's current confirmation. The
-new confirmation-delete trigger clears the deadline only when it is strictly in
-the future. Once every corrected card is complete and confirmed again, the last
-confirmation starts a fresh full 24 hours. At or after expiry, correction keeps
-the expired timestamp because the results were already revealed. Completion and
-locking also preserve the exact deadline.
+The React client mirrors that boundary with distinct session/round/owner query
+keys. It waits for authoritative score access before selecting `/scoring`, uses
+that projection for prefetch and write verification, invalidates both variants
+after mutations, and removes full cached data after terminal authorization or
+lock transitions. Restricted URLs are canonicalized to the visible hole prefix.
 
-Schema-16 upgrades reconstruct ready final-round deadlines from the latest
-required stored `confirmed_at` plus 24 hours. This preserves the historical
-trusted clock rather than starting a new window at migration time.
+## Trusted expiry and validation
 
-## Final-round identity cannot drift after start
+Visibility metadata contains `observed_at` and `hidden_until`. The browser uses
+their interval only to schedule one cleaned-up refetch; it never grants access
+locally. SSE remains payload-free and triggers the same authoritative reads.
 
-The embargo depends on a stable definition of “final.” PostgreSQL therefore now
-freezes both the tournament round count and child round numbers across the start
-boundary. A round renumber locks its parent after its own row, matching the
-existing lifecycle order. Concurrent start and renumber operations either leave
-a valid changed draft plan that cannot start or commit start and reject the
-renumber; they cannot deadlock or silently reclassify the final round.
-
-## Scope and validation
-
-Focused tests cover database-time bounds, individual/scramble/foursomes
-readiness, non-final exclusion, correction and reconfirmation, exact expiry,
-duplicate stability, completion and locking, direct-write rejection, schema-16
-backfill, cascade deletion, and bounded lifecycle races. The focused suites,
-ten repeated concurrency runs, full Rust and serialized PostgreSQL ladders,
-strict Clippy, clean/schema-16 migration, and idempotent seed all passed.
-
-This step deliberately changes no HTTP or frontend contract. The deadline is
-not yet a claim that scores are hidden. Phase 7B must apply one role-aware policy
-before round and tournament calculations and direct scorecard responses, then
-add trusted expiry refetching in the client.
+Backend coverage includes admin/scorer/player/viewer roles, individual and team
+owners, gross/net projection, open/completed/locked and null/future/equal/expired
+deadlines, writable-owner isolation, actor omission, corrupt facts, completion
+redaction, and private cache headers. Frontend coverage verifies strict runtime
+coherence, cache separation, nullable hidden state, visible-progress labels,
+timer behavior, and hidden-hole navigation. Focused backend checks, strict
+Clippy, and 196 frontend tests plus typecheck, lint, and build passed. Final
+integrated validation is run before publication.

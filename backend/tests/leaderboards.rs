@@ -293,8 +293,12 @@ async fn round_api_handles_draft_missing_partial_plus_handicap_and_exact_contrac
         .unwrap();
     let app = api::router(AppState::new(pool));
 
-    let (status, response) = get(&app, format!("/api/rounds/{ROUND_ONE}/leaderboards/gross")).await;
+    let (status, mut response) =
+        get(&app, format!("/api/rounds/{ROUND_ONE}/leaderboards/gross")).await;
     assert_eq!(status, StatusCode::OK);
+    assert_eq!(response["visibility"]["mode"], "full");
+    assert!(response["visibility"]["observed_at"].is_string());
+    response.as_object_mut().unwrap().remove("visibility");
     assert_eq!(
         response,
         json!({
@@ -304,6 +308,7 @@ async fn round_api_handles_draft_missing_partial_plus_handicap_and_exact_contrac
             "scoring_format": "individual_stroke_play",
             "metric": "gross",
             "number_of_holes": 2,
+            "visible_hole_count": 2,
             "entries": [
                 {"position": 1, "tied": false, "owner": {"type": "player", "id": PLAYER_PLUS}, "owner_name": "Plus", "members": [], "holes_scored": 1, "number_of_holes": 2, "complete": false, "confirmed": false, "playing_handicap": -1, "gross_total": 4, "net_total": 5, "par_played": 4, "score_to_par": 0},
                 {"position": null, "tied": false, "owner": {"type": "player", "id": PLAYER_A}, "owner_name": "Ada", "members": [], "holes_scored": 0, "number_of_holes": 2, "complete": false, "confirmed": false, "playing_handicap": 8, "gross_total": 0, "net_total": 0, "par_played": 0, "score_to_par": 0},
@@ -312,7 +317,9 @@ async fn round_api_handles_draft_missing_partial_plus_handicap_and_exact_contrac
             ]
         })
     );
-    let (_, net) = get(&app, format!("/api/rounds/{ROUND_ONE}/leaderboards/net")).await;
+    let (_, mut net) = get(&app, format!("/api/rounds/{ROUND_ONE}/leaderboards/net")).await;
+    assert_eq!(net["visibility"]["mode"], "full");
+    net.as_object_mut().unwrap().remove("visibility");
     let mut expected_net = response.clone();
     expected_net["metric"] = json!("net");
     expected_net["entries"][0]["score_to_par"] = json!(1);
@@ -434,12 +441,15 @@ async fn tournament_api_aggregates_completed_rounds_and_keeps_current_teams(pool
     .await;
 
     let app = api::router(AppState::new(pool));
-    let (status, response) = get(
+    let (status, mut response) = get(
         &app,
         format!("/api/tournaments/{TOURNAMENT}/leaderboards/net"),
     )
     .await;
     assert_eq!(status, StatusCode::OK);
+    assert_eq!(response["visibility"]["mode"], "full");
+    assert!(response["visibility"]["observed_at"].is_string());
+    response.as_object_mut().unwrap().remove("visibility");
     assert_eq!(
         response,
         json!({

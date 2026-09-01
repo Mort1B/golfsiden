@@ -8,10 +8,25 @@ use super::super::{
     TournamentLeaderboardFacts, build_round_leaderboard,
 };
 use super::selection::{CandidateContribution, rank_entries, select_best};
+use crate::domain::score_visibility::{VisibilityMetadata, unrestricted};
 
 pub fn build_tournament_leaderboard(
     facts: &TournamentLeaderboardFacts,
     metric: LeaderboardMetric,
+) -> Result<TournamentLeaderboard, LeaderboardError> {
+    build_tournament_leaderboard_projected(
+        facts,
+        metric,
+        unrestricted(chrono::DateTime::UNIX_EPOCH),
+        None,
+    )
+}
+
+pub fn build_tournament_leaderboard_projected(
+    facts: &TournamentLeaderboardFacts,
+    metric: LeaderboardMetric,
+    visibility: VisibilityMetadata,
+    hidden_completed_round_id: Option<uuid::Uuid>,
 ) -> Result<TournamentLeaderboard, LeaderboardError> {
     if facts.counted_rounds == 0 {
         return Err(LeaderboardError::InvalidStoredData);
@@ -34,7 +49,7 @@ pub fn build_tournament_leaderboard(
             matches!(
                 round.round.status,
                 RoundStatus::Completed | RoundStatus::Locked
-            )
+            ) && hidden_completed_round_id != Some(round.round.round_id)
         })
         .collect::<Vec<_>>();
     included.sort_by_key(|round| (round.round.round_number, round.round.round_id));
@@ -58,7 +73,7 @@ pub fn build_tournament_leaderboard(
             .remove(&round.round.round_id)
             .ok_or(LeaderboardError::InvalidStoredData)?;
         for entry in leaderboard.entries {
-            if !entry.complete {
+            if entry.complete != Some(true) {
                 return Err(LeaderboardError::InvalidStoredData);
             }
             let candidate = CandidateContribution {
@@ -153,6 +168,7 @@ pub fn build_tournament_leaderboard(
         mandatory_round_id: facts.mandatory_round_id,
         current_round_id: current_round.map(|round| round.round.round_id),
         included_round_ids: included.iter().map(|round| round.round.round_id).collect(),
+        visibility,
         entries,
     })
 }

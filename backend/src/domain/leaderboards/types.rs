@@ -2,6 +2,7 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use crate::domain::models::{ParticipantStatus, RoundStatus, ScoringFormat};
+use crate::domain::score_visibility::VisibilityMetadata;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -122,8 +123,8 @@ pub struct RoundLeaderboardEntry {
     pub members: Vec<LeaderboardMember>,
     pub holes_scored: usize,
     pub number_of_holes: usize,
-    pub complete: bool,
-    pub confirmed: bool,
+    pub complete: Option<bool>,
+    pub confirmed: Option<bool>,
     pub playing_handicap: i32,
     pub gross_total: i32,
     pub net_total: i32,
@@ -139,6 +140,8 @@ pub struct RoundLeaderboard {
     pub scoring_format: ScoringFormat,
     pub metric: LeaderboardMetric,
     pub number_of_holes: usize,
+    pub visible_hole_count: usize,
+    pub visibility: VisibilityMetadata,
     pub entries: Vec<RoundLeaderboardEntry>,
 }
 
@@ -204,5 +207,6 @@ pub struct TournamentLeaderboard {
     pub mandatory_round_id: Option<Uuid>,
     pub current_round_id: Option<Uuid>,
     pub included_round_ids: Vec<Uuid>,
+    pub visibility: VisibilityMetadata,
     pub entries: Vec<TournamentLeaderboardEntry>,
 }

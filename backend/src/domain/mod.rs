@@ -9,5 +9,6 @@ pub mod round_completion;
 pub mod round_formats;
 pub mod round_lifecycle;
 pub mod round_pairings;
+pub mod score_visibility;
 pub mod scorecards;
 pub mod scoring;

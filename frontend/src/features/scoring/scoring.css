@@ -44,6 +44,7 @@
 .hole-entry > header p { color: #68736c; font-size: .72rem; text-transform: uppercase; }
 .hole-entry > header h2 { font-size: 2.4rem; line-height: 1; }
 .hole-entry dl { display: flex; gap: 20px; margin: 0; }
+.read-hole > .score-totals { display: grid; }
 .hole-entry dl div { text-align: center; }
 .hole-entry dt { color: #68736c; font-size: .68rem; }
 .hole-entry dd { margin: 3px 0 0; font-size: 1.1rem; font-weight: 850; }

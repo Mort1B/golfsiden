@@ -5,7 +5,8 @@ import { decodeExpectedRound, decodeTournamentList, tournamentApi } from './tour
 import {
   decodeCompletionValidation,
   decodeSavedScore,
-  decodeScorecard,
+  decodeReadScorecard,
+  decodeScoringScorecard,
   decodeScoreAccess,
   ownerTypeForFormat,
   type ScoreOwner,
@@ -50,9 +51,12 @@ export const api = {
       decodeCompletionValidation(value, roundId, ownerTypeForFormat(format))),
   scoreAccess: (roundId: string) => requestDecoded(`/api/rounds/${roundId}/score-access`,
     (value) => decodeScoreAccess(value, roundId)),
-  scorecard: (roundId: string, owner: ScoreOwner) =>
+  scorecardRead: (roundId: string, owner: ScoreOwner) =>
     requestDecoded(`/api/rounds/${roundId}/scorecards/${owner.type}/${owner.id}`, (value) =>
-      decodeScorecard(value, roundId, owner)),
+      decodeReadScorecard(value, roundId, owner)),
+  scorecardScoring: (roundId: string, owner: ScoreOwner) =>
+    requestDecoded(`/api/rounds/${roundId}/scorecards/${owner.type}/${owner.id}/scoring`, (value) =>
+      decodeScoringScorecard(value, roundId, owner)),
   saveScore: (roundId: string, holeId: string, owner: ScoreOwner, grossStrokes: number, csrfToken: string) =>
     requestDecoded(`/api/rounds/${roundId}/scores`, (value) =>
       decodeSavedScore(value, roundId, holeId, owner, grossStrokes), jsonRequest('PUT', {
@@ -62,6 +66,6 @@ export const api = {
       }, csrfToken)),
   confirmScorecard: (roundId: string, owner: ScoreOwner, csrfToken: string) =>
     requestDecoded(`/api/rounds/${roundId}/scorecards/${owner.type}/${owner.id}/confirm`, (value) =>
-      decodeScorecard(value, roundId, owner), jsonRequest('POST', {}, csrfToken)),
+      decodeScoringScorecard(value, roundId, owner), jsonRequest('POST', {}, csrfToken)),
   tournamentLiveUrl,
 }

@@ -3,6 +3,7 @@ import { decodeRoundLeaderboard, decodeTournamentLeaderboard, leaderboardKeys, v
 
 const seedTournamentId = '00000000-0000-0000-0000-000000002001'
 const seedRoundId = '00000000-0000-0000-0000-000000004001'
+const fullVisibility = { mode: 'full', observed_at: '2026-09-01T10:00:00Z', hidden_until: null }
 
 describe('leaderboard decoders', () => {
   it('isolates leaderboard caches by session user', () => {
@@ -22,6 +23,8 @@ describe('leaderboard decoders', () => {
       scoring_format: 'team_scramble',
       metric: 'net',
       number_of_holes: 18,
+      visible_hole_count: 18,
+      visibility: fullVisibility,
       entries: [],
     }, seedRoundId, seedTournamentId, 'net')
 
@@ -32,6 +35,7 @@ describe('leaderboard decoders', () => {
       mandatory_round_id: null,
       current_round_id: null,
       included_round_ids: [],
+      visibility: fullVisibility,
       entries: [],
     }, seedTournamentId, 'gross')
 
@@ -57,6 +61,7 @@ describe('leaderboard decoders', () => {
       mandatory_round_id: seedRoundId,
       current_round_id: currentRoundId,
       included_round_ids: [seedRoundId, secondRoundId, thirdRoundId],
+      visibility: fullVisibility,
       entries: [{
         position: 1,
         tied: false,
@@ -164,6 +169,7 @@ describe('leaderboard decoders', () => {
       mandatory_round_id: seedRoundId,
       current_round_id: null,
       included_round_ids: [seedRoundId],
+      visibility: fullVisibility,
       entries: [leaderboardEntry],
     }
 
@@ -232,6 +238,7 @@ describe('leaderboard decoders', () => {
       mandatory_round_id: null,
       current_round_id: null,
       included_round_ids: [seedRoundId],
+      visibility: fullVisibility,
       entries: [entry],
     }
 
@@ -326,6 +333,7 @@ describe('leaderboard decoders', () => {
       mandatory_round_id: null,
       current_round_id: currentRoundId,
       included_round_ids: [seedRoundId],
+      visibility: fullVisibility,
       entries: [entry],
     }
 
@@ -397,6 +405,7 @@ describe('leaderboard decoders', () => {
       mandatory_round_id: null,
       current_round_id: null,
       included_round_ids: [seedRoundId],
+      visibility: fullVisibility,
       entries: [entry],
     }
 
@@ -433,6 +442,8 @@ describe('leaderboard decoders', () => {
       scoring_format: 'individual_stroke_play',
       metric: 'gross',
       number_of_holes: 18,
+      visible_hole_count: 18,
+      visibility: fullVisibility,
       entries: [],
     }, seedRoundId, seedTournamentId, 'gross')).toThrow('leaderboard.identity')
     expect(() => decodeRoundLeaderboard({
@@ -442,6 +453,8 @@ describe('leaderboard decoders', () => {
       scoring_format: 'individual_stroke_play',
       metric: 'gross',
       number_of_holes: 18,
+      visible_hole_count: 18,
+      visibility: fullVisibility,
       entries: [],
     }, seedRoundId, seedTournamentId, 'gross')).toThrow('leaderboard.identity')
   })
@@ -454,12 +467,51 @@ describe('leaderboard decoders', () => {
       scoring_format: 'two_player_foursomes',
       metric: 'gross',
       number_of_holes: 18,
+      visible_hole_count: 18,
+      visibility: fullVisibility,
       entries: [],
     }
     expect(decodeRoundLeaderboard(response, seedRoundId, seedTournamentId, 'gross').scoring_format)
       .toBe('two_player_foursomes')
     expect(() => decodeRoundLeaderboard({ ...response, scoring_format: 'greensomes' }, seedRoundId, seedTournamentId, 'gross'))
       .toThrow('scoring_format')
+  })
+
+  it('accepts only nullable hidden state in a front-nine round projection', () => {
+    const entry = {
+      position: 1,
+      tied: false,
+      owner: { type: 'player', id: '00000000-0000-0000-0000-000000001001' },
+      owner_name: 'Spiller',
+      members: [],
+      holes_scored: 1,
+      number_of_holes: 18,
+      complete: null,
+      confirmed: null,
+      playing_handicap: 9,
+      gross_total: 5,
+      net_total: 4,
+      par_played: 4,
+      score_to_par: 1,
+    }
+    const response = {
+      round_id: seedRoundId,
+      tournament_id: seedTournamentId,
+      status: 'open',
+      scoring_format: 'individual_stroke_play',
+      metric: 'gross',
+      number_of_holes: 18,
+      visible_hole_count: 9,
+      visibility: { mode: 'front_nine', observed_at: '2026-09-01T10:00:00Z', hidden_until: null },
+      entries: [entry],
+    }
+    expect(decodeRoundLeaderboard(response, seedRoundId, seedTournamentId, 'gross').visible_hole_count).toBe(9)
+    expect(() => decodeRoundLeaderboard({
+      ...response,
+      entries: [{ ...entry, complete: false, confirmed: false }],
+    }, seedRoundId, seedTournamentId, 'gross')).toThrow('complete')
+    expect(() => decodeRoundLeaderboard({ ...response, visible_hole_count: 18 }, seedRoundId, seedTournamentId, 'gross'))
+      .toThrow('visibility')
   })
 
   it('rejects duplicate or format-incoherent round result identities', () => {
@@ -486,6 +538,8 @@ describe('leaderboard decoders', () => {
       scoring_format: 'individual_stroke_play',
       metric: 'gross',
       number_of_holes: 1,
+      visible_hole_count: 1,
+      visibility: fullVisibility,
       entries: [entry],
     }
     expect(() => decodeRoundLeaderboard({ ...response, entries: [entry, entry] }, seedRoundId, seedTournamentId, 'gross'))

@@ -24,7 +24,7 @@ describe('private workspace cache', () => {
     queryClient.setQueryData(tournamentKeys.detail('user-two', 'tour-two'), { name: 'Andre' })
     queryClient.setQueryData(privateWorkspaceKeys.invitations('user-one', 'tour-one'), [{ id: 'invite-admin' }])
     queryClient.setQueryData(['invitations', 'preview', 'invite-one'], { name: 'Forhåndsvisning' })
-    const scorecardKey = scoringKeys.scorecard('user-one', 'round-one', { type: 'player', id: 'player-one' })
+    const scorecardKey = scoringKeys.read('user-one', 'round-one', { type: 'player', id: 'player-one' })
     queryClient.setQueryData(scorecardKey, { gross_total: 72 })
 
     clearPrivateWorkspace(queryClient)

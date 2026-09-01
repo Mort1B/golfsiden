@@ -34,6 +34,10 @@ pub fn routes() -> Router<Arc<AppState>> {
             get(get_one),
         )
         .route(
+            "/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/scoring",
+            get(get_scoring),
+        )
+        .route(
             "/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/confirm",
             post(confirm),
         )
@@ -117,7 +121,24 @@ async fn get_one(
     Path((round_id, owner_type, owner_id)): Path<(Uuid, String, Uuid)>,
 ) -> ApiResult<Response> {
     let owner = parse_owner(&owner_type, owner_id)?;
-    let summary = scorecards::get_authenticated(
+    let summary = scorecards::get_read_authenticated(
+        &state.pool,
+        authenticated.principal.session_id,
+        round_id,
+        owner,
+    )
+    .await
+    .map_err(map_error)?;
+    Ok(([(CACHE_CONTROL, "private, no-store")], Json(summary)).into_response())
+}
+
+async fn get_scoring(
+    State(state): State<Arc<AppState>>,
+    authenticated: AuthenticatedSession,
+    Path((round_id, owner_type, owner_id)): Path<(Uuid, String, Uuid)>,
+) -> ApiResult<Response> {
+    let owner = parse_owner(&owner_type, owner_id)?;
+    let summary = scorecards::get_scoring_authenticated(
         &state.pool,
         authenticated.principal.session_id,
         round_id,
