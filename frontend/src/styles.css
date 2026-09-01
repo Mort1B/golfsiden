@@ -24,8 +24,7 @@ h1, h2, h3 { letter-spacing: 0; }
 .back-button { display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid #d8ded8; border-radius: 50%; background: #fff; }
 .description { color: #5b655f; margin: -8px 0 18px 50px; }
 .bottom-nav { position: fixed; z-index: 10; bottom: 0; left: 0; right: 0; display: grid; min-height: 66px; padding: 6px 6px calc(5px + env(safe-area-inset-bottom)); border-top: 1px solid #d8ded8; background: rgba(255,255,255,.97); }
-.nav-count-4 { grid-template-columns: repeat(4, 1fr); }
-.nav-count-5 { grid-template-columns: repeat(5, 1fr); }
+.nav-count-3 { grid-template-columns: repeat(3, 1fr); }
 .nav-link { display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #68736c; font-size: .68rem; font-weight: 650; }
 .nav-link span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .nav-link.active { color: #176640; }
@@ -67,13 +66,6 @@ h1, h2, h3 { letter-spacing: 0; }
 .compact-player-grid span { overflow: hidden; text-overflow: ellipsis; }
 .compact-player-grid strong { color: #28734f; }
 
-.player-list { overflow: hidden; border: 1px solid #dce1dc; border-radius: 8px; background: #fff; }
-.player-row { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 11px; padding: 12px; border-bottom: 1px solid #e2e6e2; }
-.player-row:last-child { border-bottom: 0; }
-.player-row h2 { font-size: .95rem; }
-.player-row p { margin-top: 3px; overflow: hidden; color: #727c76; font-size: .74rem; text-overflow: ellipsis; }
-.avatar { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 50%; background: #1e5d42; color: #fff; font-weight: 800; }
-.handicap { color: #45524a; font-size: .79rem; white-space: nowrap; }
 .round-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 13px 0 4px 50px; border-top: 1px solid #d8ded8; color: #606b64; font-size: .82rem; }
 .round-meta span { display: flex; align-items: center; gap: 5px; }
 .round-meta svg { width: 16px; }

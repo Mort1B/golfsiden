@@ -64,8 +64,10 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   password. Usernames are case-insensitively unique; account email is not stored
   or accepted. Session tokens are opaque 256-bit values stored only as SHA-256
   hashes. Nullable unique `users.player_id` links an account to a golf identity
-  without profile-email inference. Global roles remain temporarily for platform compatibility;
-  `tournament_memberships` is authoritative for trip administration and scoring.
+  without profile-email inference. The account role remains part of session
+  identity, but has no product-facing global player or tournament-creation
+  authority; `tournament_memberships` is authoritative for trip administration
+  and scoring.
 - First-time creator onboarding is one transaction across the player, account,
   both initial handicap histories, tournament, admin membership, entrant,
   complete draft round plan, invitation, and session. Client-supplied roles,
@@ -232,10 +234,7 @@ Implemented resources:
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET`, `POST` | `/api/players` | List and create players |
-| `GET`, `PATCH`, `DELETE` | `/api/players/{player_id}` | Retrieve, edit, or deactivate a player |
-| `GET`, `POST` | `/api/players/{player_id}/handicaps` | Handicap history and changes |
-| `GET`, `POST` | `/api/tournaments` | List and create tournaments |
+| `GET` | `/api/tournaments` | List only the authenticated account's tournament memberships |
 | `GET` | `/api/tournaments/{tournament_id}` | Retrieve a tournament |
 | `POST` | `/api/tournaments/{tournament_id}/start` | Start a ready draft tournament as its exact admin without opening a round |
 | `GET`, `POST` | `/api/tournaments/{tournament_id}/players` | List the roster and correction state, or register entrants |

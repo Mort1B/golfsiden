@@ -24,8 +24,11 @@ selector optimization, and the persisted draft-only `counted_rounds`
 configuration boundary, and metric-specific completed best-N tournament
 contributions and the strict-Clippy lifecycle error-size repair are complete.
 The exact-admin tournament-start lifecycle and hosted management action are also
-complete, including draft-only creation and concurrent lifecycle coverage. No
-active implementation step is approved.
+complete, including draft-only creation and concurrent lifecycle coverage.
+
+The legacy global player/profile/handicap HTTP and frontend directory plus the
+platform-admin tournament-creation route are retired. No active implementation
+step is approved.
 
 ## Product decisions
 
@@ -115,28 +118,25 @@ active implementation step is approved.
 
 ## Upcoming work
 
-### Tournament scope isolation and legacy-directory retirement
+### Tournament scope isolation audit
 
-- Remove the public `/players` navigation and page plus unauthenticated global
-  player, profile, and handicap-history reads. Tournament members must discover
-  players only through the target tournament's private roster. If global player
-  operations remain necessary for deployment, place them behind a distinct
-  authenticated operator boundary rather than a member-visible directory.
-- Audit the remaining legacy platform-admin tournament/player mutation surfaces
-  and retire product-facing global-role assumptions without changing account
-  login. Exact tournament administration continues to require
-  `tournament_memberships.role = 'admin'`; the now-covered two-creator start path
-  must remain isolated in both directions.
+- Require an authenticated target-tournament membership for scorecard and live-
+  event reads, retaining `private, no-store` and identity-owned frontend caches.
+  Later public scorecards or standings require an explicit share-token contract.
+- Replace the exact-admin roster mutation's arbitrary global `player_id` input
+  with a tournament-safe participation flow that also creates or verifies the
+  matching tournament membership; preserve onboarding and invitation joining.
+- Authorize exact tournament administration before round-creation validation can
+  reveal target-specific state. A global account role remains no bypass.
 - Audit roster, pairing, scoring, scorecard, and leaderboard reads so a player is
   visible only through the target tournament's explicit membership and
   `tournament_players` registration. Reusing the same account in another
   tournament must create separate tournament participation facts; it must never
   inherit roster presence, handicap, team/flight assignment, score authority, or
   results.
-- **Stop condition:** unauthenticated callers and ordinary members cannot
-  enumerate a global player/profile/handicap directory, and two isolated
-  tournaments expose only their own registered participants through every
-  product-facing read and mutation.
+- **Stop condition:** two isolated tournaments expose only their own registered
+  participants through every product-facing read, event stream, and mutation;
+  unauthenticated callers receive no private scorecard or tournament event data.
 
 ### Mandatory counted round
 

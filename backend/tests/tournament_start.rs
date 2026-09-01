@@ -129,57 +129,6 @@ async fn status(pool: &PgPool, tournament_id: Uuid) -> String {
 }
 
 #[sqlx::test(migrations = "../migrations")]
-async fn legacy_platform_creation_rejects_status_and_always_creates_draft(pool: PgPool) {
-    seed(&pool).await;
-    let state = AppState::new(pool.clone());
-    let app = api::router(state);
-    let tournament_count = sqlx::query_scalar::<_, i64>("SELECT count(*) FROM tournaments")
-        .fetch_one(&pool)
-        .await
-        .unwrap();
-    let request = |payload: Value| {
-        Request::post("/api/tournaments")
-            .header(header::CONTENT_TYPE, "application/json")
-            .header(header::COOKIE, format!("golf_session={ADMIN_B_TOKEN}"))
-            .header("x-csrf-token", derive_csrf_token(ADMIN_B_TOKEN))
-            .body(Body::from(payload.to_string()))
-            .unwrap()
-    };
-
-    let rejected = app
-        .clone()
-        .oneshot(request(json!({
-            "name": "Bypass attempt",
-            "start_date": "2026-11-01",
-            "end_date": "2026-11-01",
-            "number_of_rounds": 1,
-            "status": "active"
-        })))
-        .await
-        .unwrap();
-    assert_eq!(rejected.status(), StatusCode::UNPROCESSABLE_ENTITY);
-    assert_eq!(
-        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM tournaments")
-            .fetch_one(&pool)
-            .await
-            .unwrap(),
-        tournament_count
-    );
-
-    let created = app
-        .oneshot(request(json!({
-            "name": "Draft only",
-            "start_date": "2026-11-01",
-            "end_date": "2026-11-01",
-            "number_of_rounds": 1
-        })))
-        .await
-        .unwrap();
-    assert_eq!(created.status(), StatusCode::CREATED);
-    assert_eq!(body(created).await["status"], "draft");
-}
-
-#[sqlx::test(migrations = "../migrations")]
 async fn database_rejects_every_non_draft_tournament_insert(pool: PgPool) {
     for status in ["active", "completed", "archived"] {
         let error = sqlx::query(

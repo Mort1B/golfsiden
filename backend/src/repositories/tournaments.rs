@@ -135,45 +135,6 @@ pub async fn create(
     get(pool, id).await?.ok_or(sqlx::Error::RowNotFound)
 }
 
-#[allow(clippy::too_many_arguments)]
-pub async fn create_platform_authorized(
-    pool: &PgPool,
-    session_id: Uuid,
-    name: &str,
-    description: &str,
-    start_date: NaiveDate,
-    end_date: NaiveDate,
-    number_of_rounds: i16,
-    counted_rounds: i16,
-    scoring_mode: ScoringMode,
-) -> Result<Tournament, TournamentMutationError> {
-    let mut transaction = pool.begin().await?;
-    let actor =
-        tournament_authorization::require_platform_admin(&mut transaction, session_id).await?;
-    let tournament = insert_tournament(
-        &mut transaction,
-        name,
-        description,
-        start_date,
-        end_date,
-        number_of_rounds,
-        counted_rounds,
-        TournamentStatus::Draft,
-        scoring_mode,
-    )
-    .await?;
-    sqlx::query(
-        "INSERT INTO tournament_memberships (tournament_id, user_id, role)
-         VALUES ($1, $2, 'admin')",
-    )
-    .bind(tournament.id)
-    .bind(actor)
-    .execute(&mut *transaction)
-    .await?;
-    transaction.commit().await?;
-    Ok(tournament)
-}
-
 pub async fn list_for_user(pool: &PgPool, user_id: Uuid) -> Result<Vec<MyTournament>, sqlx::Error> {
     let rows = sqlx::query_as::<_, MyTournamentRow>(
         "SELECT t.id, t.name, t.description, t.start_date, t.end_date,
@@ -233,36 +194,6 @@ pub async fn add_player_authorized(
     .await?;
     transaction.commit().await?;
     Ok(player)
-}
-
-#[allow(clippy::too_many_arguments)]
-async fn insert_tournament(
-    transaction: &mut Transaction<'_, Postgres>,
-    name: &str,
-    description: &str,
-    start_date: NaiveDate,
-    end_date: NaiveDate,
-    number_of_rounds: i16,
-    counted_rounds: i16,
-    status: TournamentStatus,
-    scoring_mode: ScoringMode,
-) -> Result<Tournament, sqlx::Error> {
-    let id = Uuid::new_v4();
-    sqlx::query_as::<_, Tournament>(&format!(
-        "INSERT INTO tournaments (id, name, description, start_date, end_date, number_of_rounds, counted_rounds, status, scoring_mode)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING {COLUMNS}"
-    ))
-    .bind(id)
-    .bind(name.trim())
-    .bind(description.trim())
-    .bind(start_date)
-    .bind(end_date)
-    .bind(number_of_rounds)
-    .bind(counted_rounds)
-    .bind(status)
-    .bind(scoring_mode)
-    .fetch_one(&mut **transaction)
-    .await
 }
 
 async fn insert_player(

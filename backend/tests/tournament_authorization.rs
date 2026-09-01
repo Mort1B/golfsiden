@@ -505,34 +505,3 @@ async fn tournament_handicap_correction_is_audited_then_locked_by_first_open(poo
         vec![(3.5, Some(ADMIN_B), Some("trip review".to_owned()))]
     );
 }
-
-#[sqlx::test(migrations = "../migrations")]
-async fn platform_admin_actor_is_derived_and_spoof_fields_use_json_error_envelope(pool: PgPool) {
-    seed(&pool).await;
-    let app = api::router(AppState::new(pool.clone()));
-    let spoof = app
-        .clone()
-        .oneshot(json_request(
-            Request::post(format!("/api/players/{PLAYER_LINKED}/handicaps")),
-            "admin-a-token",
-            json!({"handicap_index": 4.2, "changed_by": ADMIN_B}),
-        ))
-        .await
-        .unwrap();
-    assert_eq!(spoof.status(), StatusCode::BAD_REQUEST);
-    assert_eq!(body(spoof).await["error"]["code"], "validation_error");
-
-    let changed = app
-        .oneshot(json_request(
-            Request::post(format!("/api/players/{PLAYER_LINKED}/handicaps")),
-            "admin-a-token",
-            json!({"handicap_index": 4.2, "reason": "review"}),
-        ))
-        .await
-        .unwrap();
-    assert_eq!(changed.status(), StatusCode::CREATED);
-    let actor = sqlx::query_scalar::<_, Uuid>(
-        "SELECT changed_by FROM handicap_history WHERE player_id = $1 ORDER BY created_at DESC LIMIT 1",
-    ).bind(PLAYER_LINKED).fetch_one(&pool).await.unwrap();
-    assert_eq!(actor, ADMIN_A);
-}

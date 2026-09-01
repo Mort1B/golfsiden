@@ -60,29 +60,6 @@ pub enum TournamentRole {
 }
 
 #[derive(Debug, Clone, Serialize, FromRow)]
-pub struct Player {
-    pub id: Uuid,
-    pub display_name: String,
-    pub current_handicap_index: f64,
-    pub email: Option<String>,
-    pub profile_image_ref: Option<String>,
-    pub active: bool,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Clone, Serialize, FromRow)]
-pub struct HandicapHistoryEntry {
-    pub id: Uuid,
-    pub player_id: Uuid,
-    pub handicap_index: f64,
-    pub effective_from: DateTime<Utc>,
-    pub changed_by: Option<Uuid>,
-    pub reason: Option<String>,
-    pub created_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Clone, Serialize, FromRow)]
 pub struct Tournament {
     pub id: Uuid,
     pub name: String,

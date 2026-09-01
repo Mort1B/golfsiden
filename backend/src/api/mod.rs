@@ -6,7 +6,6 @@ mod invitations;
 mod leaderboards;
 mod live;
 mod onboarding;
-mod players;
 mod rounds;
 mod scorecards;
 mod teams;
@@ -33,7 +32,6 @@ pub fn router(state: Arc<AppState>) -> Router {
         .merge(course_provider::routes())
         .merge(invitations::routes())
         .merge(onboarding::routes())
-        .merge(players::routes())
         .merge(leaderboards::routes())
         .merge(tournaments::routes())
         .merge(rounds::routes())

@@ -1,6 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { AppShell } from './ui/AppShell'
-import { PlayersPage } from './pages/PlayersPage'
 import { RoundPage } from './pages/RoundPage'
 import { TournamentPage } from './pages/TournamentPage'
 import { TournamentsPage } from './pages/TournamentsPage'
@@ -27,7 +26,6 @@ export const router = createBrowserRouter([
       { path: '/tournaments/:tournamentId/invitations', element: <RequireSession><InvitationAdminPage /></RequireSession> },
       { path: '/manage/tournaments/:tournamentId', element: <RequireSession><TournamentManagementPage /></RequireSession> },
       { path: '/rounds/:roundId', element: <RequireSession><RoundPage /></RequireSession> },
-      { path: '/players', element: <PlayersPage /> },
       { path: '/score', element: <RequireSession><ScorePage /></RequireSession> },
       { path: '/leaderboard', element: <RequireSession><LeaderboardPage /></RequireSession> },
     ],

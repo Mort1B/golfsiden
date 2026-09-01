@@ -7,24 +7,24 @@ use axum::{
     response::IntoResponse,
     routing::get,
 };
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
     AppState,
     api::{
-        auth::{AuthenticatedSession, MutationSession, PlatformAdminSession},
+        auth::{AuthenticatedSession, MutationSession},
         authorization::map_authorization_error,
     },
-    domain::models::{ScoringMode, TournamentHandicapCorrection},
-    error::{ApiError, ApiResult, require_non_empty},
+    domain::models::TournamentHandicapCorrection,
+    error::{ApiError, ApiResult},
     repositories::tournaments::{self, TournamentMutationError},
 };
 
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/api/tournaments", get(list).post(create))
+        .route("/api/tournaments", get(list))
         .route("/api/me/tournaments", get(list_mine))
         .route("/api/tournaments/{tournament_id}", get(get_one))
         .route(
@@ -43,20 +43,6 @@ pub fn routes() -> Router<Arc<AppState>> {
             "/api/tournaments/{tournament_id}/players/{player_id}/handicap-corrections",
             axum::routing::post(change_player_handicap),
         )
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct CreateTournament {
-    name: String,
-    #[serde(default)]
-    description: String,
-    start_date: NaiveDate,
-    end_date: NaiveDate,
-    number_of_rounds: i16,
-    counted_rounds: Option<i16>,
-    #[serde(default = "default_scoring_mode")]
-    scoring_mode: ScoringMode,
 }
 
 #[derive(Deserialize)]
@@ -87,10 +73,6 @@ struct StartTournament {
     expected_tournament_updated_at: DateTime<Utc>,
 }
 
-fn default_scoring_mode() -> ScoringMode {
-    ScoringMode::Combined
-}
-
 async fn list(
     State(state): State<Arc<AppState>>,
     authenticated: AuthenticatedSession,
@@ -109,45 +91,6 @@ async fn get_one(
         .await
         .map_err(map_authorization_error)?;
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(tournament)))
-}
-
-async fn create(
-    State(state): State<Arc<AppState>>,
-    PlatformAdminSession(authenticated): PlatformAdminSession,
-    Json(input): Json<CreateTournament>,
-) -> ApiResult<impl IntoResponse> {
-    require_non_empty(&input.name, "name")?;
-    if input.end_date < input.start_date {
-        return Err(ApiError::BadRequest(
-            "end_date must not be before start_date".to_owned(),
-        ));
-    }
-    if !(1..=30).contains(&input.number_of_rounds) {
-        return Err(ApiError::BadRequest(
-            "number_of_rounds must be between 1 and 30".to_owned(),
-        ));
-    }
-    let counted_rounds = input.counted_rounds.unwrap_or(input.number_of_rounds);
-    if counted_rounds < 1 || counted_rounds > input.number_of_rounds {
-        return Err(ApiError::BadRequest(
-            "counted_rounds must be between 1 and number_of_rounds".to_owned(),
-        ));
-    }
-    let tournament = tournaments::create_platform_authorized(
-        &state.pool,
-        authenticated.principal.session_id,
-        &input.name,
-        &input.description,
-        input.start_date,
-        input.end_date,
-        input.number_of_rounds,
-        counted_rounds,
-        input.scoring_mode,
-    )
-    .await
-    .map_err(map_mutation_error)?;
-    state.notify("tournament", tournament.id);
-    Ok((StatusCode::CREATED, Json(tournament)))
 }
 
 async fn list_mine(

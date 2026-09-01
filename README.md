@@ -153,9 +153,11 @@ See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documenta
 
 Tournament-scoped membership authorization is enforced for entrant, handicap,
 round, team, lifecycle, score-save, score-confirmation, and score-access
-operations. Global player/profile mutations and legacy tournament creation are
-platform-admin-only. Public read routes remain on the pre-onboarding viewer model
-until the private frontend cutover.
+operations. The global player/profile/handicap HTTP directory, its `/players`
+page, and legacy platform-admin tournament creation have been retired. Players
+are discovered through private tournament rosters, while tournament creation is
+available through creator onboarding only. The remaining scorecard and live-event
+read surfaces still need the broader tournament-isolation audit before production.
 
 Tournament creation now issues a reusable invitation secret, and admins can
 rotate or revoke links, but recovery from a lost one-time plaintext response

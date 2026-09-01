@@ -1,78 +1,53 @@
 # Latest explanation
 
-## Tournament start is now explicit
+## Global player discovery is retired
 
-An exact tournament admin can move a tournament from `Kladd` to `Aktiv` in the
-management workspace. The action is deliberately separate from round opening:
-starting changes only `tournaments.status`; every individual round remains draft
-until its own course, tee, flights, teams, and score owners pass round-opening
-readiness.
+The web product no longer exposes a global player, profile, or handicap-history
+directory. Every former method under `/api/players` is unrouted, the `/players`
+page and navigation item are gone, and the frontend no longer contains a global
+player client or DTO. Preserved `players` and handicap-history rows remain in
+PostgreSQL because accounts, invitations, tournament registrations, snapshots,
+and historical results still reference them.
 
-The start request contains the tournament's authoritative `updated_at` and uses
-the existing CSRF-protected session. The repository locks rounds in deterministic
-UUID order, revalidates the active session and exact
-`tournament_memberships.role = 'admin'` row, locks the tournament, and then
-checks the complete numbered draft plan plus one effectively active entrant. A
-global account role never grants authority in another tournament.
+Tournament discovery did not become global as a replacement. The remaining
+collection route keeps its authenticated membership filter:
 
 ```rust
-let result = tournaments::start_authorized(
+let tournaments = tournaments::list_for_member(
     &state.pool,
-    session_id,
-    tournament_id,
-    expected_tournament_updated_at,
+    authenticated.principal.user_id,
 ).await?;
-
-if result.changed {
-    state.notify("tournament", tournament_id);
-}
+Ok(([(CACHE_CONTROL, "private, no-store")], Json(tournaments)))
 ```
 
-Successful changed transactions emit one payload-free tournament invalidation
-only after commit. Already-active retries return the same authoritative
-tournament without changing its timestamp or emitting an event. Stale,
-not-ready, invalid-state, unauthenticated, cross-tournament, and missing-resource
-requests cannot mutate state or publish SSE.
+The legacy `POST /api/tournaments` route and its platform-admin extractor and
+repository path are also removed. Creator onboarding is the product-facing
+tournament creation boundary and atomically grants only the new tournament's
+admin membership. A global account role grants no tournament listing or
+administration access, and it cannot use a separate legacy creation path.
 
-## Database and upgrade guarantees
+## Frontend and compatibility boundaries
 
-Migration 0015 guards `draft -> active` with transaction-local tournament and
-actor context, exact membership, complete round-plan, and active-entrant checks.
-It also rejects every new tournament inserted with a non-draft status; existing
-active tournaments remain valid, and the general repository creator is
-draft-only. This closes the internal/direct-SQL creation path as well as the
-legacy HTTP status field.
-It also makes an active parent tournament a prerequisite for round opening while
-preserving the full existing completion, locking, scorecard, snapshot, and
-foursomes trigger behavior.
+The application now has three primary navigation items. Mobile and desktop CSS
+explicitly lays out that three-item navigation, and an old `/players` bookmark
+falls through to the established router error page without issuing an API
+request. Tournament management continues to use the identity- and tournament-
+scoped private roster query; roster loading, correction, and invalidation
+semantics were not changed.
 
-Older deployments could legally open a round while the tournament itself still
-said `Kladd`. During upgrade, only those already-underway tournaments are
-promoted to `active`; their round states are untouched and the tournament
-timestamp is intentionally refreshed. Ordinary draft tournaments remain draft.
-The legacy platform creation endpoint can no longer accept a caller-selected
-status and always creates a draft tournament.
+No migration was needed. This release removes transport surfaces rather than
+stored identity or history, and existing tournament/player composite keys remain
+the database isolation boundary.
 
-Tournament roster responses now include the tournament-scoped `player_active`
-fact. The frontend combines it with registration status, so a withdrawn or
-deactivated sole entrant cannot make the Start action appear ready. Starting
-also freezes the counted-round setting; draft course and pairing work remains
-available because those facts belong to each round's later opening boundary.
+## Validation and remaining audit
 
-## Validation and review
+Regression coverage checks every retired player method for anonymous, member,
+and global-admin sessions, proves legacy tournament creation cannot mutate the
+database or emit SSE, and confirms authenticated tournament lists and rosters
+remain membership-scoped and `private, no-store`. Rust formatting, default and
+PostgreSQL tests, strict Clippy, frontend tests, typecheck, lint, build, and Chrome
+checks at 375px and 1440px cover the release.
 
-Focused PostgreSQL coverage proves successful and idempotent starts, both
-cross-tournament denial directions, `404`, stale and malformed plans, withdrawn
-or deactivated entrants, draft-only inserts, lifecycle rollback/no-SSE behavior,
-two concurrent HTTP starts, a start/configuration race, and a real migrations-
-0001-through-0014 upgrade. The final ladder passed 236 Rust/PostgreSQL tests and
-169 frontend tests, strict Clippy, typecheck, lint, production build, repeated
-migration/seed checks, and real Chrome validation at 375px and 1440px. Chrome
-confirmed the 44px action, disabled pending state, one request after a duplicate
-click, `Aktiv` success state, five preserved `Kladd` rounds, no horizontal
-overflow, and no console or network failures.
-
-Owner review found no remaining in-scope lifecycle or authorization defect. It
-did confirm one pre-existing privacy issue as the urgent next bounded step: the
-legacy global player directory and its unauthenticated reads must be retired in
-favor of tournament-scoped roster access before production security sign-off.
+The next isolation slice must address the remaining scorecard/live-event read
+policy, arbitrary global player IDs in the admin roster mutation, authorization
+ordering in round creation, and the complete two-tournament read/mutation audit.

@@ -2,7 +2,7 @@ use sqlx::{PgPool, Postgres, Transaction};
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::{auth::UserRole, domain::models::TournamentRole, repositories::auth};
+use crate::{domain::models::TournamentRole, repositories::auth};
 
 #[derive(Debug, Error)]
 pub enum AuthorizationError {
@@ -115,19 +115,6 @@ async fn require_membership_read(
         return Err(AuthorizationError::Forbidden);
     }
     Ok(())
-}
-
-pub async fn require_platform_admin(
-    transaction: &mut Transaction<'_, Postgres>,
-    session_id: Uuid,
-) -> Result<Uuid, AuthorizationError> {
-    let principal = auth::lock_active_session(transaction, session_id)
-        .await?
-        .ok_or(AuthorizationError::Unauthenticated)?;
-    if principal.role != UserRole::Admin {
-        return Err(AuthorizationError::Forbidden);
-    }
-    Ok(principal.user_id)
 }
 
 pub async fn require_tournament_admin(

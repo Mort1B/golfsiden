@@ -86,23 +86,6 @@ impl FromRequestParts<Arc<AppState>> for MutationSession {
     }
 }
 
-pub struct PlatformAdminSession(pub AuthenticatedSession);
-
-impl FromRequestParts<Arc<AppState>> for PlatformAdminSession {
-    type Rejection = ApiError;
-
-    async fn from_request_parts(
-        parts: &mut Parts,
-        state: &Arc<AppState>,
-    ) -> Result<Self, Self::Rejection> {
-        let MutationSession(session) = MutationSession::from_request_parts(parts, state).await?;
-        if session.principal.role != crate::auth::UserRole::Admin {
-            return Err(ApiError::Forbidden);
-        }
-        Ok(Self(session))
-    }
-}
-
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct LoginRequest {

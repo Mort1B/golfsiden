@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { BarChart3, ClipboardPen, LogIn, LogOut, Trophy, Users } from 'lucide-react'
+import { BarChart3, ClipboardPen, LogIn, LogOut, Trophy } from 'lucide-react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { api } from '../api/client'
 import { invalidateLiveQueries } from '../api/liveInvalidation'
@@ -11,7 +11,6 @@ const baseNavItems = [
   { to: '/tournaments', label: 'Turnering', icon: Trophy },
   { to: '/score', label: 'Score', icon: ClipboardPen },
   { to: '/leaderboard', label: 'Resultater', icon: BarChart3 },
-  { to: '/players', label: 'Spillere', icon: Users },
 ]
 
 export function AppShell() {
@@ -24,7 +23,7 @@ export function AppShell() {
   useEffect(() => {
     const events = new EventSource(api.liveUrl, { withCredentials: true })
     const invalidate = () => void invalidateLiveQueries(queryClient)
-    for (const type of ['player', 'tournament', 'round', 'team', 'score']) {
+    for (const type of ['tournament', 'round', 'team', 'score']) {
       events.addEventListener(type, invalidate)
     }
     return () => events.close()

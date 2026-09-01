@@ -200,9 +200,12 @@ response in one repeatable-read transaction while holding the membership row
 
 Management and lifecycle mutations resolve the target tournament from the
 resource and lock/revalidate both the session and admin membership inside the
-write transaction. Global player/profile mutations and the temporary legacy
-tournament-creation route remain platform-admin-only. `GET /api/me/tournaments`
-returns only the active user's tournament roles and linked entrant identities.
+write transaction. The former global player/profile/handicap routes and legacy
+`POST /api/tournaments` platform-admin route are no longer registered. Player
+discovery is available only from a target tournament's private roster, and
+product-facing tournament creation uses creator onboarding. `GET
+/api/me/tournaments` returns only the active user's tournament roles and linked
+entrant identities.
 
 ## Creator onboarding
 
@@ -629,11 +632,10 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 
 ## Known limitations
 
-- The legacy global player/profile/handicap directory remains publicly readable
-  and is the next security-removal step. Product-facing player discovery must use
-  tournament-scoped private rosters. Scorecard and SSE visibility still need
-  explicit private/public policy decisions; later public tournament or
-  leaderboard access will use explicit share tokens.
+- The legacy global player/profile/handicap directory and platform-admin
+  tournament creation are retired. Scorecard and SSE visibility still need the
+  broader tournament-isolation audit; later public tournament or leaderboard
+  access will use explicit share tokens.
 - Request throttling is not implemented, so the public onboarding and
   registration endpoints are not ready for an internet-facing deployment.
 - Tournament settings currently edit only the pre-start counted-round value and

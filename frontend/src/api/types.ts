@@ -19,17 +19,6 @@ export interface Tournament {
   updated_at: string
 }
 
-export interface Player {
-  id: string
-  display_name: string
-  current_handicap_index: number
-  email: string | null
-  profile_image_ref: string | null
-  active: boolean
-  created_at: string
-  updated_at: string
-}
-
 export interface TournamentPlayer {
   tournament_id: string
   player_id: string
