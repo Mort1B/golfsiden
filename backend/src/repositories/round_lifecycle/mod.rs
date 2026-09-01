@@ -19,7 +19,7 @@ pub enum OpenRoundError {
     #[error("round not found")]
     NotFound,
     #[error("round is not ready to open")]
-    NotReady(PairingValidation),
+    NotReady(Box<PairingValidation>),
     #[error("round handicap calculation failed")]
     Scoring(#[from] ScoringError),
     #[error(transparent)]

@@ -22,7 +22,8 @@ and scorecard format-policy boundary, and the complete two-player foursomes
 format with preserved WHS team handicaps, and the phone-first writable-card
 selector optimization, and the persisted draft-only `counted_rounds`
 configuration boundary, and metric-specific completed best-N tournament
-contributions are complete. No active implementation step is approved.
+contributions and the strict-Clippy lifecycle error-size repair are complete. No
+active implementation step is approved.
 
 ## Product decisions
 
@@ -90,13 +91,6 @@ contributions are complete. No active implementation step is approved.
   format begins before roadmap completion, optimization, and security review.
 
 ## Upcoming work
-
-### Validation repair
-
-- Restore strict all-feature Clippy by reducing or boxing the three oversized
-  `round_lifecycle` error variants reported at `opening.rs:22` and `mod.rs:60,71`.
-  Preserve public error mapping and lifecycle behavior, add no feature semantics,
-  and require the complete Rust/database ladder before returning to Phase 7.
 
 ### Phase 7: Live best-N standings, final-nine blackout, and scorecards
 

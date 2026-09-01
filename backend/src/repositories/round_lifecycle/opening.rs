@@ -25,7 +25,7 @@ pub(super) async fn in_transaction(
         .ok_or(OpenRoundError::NotFound)?;
     let validation = validate(&loaded.facts);
     if !validation.ready {
-        return Err(OpenRoundError::NotReady(validation));
+        return Err(OpenRoundError::NotReady(Box::new(validation)));
     }
     sqlx::query("SELECT set_config('app.round_opening_id', $1::text, true)")
         .bind(round_id)
