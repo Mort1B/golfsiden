@@ -1,66 +1,58 @@
 # Latest explanation
 
-## The open round now participates provisionally in best N
+## Results now have stable read-only destinations
 
-Phase 7B2a adds the visible scored portion of the deterministic highest-numbered
-open round to tournament gross and net selection. An unstarted card contributes
-nothing. Once an owner has a visible score, the preserved player card or exact
-round-team card becomes one provisional candidate, attributed once to each frozen
-team member where applicable.
+Phase 7B2b turns each visible result into a protected URL instead of transient
+leaderboard text. A tournament row opens the selected player's gross or net
+history. That history is the existing authoritative tournament leaderboard entry,
+so its completed qualification and metric-specific counted selection cannot drift
+from the ranking that linked to it.
 
-The displayed best N is selected independently for gross and net from completed
-history plus that one provisional candidate. Mandatory-round reservation and
-round-number/UUID cutoff ordering remain deterministic. Every loaded round is
-validated in full before the exact current round is rebuilt through its own
-role-aware visibility projection, so a different hidden final cannot redact a
-non-final open round.
+Every visible contribution keeps the exact owner that produced it. An individual
+round therefore links to its player card, while a scramble or foursomes result
+links both attributed players to the same preserved round-team card.
 
-```rust
-let qualification = completed_qualification(&candidates, required, mandatory, metric);
-select_displayed(&mut candidates, required, mandatory, metric);
-// Qualification stays completed-only; displayed selection may include one provisional.
+```ts
+scorecardUrl(
+  tournamentId,
+  contribution.round_id,
+  contribution.owner,
+  metric,
+)
 ```
 
-## Live selection is not final qualification
+The link deliberately uses `contribution.owner`, never `current_team`, because a
+player's team may change each round.
 
-`completed_rounds`, `counted_contributions`, and `eligible` remain derived only
-from completed or locked contributions. A provisional result may enter the
-displayed aggregate and position, but it never qualifies the player or satisfies
-a mandatory result. Rows with a selected score rank first by completed
-qualification count and then by the requested metric's displayed score-to-par.
-Visible provisional hole progress only orders rows inside a sporting tie; it does
-not break that tie.
+## A drilldown never becomes a scoring surface
 
-Each contribution now states whether it is provisional and carries visible holes
-scored plus the authoritative round hole count. Completed identities remain in
-`included_round_ids`; a provisional identity must match `current_round_id`.
-During a non-admin final-round blackout, its totals and progress derive only from
-holes 1–9 with the existing full-round handicap denominator. Admins retain the
-full projection.
+The direct-card route composes its target in three stages. It first loads the
+tournament's decoded rounds and proves the requested round belongs there. It then
+loads the role-projected round leaderboard and requires the exact tagged owner.
+Only after those checks does it enable the actor-free member scorecard read.
 
-## The client validates lifecycle and explains provisional state
+The route never calls score access, completion validation, `/scoring`, confirmation,
+or score mutation endpoints. It still receives the Phase 7B1 visibility projection,
+so a non-admin final card contains only visible front-nine facts and refetches at
+the trusted release deadline. SSE remains an authoritative invalidation signal.
 
-The strict frontend boundary validates contribution lifecycle, owner, progress,
-mandatory state, completed qualification, metric-specific selection, totals,
-eligibility, ranking, ties, and final-nine bounds before caching. The UI separates
-“fullførte tellende” from “foreløpig,” shows visible hole progress, and labels an
-embargoed mandatory final as awaiting release without implying whether a player
-completed it.
+## Canonical keys and URLs keep identities coherent
 
-SSE still carries invalidation only: a named event includes the fixed
-`invalidate` data marker required for browser dispatch, never identifiers or
-mutable score state. Before every tournament standings fetch, the client
-refetches or awaits the exact rounds query and then validates the new
-leaderboard against that authoritative lifecycle state. This prevents an
-open/completed transition from pairing fresh standings with stale rounds. The
-extra request is a deliberate correctness cost to measure during the later
-performance review.
+History and cards reuse the same session-owned canonical query keys as the main
+leaderboard and read-card surfaces. Explicit save/confirmation invalidation, SSE,
+logout, and identity replacement therefore target the same facts rather than
+leaving route-specific copies behind.
 
-Focused backend tests cover individual and team attribution, unstarted/partial/
-full-open cards, unequal qualification, best-N displacement, mandatory open
-rounds, independent current-round visibility, and final-nine redaction. Frontend
-tests cover strict coherence, lifecycle transitions, release wording, and live
-labels. The full backend and frontend ladders pass. In real Chrome at phone width,
-a persisted fourth-hole score dispatched the named `score` event, refetched
-rounds before standings, changed `3 av 18 hull` to `4 av 18 hull` without reload,
-and preserved the final-nine embargo with no console or network errors.
+Metric, summary/hole view, and visible hole are canonical URL state. Complete
+route identities remount independently, invalid owner types and cross-tournament
+rounds fail closed, and initial failures cannot render stale predecessor data.
+Backend integration coverage proves both player- and team-owned contribution tags
+open cards with matching preserved gross/net totals. Frontend tests cover route
+canonicalization, historical owner selection, mandatory/provisional wording,
+cache invalidation, and target mismatch behavior. The full backend, serialized
+PostgreSQL, and frontend ladders pass. Real Chrome at phone and desktop widths
+proved the embargoed individual path, canonical refresh and Back behavior, exact
+shared-team URL/card equality for Anders and Henrik after cleared-session logins,
+same-user cross-tournament isolation, and fail-closed access for a non-member.
+Observed drilldown traffic contained only private/non-cacheable read endpoints;
+no scoring-authority, confirmation, or mutation endpoint was requested.

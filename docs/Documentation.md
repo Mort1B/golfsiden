@@ -714,6 +714,24 @@ cards; tournament rows retain registered players with zero completed rounds and
 label the named mandatory round as completed, open, awaiting final release, or
 missing without inferring a hidden player's result.
 
+Every tournament row links to
+`/tournaments/{tournament_id}/results/players/{player_id}?metric=...`. This
+protected page reuses the canonical metric-specific tournament leaderboard and
+shows every visibility-projected contribution in round order, including its
+preserved player/team owner, gross/net/par totals, completed qualification, and
+explicit counted, discarded, provisional, and mandatory state. Each contribution
+links to
+`/tournaments/{tournament_id}/rounds/{round_id}/scorecards/{owner_type}/{owner_id}`;
+scored round-leaderboard rows link directly to the same read-only route.
+
+The direct-card page verifies that the round belongs to the path tournament and
+that the tagged owner exists in the role-projected round leaderboard before
+requesting the canonical member scorecard read. Metric, summary/hole view, and
+visible hole are canonical URL state. The page uses SSE and the trusted visibility-
+release timer, but never requests score access, completion validation, `/scoring`,
+confirmation, or a mutation. A history/card deep link is therefore refresh-safe
+and membership-private without granting the viewer write authority.
+
 Leaderboard responses cross a focused runtime decoder before entering TanStack
 Query. The decoder checks tagged owners, finite states, identifiers, nullability,
 numeric fields, response identity, and aggregate coherence across contribution
@@ -756,4 +774,3 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
   flight-aware opening readiness, and representative ready seed assignments
   exist together with membership-wide scoring authority. There is still no
   offline score queue or public leaderboard link.
-- Contribution drilldowns and URL-backed player history remain Phase 7B2b work.

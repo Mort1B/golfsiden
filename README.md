@@ -4,7 +4,8 @@ Mobile-first tournament software for a private annual golf trip. The current
 milestone includes atomic self-service tournament creation, revocable sessions,
 round-specific teams and flights, transactional draft pairing rosters, audited
 individual/scramble scorecards, deterministic round lifecycle operations, and
-live gross/net leaderboards. Final-round holes 10–18 are hidden from every
+live gross/net leaderboards with URL-backed player history and read-only result
+scorecards. Final-round holes 10–18 are hidden from every
 non-admin read projection until the database-owned release policy permits them;
 authorized scoring views remain available only for the exact writable card.
 
@@ -208,6 +209,11 @@ highest-numbered open round as an explicitly provisional best-N contribution.
 Completed-only qualification and mandatory-round eligibility remain separate,
 while the UI shows provisional hole progress and refetches authoritative rounds
 before validating a live standings update.
+
+Every visible tournament row opens that player's metric-specific contribution
+history, and every scored round result or historical contribution opens the exact
+preserved player/team card. These drilldowns use only membership-private read
+projections; they never acquire scoring or confirmation authority.
 
 Migration `0009` removes account email after deterministically deriving usernames
 for existing accounts. Back up production data and retain the generated username

@@ -1,4 +1,10 @@
 .score-page { max-width: 720px; }
+.drilldown-controls { display: grid; gap: 6px; padding: 15px 0 5px; }
+.drilldown-controls nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.drilldown-controls a { display: flex; min-height: 44px; align-items: center; justify-content: center; border: 1px solid #c4ccc5; border-radius: 6px; background: #fff; color: #425048; font-size: .78rem; font-weight: 750; text-decoration: none; }
+.drilldown-controls a[aria-current="page"] { border-color: #176640; background: #edf5f0; color: #155f3a; }
+.drilldown-controls a:focus-visible { outline: 3px solid #176640; outline-offset: 2px; }
+.direct-card-members { margin: -2px 2px 12px; color: #5c6961; font-size: .78rem; line-height: 1.4; overflow-wrap: anywhere; }
 .score-selectors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 15px 0 20px; border-block: 1px solid #d8ded8; }
 .score-selectors label { display: grid; min-width: 0; gap: 5px; color: #4f5b54; font-size: .72rem; font-weight: 750; }
 .score-selectors label:first-child, .score-selectors label:nth-child(2), .score-view-toggle { grid-column: 1 / -1; }

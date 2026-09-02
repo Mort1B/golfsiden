@@ -1,4 +1,5 @@
 import { Flag, Radio, Users } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import type { LeaderboardMetric, Round, TournamentLeaderboard, TournamentLeaderboardEntry } from '../../api/types'
 import {
   bestRoundsProgressLabel,
@@ -11,6 +12,7 @@ import {
   selectedProvisional,
 } from './format'
 import { validateMandatoryRound } from '../../api/mandatoryRounds'
+import { playerHistoryUrl } from './drilldownRoutes'
 
 function entryState(entry: TournamentLeaderboardEntry, requiredCount: number): string {
   const progress = bestRoundsProgressLabel(entry, requiredCount)
@@ -25,6 +27,7 @@ function TournamentRow({
   mandatoryRound,
   rounds,
   visibility,
+  tournamentId,
 }: {
   entry: TournamentLeaderboardEntry
   metric: LeaderboardMetric
@@ -33,6 +36,7 @@ function TournamentRow({
   mandatoryRound: Round | null
   rounds: Round[]
   visibility: TournamentLeaderboard['visibility']['mode']
+  tournamentId: string
 }) {
   const total = metric === 'gross' ? entry.gross_total : entry.net_total
   const hasSelectedScore = entry.contributions.some((contribution) => contribution.counted)
@@ -42,7 +46,8 @@ function TournamentRow({
     ? null
     : mandatoryRoundDisplayState(mandatoryRound, rounds, visibility, mandatory)
   return (
-    <li className={`leaderboard-row${entry.status === 'withdrawn' ? ' withdrawn' : ''}`}>
+    <li className={entry.status === 'withdrawn' ? 'withdrawn' : undefined}>
+      <Link className="leaderboard-row leaderboard-row-link" to={playerHistoryUrl(tournamentId, entry.player_id, metric)}>
       <div
         className="leaderboard-position"
         aria-label={entry.position === null
@@ -79,6 +84,7 @@ function TournamentRow({
           ? `${provisional === null ? '' : 'Foreløpig · '}${total} ${metricLabel(metric).toLowerCase()}`
           : hasCurrentRound ? 'Ingen score ennå' : 'Ingen score'}</span>
       </div>
+      </Link>
     </li>
   )
 }
@@ -107,6 +113,7 @@ export function TournamentStandings({ leaderboard, rounds }: { leaderboard: Tour
             mandatoryRound={mandatoryRound}
             rounds={rounds}
             visibility={leaderboard.visibility.mode}
+            tournamentId={leaderboard.tournament_id}
           />
         ))}
       </ol>

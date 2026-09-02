@@ -43,8 +43,10 @@ fixture. Frontend target-coherent runtime decoding and tournament-keyed transien
 state now prevent cross-target cache or UI reuse during same-account navigation.
 Phase 7B1 embargo-safe read projections and Phase 7B2a provisional open-round
 best-N standings are complete, including browser-dispatchable identifier-free
-live invalidation and authoritative 3-to-4-hole refresh validation. There is no
-active implementation step; Phase 7B2b is the next bounded candidate.
+live invalidation and authoritative 3-to-4-hole refresh validation. Phase 7B2b
+membership-private player history and result-card drilldowns are also complete.
+There is no active implementation step; partner-repeat-aware team generation and
+handicap balancing are the next bounded candidates.
 
 ## Product decisions
 
@@ -133,19 +135,6 @@ active implementation step; Phase 7B2b is the next bounded candidate.
   format begins before roadmap completion, optimization, and security review.
 
 ## Upcoming work
-
-### Phase 7B2b: Membership-private result and scorecard drilldowns
-
-- Add URL-backed, membership-scoped read-only player history and scorecard routes.
-  Make round and tournament leaderboard rows navigable, label “Best N of M,” and
-  visibly distinguish counted from discarded rounds. Preserve the completed
-  Phase 7B1 visibility, actor-free read boundaries, and Phase 7B2a provisional
-  contribution identity in every drilldown.
-- Use the existing tournament leaderboard and member scorecard read APIs; never
-  route a drilldown through `/score` or the writable `/scoring` projection.
-- **Stop condition:** every visible result opens exact URL-backed player history
-  and preserved tagged-owner scorecards, survives refresh and target/session
-  changes, and cannot reveal hidden facts or grant mutation authority.
 
 ### Later product work
 

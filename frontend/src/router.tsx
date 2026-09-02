@@ -12,6 +12,8 @@ import { TournamentOnboardingPage } from './pages/TournamentOnboardingPage'
 import { JoinPage } from './pages/JoinPage'
 import { InvitationAdminPage } from './pages/InvitationAdminPage'
 import { TournamentManagementPage } from './pages/TournamentManagementPage'
+import { PlayerHistoryPage } from './pages/PlayerHistoryPage'
+import { DirectScorecardPage } from './pages/DirectScorecardPage'
 
 export const router = createBrowserRouter([
   { path: '/', element: <HomePage /> },
@@ -28,6 +30,8 @@ export const router = createBrowserRouter([
       { path: '/rounds/:roundId', element: <RequireSession><RoundPage /></RequireSession> },
       { path: '/score', element: <RequireSession><ScorePage /></RequireSession> },
       { path: '/leaderboard', element: <RequireSession><LeaderboardPage /></RequireSession> },
+      { path: '/tournaments/:tournamentId/results/players/:playerId', element: <RequireSession><PlayerHistoryPage /></RequireSession> },
+      { path: '/tournaments/:tournamentId/rounds/:roundId/scorecards/:ownerType/:ownerId', element: <RequireSession><DirectScorecardPage /></RequireSession> },
     ],
   },
 ])

@@ -215,6 +215,36 @@ async fn open_latest_round(pool: &PgPool) {
     open(pool, ROUND_DRAFT).await;
 }
 
+async fn complete_individual_and_team_rounds(pool: &PgPool) {
+    open(pool, ROUND_ONE).await;
+    open(pool, ROUND_TWO).await;
+    for (player, gross) in [
+        (PLAYER_A, 4),
+        (PLAYER_B, 5),
+        (PLAYER_PLUS, 4),
+        (PLAYER_D, 5),
+    ] {
+        let owner = ScoreOwner::Player { id: player };
+        for hole in [HOLE_ONE, HOLE_TWO] {
+            save(pool, ROUND_ONE, hole, owner, gross).await;
+        }
+        scorecards::confirm(pool, ROUND_ONE, owner, USER)
+            .await
+            .unwrap();
+    }
+    for (team, gross) in [(TEAM_TWO_A, 4), (TEAM_TWO_B, 5)] {
+        let owner = ScoreOwner::Team { id: team };
+        for hole in [HOLE_ONE, HOLE_TWO] {
+            save(pool, ROUND_TWO, hole, owner, gross).await;
+        }
+        scorecards::confirm(pool, ROUND_TWO, owner, USER)
+            .await
+            .unwrap();
+    }
+    round_completion::complete(pool, ROUND_ONE).await.unwrap();
+    round_completion::complete(pool, ROUND_TWO).await.unwrap();
+}
+
 #[sqlx::test(migrations = "../migrations")]
 async fn foursomes_round_and_tournament_leaderboards_use_preserved_team_snapshots(pool: PgPool) {
     seed(&pool).await;
@@ -399,35 +429,9 @@ async fn scramble_formula_members_and_disabled_scorecard_parity(pool: PgPool) {
 #[sqlx::test(migrations = "../migrations")]
 async fn tournament_api_aggregates_completed_rounds_and_keeps_current_teams(pool: PgPool) {
     seed(&pool).await;
-    for round in [ROUND_ONE, ROUND_TWO, ROUND_THREE] {
-        open(&pool, round).await;
-    }
+    complete_individual_and_team_rounds(&pool).await;
+    open(&pool, ROUND_THREE).await;
     open_latest_round(&pool).await;
-    for (player, gross) in [
-        (PLAYER_A, 4),
-        (PLAYER_B, 5),
-        (PLAYER_PLUS, 4),
-        (PLAYER_D, 5),
-    ] {
-        let owner = ScoreOwner::Player { id: player };
-        for hole in [HOLE_ONE, HOLE_TWO] {
-            save(&pool, ROUND_ONE, hole, owner, gross).await;
-        }
-        scorecards::confirm(&pool, ROUND_ONE, owner, USER)
-            .await
-            .unwrap();
-    }
-    for (team, gross) in [(TEAM_TWO_A, 4), (TEAM_TWO_B, 5)] {
-        let owner = ScoreOwner::Team { id: team };
-        for hole in [HOLE_ONE, HOLE_TWO] {
-            save(&pool, ROUND_TWO, hole, owner, gross).await;
-        }
-        scorecards::confirm(&pool, ROUND_TWO, owner, USER)
-            .await
-            .unwrap();
-    }
-    round_completion::complete(&pool, ROUND_ONE).await.unwrap();
-    round_completion::complete(&pool, ROUND_TWO).await.unwrap();
     round_completion::lock(&pool, ROUND_TWO).await.unwrap();
     sqlx::query("UPDATE tournament_players SET status = 'withdrawn' WHERE tournament_id = $1 AND player_id = $2")
         .bind(TOURNAMENT).bind(PLAYER_D).execute(&pool).await.unwrap();
@@ -492,6 +496,59 @@ async fn tournament_api_aggregates_completed_rounds_and_keeps_current_teams(pool
         response,
         json!({"error":{"code":"not_found","message":"resource not found"}})
     );
+}
+
+#[sqlx::test(migrations = "../migrations")]
+async fn tournament_contributions_open_their_exact_preserved_scorecards(pool: PgPool) {
+    seed(&pool).await;
+    complete_individual_and_team_rounds(&pool).await;
+    let app = api::router(AppState::new(pool));
+
+    for metric in ["gross", "net"] {
+        let (status, tournament) = get(
+            &app,
+            format!("/api/tournaments/{TOURNAMENT}/leaderboards/{metric}"),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        let ada = tournament["entries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|entry| entry["player_id"] == PLAYER_A.to_string())
+            .unwrap();
+        let contributions = ada["contributions"].as_array().unwrap();
+
+        for (round_id, owner_type, owner_id) in [
+            (ROUND_ONE, "player", PLAYER_A),
+            (ROUND_TWO, "team", TEAM_TWO_A),
+        ] {
+            let contribution = contributions
+                .iter()
+                .find(|contribution| {
+                    contribution["round_id"] == round_id.to_string()
+                        && contribution["owner"]["type"] == owner_type
+                        && contribution["owner"]["id"] == owner_id.to_string()
+                })
+                .unwrap();
+            let tagged_owner_type = contribution["owner"]["type"].as_str().unwrap();
+            let tagged_owner_id = contribution["owner"]["id"].as_str().unwrap();
+            let tagged_round_id = contribution["round_id"].as_str().unwrap();
+            let (status, scorecard) = get(
+                &app,
+                format!(
+                    "/api/rounds/{tagged_round_id}/scorecards/{tagged_owner_type}/{tagged_owner_id}"
+                ),
+            )
+            .await;
+
+            assert_eq!(status, StatusCode::OK);
+            assert_eq!(scorecard["round_id"], contribution["round_id"]);
+            assert_eq!(scorecard["owner"], contribution["owner"]);
+            assert_eq!(scorecard["gross_total"], contribution["gross_total"]);
+            assert_eq!(scorecard["net_total"], contribution["net_total"]);
+        }
+    }
 }
 
 #[sqlx::test(migrations = "../migrations")]

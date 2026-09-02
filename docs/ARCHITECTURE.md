@@ -271,8 +271,9 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
 - A non-null mandatory-round identity is also composed with the exact decoded
   tournament round collection before settings or leaderboard data enters the
   query cache. Unknown or cross-target round identities fail closed.
-- Route shells key tournament, management, round, leaderboard, and invitation
-  workspaces by their target identity. This makes correction/count drafts,
+- Route shells key tournament, management, round, leaderboard, result-history,
+  read-card, and invitation workspaces by their target identity. This makes
+  correction/count drafts,
   mutation receipts and errors, and one-time invitation tokens target-local even
   when React Router reuses the page component or an old request completes late.
 - The global leaderboard route owns selection in canonical URL parameters instead
@@ -284,6 +285,15 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   a new open/completed projection is never validated against stale round status;
   the extra authoritative fetch is an explicit correctness cost for later
   performance review.
+- Protected result-history routes project one exact player from the canonical
+  metric-specific tournament leaderboard. Contribution links use the preserved
+  tagged historical owner, never the player's current team. Protected result-card
+  routes first compose tournament and round identity, then require that exact
+  owner in the role-projected round leaderboard before enabling the canonical
+  actor-free scorecard read. Both routes reuse session-owned canonical query keys,
+  so explicit mutation invalidation, SSE, logout, and identity changes address
+  the same cached facts. No drilldown requests score access, completion,
+  `/scoring`, confirmation, or mutation endpoints.
 - The score route likewise owns tournament, round, tagged owner, hole, and view
   selection in canonical URL parameters. Completion validation is its owner
   authority, and exact runtime decoders protect scorecard state before caching.
