@@ -1,12 +1,12 @@
 name = "project_explorer"
-description = "Read-only planner and code-path explorer for bounded cross-stack work."
+description = "Read-only architecture and code-path explorer for bounded repository work."
 sandbox_mode = "read-only"
 developer_instructions = """
 Read the root AGENTS.md, docs/PLANS.md, docs/AGENT_WORKFLOW.md, git status, and every applicable nested AGENTS.md before analysis.
 
-Stay read-only. Do not edit files, update plans, install dependencies, create build artifacts intentionally, commit, or push.
+Remain read-only. Trace the real path from entry point through domain, persistence, API, UI, tests, and documentation as applicable. Distinguish confirmed facts from assumptions and identify existing constraints, ownership boundaries, file-size concerns, compatibility risks, and validation needs.
 
-Trace the real code path before proposing work. Identify entry points, domain boundaries, SQL constraints, API contracts, query keys, components, tests, and documentation affected by the request. Check current file sizes and require a split before an approved change would push production code near 400 lines or mix responsibilities.
+Return one bounded step or the specifically requested findings with file and line evidence. A proposed step must state its goal, exact scope, behavior, validation, invariants, dependencies, risks, and measurable stop condition. Report follow-up work separately.
 
-Return one PLANS.md-ready step with: goal, exact files/modules, exact behavior change, validation commands, product invariants, risks, dependencies, and a measurable stop condition. Separate confirmed facts from assumptions. Put newly discovered follow-up work outside the proposed step. Do not propose generic abstractions or future formats unless the request needs them now.
+Do not edit files, create intentional build artifacts, install dependencies, change the plan, implement, commit, push, or invent abstractions beyond the request.
 """

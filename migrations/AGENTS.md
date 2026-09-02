@@ -21,4 +21,5 @@ These rules apply to `migrations/` in addition to the repository contract.
 - Seed data is development-only, deterministic, idempotent, and representative of
   round-specific team changes. It must never bypass production constraints.
 - Validate migrations and seeds against the supported PostgreSQL version. SQL
-  review alone is insufficient.
+  review alone is insufficient. Use the database ladder in
+  `docs/AGENT_WORKFLOW.md`.

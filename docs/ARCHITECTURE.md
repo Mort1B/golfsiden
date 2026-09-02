@@ -5,7 +5,8 @@
 - `backend/` is an Axum service using Tokio, SQLx, PostgreSQL, Serde, UUIDs, and tracing.
 - `frontend/` is a Vite React application using strict TypeScript, React Router, and TanStack Query.
 - `migrations/` owns the production database schema.
-- `docs/` records architecture and phased delivery decisions.
+- `docs/` separates current behavior, durable architecture, active work, latest
+  rationale, and future deployment procedures.
 
 Backend request handling is split into `api`, `repositories`, and `domain`. Handlers own HTTP validation and response mapping, repositories own SQL and transaction mechanics, and pure handicap/scoring/lifecycle behavior stays in `domain`. Authentication and score authorization are isolated modules rather than handler-local policy.
 
@@ -132,6 +133,11 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   ancestor reads serialize finalization with child writes. Finalized hierarchies
   are append-only. Pre-migration rows keep null revision metadata instead of
   receiving invented provenance.
+- Manual course configuration creates one round-specific immutable course/tee
+  revision, not a reusable course library or multi-tee catalog. Round opening
+  derives and freezes each eligible owner's Course and Playing Handicap from
+  that selected tee; net scoring allocates received strokes from the preserved
+  Playing Handicap through the revision's unique hole stroke indexes.
 - Draft-round course configuration is a conditional `PUT` with the current
   round `updated_at` as a required optimistic token. A short repeatable-read
   preflight proves exact tournament-admin scope and draft state before request
@@ -317,7 +323,7 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   is visible immediately, but net output is shown only after decoded server
   verification.
 
-## API milestone
+## API inventory
 
 Implemented resources:
 
@@ -371,10 +377,11 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 
 - Public scorecard/share-link policy; production signup, login, and invitation-
   registration rate limiting.
-- Faster phone switching among several writable flight cards.
 - Separate migration and runtime database roles plus production privilege policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.
 - Scramble formulas beyond the initial configurable 35%/15% implementation.
 - Configurable tie-break ordering beyond shared competition positions.
 - Public leaderboard token/link design.
 - Offline mutation queue and score conflict presentation.
+- Reusable course and multi-tee library behavior, including whether the UI should
+  show explicit per-hole received-stroke badges.

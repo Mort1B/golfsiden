@@ -1,9 +1,10 @@
 # Guttas Golf
 
-Mobile-first tournament software for a private annual golf trip. The current
-milestone includes atomic self-service tournament creation, revocable sessions,
+Mobile-first tournament software for a private annual golf trip. The application
+includes atomic self-service tournament creation, revocable sessions,
 round-specific teams and flights, transactional draft pairing rosters, audited
-individual/scramble scorecards, deterministic round lifecycle operations, and
+individual, scramble, and foursomes scorecards, deterministic round lifecycle
+operations, and
 live gross/net leaderboards with URL-backed player history and read-only result
 scorecards. Final-round holes 10–18 default to hidden from every non-admin read
 projection until the exact tournament admin releases them; the admin may re-hide
@@ -69,9 +70,9 @@ within its best-three standings. It is ready to start. After
 the admin starts the tournament in its management workspace, every seeded
 round's pairings are ready to open.
 Each round has two four-player flights starting on holes 1 and 10. Scramble
-rounds one, two, and four have four two-player score-owner teams; individual
-rounds three and five use flights only. The player rotations change between
-rounds. Development credentials are:
+rounds one and two and foursomes round four have four two-player score-owner
+teams; individual rounds three and five use flights only. The player rotations
+change between rounds. Development credentials are:
 
 - Admin username: `admin`
 - Player usernames: `anders`, `bjarne`, `christian`, `daniel`, `eirik`,
@@ -95,8 +96,8 @@ a global account-wide ceiling.
 
 The missing shortlist courses are expected to be added directly to
 GolfCourseAPI later using a Pro plan. Until a provider course has complete tee
-and hole data, the planned round-configuration flow must also support manual
-entry by the tournament admin. The admin chooses or names the tee and supplies
+and hole data, round configuration uses manual entry by the tournament admin.
+The admin chooses or names the tee and supplies
 its course rating and slope, then enters each hole's par and unique stroke index.
 Hole distance in yards is optional. The backend now has one validated transactional
 storage boundary for either source. It records the selected tee and complete
@@ -140,19 +141,19 @@ npm run build
 ## Repository map
 
 - `AGENTS.md`: repository-wide engineering and agent operating contract
-- `.codex/agents`: project-scoped explorer, implementation, review, and validation agents
+- `.codex/agents`: repository-local explorer, implementation, review, and validation roles
 - `backend/src/api`: routes, handlers, request validation, SSE
 - `backend/src/domain`: API/domain models and pure scoring/handicap services
 - `backend/src/repositories`: SQLx database access
 - `backend/src/bin`: migration and seed commands
 - `backend/tests`: PostgreSQL integrity tests
-- `frontend/src/pages`: milestone viewer pages
+- `frontend/src/pages`: route-level application pages
 - `frontend/src/features`: focused mobile feature components and utilities
 - `frontend/src/api`: typed API client and resource types
 - `migrations`: PostgreSQL schema and integrity triggers
-- `docs`: architecture decisions and phased plan
+- `docs`: current behavior, architecture, active work, workflow, and deployment guidance
 
-See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documentation.md), [Active plans](docs/PLANS.md), and [Agent workflow](docs/AGENT_WORKFLOW.md) for the API inventory, domain decisions, current behavior, and next milestone.
+See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documentation.md), [Plans](docs/PLANS.md), [Agent workflow](docs/AGENT_WORKFLOW.md), and the [deployment guide](docs/deployment_guide.md) for the API inventory, domain decisions, current behavior, queued work, and future operations guidance.
 
 ## Current limitations
 
@@ -185,10 +186,10 @@ rotate or revoke links, but recovery from a lost one-time plaintext response
 still requires rotation. Request throttling is required before public
 deployment. The backend now exposes a private consolidated team/flight roster and
 an atomic admin replacement endpoint for draft rounds. Flight-aware validation
-and opening require complete assignments and keep scramble teams within one
-flight; the development seed supplies representative assignments for all five
-rounds, ready to open after the admin starts the tournament. Tournament admins
-can edit one draft round at a time with accessible
+and opening require complete assignments and keep scramble and foursomes teams
+within one flight; the development seed supplies representative assignments for
+all five rounds, ready to open after the admin starts the tournament. Tournament
+admins can edit one draft round at a time with accessible
 add, move, remove, and ordering controls; saves replace the complete team/flight
 roster atomically and preserve dirty input on conflicts. The remaining
 tournament settings, offline scoring, and locked-round score corrections remain

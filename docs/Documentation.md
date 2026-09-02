@@ -2,33 +2,26 @@
 
 ## Current product state
 
-Milestone 1 provides a Rust/Axum API, PostgreSQL schema and migrations, an
-idempotent development seed, and a strict TypeScript React viewer application.
-Milestone 2 now includes deterministic round opening, backend score entry,
-correction, scorecard summary and confirmation, plus atomic round completion and
-locking and live gross/net leaderboard APIs for individual stroke play,
-two-player scramble, and two-player foursomes. Signed-in tournament members can browse their tournaments,
-tournament players, rounds, round-specific teams, and gross/net standings. The
-mobile result view supports shareable selections and live refetch inside that
-private workspace. Global player reads are retired.
-The mobile score view supports authenticated hole entry, correction,
-confirmation, locked read-only cards, and every writable card in the signed-in
-player's exact flight for all three scoring formats.
-Tournament-scoped memberships now authorize entrant, round, team, lifecycle,
-handicap, and score mutations as well as tournament workspace reads. A first-time
-visitor can create their account, player identity, draft tournament, complete
-round plan, admin membership, initial invitation, and session through one mobile
-onboarding flow.
-Shared invitation links now support minimal preview, atomic new-player
-registration, exact linked-player acceptance, and tournament-admin issue,
-rotation, and revocation from mobile-first React views.
-Accounts now use username and password only. Tournament admins can correct a
-registered handicap with an audit reason until the first round opens; the
-handicap is permanently fixed for that tournament afterward.
-An exact tournament admin can now start a ready draft tournament from its
-management workspace. Tournament start and round opening are separate lifecycle
-actions: start activates the tournament and freezes pre-start settings, while
-every round remains draft until it is explicitly opened.
+The application is a private, mobile-first tournament workspace backed by a
+Rust/Axum API, PostgreSQL migrations, an idempotent development seed, and a
+strict TypeScript React client. Username/password accounts enter through atomic
+creator onboarding or tournament invitations; tournament membership, rather
+than a global role or player directory, owns access.
+
+Exact tournament admins configure counted and optional mandatory rounds, select
+or manually register one immutable course/tee revision per draft round, manage
+teams and flights, start the tournament, and open, complete, or lock individual
+rounds through separate lifecycle actions. Opening calculates and freezes
+handicap snapshots from the selected tee. Individual stroke play, two-player
+scramble, and two-player foursomes have distinct preserved score ownership and
+handicap rules.
+
+Members can enter authorized flight scorecards, confirm cards, and browse live
+gross/net round and best-N tournament standings, player contribution histories,
+and read-only preserved result cards. Server-Sent Events trigger authoritative
+private refetches. For the configured 18-hole final, holes 10–18 default to
+hidden from non-admin result projections until the exact tournament admin
+releases them; the admin can re-hide them without any time dependency.
 
 ## Repository structure
 
@@ -41,8 +34,9 @@ every round remains draft until it is explicitly opened.
 - `frontend/src/pages/`: route-level mobile-first views.
 - `frontend/src/ui/`: reusable application UI.
 - `migrations/`: forward PostgreSQL schema changes.
-- `.codex/agents/`: project-specific specialist agent definitions.
-- `docs/PLANS.md`: the only active implementation plan.
+- `.codex/agents/`: repository specialist role definitions.
+- `docs/`: current behavior, durable architecture, active work, workflow, latest
+  rationale, and the deployment-guide placeholder.
 
 ## Preserved domain behavior
 
@@ -54,7 +48,8 @@ every round remains draft until it is explicitly opened.
   round has opened or snapshot has existed.
 - Team membership is unique per player and round.
 - Scores have exclusive player/team ownership.
-- Locked-round score mutations require an explicit admin correction setting.
+- PostgreSQL reserves an explicit audited administrator context for any future
+  locked-round correction; no operator flow currently exposes that path.
 - Score mutations are auditable in PostgreSQL.
 - The initial two-player scramble formula is isolated in the domain layer and
   uses 35% of the lower plus 15% of the higher course handicap. Each registered
@@ -121,7 +116,7 @@ tournament. Round lookup, session revalidation, membership `FOR SHARE`, and card
 assembly share one repeatable-read transaction; successful responses are
 `private, no-store`.
 
-For an applicable final-round blackout, non-admin member reads contain only
+When the final back nine is hidden, non-admin member reads contain only
 holes 1–9 and totals derived from those holes; authoritative completeness,
 confirmation, and confirmation time are null. The full card is available at the
 same path plus `/scoring` only after exact admin/scorer/flight-owner write
@@ -605,7 +600,7 @@ commas.
 `GET /api/rounds/{round_id}/completion-validation` returns a repeatable-read,
 deterministically ordered view of every required player or team scorecard. Exact
 admins receive authoritative progress, confirmation, and lifecycle readiness.
-During a non-admin final-nine blackout it counts only actual scores on holes
+While the final back nine is hidden for a non-admin, it counts only actual scores on holes
 1–9, reports nine visible required holes, nulls completion, confirmation, and
 readiness, and omits issue codes derived from hidden state.
 
@@ -763,6 +758,10 @@ Follow `README.md` for setup and commands. Agents and contributors must also rea
 the root and applicable nested `AGENTS.md` files. Meaningful implementation work
 is plan-gated through `docs/PLANS.md` and follows the loop in
 `docs/AGENT_WORKFLOW.md`.
+`docs/PLANS.md` contains only active and queued work; durable technical decisions
+belong in `docs/ARCHITECTURE.md`, while this file owns current behavior and
+operator-facing contracts. Deployment procedures will be recorded in
+`docs/deployment_guide.md` when that work begins.
 
 ## Known limitations
 

@@ -82,10 +82,11 @@ These rules apply to `frontend/` in addition to the repository contract.
 
 - Test user-visible behavior, not component implementation details.
 - Pure utilities use dedicated unit tests. Components and hooks use Vitest and
-  React Testing Library once that harness is introduced.
+  React Testing Library.
 - Cover mutation failure, stale/refetch behavior, long names, empty collections,
   and locked/disabled states when relevant.
 - Use browser evidence for layout or interaction changes. Inspect console errors
   and failed network requests, not screenshots alone.
-- Run `npm run typecheck`, `npm run lint`, and `npm run build` before completion.
-  Do not weaken ESLint or TypeScript configuration to make a change pass.
+- Run `npm run test`, `npm run typecheck`, `npm run lint`, and `npm run build`
+  before completion. Do not weaken the test, ESLint, or TypeScript configuration
+  to make a change pass.

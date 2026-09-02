@@ -1,53 +1,69 @@
 # Latest explanation
 
-## Final visibility is an admin decision
+## The plan is a queue, not a history
 
-Phase 7C replaces the 24-hour final-score clock with one tournament-owned
-setting. A newly created tournament hides holes 10–18 by default. The exact
-tournament admin can release or re-hide them from the management workspace even
-after the final is completed or locked; confirmation and elapsed time no longer
-affect the decision.
+`docs/PLANS.md` had accumulated a long release recap and a second copy of durable
+product decisions. That made it harder to see whether work was actually active
+and created multiple places that could disagree.
 
-The focused API uses an absolute desired state and its own optimistic timestamp:
+The repository now assigns one purpose to each document:
 
-```json
-{
-  "back_nine_hidden": false,
-  "expected_visibility_updated_at": "2026-09-02T12:00:00Z"
-}
+- `PLANS.md` contains one active step, one next candidate, and a short later queue.
+- `ARCHITECTURE.md` contains durable boundaries, data ownership, invariants, and
+  the implemented API inventory.
+- `Documentation.md` describes current behavior and operator-facing contracts.
+- `LatestExplanation.md` records the rationale and evidence for the latest step.
+- `deployment_guide.md` is reserved for the future production runbook.
+
+A plan step stays compact and testable:
+
+```markdown
+## Active step: short name
+
+- Goal: the outcome
+- Scope: owned files or modules
+- Behavior: the exact change
+- Validation: commands and evidence
+- Invariants: facts that must remain true
+- Stop condition: the measurable boundary
 ```
 
-The repository revalidates the active session and exact tournament-admin
-membership inside the write transaction. PostgreSQL independently guards the two
-visibility columns and advances the timestamp. Changed commits publish a
-dedicated identifier-free `visibility` event; idempotent requests do not.
+When the step is complete, that section is removed. Git retains chronology; the
+durable documents retain the current truth.
 
-## Every protected read uses the same policy
+## Durable product facts remain explicit
 
-The pure visibility rule consumes the caller's exact tournament role, final-round
-identity, round state, hole count, and persisted toggle. Exact admins and the
-separately authorized scoring projection remain full. For every other role, a
-hidden open final is recomputed from holes 1–9, and a hidden completed or locked
-final is omitted before tournament best-N selection. Actor-free scorecards,
-completion readiness, player history, and direct result cards receive the same
-redaction.
+The cleanup does not discard the latest behavior. Architecture and Documentation
+now explicitly retain both relevant contracts: final holes 10–18 are controlled
+by an exact-admin toggle with no time dependency, and manual course setup creates
+one immutable round-specific course/tee revision. Round opening calculates and
+freezes Course and Playing Handicap, and net scoring allocates received strokes
+through the preserved hole stroke indexes. A reusable multi-tee course library
+remains a separate decision.
 
-Migration 0018 preserves already-released completed/locked finals during upgrade,
-keeps other tournaments hidden, and removes the former deadline column and
-confirmation triggers. Course revisions, round lifecycle, confirmations, scores,
-and immutable handicap snapshots are unchanged.
+## Agent guidance is responsibility-based
 
-## Tightening visibility fails closed in the browser
+The root `AGENTS.md` owns repository-wide scope, invariants, completion, and
+publication policy. `docs/AGENT_WORKFLOW.md` owns role routing, the execution
+loop, documentation ownership, and validation commands. Nested instructions own
+backend, frontend, and migration rules, while `.codex/agents/` defines the
+permissions and handoff contract for each specialist.
 
-A normal query invalidation can continue rendering old data while refetching.
-That is unsafe when an admin re-hides results, so the dedicated visibility event
-cancels in-flight protected reads and synchronously clears role-projected
-leaderboard, completion, history, drilldown, and actor-free scorecard query state.
-An EventSource error performs the same transition immediately without refetching
-while offline; reconnect `open` clears again and then loads authoritative state.
-Writable `/scoring` queries stay separate and are never cleared by this policy.
+This removes repeated framework and milestone wording without weakening the plan
+gate, sequential-writer rule, read-only review, validation requirements, or golf
+domain invariants. The current frontend ladder includes its existing Vitest
+suite, and database examples apply the disposable target explicitly to tests,
+migrations, and seed commands.
 
-The manual course path remains the existing round-specific immutable revision.
-Admins provide tee rating, slope, hole pars, and stroke indexes; opening still
-calculates and freezes Course/Playing Handicap in the backend and allocates
-received strokes by the preserved handicap and hole index.
+## Validation
+
+This documentation-only iteration required no runtime rebuild. All six repository
+TOML files parsed, the five configured role descriptions matched their role
+definitions, and every local Markdown link across the eight repository and docs
+files resolved. Searches found no stale planned-flow, blackout, phase-specific
+agent, or obsolete test-harness wording, and `git diff --check` passed.
+
+Two read-only discovery audits confirmed that the decisions removed from the
+plan have durable homes. A final reviewer found one stale README seed-format
+description; it was corrected to identify rounds one and two as scramble and
+round four as foursomes. The reviewer reported no remaining findings.

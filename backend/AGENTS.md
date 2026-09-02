@@ -59,5 +59,5 @@ These rules apply to `backend/` in addition to the repository contract.
 - API tests assert status, JSON shape, validation errors, and persisted effects.
 - Every regression fix begins with or includes a test that fails for the original
   behavior.
-- Run the backend and database commands from the root `AGENTS.md`. Use
+- Run the backend and database ladders from `docs/AGENT_WORKFLOW.md`. Use
   `cargo fmt` to make formatting changes; do not hand-format around rustfmt.

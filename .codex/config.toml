@@ -4,21 +4,21 @@ max_concurrent_threads_per_session = 4
 interrupt_message = true
 
 [agents.project_explorer]
-description = "Read-only planner and code-path explorer for bounded cross-stack work."
+description = "Read-only architecture and code-path explorer for bounded repository work."
 config_file = "agents/project_explorer.toml"
 
 [agents.backend_engineer]
-description = "Rust, Axum, SQLx, PostgreSQL, and domain implementation specialist."
+description = "Backend implementation specialist for the Rust service and PostgreSQL persistence."
 config_file = "agents/backend_engineer.toml"
 
 [agents.frontend_engineer]
-description = "Strict TypeScript and mobile-first React implementation specialist."
+description = "Frontend implementation specialist for strict, accessible, mobile-first React."
 config_file = "agents/frontend_engineer.toml"
 
 [agents.reviewer]
-description = "Read-only correctness, security, invariant, and regression reviewer."
+description = "Read-only reviewer for correctness, security, invariants, regressions, and test gaps."
 config_file = "agents/reviewer.toml"
 
 [agents.validator]
-description = "Command-only validation specialist for Rust, PostgreSQL, frontend, and browser checks."
+description = "Command-only validator for backend, PostgreSQL, frontend, API, and browser behavior."
 config_file = "agents/validator.toml"
