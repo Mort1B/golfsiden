@@ -27,7 +27,6 @@ import {
 import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 import { useAuth } from '../features/auth/authContext'
 import { useTournamentLive } from '../features/live/useTournamentLive'
-import { useVisibilityRefetch } from '../features/visibility/useVisibilityRefetch'
 
 export function ScorePage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -93,12 +92,6 @@ export function ScorePage() {
     queryClient.removeQueries({ queryKey: scoringKeys.scoring(userId, round.id, owner.owner), exact: true })
     void Promise.all([refetchCompletion(), refetchAccess(), refetchRounds()])
   }, [owner, queryClient, refetchAccess, refetchCompletion, refetchRounds, round, terminalScoringError, userId])
-  const refetchCard = cardQuery.refetch
-  const refetchVisibilityProjection = useCallback(async () => {
-    await refetchCompletion()
-    if (owner !== undefined) await refetchCard()
-  }, [owner, refetchCard, refetchCompletion])
-  useVisibilityRefetch(completionQuery.data?.visibility, refetchVisibilityProjection)
   const view = parseScoreView(searchParams.get('view'))
   const requestedHole = parseHoleNumber(searchParams.get('hole'))
   const visibleHole = canonicalVisibleHole(cardQuery.data?.holes.map((item) => item.hole_number) ?? [], requestedHole)

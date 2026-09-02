@@ -10,7 +10,6 @@ import { PlayerHistory } from '../features/leaderboards/PlayerHistory'
 import { hasPlayerHistoryBackgroundError } from '../features/leaderboards/playerHistory'
 import { loadTournamentLeaderboardAfterRounds } from '../features/leaderboards/tournamentLoader'
 import { useTournamentLive } from '../features/live/useTournamentLive'
-import { useVisibilityRefetch } from '../features/visibility/useVisibilityRefetch'
 import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 
 export function PlayerHistoryPage() {
@@ -35,7 +34,6 @@ export function PlayerHistoryPage() {
     }),
     enabled: tournamentId !== '' && playerId !== '' && roundsQuery.data !== undefined && !roundsQuery.error,
   })
-  useVisibilityRefetch(leaderboardQuery.data?.visibility, leaderboardQuery.refetch)
   const player = leaderboardQuery.data?.entries.find((entry) => entry.player_id === playerId)
   const canonical = new URLSearchParams({ metric })
 

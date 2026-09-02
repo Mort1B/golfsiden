@@ -16,7 +16,6 @@ import { TournamentStandings } from '../features/leaderboards/TournamentStanding
 import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 import { useAuth } from '../features/auth/authContext'
 import { useTournamentLive } from '../features/live/useTournamentLive'
-import { useVisibilityRefetch } from '../features/visibility/useVisibilityRefetch'
 import { loadTournamentLeaderboardAfterRounds } from '../features/leaderboards/tournamentLoader'
 
 export function LeaderboardPage() {
@@ -63,8 +62,6 @@ export function LeaderboardPage() {
       && roundsQuery.data !== undefined
       && !roundsQuery.error,
   })
-  useVisibilityRefetch(roundLeaderboardQuery.data?.visibility, roundLeaderboardQuery.refetch)
-  useVisibilityRefetch(tournamentLeaderboardQuery.data?.visibility, tournamentLeaderboardQuery.refetch)
 
   if (tournamentsQuery.isPending) return <section className="page leaderboard-page"><LoadingState /></section>
   if (tournamentsQuery.error && tournaments.length === 0) {
@@ -151,7 +148,7 @@ export function LeaderboardPage() {
         </EmptyState>
       )}
       {scope === 'round' && roundLeaderboardQuery.data?.visibility.mode === 'front_nine' && (
-        <p className="leaderboard-visibility-notice" role="status">Hull 10–18 er skjult til finaleresultatene frigis.</p>
+        <p className="leaderboard-visibility-notice" role="status">Hull 10–18 er skjult til administratoren frigir finalens bakni.</p>
       )}
       {scope === 'round' && roundLeaderboardQuery.data && roundLeaderboardQuery.data.entries.length > 0 && (
         <RoundStandings leaderboard={roundLeaderboardQuery.data} />
@@ -161,7 +158,7 @@ export function LeaderboardPage() {
         <EmptyState>Ingen spillere er registrert i turneringen</EmptyState>
       )}
       {scope === 'tournament' && tournamentLeaderboardQuery.data?.visibility.mode === 'front_nine' && (
-        <p className="leaderboard-visibility-notice" role="status">Finalen viser bare synlige resultater. Hull 10–18 er skjult til frigivelse.</p>
+        <p className="leaderboard-visibility-notice" role="status">Finalen viser bare synlige resultater. Hull 10–18 er skjult til administratoren frigir bakni.</p>
       )}
       {scope === 'tournament' && !roundsQuery.isPending && !roundsQuery.error && tournamentLeaderboardQuery.data && tournamentLeaderboardQuery.data.entries.length > 0 && (
         <TournamentStandings leaderboard={tournamentLeaderboardQuery.data} rounds={rounds} />

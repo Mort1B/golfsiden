@@ -9,6 +9,7 @@ mod onboarding;
 mod rounds;
 mod scorecards;
 mod teams;
+mod tournament_visibility;
 mod tournaments;
 
 use std::sync::Arc;
@@ -37,6 +38,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .merge(rounds::routes())
         .merge(scorecards::routes())
         .merge(teams::routes())
+        .merge(tournament_visibility::routes())
         .route("/api/tournaments/{tournament_id}/live", get(live::events))
         .layer(TraceLayer::new_for_http());
     let router = if let Some(origin) = cors_origin {

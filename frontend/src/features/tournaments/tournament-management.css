@@ -3,7 +3,7 @@
 .management-section-nav { display: flex; gap: 8px; margin: 0 -16px 18px; padding: 2px 16px 12px; overflow-x: auto; scrollbar-width: thin; }
 .management-section-nav a { display: inline-flex; min-height: 44px; flex: 0 0 auto; align-items: center; padding: 8px 13px; border: 1px solid #d6ddd7; border-radius: 999px; background: #fff; color: #365047; font-size: .82rem; font-weight: 750; }
 .management-section-nav a:hover { border-color: #8ba697; }
-.management-section-nav a:focus-visible, .management-link:focus-visible, .management-links-list a:focus-visible, .management-state-link:focus-visible, .counted-rounds-editor select:focus-visible, .counted-rounds-editor button:focus-visible, .tournament-start-panel button:focus-visible { outline: 3px solid #176640; outline-offset: 2px; }
+.management-section-nav a:focus-visible, .management-link:focus-visible, .management-links-list a:focus-visible, .management-state-link:focus-visible, .counted-rounds-editor select:focus-visible, .counted-rounds-editor button:focus-visible, .tournament-start-panel button:focus-visible, .final-visibility-control button:focus-visible, .final-visibility-switch:has(input:focus-visible) { outline: 3px solid #176640; outline-offset: 2px; }
 .management-sections { display: grid; gap: 14px; }
 .management-section { scroll-margin-top: 18px; overflow: hidden; padding: 20px 16px; border: 1px solid #dbe1dc; border-radius: 9px; background: #fff; box-shadow: 0 2px 8px rgba(27,43,34,.04); }
 .management-section:focus, .management-section:target { outline: 3px solid #176640; outline-offset: 3px; }
@@ -72,6 +72,27 @@
 .tournament-start-message.error { padding: 10px 12px; border-left: 4px solid #a33d35; background: #fff2f0; color: #7f2a23; }
 .tournament-start-message button { margin-top: 8px; border-color: currentColor; background: #fff; color: inherit; }
 .tournament-start-receipt { display: flex; min-height: 20px; align-items: center; gap: 7px; color: #176640; font-weight: 750; }
+.final-visibility-control { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; margin-bottom: 20px; padding: 16px; border: 1px solid #c9d8ce; border-radius: 8px; background: #f6faf7; }
+.final-visibility-control.loading, .final-visibility-control.error { grid-template-columns: 22px minmax(0, 1fr); align-items: start; }
+.final-visibility-control.loading > svg { width: 20px; color: #28734f; }
+.final-visibility-control.error { border-color: #dda8a2; background: #fff5f3; color: #852c24; }
+.final-visibility-control.error > div { grid-column: 1 / -1; }
+.final-visibility-control.error button, .final-visibility-error button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 7px; padding: 8px 12px; border: 1px solid currentColor; border-radius: 6px; background: #fff; color: inherit; font-weight: 800; }
+.final-visibility-control.error button { grid-column: 1 / -1; justify-self: start; }
+.final-visibility-heading { display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: start; gap: 9px; }
+.final-visibility-heading > svg { width: 20px; color: #176640; }
+.final-visibility-heading h3, .final-visibility-control h3 { font-size: 1rem; }
+.final-visibility-heading p, .final-visibility-control.loading p, .final-visibility-control.error p { margin-top: 3px; color: inherit; font-size: .8rem; line-height: 1.45; overflow-wrap: anywhere; }
+.final-visibility-switch { display: inline-flex; min-height: 44px; align-items: center; gap: 9px; padding: 4px 0 4px 8px; color: #244b37; font-size: .84rem; font-weight: 800; cursor: pointer; }
+.final-visibility-switch input { width: 24px; height: 24px; margin: 0; accent-color: #176640; }
+.final-visibility-switch:has(input:disabled) { cursor: wait; opacity: .65; }
+.final-visibility-description, .final-visibility-sync, .final-visibility-error, .final-visibility-confirmed { grid-column: 1 / -1; font-size: .8rem; line-height: 1.5; overflow-wrap: anywhere; }
+.final-visibility-description { color: #5f6d65; }
+.final-visibility-sync { min-height: 20px; color: #4e6256; }
+.final-visibility-error { padding: 10px 12px; border-left: 4px solid #a33d35; background: #fff2f0; color: #7f2a23; }
+.final-visibility-error button { margin-top: 8px; }
+.final-visibility-error button svg, .final-visibility-control.error button svg, .final-visibility-confirmed svg { width: 17px; flex: 0 0 auto; }
+.final-visibility-confirmed { display: inline-flex; align-items: center; gap: 6px; color: #176640; font-weight: 750; }
 .management-section .state-message { margin: 8px 0 0; }
 
 @media (min-width: 700px) {
@@ -87,4 +108,7 @@
   .counted-rounds-fields { grid-template-columns: 1fr; }
   .counted-rounds-save { width: 100%; }
   .tournament-start-action { width: 100%; }
+  .final-visibility-control { grid-template-columns: 1fr; }
+  .final-visibility-switch { padding-left: 0; }
+  .final-visibility-control.error button { width: 100%; }
 }

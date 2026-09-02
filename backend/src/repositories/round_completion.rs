@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use chrono::{DateTime, Utc};
 use sqlx::{FromRow, PgConnection, PgPool, Postgres, Transaction};
 use thiserror::Error;
 use uuid::Uuid;
@@ -59,7 +58,7 @@ struct ReadVisibilityRow {
     round_number: i16,
     status: RoundStatus,
     number_of_holes: i16,
-    final_scores_hidden_until: Option<DateTime<Utc>>,
+    final_round_back_nine_hidden: bool,
     tournament_round_count: i16,
 }
 
@@ -95,7 +94,7 @@ pub async fn validation_for_member(
         .await?;
     let context = sqlx::query_as::<_, ReadVisibilityRow>(
         "SELECT r.tournament_id, r.round_number, r.status, r.number_of_holes,
-                r.final_scores_hidden_until, t.number_of_rounds AS tournament_round_count
+                t.final_round_back_nine_hidden, t.number_of_rounds AS tournament_round_count
          FROM rounds r JOIN tournaments t ON t.id = r.tournament_id WHERE r.id = $1",
     )
     .bind(round_id)
@@ -120,10 +119,7 @@ pub async fn validation_for_member(
         .await?
         .map(validate)
         .ok_or(AuthorizationError::NotFound)?;
-    let observed_at = sqlx::query_scalar("SELECT transaction_timestamp()")
-        .fetch_one(&mut *transaction)
-        .await?;
-    let metadata = completion_visibility(&context, role, observed_at);
+    let metadata = completion_visibility(&context, role);
     let visible_holes = load_visible_holes(&mut transaction, round_id).await?;
     let projection = read_projection(validation, metadata, &visible_holes);
     transaction.commit().await?;
@@ -133,15 +129,13 @@ pub async fn validation_for_member(
 fn completion_visibility(
     context: &ReadVisibilityRow,
     role: TournamentRole,
-    observed_at: DateTime<Utc>,
 ) -> crate::domain::score_visibility::VisibilityMetadata {
     visibility(VisibilityFacts {
         role,
         is_final_round: context.round_number == context.tournament_round_count,
         status: context.status,
         number_of_holes: context.number_of_holes,
-        hidden_until: context.final_scores_hidden_until,
-        observed_at,
+        back_nine_hidden: context.final_round_back_nine_hidden,
     })
 }
 
@@ -348,29 +342,26 @@ async fn load_team_owners(
 
 #[cfg(test)]
 mod tests {
-    use chrono::TimeZone;
-
     use super::*;
     use crate::domain::score_visibility::VisibilityMode;
 
     #[test]
-    fn completion_read_wiring_reveals_at_exact_database_deadline() {
-        let observed_at = Utc.with_ymd_and_hms(2026, 9, 2, 12, 0, 0).unwrap();
+    fn completion_read_wiring_uses_the_persisted_toggle() {
         let mut context = ReadVisibilityRow {
             tournament_id: Uuid::from_u128(1),
             round_number: 4,
             status: RoundStatus::Completed,
             number_of_holes: 18,
-            final_scores_hidden_until: Some(observed_at),
+            final_round_back_nine_hidden: false,
             tournament_round_count: 4,
         };
         assert_eq!(
-            completion_visibility(&context, TournamentRole::Player, observed_at).mode,
+            completion_visibility(&context, TournamentRole::Player).mode,
             VisibilityMode::Full
         );
-        context.final_scores_hidden_until = Some(observed_at + chrono::Duration::nanoseconds(1));
+        context.final_round_back_nine_hidden = true;
         assert_eq!(
-            completion_visibility(&context, TournamentRole::Player, observed_at).mode,
+            completion_visibility(&context, TournamentRole::Player).mode,
             VisibilityMode::FrontNine
         );
     }

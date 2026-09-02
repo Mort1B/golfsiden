@@ -11,7 +11,7 @@ const round: Round = {
 const leaderboard: RoundLeaderboard = {
   round_id: 'round', tournament_id: 'tournament', status: 'open', scoring_format: 'team_scramble', metric: 'net',
   number_of_holes: 18, visible_hole_count: 9,
-  visibility: { mode: 'front_nine', observed_at: '2026-09-02T12:00:00Z', hidden_until: null },
+  visibility: { mode: 'front_nine' },
   entries: [{
     position: 1, tied: false, owner: { type: 'team', id: 'team' }, owner_name: 'Langt historisk lag',
     members: [{ player_id: 'one', display_name: 'En', display_order: 1 }, { player_id: 'two', display_name: 'To', display_order: 2 }],

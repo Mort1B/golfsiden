@@ -6,7 +6,11 @@ export const tournamentLiveEventTypes = [
   'team',
   'score',
   'invitation',
+  'visibility',
 ] as const
+
+export type TournamentLiveEventType = typeof tournamentLiveEventTypes[number]
+export type TournamentLiveSignal = TournamentLiveEventType | 'open' | 'error'
 
 export interface TournamentLiveSource {
   addEventListener(type: string, listener: EventListener): void
@@ -20,7 +24,7 @@ export type TournamentLiveSourceFactory = (
 
 interface SharedSubscription {
   source: TournamentLiveSource
-  listeners: Set<() => void>
+  listeners: Set<(signal: TournamentLiveSignal) => void>
   disposalVersion: number
 }
 
@@ -31,7 +35,7 @@ const nativeSource: TournamentLiveSourceFactory = (url, init) => new EventSource
 export function subscribeTournamentLive(
   userId: string,
   tournamentId: string,
-  onInvalidate: () => void,
+  onInvalidate: (signal: TournamentLiveSignal) => void,
   createSource: TournamentLiveSourceFactory = nativeSource,
 ): () => void {
   if (userId.length === 0 || tournamentId.length === 0) return () => undefined
@@ -41,13 +45,14 @@ export function subscribeTournamentLive(
   if (!subscription) {
     const source = createSource(tournamentLiveUrl(tournamentId), { withCredentials: true })
     const created: SharedSubscription = { source, listeners: new Set(), disposalVersion: 0 }
-    const notify = () => {
-      for (const listener of created.listeners) listener()
+    const notify = (signal: TournamentLiveSignal) => {
+      for (const listener of created.listeners) listener(signal)
     }
     for (const eventType of tournamentLiveEventTypes) {
-      source.addEventListener(eventType, notify)
+      source.addEventListener(eventType, () => notify(eventType))
     }
-    source.addEventListener('open', notify)
+    source.addEventListener('open', () => notify('open'))
+    source.addEventListener('error', () => notify('error'))
     subscriptions.set(key, created)
     subscription = created
   }

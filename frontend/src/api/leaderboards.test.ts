@@ -4,7 +4,7 @@ import type { Round } from './types'
 
 const seedTournamentId = '00000000-0000-0000-0000-000000002001'
 const seedRoundId = '00000000-0000-0000-0000-000000004001'
-const fullVisibility = { mode: 'full', observed_at: '2026-09-01T10:00:00Z', hidden_until: null }
+const fullVisibility = { mode: 'full' }
 
 function roundFixture(id: string, roundNumber: number, status: Round['status']): Round {
   return {
@@ -752,7 +752,7 @@ describe('leaderboard decoders', () => {
       mandatory_round_id: null,
       current_round_id: currentRoundId,
       included_round_ids: [],
-      visibility: { mode: 'front_nine', observed_at: '2026-09-01T10:00:00Z', hidden_until: null },
+      visibility: { mode: 'front_nine' },
       entries: [{
         position: 1,
         tied: false,
@@ -844,7 +844,7 @@ describe('leaderboard decoders', () => {
       metric: 'gross',
       number_of_holes: 18,
       visible_hole_count: 9,
-      visibility: { mode: 'front_nine', observed_at: '2026-09-01T10:00:00Z', hidden_until: null },
+      visibility: { mode: 'front_nine' },
       entries: [entry],
     }
     expect(decodeRoundLeaderboard(response, seedRoundId, seedTournamentId, 'gross').visible_hole_count).toBe(9)

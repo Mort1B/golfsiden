@@ -31,9 +31,9 @@ describe('tournament live subscription', () => {
     const unsubscribe = subscribeTournamentLive('user-one', 'tour-one', invalidate, factory)
 
     expect(factory).toHaveBeenCalledWith('/api/tournaments/tour-one/live', { withCredentials: true })
-    expect([...source.listeners.keys()]).toEqual([...tournamentLiveEventTypes, 'open'])
+    expect([...source.listeners.keys()]).toEqual([...tournamentLiveEventTypes, 'open', 'error'])
     for (const eventType of tournamentLiveEventTypes) source.emit(eventType)
-    expect(invalidate).toHaveBeenCalledTimes(5)
+    expect(invalidate.mock.calls.map(([signal]) => signal)).toEqual([...tournamentLiveEventTypes])
     expect(source.listeners.has('invitation')).toBe(true)
 
     unsubscribe()
@@ -54,7 +54,25 @@ describe('tournament live subscription', () => {
     source.emit('open')
     source.emit('open')
 
-    expect(invalidate).toHaveBeenCalledTimes(2)
+    expect(invalidate).toHaveBeenNthCalledWith(1, 'open')
+    expect(invalidate).toHaveBeenNthCalledWith(2, 'open')
+    unsubscribe()
+  })
+
+  it('forwards a typed disconnect signal when EventSource reports an error', () => {
+    const source = new FakeSource()
+    const invalidate = vi.fn()
+    const unsubscribe = subscribeTournamentLive(
+      'user-error',
+      'tour-error',
+      invalidate,
+      () => source,
+    )
+
+    source.emit('error')
+
+    expect(invalidate).toHaveBeenCalledOnce()
+    expect(invalidate).toHaveBeenCalledWith('error')
     unsubscribe()
   })
 

@@ -109,21 +109,17 @@ pub async fn get_read_authenticated(
         .await?
         .ok_or(ScorecardError::Forbidden)?;
     let read_context = sqlx::query_as::<_, ReadVisibilityContext>(
-        "SELECT r.round_number, t.number_of_rounds AS tournament_round_count, r.final_scores_hidden_until FROM rounds r JOIN tournaments t ON t.id = r.tournament_id WHERE r.id = $1",
+        "SELECT r.round_number, t.number_of_rounds AS tournament_round_count, t.final_round_back_nine_hidden FROM rounds r JOIN tournaments t ON t.id = r.tournament_id WHERE r.id = $1",
     )
     .bind(round_id)
     .fetch_one(&mut *transaction)
     .await?;
-    let observed_at = sqlx::query_scalar("SELECT transaction_timestamp()")
-        .fetch_one(&mut *transaction)
-        .await?;
     let metadata = visibility(VisibilityFacts {
         role,
         is_final_round: read_context.round_number == read_context.tournament_round_count,
         status: context.status,
         number_of_holes: context.number_of_holes,
-        hidden_until: read_context.final_scores_hidden_until,
-        observed_at,
+        back_nine_hidden: read_context.final_round_back_nine_hidden,
     });
     let summary = build_summary(&mut transaction, &context, owner).await?;
     let result = read_projection(summary, metadata);

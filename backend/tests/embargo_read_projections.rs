@@ -505,7 +505,10 @@ async fn hidden_completed_final_round_is_omitted_from_non_admin_tournament_total
     let (_, restricted, cache) = get(&app, &path, SCORER).await;
     assert_eq!(cache, "private, no-store");
     assert_eq!(restricted["visibility"]["mode"], "front_nine");
-    assert!(restricted["visibility"]["hidden_until"].is_string());
+    assert_eq!(
+        restricted["visibility"],
+        serde_json::json!({"mode": "front_nine"})
+    );
     assert_eq!(restricted["included_round_ids"], serde_json::json!([]));
     assert!(
         restricted["entries"]
@@ -562,7 +565,7 @@ async fn hidden_completed_final_round_is_omitted_from_non_admin_tournament_total
 }
 
 #[sqlx::test(migrations = "../migrations")]
-async fn locked_future_null_and_expired_deadlines_fail_closed_then_reveal(pool: PgPool) {
+async fn locked_final_releases_and_rehides_only_through_the_admin_toggle(pool: PgPool) {
     let holes = seed(&pool).await;
     save_all(&pool, &holes, PLAYER_A, 4).await;
     save_all(&pool, &holes, PLAYER_B, 5).await;
@@ -575,9 +578,9 @@ async fn locked_future_null_and_expired_deadlines_fail_closed_then_reveal(pool: 
     round_completion::lock(&pool, ROUND).await.unwrap();
     let app = api::router(AppState::new(pool.clone()));
     let card = format!("/api/rounds/{ROUND}/scorecards/player/{PLAYER_A}");
-    let (_, future, _) = get(&app, &card, PLAYER_USER).await;
-    assert_eq!(future["visibility"]["mode"], "front_nine");
-    assert!(future["complete"].is_null() && future["confirmed"].is_null());
+    let (_, hidden, _) = get(&app, &card, PLAYER_USER).await;
+    assert_eq!(hidden["visibility"]["mode"], "front_nine");
+    assert!(hidden["complete"].is_null() && hidden["confirmed"].is_null());
     let (status, _, _) = get(&app, &format!("{card}/scoring"), PLAYER_USER).await;
     assert_eq!(status, StatusCode::FORBIDDEN);
     let completion_path = format!("/api/rounds/{ROUND}/completion-validation");
@@ -587,39 +590,38 @@ async fn locked_future_null_and_expired_deadlines_fail_closed_then_reveal(pool: 
     assert!(locked_completion["ready_to_lock"].is_null());
     assert_eq!(locked_completion["issues"], serde_json::json!([]));
 
-    sqlx::query("ALTER TABLE rounds DISABLE TRIGGER rounds_protect_final_score_embargo")
-        .execute(&pool)
+    let admin_session = sqlx::query_scalar(
+        "SELECT id FROM user_sessions WHERE user_id = $1 AND revoked_at IS NULL",
+    )
+    .bind(ADMIN)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let initial = sqlx::query_scalar("SELECT visibility_updated_at FROM tournaments WHERE id = $1")
+        .bind(TOURNAMENT)
+        .fetch_one(&pool)
         .await
         .unwrap();
-    sqlx::query("UPDATE rounds SET final_scores_hidden_until = NULL WHERE id = $1")
-        .bind(ROUND)
-        .execute(&pool)
-        .await
-        .unwrap();
-    let (_, null_deadline, _) = get(&app, &card, PLAYER_USER).await;
-    assert_eq!(null_deadline["visibility"]["mode"], "front_nine");
-    assert!(null_deadline["visibility"]["hidden_until"].is_null());
-    let (_, null_completion, _) = get(&app, &completion_path, PLAYER_USER).await;
-    assert_eq!(null_completion["visibility"]["mode"], "front_nine");
-    assert!(null_completion["ready_to_lock"].is_null());
-    assert_eq!(null_completion["issues"], serde_json::json!([]));
-
-    sqlx::query("UPDATE rounds SET final_scores_hidden_until = clock_timestamp() - interval '1 second' WHERE id = $1")
-        .bind(ROUND)
-        .execute(&pool)
-        .await
-        .unwrap();
-    let (_, expired, _) = get(&app, &card, PLAYER_USER).await;
-    assert_eq!(expired["visibility"]["mode"], "full");
-    assert_eq!(expired["holes"].as_array().unwrap().len(), 18);
-    assert_eq!(expired["complete"], true);
-    assert_eq!(expired["confirmed"], true);
-    let (_, expired_completion, _) = get(&app, &completion_path, PLAYER_USER).await;
-    assert_eq!(expired_completion["visibility"]["mode"], "full");
-    assert_eq!(expired_completion["owners"][0]["complete"], true);
-    assert_eq!(expired_completion["owners"][0]["confirmed"], true);
-    assert!(expired_completion["ready_to_complete"].is_boolean());
-    assert!(expired_completion["ready_to_lock"].is_boolean());
+    let released = golf_api::repositories::tournament_visibility::update_authorized(
+        &pool,
+        admin_session,
+        TOURNAMENT,
+        false,
+        initial,
+    )
+    .await
+    .unwrap();
+    let (_, released_card, _) = get(&app, &card, PLAYER_USER).await;
+    assert_eq!(released_card["visibility"]["mode"], "full");
+    assert_eq!(released_card["holes"].as_array().unwrap().len(), 18);
+    assert_eq!(released_card["complete"], true);
+    assert_eq!(released_card["confirmed"], true);
+    let (_, released_completion, _) = get(&app, &completion_path, PLAYER_USER).await;
+    assert_eq!(released_completion["visibility"]["mode"], "full");
+    assert_eq!(released_completion["owners"][0]["complete"], true);
+    assert_eq!(released_completion["owners"][0]["confirmed"], true);
+    assert!(released_completion["ready_to_complete"].is_boolean());
+    assert!(released_completion["ready_to_lock"].is_boolean());
     let (_, tournament, _) = get(
         &app,
         &format!("/api/tournaments/{TOURNAMENT}/leaderboards/gross"),
@@ -628,6 +630,30 @@ async fn locked_future_null_and_expired_deadlines_fail_closed_then_reveal(pool: 
     .await;
     assert_eq!(tournament["visibility"]["mode"], "full");
     assert_eq!(tournament["included_round_ids"], serde_json::json!([ROUND]));
+
+    golf_api::repositories::tournament_visibility::update_authorized(
+        &pool,
+        admin_session,
+        TOURNAMENT,
+        true,
+        released.visibility.visibility_updated_at,
+    )
+    .await
+    .unwrap();
+    let (_, rehidden_card, _) = get(&app, &card, PLAYER_USER).await;
+    assert_eq!(rehidden_card["visibility"]["mode"], "front_nine");
+    assert_eq!(rehidden_card["holes"].as_array().unwrap().len(), 9);
+    let (_, rehidden_tournament, _) = get(
+        &app,
+        &format!("/api/tournaments/{TOURNAMENT}/leaderboards/gross"),
+        PLAYER_USER,
+    )
+    .await;
+    assert_eq!(rehidden_tournament["visibility"]["mode"], "front_nine");
+    assert_eq!(
+        rehidden_tournament["included_round_ids"],
+        serde_json::json!([])
+    );
 }
 
 #[sqlx::test(migrations = "../migrations")]

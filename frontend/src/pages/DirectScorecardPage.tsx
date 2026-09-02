@@ -11,7 +11,6 @@ import { useTournamentLive } from '../features/live/useTournamentLive'
 import { DirectScorecardView } from '../features/scoring/DirectScorecardView'
 import { matchingRound, projectedOwner } from '../features/scoring/directScorecard'
 import { canonicalVisibleHole, parseHoleNumber, type ScoreView } from '../features/scoring/selection'
-import { useVisibilityRefetch } from '../features/visibility/useVisibilityRefetch'
 import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 
 export function DirectScorecardPage() {
@@ -52,8 +51,6 @@ export function DirectScorecardPage() {
     enabled: ownerEntry !== null,
     retry: false,
   })
-  useVisibilityRefetch(leaderboardQuery.data?.visibility, leaderboardQuery.refetch)
-  useVisibilityRefetch(cardQuery.data?.visibility, cardQuery.refetch)
 
   const visibleHole = canonicalVisibleHole(cardQuery.data?.holes.map((hole) => hole.hole_number) ?? [], requestedHole)
   const hole = cardQuery.data?.holes.find((candidate) => candidate.hole_number === visibleHole)

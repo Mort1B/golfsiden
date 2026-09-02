@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use sqlx::FromRow;
 use uuid::Uuid;
 
@@ -14,7 +13,7 @@ pub(super) struct RoundRow {
     pub number_of_holes: i16,
     pub handicap_enabled: bool,
     pub handicap_allowance_percent: i16,
-    pub final_scores_hidden_until: Option<DateTime<Utc>>,
+    pub final_round_back_nine_hidden: bool,
     pub tournament_round_count: i16,
 }
 

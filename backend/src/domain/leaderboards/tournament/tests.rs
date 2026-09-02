@@ -269,11 +269,7 @@ fn final_open_round(player_id: u128) -> RoundLeaderboardFacts {
 }
 
 fn visibility(mode: VisibilityMode) -> VisibilityMetadata {
-    VisibilityMetadata {
-        mode,
-        observed_at: chrono::DateTime::UNIX_EPOCH,
-        hidden_until: None,
-    }
+    VisibilityMetadata { mode }
 }
 
 #[test]

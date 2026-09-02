@@ -46,7 +46,7 @@ export function ReadScorecardExperience(props: ReadScorecardExperienceProps) {
         <span>{props.round.name}</span>
       </header>
       <div className="scoring-notice">Du kan se dette scorekortet, men ikke føre score for det.</div>
-      {hidden && <div className="scoring-notice warning" role="status">Hull 10–18 er skjult til finaleresultatene frigis.</div>}
+      {hidden && <div className="scoring-notice warning" role="status">Hull 10–18 er skjult til administratoren frigir finalens bakni.</div>}
       <dl className="scorecard-strip">
         <div><dt>Brutto</dt><dd>{props.card.holes_scored > 0 ? props.card.gross_total : '–'}</dd></div>
         <div><dt>Netto</dt><dd>{props.card.holes_scored > 0 ? props.card.net_total : '–'}</dd></div>

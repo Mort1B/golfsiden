@@ -267,13 +267,10 @@ mod tests {
         sources[0] = source(1, 1, Some(5));
         sources[9] = source(10, 10, Some(2));
         let summary = summarize(Uuid::from_u128(1), owner, 0, 18, sources, None).unwrap();
-        let observed_at = Utc::now();
         let projected = read_projection(
             summary,
             VisibilityMetadata {
                 mode: VisibilityMode::FrontNine,
-                observed_at,
-                hidden_until: Some(observed_at + chrono::Duration::hours(1)),
             },
         );
         assert_eq!(projected.holes.len(), 9);

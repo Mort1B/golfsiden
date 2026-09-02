@@ -13,4 +13,5 @@ pub mod score_authorization;
 pub mod scorecards;
 pub mod teams;
 pub mod tournament_authorization;
+pub mod tournament_visibility;
 pub mod tournaments;

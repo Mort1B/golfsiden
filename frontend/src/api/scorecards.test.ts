@@ -83,7 +83,7 @@ describe('scorecard boundaries', () => {
       complete: null,
       confirmed: null,
       confirmed_at: null,
-      visibility: { mode: 'front_nine', observed_at: '2026-09-10T10:00:00Z', hidden_until: null },
+      visibility: { mode: 'front_nine' },
     }
     expect(decodeReadScorecard(response, roundId, owner).holes).toHaveLength(9)
     expect(() => decodeReadScorecard({ ...response, confirmed: false }, roundId, owner)).toThrow('visibility')
@@ -106,7 +106,7 @@ describe('scorecard boundaries', () => {
         { code: 'unconfirmed_scorecards', message: 'unconfirmed' },
         { code: 'round_not_completed', message: 'not completed' },
       ],
-      visibility: { mode: 'full', observed_at: '2026-09-10T10:00:00Z', hidden_until: null },
+      visibility: { mode: 'full' },
     }
     expect(decodeCompletionValidation(response, roundId, 'player').owners).toHaveLength(1)
     expect(() => decodeCompletionValidation(response, roundId, 'team')).toThrow('owner.type')
@@ -120,7 +120,7 @@ describe('scorecard boundaries', () => {
       ready_to_complete: null,
       ready_to_lock: null,
       issues: [],
-      visibility: { mode: 'front_nine', observed_at: '2026-09-10T10:00:00Z', hidden_until: null },
+      visibility: { mode: 'front_nine' },
     }
     expect(decodeCompletionValidation(response, roundId, 'player').owners[0]).toMatchObject({
       holes_scored: 9,

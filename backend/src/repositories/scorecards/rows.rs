@@ -25,7 +25,7 @@ pub(super) struct RoundContext {
 pub(super) struct ReadVisibilityContext {
     pub round_number: i16,
     pub tournament_round_count: i16,
-    pub final_scores_hidden_until: Option<DateTime<Utc>>,
+    pub final_round_back_nine_hidden: bool,
 }
 
 #[derive(FromRow)]

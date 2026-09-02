@@ -220,7 +220,7 @@ remain bound to the exact target.
 
 The strict frontend boundary independently verifies every target-bearing
 tournament detail, roster, round list/detail, team, pairing, leaderboard,
-handicap correction, counted-round, start, course-configuration, and invitation
+handicap correction, counted-round, start, final visibility, course-configuration, and invitation
 response before TanStack Query or transient UI receives it. Duplicate resource
 identities and mismatched tournament, round, player, team, metric, or invitation
 predecessor facts fail closed as invalid server data. Query keys remain rooted by
@@ -623,28 +623,32 @@ confirmed again. Once locked, ordinary score changes remain rejected. Migration
 4 also fails fast when upgrading a database that already contains an invalid
 completed or locked round.
 
-### Persisted final-score embargo clock
+### Administrator-controlled final visibility
 
-Migration `0017` adds nullable `rounds.final_scores_hidden_until`. For the
-authoritative final round only, the last required confirmation starts one
-database-time deadline 24 hours ahead. Intermediate confirmations, non-final
-rounds, duplicate confirmations, completion, and locking do not create, extend,
-or shorten it. A score correction that removes confirmation strictly before
-expiry clears the deadline; complete reconfirmation then starts a fresh 24-hour
-window. At or after expiry, the stored deadline remains unchanged because those
-results have already been revealed.
+Migration `0018` replaces the former deadline with
+`tournaments.final_round_back_nine_hidden` and a dedicated
+`visibility_updated_at` concurrency token. New tournaments default to hidden.
+During upgrade, only completed or locked finals whose schema-17 deadline had
+already expired remain released; every other tournament stays hidden. The old
+deadline column, helper functions, and confirmation-maintenance triggers are
+removed.
 
-Upgrades from schema 16 reconstruct an already-ready final round's deadline as
-the latest required stored `confirmed_at` plus 24 hours. Unready and non-final
-rounds remain null. Direct ordinary deadline writes are rejected. Tournament
-round count and child round numbers are frozen when start commits, so direct SQL
-cannot redefine the final round afterward; concurrent start and renumbering
-serialize in the existing round-before-tournament lock order.
+`GET /api/tournaments/{tournament_id}/final-round-visibility` returns the focused
+private resource to the exact tournament admin. `PATCH` accepts an absolute
+`back_nine_hidden` value and `expected_visibility_updated_at`, revalidates the
+active session and exact admin membership under the established
+rounds-before-tournament lock order, and returns
+`final_round_visibility_stale` for a superseded token. PostgreSQL independently
+requires the transaction-local exact-admin workflow and owns the next timestamp.
+Idempotent writes do not emit an event; changed writes emit one identifier-free
+`visibility` event only after commit.
 
-The read boundary now consumes this clock through one shared policy using a
-single PostgreSQL observation time. Exact deadline equality reveals a completed
-or locked round, while an open final remains restricted. The client uses the
-server-provided interval only to schedule an authoritative refetch.
+The shared read policy gives exact admins full projections. Every other role sees
+only holes 1–9 for a hidden open, completed, or locked configured 18-hole final.
+Release and re-hide are explicit admin actions; confirmation, completion,
+locking, and elapsed time never change visibility. The management workspace
+shows the control only for a configured 18-hole final and recovers stale saves by
+refetching the focused resource.
 
 ## Leaderboards
 
@@ -696,10 +700,10 @@ closed instead of producing plausible partial standings.
 Both round and tournament leaderboard routes require membership in the target
 tournament and are returned as private, non-cacheable responses.
 
-Exact tournament admins receive full standings. For every other role, an open
-18-hole final is calculated from holes 1–9 only. A completed or locked final with
-a null or future release deadline is omitted entirely from tournament best-N
-selection, totals, eligibility, positions, ties, and included-round identities.
+Exact tournament admins receive full standings. For every other role, a hidden
+open 18-hole final is calculated from holes 1–9 only. A hidden completed or
+locked final is omitted entirely from tournament best-N selection, totals,
+eligibility, positions, ties, and included-round identities.
 Round totals and ranks are recomputed after redaction while retaining the full
 18-hole handicap allocation denominator. A non-admin provisional final result
 therefore contains at most holes 1–9, while the exact admin projection remains
@@ -727,9 +731,9 @@ scored round-leaderboard rows link directly to the same read-only route.
 The direct-card page verifies that the round belongs to the path tournament and
 that the tagged owner exists in the role-projected round leaderboard before
 requesting the canonical member scorecard read. Metric, summary/hole view, and
-visible hole are canonical URL state. The page uses SSE and the trusted visibility-
-release timer, but never requests score access, completion validation, `/scoring`,
-confirmation, or a mutation. A history/card deep link is therefore refresh-safe
+visible hole are canonical URL state. The page uses SSE-driven authoritative
+visibility refresh, but never requests score access, completion validation,
+`/scoring`, confirmation, or a mutation. A history/card deep link is therefore refresh-safe
 and membership-private without granting the viewer write authority.
 
 Leaderboard responses cross a focused runtime decoder before entering TanStack
@@ -747,7 +751,10 @@ requires exact membership, revalidates the active session and membership before
 each matching event, and emits only an event type plus the fixed `invalidate`
 marker, with no identifiers or mutable state.
 Initial connection and every reconnect invalidate the current user's private
-workspace. A lagged server receiver closes the stream so native reconnection
+workspace. Visibility events and stream errors first clear every role-projected
+result query, preventing a previously released back nine from remaining visible
+while disconnected or refetching; authorized `/scoring` queries are excluded.
+A lagged server receiver closes the stream so native reconnection
 triggers that same authoritative resync instead of silently leaving stale state.
 
 ## Development workflow

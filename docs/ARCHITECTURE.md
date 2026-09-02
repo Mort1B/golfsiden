@@ -196,22 +196,22 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   team handicap snapshot per owner. Both the repository and lifecycle
   trigger require every owner to have exactly the configured hole count and a
   current confirmation.
-- `rounds.final_scores_hidden_until` is the database-owned final-score embargo
-  clock. Only the round whose number equals its tournament's configured count can
-  receive it. The last required confirmation starts one 24-hour window from
-  PostgreSQL time; a confirmation invalidated strictly before expiry clears it,
-  while expiry, completion, and locking preserve it. Schema upgrades reconstruct
-  ready final-round deadlines from the latest required `confirmed_at` fact.
+- `tournaments.final_round_back_nine_hidden` is the database-owned visibility
+  state for the configured final. It defaults to hidden and has an independent
+  `visibility_updated_at` concurrency token. Migration 0018 preserves finals
+  already released by the former deadline while keeping every other tournament
+  hidden, then removes the deadline column and confirmation-maintenance triggers.
+  A narrow PostgreSQL trigger accepts changes only from the exact active-admin
+  workflow and advances the dedicated timestamp monotonically.
 - Final-round identity is immutable after tournament start: PostgreSQL freezes
   both `tournaments.number_of_rounds` and each child `rounds.round_number` across
   the start boundary. Round-number checks lock round then parent tournament,
   matching lifecycle lock order and serializing start-versus-renumber races.
 - One pure visibility policy consumes the exact tournament role, authoritative
-  final-round identity, round state, configured hole count, stored deadline, and
-  one PostgreSQL observation timestamp. Exact admins receive full reads. Other
-  members receive only holes 1–9 while an 18-hole final is open or while its
-  completed/locked deadline is null or in the future; equality reveals a
-  non-open round.
+  final-round identity, round state, configured hole count, and persisted hidden
+  state. Exact admins receive full reads. Other members receive only holes 1–9
+  for a hidden open, completed, or locked 18-hole final. Confirmation, completion,
+  locking, database time, and browser time never change that decision.
 - Round standings and member scorecards validate the complete stored fact set
   before redaction, then recompute every visible total, progress value, rank,
   and tie from visible facts. Completion reads likewise count actual front-nine
@@ -256,7 +256,8 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   `invalidate` data marker required for browser dispatch. The internal tournament
   and resource identifiers never enter the SSE frame. A lagged receiver closes;
   initial connection and native reconnection invalidate the user's private query
-  root and refetch authoritative state.
+  root and refetch authoritative state. The visibility mutation emits a dedicated
+  `visibility` event.
 - Private workspace query keys are rooted by session user ID. Initial or changed
   identities clear that root before publication; same-user refreshes preserve it.
   Scorecards use that same user-owned root. Tournament-live invalidation targets
@@ -301,10 +302,13 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   score access, preserves the hole on quick switches, and replaces rapid switch
   history. The route prefetches only adjacent writable owner keys; TanStack Query
   remains the sole owner of authoritative scorecard reads.
-- Visibility deadlines schedule a cleaned-up authoritative refetch using the
-  server interval `hidden_until - observed_at`. Browser time never changes
-  authorization or locally reveals cached facts, and restricted hole URLs are
-  canonicalized to the visible prefix.
+- Visibility events synchronously clear role-projected leaderboard, completion,
+  history, drilldown, and actor-free scorecard query state before authoritative
+  refetch. An EventSource error performs the same transition without refetching
+  while disconnected; `open` repeats it and refreshes after reconnection.
+  Writable `/scoring` queries are deliberately excluded. Browser time never
+  changes authorization or locally reveals cached facts, and restricted hole
+  URLs are canonicalized to the visible prefix.
 - Hole mutation intent stays outside TanStack Query in one round/owner/hole
   coordinator. It serializes writes, coalesces rapid input, and requires an
   authoritative refetch match before reporting synchronization. Route and unload
@@ -322,6 +326,7 @@ Implemented resources:
 | `GET` | `/api/tournaments` | List only the authenticated account's tournament memberships |
 | `GET` | `/api/tournaments/{tournament_id}` | Retrieve a tournament |
 | `POST` | `/api/tournaments/{tournament_id}/start` | Start a ready draft tournament as its exact admin without opening a round |
+| `GET`, `PATCH` | `/api/tournaments/{tournament_id}/final-round-visibility` | Read or change the exact-admin final-back-nine visibility setting |
 | `GET` | `/api/tournaments/{tournament_id}/players` | List the private roster and handicap-correction state |
 | `POST` | `/api/tournaments/{tournament_id}/players/{player_id}/handicap-corrections` | Audit a pre-opening tournament handicap correction |
 | `GET`, `POST` | `/api/tournaments/{tournament_id}/rounds` | List and create rounds |

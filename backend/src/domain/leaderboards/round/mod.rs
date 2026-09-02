@@ -19,7 +19,7 @@ pub fn build_round_leaderboard(
     facts: &RoundLeaderboardFacts,
     metric: LeaderboardMetric,
 ) -> Result<RoundLeaderboard, LeaderboardError> {
-    build_round_leaderboard_projected(facts, metric, unrestricted(chrono::DateTime::UNIX_EPOCH))
+    build_round_leaderboard_projected(facts, metric, unrestricted())
 }
 
 pub fn build_round_leaderboard_projected(

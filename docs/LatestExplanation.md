@@ -1,58 +1,53 @@
 # Latest explanation
 
-## Results now have stable read-only destinations
+## Final visibility is an admin decision
 
-Phase 7B2b turns each visible result into a protected URL instead of transient
-leaderboard text. A tournament row opens the selected player's gross or net
-history. That history is the existing authoritative tournament leaderboard entry,
-so its completed qualification and metric-specific counted selection cannot drift
-from the ranking that linked to it.
+Phase 7C replaces the 24-hour final-score clock with one tournament-owned
+setting. A newly created tournament hides holes 10–18 by default. The exact
+tournament admin can release or re-hide them from the management workspace even
+after the final is completed or locked; confirmation and elapsed time no longer
+affect the decision.
 
-Every visible contribution keeps the exact owner that produced it. An individual
-round therefore links to its player card, while a scramble or foursomes result
-links both attributed players to the same preserved round-team card.
+The focused API uses an absolute desired state and its own optimistic timestamp:
 
-```ts
-scorecardUrl(
-  tournamentId,
-  contribution.round_id,
-  contribution.owner,
-  metric,
-)
+```json
+{
+  "back_nine_hidden": false,
+  "expected_visibility_updated_at": "2026-09-02T12:00:00Z"
+}
 ```
 
-The link deliberately uses `contribution.owner`, never `current_team`, because a
-player's team may change each round.
+The repository revalidates the active session and exact tournament-admin
+membership inside the write transaction. PostgreSQL independently guards the two
+visibility columns and advances the timestamp. Changed commits publish a
+dedicated identifier-free `visibility` event; idempotent requests do not.
 
-## A drilldown never becomes a scoring surface
+## Every protected read uses the same policy
 
-The direct-card route composes its target in three stages. It first loads the
-tournament's decoded rounds and proves the requested round belongs there. It then
-loads the role-projected round leaderboard and requires the exact tagged owner.
-Only after those checks does it enable the actor-free member scorecard read.
+The pure visibility rule consumes the caller's exact tournament role, final-round
+identity, round state, hole count, and persisted toggle. Exact admins and the
+separately authorized scoring projection remain full. For every other role, a
+hidden open final is recomputed from holes 1–9, and a hidden completed or locked
+final is omitted before tournament best-N selection. Actor-free scorecards,
+completion readiness, player history, and direct result cards receive the same
+redaction.
 
-The route never calls score access, completion validation, `/scoring`, confirmation,
-or score mutation endpoints. It still receives the Phase 7B1 visibility projection,
-so a non-admin final card contains only visible front-nine facts and refetches at
-the trusted release deadline. SSE remains an authoritative invalidation signal.
+Migration 0018 preserves already-released completed/locked finals during upgrade,
+keeps other tournaments hidden, and removes the former deadline column and
+confirmation triggers. Course revisions, round lifecycle, confirmations, scores,
+and immutable handicap snapshots are unchanged.
 
-## Canonical keys and URLs keep identities coherent
+## Tightening visibility fails closed in the browser
 
-History and cards reuse the same session-owned canonical query keys as the main
-leaderboard and read-card surfaces. Explicit save/confirmation invalidation, SSE,
-logout, and identity replacement therefore target the same facts rather than
-leaving route-specific copies behind.
+A normal query invalidation can continue rendering old data while refetching.
+That is unsafe when an admin re-hides results, so the dedicated visibility event
+cancels in-flight protected reads and synchronously clears role-projected
+leaderboard, completion, history, drilldown, and actor-free scorecard query state.
+An EventSource error performs the same transition immediately without refetching
+while offline; reconnect `open` clears again and then loads authoritative state.
+Writable `/scoring` queries stay separate and are never cleared by this policy.
 
-Metric, summary/hole view, and visible hole are canonical URL state. Complete
-route identities remount independently, invalid owner types and cross-tournament
-rounds fail closed, and initial failures cannot render stale predecessor data.
-Backend integration coverage proves both player- and team-owned contribution tags
-open cards with matching preserved gross/net totals. Frontend tests cover route
-canonicalization, historical owner selection, mandatory/provisional wording,
-cache invalidation, and target mismatch behavior. The full backend, serialized
-PostgreSQL, and frontend ladders pass. Real Chrome at phone and desktop widths
-proved the embargoed individual path, canonical refresh and Back behavior, exact
-shared-team URL/card equality for Anders and Henrik after cleared-session logins,
-same-user cross-tournament isolation, and fail-closed access for a non-member.
-Observed drilldown traffic contained only private/non-cacheable read endpoints;
-no scoring-authority, confirmation, or mutation endpoint was requested.
+The manual course path remains the existing round-specific immutable revision.
+Admins provide tee rating, slope, hole pars, and stroke indexes; opening still
+calculates and freezes Course/Playing Handicap in the backend and allocates
+received strokes by the preserved handicap and hole index.

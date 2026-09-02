@@ -5,9 +5,10 @@ milestone includes atomic self-service tournament creation, revocable sessions,
 round-specific teams and flights, transactional draft pairing rosters, audited
 individual/scramble scorecards, deterministic round lifecycle operations, and
 live gross/net leaderboards with URL-backed player history and read-only result
-scorecards. Final-round holes 10–18 are hidden from every
-non-admin read projection until the database-owned release policy permits them;
-authorized scoring views remain available only for the exact writable card.
+scorecards. Final-round holes 10–18 default to hidden from every non-admin read
+projection until the exact tournament admin releases them; the admin may re-hide
+them without a time dependency. Authorized scoring views remain available only
+for the exact writable card.
 
 ## Prerequisites
 
@@ -201,8 +202,9 @@ standings, scorecards, and completion progress. Non-admin tournament standings
 omit a completed or locked final round while it is hidden, and member scorecard
 reads expose only front-nine-derived facts. The separate `/scoring` scorecard
 projection returns a full card only after exact write authorization. The
-frontend keeps read and scoring projections in distinct session-owned caches and
-refetches after the server-provided release interval.
+frontend keeps read and scoring projections in distinct session-owned caches.
+Dedicated visibility events, disconnects, and reconnects clear role-projected
+facts before authoritative refetch, while writable scoring caches remain separate.
 
 Tournament gross and net standings now include the visible scored portion of the
 highest-numbered open round as an explicitly provisional best-N contribution.

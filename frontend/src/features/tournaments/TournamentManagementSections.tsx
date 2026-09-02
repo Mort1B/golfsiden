@@ -7,6 +7,8 @@ import { CourseConfigurationSection } from './CourseConfigurationSection'
 import { CountedRoundsEditor } from './CountedRoundsEditor'
 import { PairingSection } from './pairings/PairingSection'
 import { TournamentStartPanel } from './TournamentStartPanel'
+import { FinalRoundVisibilityControl } from './FinalRoundVisibilityControl'
+import { applicableFinalRound } from './finalRoundVisibility'
 
 interface ReadState<T> {
   data: T | undefined
@@ -62,6 +64,7 @@ function RosterState({ state }: { state: ReadState<TournamentPlayerRoster> }) {
 }
 
 export function TournamentManagementSections({ tournament, roster, rounds }: Props) {
+  const finalRound = rounds.data === undefined ? null : applicableFinalRound(tournament, rounds.data)
   return (
     <div className="management-sections">
       <section id="settings" className="management-section" aria-labelledby="settings-heading" tabIndex={-1}>
@@ -122,6 +125,7 @@ export function TournamentManagementSections({ tournament, roster, rounds }: Pro
         <header><p className="eyebrow">Gjeldende status</p><h2 id="lifecycle-heading">Livsløp</h2></header>
         <p className="management-current-status">Turneringen er <StatusBadge status={tournament.status} />.</p>
         <TournamentStartPanel tournament={tournament} roster={roster} rounds={rounds} />
+        {finalRound && <FinalRoundVisibilityControl tournament={tournament} finalRound={finalRound} />}
         <RoundState state={rounds}>{(items) => (
           <ul className="management-detail-list">
             {items.map((round) => <li key={round.id}><CalendarDays aria-hidden="true" /><span><strong>{formatName(round)}</strong>{formatDate(round.round_date)} · {round.number_of_holes} hull · <StatusBadge status={round.status} /></span></li>)}

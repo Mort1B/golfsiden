@@ -35,7 +35,7 @@ function leaderboard(currentRoundId: string | null, includedRoundIds: string[]):
     mandatory_round_id: null,
     current_round_id: currentRoundId,
     included_round_ids: includedRoundIds,
-    visibility: { mode: 'full', observed_at: '2026-09-01T10:00:00Z', hidden_until: null },
+    visibility: { mode: 'full' },
     entries: [],
   }
 }

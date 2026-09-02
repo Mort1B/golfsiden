@@ -326,8 +326,7 @@ async fn round_api_handles_draft_missing_partial_plus_handicap_and_exact_contrac
     let (status, mut response) =
         get(&app, format!("/api/rounds/{ROUND_ONE}/leaderboards/gross")).await;
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(response["visibility"]["mode"], "full");
-    assert!(response["visibility"]["observed_at"].is_string());
+    assert_eq!(response["visibility"], json!({"mode": "full"}));
     response.as_object_mut().unwrap().remove("visibility");
     assert_eq!(
         response,
@@ -451,8 +450,7 @@ async fn tournament_api_aggregates_completed_rounds_and_keeps_current_teams(pool
     )
     .await;
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(response["visibility"]["mode"], "full");
-    assert!(response["visibility"]["observed_at"].is_string());
+    assert_eq!(response["visibility"], json!({"mode": "full"}));
     response.as_object_mut().unwrap().remove("visibility");
     assert_eq!(
         response,

@@ -14,7 +14,7 @@ pub fn build_tournament_leaderboard(
     facts: &TournamentLeaderboardFacts,
     metric: LeaderboardMetric,
 ) -> Result<TournamentLeaderboard, LeaderboardError> {
-    let full = unrestricted(chrono::DateTime::UNIX_EPOCH);
+    let full = unrestricted();
     build_tournament_leaderboard_projected(facts, metric, full, None, full)
 }
 
