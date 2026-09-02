@@ -45,8 +45,10 @@ Phase 7B1 embargo-safe read projections and Phase 7B2a provisional open-round
 best-N standings are complete, including browser-dispatchable identifier-free
 live invalidation and authoritative 3-to-4-hole refresh validation. Phase 7B2b
 membership-private player history and result-card drilldowns are also complete.
-There is no active implementation step; partner-repeat-aware team generation and
-handicap balancing are the next bounded candidates.
+The next implementation step is planned but not started: replace the trusted
+final-score embargo clock with an exact-admin final-back-nine visibility toggle.
+Partner-repeat-aware team generation and handicap balancing remain later bounded
+candidates.
 
 ## Product decisions
 
@@ -85,6 +87,11 @@ handicap balancing are the next bounded candidates.
   pars, and a unique `1..=hole_count` stroke-index permutation are required;
   each hole's yard distance is optional. Manual and provider imports create the same
   immutable local revision before the round can open.
+- Manual course registration is round-specific, not a reusable course library.
+  The backend derives par from the stored holes, calculates and freezes Course/
+  Playing Handicap when the round opens, and allocates received strokes from the
+  preserved Playing Handicap and each hole's stroke index. A reusable multi-tee
+  library or explicit per-hole stroke badges require separate product approval.
 - Flights are explicit, round-specific groups independent of teams, tee times,
   and starting holes. Every authenticated player linked to an exact flight member
   may write every eligible scorecard in that flight; tournament admins/scorers
@@ -109,12 +116,12 @@ handicap balancing are the next bounded candidates.
   round contribution and its player/team owner; a team drilldown shows that
   round's shared card. Gross and net views use the same preserved strokes.
 - Players can view live gross/net standings for the current round and live
-  tournament-wide standings that include the active round. While the final round
-  is open, holes 10-18 are excluded from every non-admin leaderboard projection;
-  only that tournament's admins see full live standings. When every required
-  final-round scorecard is complete and confirmed, a 24-hour embargo starts from
-  trusted database time. Completion or locking does not reveal the hidden final
-  scores early; they become visible automatically when the embargo expires.
+  tournament-wide standings that include the active round. For the configured
+  18-hole final, an exact tournament admin controls whether holes 10-18 are hidden
+  from every non-admin result projection. New tournaments default to hidden; the
+  admin may release or re-hide the back nine while the final is open, completed,
+  or locked. Time, confirmation, completion, and locking never change visibility.
+  Exact tournament admins and authorized scoring projections remain full.
 - Two-player foursomes uses one alternate-shot team card. Its Playing Handicap is
   50% of the partners' combined unrounded Course Handicaps, applied once and
   rounded only at the end under WHS allowance rules; the final team value is
@@ -133,6 +140,69 @@ handicap balancing are the next bounded candidates.
 - Every later scoring format still requires explicit approval of team size,
   handicap allowance, score owner, completion rule, and tie behavior. No later
   format begins before roadmap completion, optimization, and security review.
+
+## Active implementation step
+
+### Phase 7C: administrator-controlled final-back-nine visibility
+
+- **Goal:** Replace the 24-hour final-score embargo with one persistent,
+  tournament-owned hidden/released setting controlled only by the exact
+  tournament admin. Preserve the already-complete manual course registration and
+  backend handicap/stroke calculation as regression-tested dependencies.
+- **Files and modules:** Add forward migration
+  `0018_admin_final_round_visibility.sql`; add focused tournament visibility API
+  and repository modules; update `domain/score_visibility.rs` plus the
+  leaderboard, scorecard, and completion read repositories; add a focused
+  management toggle, typed frontend API/query boundary, and fail-closed live
+  cache transition; remove the frontend deadline-refetch hook; replace embargo
+  tests and update durable documentation.
+- **Exact behavior:** Store an explicit hidden boolean that defaults to hidden.
+  Upgrade data keeps already-expired completed/locked finals visible and keeps
+  every other existing final hidden, then removes the deadline column, clock
+  helpers, and confirmation-maintenance triggers. Provide a private `GET` and an
+  explicit desired-state `PATCH` with CSRF, active-session revalidation, exact
+  tournament-admin authorization, an `expected_visibility_updated_at` token and
+  stable stale-conflict code, serialized writes in the established
+  rounds-before-tournament lock order, database-guarded mutation context, and a
+  dedicated identifier-free post-commit visibility SSE event.
+  The setting applies only to the configured 18-hole final; draft, non-final,
+  and non-18-hole projections remain full. Non-admin round standings,
+  tournament standings, actor-free scorecards, completion state, history, and
+  drilldowns expose no back-nine-derived facts while hidden and become full only
+  after a committed release and authoritative refetch. Re-hiding is allowed even
+  after completion or locking. A visibility event synchronously removes every
+  role-projected leaderboard, actor-free scorecard, completion, history, and
+  drilldown cache before refetch; live-stream open/reconnect performs the same
+  fail-closed removal in case an event was missed. Authorized `/scoring` caches
+  remain separate and are not purged by this visibility policy. The admin control
+  exposes loading, failure, pending, current-state, and success states with an
+  accessible 44px target.
+- **Validation:** Cover migration 17-to-18 backfill and PostgreSQL write guards;
+  `401`/`403`/`404`, CSRF, malformed input, stale/idempotent/concurrent writes,
+  cross-tournament isolation, cache headers, and post-commit SSE; hidden,
+  released, and re-hidden open/completed/locked projections across gross/net,
+  best-N/mandatory results, scorecards, completion, history, and drilldowns;
+  full admin/scoring projections; frontend decoders, query keys, mutation
+  recovery, synchronous stale-full-cache removal on re-hide and reconnect, and
+  the existing manual-course-to-frozen-handicap/stroke-allocation path. Run the
+  full backend, PostgreSQL migration/seed, Clippy, frontend, and phone/desktop
+  Chrome ladders, including a second non-admin session and clean console/network
+  output.
+- **Invariants:** Do not weaken tournament-scoped administration, private read
+  authorization, score-owner exclusivity, round locking, immutable handicap
+  snapshots, best-N selection, or gross/net separation. Browser time must never
+  reveal cached data. The toggle must not mutate scores, confirmations,
+  handicaps, round lifecycle, or immutable course revisions. No audit-history
+  table, reusable course library, multiple-tee editor, or stroke-badge UI is in
+  this step.
+- **Stop condition:** Stop when one exact tournament admin can persistently hide,
+  release, and re-hide holes 10-18 without any elapsed-time dependency; every
+  protected non-admin projection reveals only after the committed setting and an
+  authoritative refetch, while re-hiding immediately removes previously cached
+  facts before refetch; unauthorized and cross-tournament writes fail; the
+  existing manual course and backend-calculated received-stroke path still pass;
+  review findings and all required validation/documentation are resolved. Do not
+  begin partner generation or any optional course-library/stroke-display work.
 
 ## Upcoming work
 
