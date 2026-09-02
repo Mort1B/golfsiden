@@ -1,5 +1,6 @@
 pub const USERNAME_ERROR: &str =
     "username must contain 3 to 32 lowercase letters, digits, underscores, or hyphens";
+pub const PASSWORD_ERROR: &str = "password must be between 12 and 128 bytes";
 
 pub fn normalize_username(username: &str) -> String {
     username.trim().to_ascii_lowercase()
@@ -15,6 +16,14 @@ pub fn normalize_and_validate_username(username: &str) -> Result<String, &'stati
         Ok(username)
     } else {
         Err(USERNAME_ERROR)
+    }
+}
+
+pub fn validate_password_length(password: &str) -> Result<(), &'static str> {
+    if (12..=128).contains(&password.len()) {
+        Ok(())
+    } else {
+        Err(PASSWORD_ERROR)
     }
 }
 
@@ -35,5 +44,12 @@ mod tests {
         for value in ["ab", "a.b", "spilleræ", "a username", &"a".repeat(33)] {
             assert!(normalize_and_validate_username(value).is_err());
         }
+    }
+
+    #[test]
+    fn password_length_uses_account_contract_bytes() {
+        assert!(validate_password_length("123456789012").is_ok());
+        assert!(validate_password_length("short").is_err());
+        assert!(validate_password_length(&"a".repeat(129)).is_err());
     }
 }

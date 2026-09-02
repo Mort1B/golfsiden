@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::{
     Json,
     extract::{Path, State, rejection::JsonRejection},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::IntoResponse,
 };
 use axum_extra::extract::cookie::{Cookie, CookieJar};
@@ -21,6 +21,7 @@ use crate::{
     },
     domain::invitations::{RegistrationInput, valid_token_shape, validate_registration},
     error::ApiError,
+    rate_limit::RateLimitRoute,
     repositories::{
         auth,
         invitations::{self, InvitationError, InvitationPreview, JoinStatus},
@@ -68,9 +69,18 @@ struct RegisterResponse {
 pub(super) async fn preview(
     State(state): State<Arc<AppState>>,
     Path(invitation_id): Path<String>,
+    headers: HeaderMap,
     input: Result<Json<Value>, JsonRejection>,
 ) -> Result<Json<InvitationPreview>, InvitationApiError> {
     let invitation_id = parse_public_id(&invitation_id)?;
+    state
+        .rate_limiter
+        .check(
+            RateLimitRoute::InvitationPreview,
+            state.proxy_trust.client_identity(&headers),
+            invitation_id.as_bytes(),
+        )
+        .map_err(ApiError::from)?;
     let Json(value) = input.map_err(invalid_token_body)?;
     authenticate_body_token(&state, invitation_id, &value).await?;
     let input: TokenRequest = strict_decode(value, "request must contain only token")?;
@@ -83,9 +93,18 @@ pub(super) async fn register(
     State(state): State<Arc<AppState>>,
     jar: CookieJar,
     Path(invitation_id): Path<String>,
+    headers: HeaderMap,
     input: Result<Json<Value>, JsonRejection>,
 ) -> Result<impl IntoResponse, InvitationApiError> {
     let invitation_id = parse_public_id(&invitation_id)?;
+    state
+        .rate_limiter
+        .check(
+            RateLimitRoute::InvitationRegister,
+            state.proxy_trust.client_identity(&headers),
+            invitation_id.as_bytes(),
+        )
+        .map_err(ApiError::from)?;
     let Json(value) = input.map_err(|_| {
         ApiError::BadRequest("request must contain token, account, and player objects".to_owned())
     })?;
@@ -147,9 +166,18 @@ pub(super) async fn accept(
     State(state): State<Arc<AppState>>,
     Path(invitation_id): Path<String>,
     MutationSession(authenticated): MutationSession,
+    headers: HeaderMap,
     input: Result<Json<Value>, JsonRejection>,
 ) -> Result<impl IntoResponse, InvitationApiError> {
     let invitation_id = parse_public_id(&invitation_id)?;
+    state
+        .rate_limiter
+        .check(
+            RateLimitRoute::InvitationAccept,
+            state.proxy_trust.client_identity(&headers),
+            invitation_id.as_bytes(),
+        )
+        .map_err(ApiError::from)?;
     let Json(value) = input.map_err(invalid_token_body)?;
     authenticate_body_token(&state, invitation_id, &value).await?;
     let input: TokenRequest = strict_decode(value, "request must contain only token")?;

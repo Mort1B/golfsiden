@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use axum::{
     Json, Router,
-    extract::{FromRequestParts, State, rejection::JsonRejection},
-    http::{StatusCode, header::CACHE_CONTROL, request::Parts},
+    extract::{DefaultBodyLimit, FromRequestParts, State, rejection::JsonRejection},
+    http::{HeaderMap, StatusCode, header::CACHE_CONTROL, request::Parts},
     response::IntoResponse,
     routing::{get, post},
 };
@@ -15,14 +15,19 @@ use crate::{
     AppState,
     auth::{
         SESSION_COOKIE_NAME, SessionPrincipal, derive_csrf_token, generate_session_token,
-        hash_session_token, verify_derived_csrf, verify_password,
+        hash_session_token, verify_derived_csrf, verify_password_bounded,
     },
-    domain::accounts::normalize_and_validate_username,
+    domain::accounts::{
+        PASSWORD_ERROR, USERNAME_ERROR, normalize_and_validate_username, normalize_username,
+        validate_password_length,
+    },
     error::{ApiError, ApiResult},
+    rate_limit::RateLimitRoute,
     repositories::auth,
 };
 
 const DUMMY_PASSWORD_HASH: &str = "$argon2id$v=19$m=19456,t=2,p=1$Z29sZi1kdW1teS1zYWx0$g6+at6I1zni8XIFjKb4q79OHktQWrmrpswK13OU9sg0";
+const MAX_LOGIN_BODY_BYTES: usize = 4 * 1024;
 pub const CSRF_HEADER: &str = "x-csrf-token";
 
 pub fn routes() -> Router<Arc<AppState>> {
@@ -30,6 +35,7 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/api/auth/login", post(login))
         .route("/api/auth/session", get(session))
         .route("/api/auth/logout", post(logout))
+        .layer(DefaultBodyLimit::max(MAX_LOGIN_BODY_BYTES))
 }
 
 pub struct AuthenticatedSession {
@@ -96,18 +102,35 @@ struct LoginRequest {
 async fn login(
     State(state): State<Arc<AppState>>,
     jar: CookieJar,
+    headers: HeaderMap,
     input: Result<Json<LoginRequest>, JsonRejection>,
 ) -> ApiResult<impl IntoResponse> {
-    let Json(input) = input.map_err(|_| {
-        ApiError::BadRequest("request must contain username and password".to_owned())
+    let Json(input) = input.map_err(|error| {
+        if error.status() == StatusCode::PAYLOAD_TOO_LARGE {
+            ApiError::PayloadTooLarge
+        } else {
+            ApiError::BadRequest("request must contain username and password".to_owned())
+        }
     })?;
-    let username = normalize_and_validate_username(&input.username).unwrap_or_default();
+    let normalized_username = normalize_username(&input.username);
+    state.rate_limiter.check(
+        RateLimitRoute::Login,
+        state.proxy_trust.client_identity(&headers),
+        normalized_username.as_bytes(),
+    )?;
+    let username = normalize_and_validate_username(&input.username)
+        .map_err(|_| ApiError::BadRequest(USERNAME_ERROR.to_owned()))?;
+    validate_password_length(&input.password)
+        .map_err(|_| ApiError::BadRequest(PASSWORD_ERROR.to_owned()))?;
     let user = auth::find_login_user(&state.pool, &username).await?;
     let encoded_hash = user
         .as_ref()
         .and_then(|user| user.password_hash.clone())
         .unwrap_or_else(|| DUMMY_PASSWORD_HASH.to_owned());
-    if !verify_password(input.password, encoded_hash).await {
+    if !verify_password_bounded(input.password, encoded_hash)
+        .await
+        .map_err(|_| ApiError::Internal)?
+    {
         return Err(ApiError::InvalidCredentials);
     }
     let user_id = user

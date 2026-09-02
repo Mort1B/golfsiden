@@ -4,12 +4,16 @@ use axum::{
     body::Body,
     http::{Request, StatusCode, header, request::Builder},
 };
+use std::time::Duration as StdDuration;
+
 use chrono::{Duration, Utc};
 use golf_api::{
     AppState, api,
     auth::{
         derive_csrf_token, generate_invitation_token, hash_invitation_token, hash_session_token,
     },
+    course_provider::CourseProviderClient,
+    rate_limit::{RateLimitRoute, RateLimiter},
     repositories::{auth, tournaments},
 };
 use http_body_util::BodyExt;
@@ -298,6 +302,78 @@ async fn preview_is_minimal_and_wrong_tokens_are_one_oracle_safe_error(pool: PgP
         assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
         assert_eq!(body(response).await, baseline_body);
     }
+}
+
+#[sqlx::test(migrations = "../migrations")]
+async fn all_public_invitation_routes_enforce_stable_rate_limit_responses(pool: PgPool) {
+    let seed = seed(&pool, None).await;
+    let limiter = RateLimiter::with_rules(
+        [
+            (
+                RateLimitRoute::InvitationPreview,
+                StdDuration::from_secs(60),
+                1,
+                10,
+            ),
+            (
+                RateLimitRoute::InvitationRegister,
+                StdDuration::from_secs(60),
+                1,
+                10,
+            ),
+            (
+                RateLimitRoute::InvitationAccept,
+                StdDuration::from_secs(60),
+                1,
+                10,
+            ),
+        ],
+        32,
+    );
+    let app = api::router(AppState::with_runtime_services(
+        pool,
+        golf_api::auth::AuthConfig::local(),
+        CourseProviderClient::disabled(),
+        limiter,
+    ));
+
+    let preview_path = format!("/api/invitations/{INVITATION_ID}/preview");
+    let first_preview = post_token(app.clone(), preview_path.clone(), &seed.invitation_token).await;
+    assert_eq!(first_preview.status(), StatusCode::OK);
+    let limited_preview = post_token(app.clone(), preview_path, &seed.invitation_token).await;
+    assert_rate_limited(limited_preview).await;
+
+    let register_path = format!("/api/invitations/{INVITATION_ID}/register");
+    let malformed_register = || {
+        json_request(
+            Request::post(&register_path),
+            json!({"token": seed.invitation_token, "account": "bad"}),
+        )
+    };
+    let first_register = app.clone().oneshot(malformed_register()).await.unwrap();
+    assert_eq!(first_register.status(), StatusCode::BAD_REQUEST);
+    let limited_register = app.clone().oneshot(malformed_register()).await.unwrap();
+    assert_rate_limited(limited_register).await;
+
+    let accept_path = format!("/api/invitations/{INVITATION_ID}/accept");
+    let wrong_token = generate_invitation_token().unwrap();
+    let accept_request = || {
+        json_request(
+            authorized(Request::post(&accept_path), "player-invitation-session"),
+            json!({"token": wrong_token}),
+        )
+    };
+    let first_accept = app.clone().oneshot(accept_request()).await.unwrap();
+    assert_eq!(first_accept.status(), StatusCode::NOT_FOUND);
+    let limited_accept = app.oneshot(accept_request()).await.unwrap();
+    assert_rate_limited(limited_accept).await;
+}
+
+async fn assert_rate_limited(response: axum::response::Response) {
+    assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
+    assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
+    assert_eq!(response.headers()[header::RETRY_AFTER], "60");
+    assert_eq!(body(response).await["error"]["code"], "rate_limited");
 }
 
 #[sqlx::test(migrations = "../migrations")]

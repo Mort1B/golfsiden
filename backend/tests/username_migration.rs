@@ -71,22 +71,52 @@ async fn v8_upgrade_backfills_collision_safe_usernames_and_preserves_identity(po
 
     sqlx::raw_sql(MIGRATION_9).execute(&pool).await.unwrap();
 
-    let users = sqlx::query_as::<_, (String, String, String, Option<uuid::Uuid>)>(
-        "SELECT username, display_name, password_hash, player_id
+    let users = sqlx::query_as::<_, (uuid::Uuid, String, String, String, Option<uuid::Uuid>)>(
+        "SELECT id, username, display_name, password_hash, player_id
          FROM users ORDER BY id",
     )
     .fetch_all(&pool)
     .await
     .unwrap();
-    assert_eq!(users[0].0, "foo_bar");
-    assert_eq!(users[1].0, "foo_bar_2");
-    assert_eq!(users[2].0, "foo_bar_2_2");
-    assert_eq!(users[3].0, "user_");
-    assert_eq!(users[0].1, "First");
-    assert_eq!(users[0].2, "hash-one");
+    // PostgreSQL collation versions may order punctuation differently. The
+    // published migration promises valid, recognizable, collision-safe names,
+    // not which colliding legacy identity receives a particular suffix.
+    let usernames = users
+        .iter()
+        .map(|user| user.1.as_str())
+        .collect::<std::collections::HashSet<_>>();
+    assert_eq!(usernames.len(), users.len());
+    assert!(users.iter().all(|user| {
+        (3..=32).contains(&user.1.len())
+            && user.1.bytes().all(|byte| {
+                byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"_-".contains(&byte)
+            })
+    }));
+    assert!(users[0].1.starts_with("foo_bar"));
+    assert!(users[1].1.starts_with("foo_bar"));
+    assert!(users[2].1.starts_with("foo_bar_2"));
+    assert!(users[3].1.starts_with("user_"));
     assert_eq!(
-        users[0].3,
+        users[0].0,
+        uuid::uuid!("99000000-0000-0000-0000-000000000011")
+    );
+    assert_eq!(users[0].2, "First");
+    assert_eq!(users[0].3, "hash-one");
+    assert_eq!(
+        users[0].4,
         Some(uuid::uuid!("99000000-0000-0000-0000-000000000001"))
+    );
+    assert_eq!(
+        (users[1].2.as_str(), users[1].3.as_str(), users[1].4),
+        ("Second", "hash-two", None)
+    );
+    assert_eq!(
+        (users[2].2.as_str(), users[2].3.as_str(), users[2].4),
+        ("Third", "hash-three", None)
+    );
+    assert_eq!(
+        (users[3].2.as_str(), users[3].3.as_str(), users[3].4),
+        ("Short", "hash-four", None)
     );
     let session_user = sqlx::query_scalar::<_, uuid::Uuid>(
         "SELECT user_id FROM user_sessions

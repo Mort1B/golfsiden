@@ -1,7 +1,7 @@
 use chrono::{DateTime, Days, NaiveDate, Utc};
 
 use crate::domain::{
-    accounts::normalize_and_validate_username,
+    accounts::{normalize_and_validate_username, validate_password_length},
     models::{ScoringFormat, ScoringMode},
 };
 
@@ -62,7 +62,7 @@ pub fn validate(
 ) -> Result<ValidatedOnboarding, &'static str> {
     input.username = normalize_and_validate_username(&input.username)
         .map_err(|_| "creator.account.username is invalid")?;
-    if !(12..=128).contains(&input.password.len()) {
+    if validate_password_length(&input.password).is_err() {
         return Err("creator.account.password must be between 12 and 128 bytes");
     }
     validate_name(

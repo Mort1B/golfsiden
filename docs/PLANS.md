@@ -6,7 +6,7 @@ belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. Awaiting approval for the next bounded implementation step.
+None. Awaiting an explicitly approved priority.
 
 ## Next candidate
 
@@ -17,7 +17,6 @@ None. Awaiting an explicitly approved priority.
 - Flight progress.
 - Configurable tie-breaks, public share links, offline scoring, and account
   recovery.
-- Rate limiting, deployment, backups, and production database roles.
 - Decide whether PostgreSQL should enforce at most one open round per tournament;
   reads currently select the highest-numbered open round deterministically.
 - After roadmap completion, performance work, and security review, decide the

@@ -1,7 +1,10 @@
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
 
-use crate::domain::{accounts::normalize_and_validate_username, models::TournamentStatus};
+use crate::domain::{
+    accounts::{normalize_and_validate_username, validate_password_length},
+    models::TournamentStatus,
+};
 
 const TOKEN_LENGTH: usize = 43;
 const TOKEN_BYTES: usize = 32;
@@ -35,7 +38,7 @@ pub fn validate_registration(
 ) -> Result<ValidatedRegistration, &'static str> {
     input.username = normalize_and_validate_username(&input.username)
         .map_err(|_| "account.username is invalid")?;
-    if !(12..=128).contains(&input.password.len()) {
+    if validate_password_length(&input.password).is_err() {
         return Err("account.password must be between 12 and 128 bytes");
     }
     if input.display_name.trim().is_empty()

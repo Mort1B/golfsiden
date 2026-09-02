@@ -1,0 +1,14 @@
+FROM node:22-alpine AS builder
+
+WORKDIR /source
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+ENV VITE_API_URL=""
+RUN npm run build
+
+FROM caddy:2.10.2-alpine
+COPY deploy/Caddyfile /etc/caddy/Caddyfile
+COPY deploy/validate-and-run-caddy.sh /usr/local/bin/validate-and-run-caddy
+COPY --from=builder /source/dist /srv
+ENTRYPOINT ["/usr/local/bin/validate-and-run-caddy"]

@@ -5,7 +5,10 @@ pub mod course_catalog;
 pub mod course_provider;
 pub mod domain;
 pub mod error;
+pub mod proxy;
+pub mod rate_limit;
 pub mod repositories;
+pub mod schema;
 
 use std::sync::Arc;
 
@@ -18,6 +21,8 @@ pub struct AppState {
     pub live_events: broadcast::Sender<LiveEvent>,
     pub auth: auth::AuthConfig,
     pub course_provider: course_provider::CourseProviderClient,
+    pub proxy_trust: proxy::ProxyTrustConfig,
+    pub rate_limiter: rate_limit::RateLimiter,
 }
 
 #[derive(Clone, Debug)]
@@ -45,12 +50,44 @@ impl AppState {
         auth: auth::AuthConfig,
         course_provider: course_provider::CourseProviderClient,
     ) -> Arc<Self> {
+        Self::with_runtime_services(
+            pool,
+            auth,
+            course_provider,
+            rate_limit::RateLimiter::disabled(),
+        )
+    }
+
+    pub fn with_runtime_services(
+        pool: PgPool,
+        auth: auth::AuthConfig,
+        course_provider: course_provider::CourseProviderClient,
+        rate_limiter: rate_limit::RateLimiter,
+    ) -> Arc<Self> {
+        Self::with_runtime_services_and_proxy(
+            pool,
+            auth,
+            course_provider,
+            rate_limiter,
+            proxy::ProxyTrustConfig::direct(),
+        )
+    }
+
+    pub fn with_runtime_services_and_proxy(
+        pool: PgPool,
+        auth: auth::AuthConfig,
+        course_provider: course_provider::CourseProviderClient,
+        rate_limiter: rate_limit::RateLimiter,
+        proxy_trust: proxy::ProxyTrustConfig,
+    ) -> Arc<Self> {
         let (live_events, _) = broadcast::channel(128);
         Arc::new(Self {
             pool,
             live_events,
             auth,
             course_provider,
+            proxy_trust,
+            rate_limiter,
         })
     }
 

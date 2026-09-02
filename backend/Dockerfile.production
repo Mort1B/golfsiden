@@ -1,0 +1,21 @@
+FROM rust:1.88-bookworm AS builder
+
+WORKDIR /source
+COPY Cargo.toml Cargo.lock ./
+COPY backend/Cargo.toml backend/Cargo.toml
+COPY migrations migrations
+COPY backend backend
+RUN cargo build --locked --release -p golf-api --bins
+
+FROM debian:bookworm-slim AS runtime
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 golf
+COPY --from=builder /source/target/release/golf-api /usr/local/bin/golf-api
+COPY --from=builder /source/target/release/migrate /usr/local/bin/migrate
+
+USER golf
+EXPOSE 3000
+ENTRYPOINT ["/usr/local/bin/golf-api"]

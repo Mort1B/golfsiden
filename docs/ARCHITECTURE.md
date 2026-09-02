@@ -6,9 +6,45 @@
 - `frontend/` is a Vite React application using strict TypeScript, React Router, and TanStack Query.
 - `migrations/` owns the production database schema.
 - `docs/` separates current behavior, durable architecture, active work, latest
-  rationale, and future deployment procedures.
+  rationale, and production deployment/recovery procedures.
 
 Backend request handling is split into `api`, `repositories`, and `domain`. Handlers own HTTP validation and response mapping, repositories own SQL and transaction mechanics, and pure handicap/scoring/lifecycle behavior stays in `domain`. Authentication and score authorization are isolated modules rather than handler-local policy.
+
+## Production delivery boundary
+
+The portable production topology is one same-origin HTTPS boundary. Caddy serves
+the immutable Vite build, terminates TLS, applies browser security headers, and
+reverse-proxies `/api` plus unbuffered SSE to one Rust API instance. The API and
+PostgreSQL have no public listeners; PostgreSQL additionally lives only on the
+internal Compose data network. Named volumes own PostgreSQL durability and Caddy
+certificate state. The single-instance assumption deliberately permits bounded
+in-process request throttling and provider quota accounting; a multi-API
+deployment would require shared implementations for both.
+
+Caddy overwrites `X-Golf-Client-IP` and attaches a 256-bit shared proxy secret.
+The API accepts that client identity only after a constant-time secret match and
+otherwise collapses the request to a non-spoofable direct identity. Public
+`Forwarded`, `X-Forwarded-For`, and lookalike internal headers never select a
+rate-limit bucket. Abuse-sensitive authentication and invitation routes use a
+bounded two-level limiter, while password verification uses a separate shared
+four-task Argon2 semaphore.
+
+Database authority is split by lifecycle. The owner credential initializes the
+cluster, performs explicit migrations, backups, and restores. A distinct runtime
+login receives schema usage plus DML, sequence, and function execution only; it
+cannot create or alter schema and cannot modify `_sqlx_migrations`. The API never
+migrates in production. Before binding it verifies the exact configured runtime
+identity and absence of cluster, schema, and migration-history write authority.
+Before binding, and on every readiness check, it compares the applied SQLx
+history with all embedded migrations by version, success state, and checksum.
+Liveness remains database-independent so operators can distinguish a live
+process from a ready service.
+
+Backup and restore are part of this boundary rather than operator folklore. A
+custom-format, no-owner/no-privilege dump is written atomically with a
+basename-relative checksum so the dump/sidecar pair remains relocatable.
+Restore is allowed only into an empty public schema, executes in one transaction,
+and reapplies runtime grants before the API is started.
 
 ## Domain decisions
 
@@ -228,8 +264,10 @@ Backend request handling is split into `api`, `repositories`, and `domain`. Hand
   it is non-locking and unavailable once the round is locked. Read and scoring
   projections have separate session-owned frontend cache keys.
 - Transaction-local lifecycle settings route application writes through the
-  expected integrity paths; they are not an authorization boundary. Runtime role
-  separation and database privilege hardening belong with authentication work.
+  expected integrity paths; they are not an authorization boundary. The
+  least-privilege runtime role prevents ordinary API connections from using
+  schema-management authority, while repository authorization and PostgreSQL
+  integrity triggers remain the application/data boundaries.
 - Round leaderboards calculate live gross/net score-to-par from the holes actually
   scored. Tournament leaderboards independently select each player's displayed
   best N from completed/locked history plus the visible scored portion of the
@@ -375,9 +413,7 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 
 ## Deferred decisions
 
-- Public scorecard/share-link policy; production signup, login, and invitation-
-  registration rate limiting.
-- Separate migration and runtime database roles plus production privilege policy.
+- Public scorecard/share-link policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.
 - Scramble formulas beyond the initial configurable 35%/15% implementation.
 - Configurable tie-break ordering beyond shared competition positions.

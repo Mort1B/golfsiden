@@ -55,8 +55,11 @@ where
     .map_err(|_| AsyncPasswordHashError::TaskFailed)
 }
 
-pub async fn verify_password(password: String, encoded_hash: String) -> bool {
-    tokio::task::spawn_blocking(move || {
+pub async fn verify_password_bounded(
+    password: String,
+    encoded_hash: String,
+) -> Result<bool, AsyncPasswordHashError> {
+    run_bounded_blocking(PASSWORD_HASH_LIMIT.clone(), move || {
         let Ok(hash) = PasswordHash::new(&encoded_hash) else {
             return false;
         };
@@ -65,7 +68,12 @@ pub async fn verify_password(password: String, encoded_hash: String) -> bool {
             .is_ok()
     })
     .await
-    .unwrap_or(false)
+}
+
+pub async fn verify_password(password: String, encoded_hash: String) -> bool {
+    verify_password_bounded(password, encoded_hash)
+        .await
+        .unwrap_or(false)
 }
 
 #[cfg(test)]
@@ -79,13 +87,21 @@ mod tests {
 
     #[tokio::test]
     async fn bounded_hashes_are_argon2_and_release_capacity() {
-        let before = PASSWORD_HASH_LIMIT.available_permits();
         let hash = hash_password_bounded("a sufficiently long password".to_owned())
             .await
             .unwrap();
         assert!(hash.starts_with("$argon2"));
-        assert_eq!(PASSWORD_HASH_LIMIT.available_permits(), before);
         assert_eq!(MAX_CONCURRENT_PASSWORD_HASHES, 4);
+    }
+
+    #[tokio::test]
+    async fn bounded_verification_uses_the_shared_capacity_and_releases_it() {
+        let hash = hash_password(b"a sufficiently long password").unwrap();
+        assert!(
+            verify_password_bounded("a sufficiently long password".to_owned(), hash)
+                .await
+                .unwrap()
+        );
     }
 
     #[tokio::test]

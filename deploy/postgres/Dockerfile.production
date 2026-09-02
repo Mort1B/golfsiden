@@ -1,0 +1,12 @@
+FROM postgres:17-alpine
+
+COPY deploy/postgres/10-create-runtime-role.sh /docker-entrypoint-initdb.d/10-create-runtime-role.sh
+COPY deploy/postgres/refresh-runtime-grants.sh /opt/golfsiden/refresh-runtime-grants.sh
+COPY deploy/postgres/validate-and-run-postgres.sh /usr/local/bin/validate-and-run-postgres
+
+RUN chmod 0555 \
+      /docker-entrypoint-initdb.d/10-create-runtime-role.sh \
+      /opt/golfsiden/refresh-runtime-grants.sh \
+      /usr/local/bin/validate-and-run-postgres
+
+ENTRYPOINT ["/usr/local/bin/validate-and-run-postgres"]

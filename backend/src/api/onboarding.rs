@@ -3,7 +3,7 @@ use std::sync::Arc;
 use axum::{
     Json, Router,
     extract::{DefaultBodyLimit, State, rejection::JsonRejection},
-    http::{HeaderValue, StatusCode, header::CACHE_CONTROL},
+    http::{HeaderMap, HeaderValue, StatusCode, header::CACHE_CONTROL},
     middleware,
     response::{IntoResponse, Response},
     routing::post,
@@ -21,10 +21,12 @@ use crate::{
         generate_session_token, hash_invitation_token, hash_password_bounded, hash_session_token,
     },
     domain::{
+        accounts::normalize_username,
         models::{Round, ScoringFormat, Tournament, TournamentRole},
         onboarding::{self, OnboardingInput, RoundInput},
     },
     error::{ApiError, ApiResult},
+    rate_limit::RateLimitRoute,
     repositories::{
         auth,
         onboarding::{self as onboarding_repository, OnboardingRepositoryError},
@@ -116,6 +118,7 @@ struct InvitationResponse {
 async fn create(
     State(state): State<Arc<AppState>>,
     jar: CookieJar,
+    headers: HeaderMap,
     input: Result<Json<CreateOnboardingRequest>, JsonRejection>,
 ) -> ApiResult<impl IntoResponse> {
     let Json(input) = input.map_err(|_| {
@@ -123,6 +126,11 @@ async fn create(
             "request must match the creator, tournament, and rounds contract".to_owned(),
         )
     })?;
+    state.rate_limiter.check(
+        RateLimitRoute::Onboarding,
+        state.proxy_trust.client_identity(&headers),
+        normalize_username(&input.creator.account.username).as_bytes(),
+    )?;
     let mut input = onboarding::validate(input.into_domain(), Utc::now().date_naive())
         .map_err(|message| ApiError::BadRequest(message.to_owned()))?;
 

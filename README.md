@@ -13,7 +13,7 @@ for the exact writable card.
 
 ## Prerequisites
 
-- Rust 1.85 or newer
+- Rust 1.88 or newer
 - Node.js 20 or newer and npm
 - PostgreSQL 15 or newer
 - Docker Compose (optional, for the supplied local database)
@@ -35,7 +35,9 @@ Start the backend:
 cargo run -p golf-api --bin golf-api
 ```
 
-The API listens at `http://localhost:3000`. Set `RUN_MIGRATIONS=true` to apply pending migrations automatically during backend startup.
+The API listens at `http://localhost:3000`. `RUN_MIGRATIONS=true` is a
+development convenience; production uses the explicit migration action and
+refuses startup against an incompatible schema.
 
 In a second terminal, start the frontend:
 
@@ -49,6 +51,22 @@ The app is available at `http://localhost:5173`. Vite proxies `/api` to the
 backend, so cookies remain same-origin from the browser's perspective. For a
 separate API origin, set `VITE_API_URL` before building the frontend and set the
 backend `CORS_ALLOWED_ORIGIN` to the exact frontend origin.
+
+## Production deployment
+
+The repository includes a portable single-host production baseline in
+`compose.production.yml`: Caddy terminates HTTPS, serves the actual Vite build,
+and proxies same-origin `/api` and SSE traffic to the Rust release binary;
+PostgreSQL remains private on an internal network with a persistent volume and a
+separate least-privilege runtime role. Production secrets come from an ignored
+runtime environment file, secure cookies and a trusted-proxy secret are
+mandatory, migrations are explicit, and `/api/health` and `/api/ready` expose
+separate liveness and readiness boundaries.
+
+Use [the production deployment and recovery guide](docs/deployment_guide.md) for
+the exact build, migration, permission, backup, restore, rollback, and launch
+procedure. Never reuse `.env.example` credentials or run the development seed in
+production.
 
 ## Database commands
 
@@ -153,7 +171,7 @@ npm run build
 - `migrations`: PostgreSQL schema and integrity triggers
 - `docs`: current behavior, architecture, active work, workflow, and deployment guidance
 
-See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documentation.md), [Plans](docs/PLANS.md), [Agent workflow](docs/AGENT_WORKFLOW.md), and the [deployment guide](docs/deployment_guide.md) for the API inventory, domain decisions, current behavior, queued work, and future operations guidance.
+See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documentation.md), [Plans](docs/PLANS.md), [Agent workflow](docs/AGENT_WORKFLOW.md), and the [deployment guide](docs/deployment_guide.md) for the API inventory, domain decisions, current behavior, queued work, and production operations guidance.
 
 ## Current limitations
 
@@ -183,8 +201,10 @@ slots; a player who misses it cannot replace it with another result.
 
 Tournament creation now issues a reusable invitation secret, and admins can
 rotate or revoke links, but recovery from a lost one-time plaintext response
-still requires rotation. Request throttling is required before public
-deployment. The backend now exposes a private consolidated team/flight roster and
+still requires rotation. Production throttling covers login, creator onboarding,
+invitation preview/registration/acceptance, and bounded Argon2 work; it is
+single-instance and would require shared state before scaling the API
+horizontally. The backend now exposes a private consolidated team/flight roster and
 an atomic admin replacement endpoint for draft rounds. Flight-aware validation
 and opening require complete assignments and keep scramble and foursomes teams
 within one flight; the development seed supplies representative assignments for

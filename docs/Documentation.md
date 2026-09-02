@@ -23,6 +23,36 @@ private refetches. For the configured 18-hole final, holes 10–18 default to
 hidden from non-admin result projections until the exact tournament admin
 releases them; the admin can re-hide them without any time dependency.
 
+## Production and operator behavior
+
+The supported production baseline is a single-host Docker Compose deployment:
+HTTPS Caddy serves the built Vite output and proxies same-origin `/api` and SSE
+traffic to the Rust release binary; PostgreSQL is reachable only on an internal
+container network. API and web restart automatically, while the PostgreSQL data
+and Caddy state use named volumes. Production database ownership is split: an
+owner URL performs the explicit migration action, then a separate runtime role
+receives application DML, sequence, and function privileges but read-only access
+to SQLx migration history. The API does not migrate on startup and refuses to
+bind when its connected identity differs from `APP_DATABASE_USER`, retains
+schema/cluster authority, can modify migration history, or sees missing,
+pending, dirty, unknown, or checksum-mismatched migration history.
+
+`GET /api/health` reports process liveness without depending on PostgreSQL.
+`GET /api/ready` verifies database reachability and the exact embedded schema
+history, returning a stable non-secret `503` while unavailable. Production
+configuration requires secure session cookies, a shared proxy secret, an HTTPS
+CORS origin if a separate origin is deliberately enabled, and a bounded database
+pool. Caddy overwrites the internal client-IP and proxy-secret headers; the API
+trusts the client address only when that secret matches, so public forwarding
+headers cannot choose a rate-limit identity.
+
+The deployment runbook uses explicit migration and permission actions, never a
+production seed. Its backup script creates an atomic custom-format PostgreSQL
+dump and relocatable SHA-256 sidecar. Restore requires an explicit confirmation, an empty
+public schema, a valid checksum, and a single-transaction restore before runtime
+grants are reapplied. See `deployment_guide.md` for deployment, rollback,
+monitoring, backup, credential rotation, and disaster recovery commands.
+
 ## Repository structure
 
 - `backend/src/api/`: Axum routes, validation, response mapping, and SSE.
@@ -36,7 +66,7 @@ releases them; the admin can re-hide them without any time dependency.
 - `migrations/`: forward PostgreSQL schema changes.
 - `.codex/agents/`: repository specialist role definitions.
 - `docs/`: current behavior, durable architecture, active work, workflow, latest
-  rationale, and the deployment-guide placeholder.
+  rationale, and the production deployment/recovery runbook.
 
 ## Preserved domain behavior
 
@@ -178,10 +208,25 @@ does not participate in authentication or identity linking.
 
 Login creates a revocable server session and returns an opaque token only in an
 `HttpOnly`, `SameSite=Lax` cookie. PostgreSQL stores only the token's SHA-256
-hash. Auth responses are not cacheable, Argon2 password verification runs off
-the async executor, and score mutations plus logout require the session-derived
-CSRF token. Score writes lock and revalidate the session in their existing round
-transaction, so logout cannot complete before an already-authorized write.
+hash. Auth responses are not cacheable. Password syntax and a 4 KiB login-body
+limit are checked before database work, and Argon2 verification runs through a
+shared four-task semaphore off the async executor so credential bursts cannot
+consume unbounded blocking workers. Score mutations plus logout require the
+session-derived CSRF token. Score writes lock and revalidate the session in their
+existing round transaction, so logout cannot complete before an
+already-authorized write.
+
+Production request throttling uses a bounded in-process store appropriate to the
+single API instance. Each sensitive route has a narrow client-and-resource key
+plus a broader per-client ceiling: login allows 10 attempts per normalized
+account and 40 per client per minute; creator onboarding allows 3/6 per hour;
+invitation preview allows 30/100 per minute; registration allows 5/20 per ten
+minutes; and authenticated invitation acceptance allows 10/40 per minute.
+Rejected requests return the stable `rate_limited` JSON error, `429`,
+`Retry-After`, and `Cache-Control: no-store`. A narrow-key rejection does not
+charge the broad bucket, stale buckets are evicted, storage is capped, and the
+limiter is disabled in development and direct unit-test state unless selected
+explicitly.
 
 `tournament_memberships` owns the role for a specific trip. Tournament admins
 and scorers can write any eligible card in that tournament. A tournament player
@@ -760,8 +805,8 @@ is plan-gated through `docs/PLANS.md` and follows the loop in
 `docs/AGENT_WORKFLOW.md`.
 `docs/PLANS.md` contains only active and queued work; durable technical decisions
 belong in `docs/ARCHITECTURE.md`, while this file owns current behavior and
-operator-facing contracts. Deployment procedures will be recorded in
-`docs/deployment_guide.md` when that work begins.
+operator-facing contracts. The production deployment, migration, backup,
+restore, and rollback procedures are maintained in `docs/deployment_guide.md`.
 
 ## Known limitations
 
@@ -769,8 +814,8 @@ operator-facing contracts. Deployment procedures will be recorded in
   tournament creation are retired. Scorecards and target-tournament SSE are
   membership-private. Later public tournament, scorecard, or leaderboard access
   requires an explicit share-token contract.
-- Request throttling is not implemented, so the public onboarding and
-  registration endpoints are not ready for an internet-facing deployment.
+- Request throttling is process-local, so the supported production topology is
+  one API replica. A future multi-replica topology requires a shared limiter.
 - Tournament settings currently edit only the atomic pre-start best-N and
   optional mandatory-round configuration and expose the explicit
   tournament-start action; general tournament editing and

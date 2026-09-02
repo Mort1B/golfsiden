@@ -1,0 +1,123 @@
+name: golfsiden
+
+services:
+  postgres:
+    image: golfsiden-postgres:${GOLFSIDEN_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: deploy/postgres/Dockerfile.production
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_OWNER_USER:?set POSTGRES_OWNER_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?set POSTGRES_OWNER_PASSWORD}
+      POSTGRES_INITDB_ARGS: --data-checksums --auth-host=scram-sha-256
+      APP_DATABASE_USER: ${APP_DATABASE_USER:?set APP_DATABASE_USER}
+      APP_DATABASE_PASSWORD: ${APP_DATABASE_PASSWORD:?set APP_DATABASE_PASSWORD}
+    command:
+      - postgres
+      - -c
+      - password_encryption=scram-sha-256
+      - -c
+      - log_min_duration_statement=1000
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - data
+
+  migrate:
+    profiles: ["tools"]
+    image: golfsiden-api:${GOLFSIDEN_IMAGE_TAG:-local}
+    entrypoint: ["/usr/local/bin/migrate"]
+    environment:
+      DATABASE_URL: ${MIGRATION_DATABASE_URL:?set MIGRATION_DATABASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data
+
+  permissions:
+    profiles: ["tools"]
+    image: golfsiden-postgres:${GOLFSIDEN_IMAGE_TAG:-local}
+    entrypoint: ["/opt/golfsiden/refresh-runtime-grants.sh"]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_OWNER_USER:?set POSTGRES_OWNER_USER}
+      POSTGRES_OWNER_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?set POSTGRES_OWNER_PASSWORD}
+      APP_DATABASE_USER: ${APP_DATABASE_USER:?set APP_DATABASE_USER}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - data
+
+  api:
+    image: golfsiden-api:${GOLFSIDEN_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.production
+    environment:
+      APP_ENV: production
+      DATABASE_URL: ${APP_DATABASE_URL:?set APP_DATABASE_URL}
+      APP_DATABASE_USER: ${APP_DATABASE_USER:?set APP_DATABASE_USER}
+      DATABASE_MAX_CONNECTIONS: ${DATABASE_MAX_CONNECTIONS:-10}
+      PORT: 3000
+      RUN_MIGRATIONS: "false"
+      SESSION_COOKIE_SECURE: "true"
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-24}
+      PROXY_SHARED_SECRET: ${PROXY_SHARED_SECRET:?set PROXY_SHARED_SECRET}
+      GOLF_COURSE_API_KEY: ${GOLF_COURSE_API_KEY:-}
+      GOLF_COURSE_API_DAILY_LIMIT: ${GOLF_COURSE_API_DAILY_LIMIT:-50}
+      RUST_LOG: ${RUST_LOG:-golf_api=info,tower_http=info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:3000/api/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - app
+      - data
+
+  web:
+    image: golfsiden-web:${GOLFSIDEN_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.production
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS}
+      PROXY_SHARED_SECRET: ${PROXY_SHARED_SECRET:?set PROXY_SHARED_SECRET}
+    ports:
+      - "${PUBLIC_HTTP_PORT:-80}:80"
+      - "${PUBLIC_HTTPS_PORT:-443}:443"
+      - "${PUBLIC_HTTPS_PORT:-443}:443/udp"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  app:
+  data:
+    internal: true

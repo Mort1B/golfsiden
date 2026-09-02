@@ -1,6 +1,12 @@
 use std::net::SocketAddr;
 
-use golf_api::{AppState, api, config::Config, course_provider::CourseProviderClient};
+use golf_api::{
+    AppState, api,
+    config::{AppEnvironment, Config},
+    course_provider::CourseProviderClient,
+    rate_limit::RateLimiter,
+    schema,
+};
 use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
 use tracing::info;
@@ -23,7 +29,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     if config.run_migrations {
-        sqlx::migrate!("../migrations").run(&pool).await?;
+        schema::MIGRATOR.run(&pool).await?;
+    }
+    schema::check_compatibility(&pool).await?;
+    if let Some(expected_user) = &config.expected_database_user {
+        schema::check_runtime_authority(&pool, expected_user).await?;
     }
 
     let address = SocketAddr::from(([0, 0, 0, 0], config.port));
@@ -37,12 +47,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )?,
         None => CourseProviderClient::disabled(),
     };
+    let rate_limiter = match config.environment {
+        AppEnvironment::Production => RateLimiter::production(),
+        AppEnvironment::Development => RateLimiter::disabled(),
+    };
     axum::serve(
         listener,
-        api::router(AppState::with_auth_and_course_provider(
+        api::router(AppState::with_runtime_services_and_proxy(
             pool,
             config.auth,
             course_provider,
+            rate_limiter,
+            config.proxy_trust,
         )),
     )
     .with_graceful_shutdown(shutdown_signal())

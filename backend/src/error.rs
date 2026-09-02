@@ -1,6 +1,9 @@
 use axum::{
     Json,
-    http::{StatusCode, header::CACHE_CONTROL},
+    http::{
+        HeaderValue, StatusCode,
+        header::{CACHE_CONTROL, RETRY_AFTER},
+    },
     response::IntoResponse,
 };
 use serde::Serialize;
@@ -10,6 +13,8 @@ use thiserror::Error;
 pub enum ApiError {
     #[error("{0}")]
     BadRequest(String),
+    #[error("request body is too large")]
+    PayloadTooLarge,
     #[error("resource not found")]
     NotFound,
     #[error("{0}")]
@@ -25,6 +30,10 @@ pub enum ApiError {
     Unauthenticated,
     #[error("request is not permitted")]
     Forbidden,
+    #[error("too many requests; try again later")]
+    RateLimited { retry_after_seconds: u64 },
+    #[error("service is not ready")]
+    ServiceUnavailable,
     #[error("internal server error")]
     Internal,
     #[error("database operation failed")]
@@ -44,38 +53,65 @@ struct ErrorBody {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> axum::response::Response {
-        let (status, code, message) = match &self {
-            Self::BadRequest(message) => {
-                (StatusCode::BAD_REQUEST, "validation_error", message.clone())
-            }
-            Self::NotFound => (StatusCode::NOT_FOUND, "not_found", self.to_string()),
-            Self::Conflict(message) => (StatusCode::CONFLICT, "conflict", message.clone()),
+        let (status, code, message, retry_after) = match &self {
+            Self::BadRequest(message) => (
+                StatusCode::BAD_REQUEST,
+                "validation_error",
+                message.clone(),
+                None,
+            ),
+            Self::PayloadTooLarge => (
+                StatusCode::PAYLOAD_TOO_LARGE,
+                "payload_too_large",
+                self.to_string(),
+                None,
+            ),
+            Self::NotFound => (StatusCode::NOT_FOUND, "not_found", self.to_string(), None),
+            Self::Conflict(message) => (StatusCode::CONFLICT, "conflict", message.clone(), None),
             Self::DomainConflict { code, message } => {
-                (StatusCode::CONFLICT, *code, (*message).to_owned())
+                (StatusCode::CONFLICT, *code, (*message).to_owned(), None)
             }
             Self::InvalidCredentials => (
                 StatusCode::UNAUTHORIZED,
                 "invalid_credentials",
                 self.to_string(),
+                None,
             ),
             Self::Unauthenticated => (
                 StatusCode::UNAUTHORIZED,
                 "unauthenticated",
                 self.to_string(),
+                None,
             ),
-            Self::Forbidden => (StatusCode::FORBIDDEN, "forbidden", self.to_string()),
+            Self::Forbidden => (StatusCode::FORBIDDEN, "forbidden", self.to_string(), None),
+            Self::RateLimited {
+                retry_after_seconds,
+            } => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "rate_limited",
+                self.to_string(),
+                Some(*retry_after_seconds),
+            ),
+            Self::ServiceUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "service_unavailable",
+                self.to_string(),
+                None,
+            ),
             Self::Internal => {
                 tracing::error!("internal application error");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "internal_error",
                     self.to_string(),
+                    None,
                 )
             }
             Self::Database(error) if is_constraint_violation(error) => (
                 StatusCode::CONFLICT,
                 "constraint_violation",
                 constraint_message(error),
+                None,
             ),
             Self::Database(error) => {
                 tracing::error!(?error, "database error");
@@ -83,21 +119,31 @@ impl IntoResponse for ApiError {
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "internal_error",
                     self.to_string(),
+                    None,
                 )
             }
         };
-        let response = (
+        let mut response = (
             status,
             Json(ErrorEnvelope {
                 error: ErrorBody { code, message },
             }),
         )
             .into_response();
-        if matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN) {
-            ([(CACHE_CONTROL, "no-store")], response).into_response()
-        } else {
-            response
+        if let Some(seconds) = retry_after
+            && let Ok(value) = HeaderValue::from_str(&seconds.to_string())
+        {
+            response.headers_mut().insert(RETRY_AFTER, value);
         }
+        if matches!(
+            status,
+            StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN | StatusCode::TOO_MANY_REQUESTS
+        ) {
+            response
+                .headers_mut()
+                .insert(CACHE_CONTROL, HeaderValue::from_static("no-store"));
+        }
+        response
     }
 }
 

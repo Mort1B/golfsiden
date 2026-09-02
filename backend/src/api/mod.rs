@@ -16,18 +16,20 @@ use std::sync::Arc;
 
 use axum::{
     Json, Router,
+    extract::State,
     http::{HeaderName, Method, header::CONTENT_TYPE},
     routing::get,
 };
 use serde_json::{Value, json};
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 
-use crate::AppState;
+use crate::{AppState, error::ApiError, schema};
 
 pub fn router(state: Arc<AppState>) -> Router {
     let cors_origin = state.auth.cors_allowed_origin.clone();
     let router = Router::new()
         .route("/api/health", get(health))
+        .route("/api/ready", get(ready))
         .merge(auth::routes())
         .merge(course_catalog::routes())
         .merge(course_provider::routes())
@@ -63,4 +65,14 @@ pub fn router(state: Arc<AppState>) -> Router {
 
 async fn health() -> Json<Value> {
     Json(json!({ "status": "ok" }))
+}
+
+async fn ready(State(state): State<Arc<AppState>>) -> Result<Json<Value>, ApiError> {
+    schema::check_compatibility(&state.pool)
+        .await
+        .map_err(|error| {
+            tracing::warn!(%error, "readiness check failed");
+            ApiError::ServiceUnavailable
+        })?;
+    Ok(Json(json!({ "status": "ready" })))
 }

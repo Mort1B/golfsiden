@@ -4,14 +4,18 @@ use axum::{
     body::Body,
     http::{Request, StatusCode, header},
 };
+use std::time::Duration;
+
 use chrono::{Days, NaiveDate, Utc};
 use golf_api::{
     AppState, api,
     auth::{hash_password, hash_session_token, verify_password},
+    course_provider::CourseProviderClient,
     domain::{
         models::ScoringFormat,
         onboarding::{OnboardingInput, RoundInput, ValidatedOnboarding, validate},
     },
+    rate_limit::{RateLimitRoute, RateLimiter},
     repositories::onboarding::{
         self as onboarding_repository, CreateOnboardingParams, OnboardingRepositoryError,
     },
@@ -286,6 +290,34 @@ async fn onboarding_atomically_links_creator_rounds_invite_and_session(pool: PgP
     assert_eq!(event.resource, "tournament");
     assert_eq!(event.id, tournament_id);
     assert!(events.try_recv().is_err());
+}
+
+#[sqlx::test(migrations = "../migrations")]
+async fn onboarding_route_enforces_stable_rate_limit_response(pool: PgPool) {
+    let limiter = RateLimiter::with_rules(
+        [(RateLimitRoute::Onboarding, Duration::from_secs(60), 1, 10)],
+        16,
+    );
+    let app = api::router(AppState::with_runtime_services(
+        pool,
+        golf_api::auth::AuthConfig::local(),
+        CourseProviderClient::disabled(),
+        limiter,
+    ));
+    let mut request = valid_request("limited_creator");
+    request["creator"]["account"]["password"] = json!("short");
+
+    let first = post_json(app.clone(), request.clone(), None).await;
+    assert_eq!(first.status(), StatusCode::BAD_REQUEST);
+
+    let limited = post_json(app, request, None).await;
+    assert_eq!(limited.status(), StatusCode::TOO_MANY_REQUESTS);
+    assert_eq!(limited.headers()[header::CACHE_CONTROL], "no-store");
+    assert_eq!(limited.headers()[header::RETRY_AFTER], "60");
+    assert_eq!(
+        response_json(limited).await["error"]["code"],
+        "rate_limited"
+    );
 }
 
 #[sqlx::test(migrations = "../migrations")]

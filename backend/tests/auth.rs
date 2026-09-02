@@ -8,6 +8,9 @@ use chrono::{Duration as ChronoDuration, Utc};
 use golf_api::{
     AppState, api,
     auth::{hash_password, hash_session_token},
+    course_provider::CourseProviderClient,
+    proxy::{PROXY_CLIENT_IP_HEADER, PROXY_SHARED_SECRET_HEADER, ProxyTrustConfig},
+    rate_limit::{RateLimitRoute, RateLimiter},
     repositories::auth as auth_repository,
 };
 use http_body_util::BodyExt;
@@ -57,7 +60,7 @@ async fn login_session_csrf_and_logout_follow_the_cookie_contract(pool: PgPool) 
             Request::post("/api/auth/login")
                 .header(header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
-                    json!({"username": "session_player", "password": "wrong"}).to_string(),
+                    json!({"username": "session_player", "password": "wrong-password"}).to_string(),
                 ))
                 .unwrap(),
         )
@@ -72,7 +75,7 @@ async fn login_session_csrf_and_logout_follow_the_cookie_contract(pool: PgPool) 
             Request::post("/api/auth/login")
                 .header(header::CONTENT_TYPE, "application/json")
                 .body(Body::from(
-                    json!({"username": "missing_player", "password": "wrong"}).to_string(),
+                    json!({"username": "missing_player", "password": "wrong-password"}).to_string(),
                 ))
                 .unwrap(),
         )
@@ -174,6 +177,116 @@ async fn login_session_csrf_and_logout_follow_the_cookie_contract(pool: PgPool) 
         .unwrap();
     assert_eq!(revoked.status(), StatusCode::UNAUTHORIZED);
     assert_eq!(revoked.headers()[header::CACHE_CONTROL], "no-store");
+}
+
+#[sqlx::test(migrations = "../migrations")]
+async fn login_bounds_input_and_ignores_forwarding_headers_for_rate_keys(pool: PgPool) {
+    seed_user(&pool).await;
+    let limiter = RateLimiter::with_rules(
+        [(
+            RateLimitRoute::Login,
+            std::time::Duration::from_secs(60),
+            1,
+            20,
+        )],
+        32,
+    );
+    let app = api::router(AppState::with_runtime_services_and_proxy(
+        pool,
+        golf_api::auth::AuthConfig::local(),
+        CourseProviderClient::disabled(),
+        limiter,
+        ProxyTrustConfig::trusted("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".to_owned()),
+    ));
+
+    let success = app
+        .clone()
+        .oneshot(
+            Request::post("/api/auth/login")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(
+                    json!({"username": "session_player", "password": "test-password"}).to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(success.status(), StatusCode::OK);
+
+    let first_unknown = app
+        .clone()
+        .oneshot(
+            Request::post("/api/auth/login")
+                .header(header::CONTENT_TYPE, "application/json")
+                .header("forwarded", "for=198.51.100.1")
+                .header(PROXY_CLIENT_IP_HEADER, "198.51.100.1")
+                .body(Body::from(
+                    json!({"username": "missing_player", "password": "wrong-password"}).to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(first_unknown.status(), StatusCode::UNAUTHORIZED);
+
+    let limited = app
+        .clone()
+        .oneshot(
+            Request::post("/api/auth/login")
+                .header(header::CONTENT_TYPE, "application/json")
+                .header("x-forwarded-for", "203.0.113.99")
+                .header(PROXY_CLIENT_IP_HEADER, "203.0.113.99")
+                .header(PROXY_SHARED_SECRET_HEADER, "wrong-secret")
+                .body(Body::from(
+                    json!({"username": "missing_player", "password": "wrong-password"}).to_string(),
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(limited.status(), StatusCode::TOO_MANY_REQUESTS);
+    let retry_after = limited.headers()[header::RETRY_AFTER]
+        .to_str()
+        .unwrap()
+        .parse::<u64>()
+        .unwrap();
+    assert!((1..=60).contains(&retry_after));
+    assert_eq!(limited.headers()[header::CACHE_CONTROL], "no-store");
+    assert_eq!(
+        response_json(limited).await,
+        json!({"error":{"code":"rate_limited","message":"too many requests; try again later"}})
+    );
+
+    for invalid in [
+        json!({"username": "bad.name", "password": "wrong-password"}),
+        json!({"username": "another_valid", "password": "short"}),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::post("/api/auth/login")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(invalid.to_string()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    let oversized = app
+        .oneshot(
+            Request::post("/api/auth/login")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(format!(
+                    "{{\"username\":\"large_player\",\"password\":\"{}\"}}",
+                    "a".repeat(5_000)
+                )))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(oversized.status(), StatusCode::PAYLOAD_TOO_LARGE);
 }
 
 #[sqlx::test(migrations = "../migrations")]
