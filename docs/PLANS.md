@@ -10,13 +10,11 @@ None. Awaiting approval for the next bounded implementation step.
 
 ## Next candidate
 
-- Partner-repeat-aware team generation and handicap balancing. Define the exact
-  balancing objective, repeat constraints, admin controls, persistence effects,
-  and acceptance examples before implementation.
+None. Awaiting an explicitly approved priority.
 
 ## Later
 
-- Flight progress and missing-score alerts.
+- Flight progress.
 - Configurable tie-breaks, public share links, offline scoring, and account
   recovery.
 - Rate limiting, deployment, backups, and production database roles.
