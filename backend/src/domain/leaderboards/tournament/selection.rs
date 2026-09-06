@@ -108,9 +108,9 @@ pub(super) fn rank_entries(entries: &mut [TournamentLeaderboardEntry]) {
             index + 1
         });
         entries[index].tied = tied_previous
-            || entries
-                .get(index + 1)
-                .is_some_and(|next| rank_key(next) == rank_key(&entries[index]));
+            || entries.get(index + 1).is_some_and(|next| {
+                has_selected(next) && rank_key(next) == rank_key(&entries[index])
+            });
     }
 }
 

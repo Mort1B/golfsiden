@@ -745,3 +745,39 @@ fn hidden_final_metadata_does_not_redact_a_different_current_round() {
     assert_eq!(result.visibility.mode, VisibilityMode::FrontNine);
     assert_eq!(result.entries[0].contributions[0].holes_scored, 2);
 }
+
+#[test]
+fn provisional_even_par_is_not_tied_with_unstarted_players() {
+    for metric in [LeaderboardMetric::Gross, LeaderboardMetric::Net] {
+        let round = open_individual_round(1, &[(1, 4), (2, 4)], &[(1, 1)]);
+        let result = build_tournament_leaderboard(&facts(vec![round], 2), metric).unwrap();
+        let leader = &result.entries[0];
+        assert_eq!(leader.score_to_par, 0);
+        assert_eq!(leader.counted_contributions, 0);
+        assert_eq!(leader.position, Some(1));
+        assert!(
+            !leader.tied,
+            "an unstarted player cannot create a sporting tie"
+        );
+        assert!(
+            result.entries[1..]
+                .iter()
+                .all(|entry| entry.position.is_none() && !entry.tied)
+        );
+    }
+}
+
+#[test]
+fn provisional_even_par_players_remain_tied_with_each_other() {
+    for metric in [LeaderboardMetric::Gross, LeaderboardMetric::Net] {
+        let round = open_individual_round(1, &[(1, 4), (2, 4)], &[(1, 1), (2, 1)]);
+        let result = build_tournament_leaderboard(&facts(vec![round], 2), metric).unwrap();
+        assert!(
+            result.entries[..2]
+                .iter()
+                .all(|entry| entry.position == Some(1) && entry.tied)
+        );
+        assert_eq!(result.entries[2].position, None);
+        assert!(!result.entries[2].tied);
+    }
+}

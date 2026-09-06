@@ -13,6 +13,13 @@ export function invalidateLiveQueries(queryClient: QueryClient, userId: string):
   })
 }
 
+function isScoreInvalidationTarget(queryKey: readonly unknown[], userId: string): boolean {
+  if (!isLiveInvalidationTarget(queryKey, userId)) return false
+  if (queryKey[2] === 'leaderboards') return true
+  return queryKey[2] === 'rounds'
+    && (queryKey[4] === 'completion-validation' || queryKey[4] === 'scorecards')
+}
+
 export function isVisibilityProjectionTarget(queryKey: readonly unknown[], userId: string): boolean {
   if (queryKey[0] !== privateWorkspaceKeys.root[0] || queryKey[1] !== userId) return false
   if (queryKey[2] === 'leaderboards') return true
@@ -46,6 +53,13 @@ export function handleTournamentLiveSignal(
   userId: string,
   signal: TournamentLiveSignal,
 ): Promise<void> {
+  // Score saves/confirmations do not change tournament setup or score access.
+  // Structural events and reconnection still reconcile the full private workspace.
+  if (signal === 'score') {
+    return queryClient.invalidateQueries({
+      predicate: (query) => isScoreInvalidationTarget(query.queryKey, userId),
+    })
+  }
   if (signal === 'error') {
     failClosedVisibilityProjectionQueries(queryClient, userId)
     return Promise.resolve()

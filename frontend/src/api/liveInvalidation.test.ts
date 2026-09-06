@@ -105,3 +105,42 @@ describe('visibility-safe live invalidation', () => {
     unsubscribe()
   })
 })
+
+it('refreshes score-dependent views without refetching unchanged setup on a score event', async () => {
+  const client = new QueryClient()
+  const changed = [
+    leaderboardKeys.round('user', 'round', 'gross'),
+    leaderboardKeys.round('user', 'round', 'net'),
+    leaderboardKeys.tournament('user', 'tour', 'gross'),
+    leaderboardKeys.tournament('user', 'tour', 'net'),
+    privateWorkspaceKeys.completion('user', 'round'),
+    scoringKeys.read('user', 'round', owner),
+    scoringKeys.scoring('user', 'round', owner),
+  ]
+  const unchanged = [
+    ['private-workspace', 'user', 'tournaments', 'list'],
+    ['private-workspace', 'user', 'tournaments', 'tour', 'rounds'],
+    ['private-workspace', 'user', 'tournaments', 'tour', 'players'],
+    ['private-workspace', 'user', 'rounds', 'round', 'teams'],
+    ['private-workspace', 'user', 'rounds', 'round', 'detail'],
+    ['private-workspace', 'user', 'rounds', 'round', 'pairing-validation'],
+    privateWorkspaceKeys.scoreAccess('user', 'round'),
+    privateWorkspaceKeys.invitations('user', 'tour'),
+    ['auth', 'session'],
+    scoringKeys.read('another-user', 'round', owner),
+  ]
+  const calls = [...changed, ...unchanged].map(queryKey => {
+    const queryFn = vi.fn(async () => ({ refreshed: true }))
+    const observer = new QueryObserver(client, { queryKey, queryFn, initialData: { refreshed: false }, staleTime: Infinity })
+    return { queryFn, unsubscribe: observer.subscribe(() => undefined) }
+  })
+  try {
+    await handleTournamentLiveSignal(client, 'user', 'score')
+    expect(calls.slice(0, changed.length).every(item => item.queryFn.mock.calls.length === 1)).toBe(true)
+    expect(calls.slice(changed.length).every(item => item.queryFn.mock.calls.length === 0)).toBe(true)
+    await handleTournamentLiveSignal(client, 'user', 'round')
+    // Lifecycle updates still revalidate setup as well as all affected scores.
+    expect(calls.slice(changed.length, -2).every(item => item.queryFn.mock.calls.length === 1)).toBe(true)
+    expect(calls.slice(-2).every(item => item.queryFn.mock.calls.length === 0)).toBe(true)
+  } finally { calls.forEach(item => item.unsubscribe()) }
+})

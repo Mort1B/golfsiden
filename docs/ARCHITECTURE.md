@@ -370,7 +370,9 @@ and reapplies runtime grants before the API is started.
   provisional state, and hole progress and are attributed through frozen
   membership for that exact round. Completed-only qualification count ranks
   before selected score-to-par and alone controls eligibility; separate gross
-  and net routes never use the other metric as a hidden tie-break.
+  and net routes never use the other metric as a hidden tie-break. Sporting ties
+  compare only entries with selected contributions; an unstarted/unranked entry
+  cannot make an even-par provisional entry tied.
 - Round-leaderboard owner construction is isolated from format-neutral stored-
   fact validation, score/confirmation assembly, totals, and ranking. One closed,
   exhaustive policy maps each current scoring format to snapshot-owned entries
@@ -402,6 +404,12 @@ and reapplies runtime grants before the API is started.
   Scorecards use that same user-owned root. Tournament-live invalidation targets
   only the active user's private queries and excludes provider/catalog queries,
   so events cannot unmount authentication or expose a predecessor's card.
+  Ordinary `score` events invalidate only that user's leaderboard, round
+  completion-validation, and read/scoring-card query families. Score saves and
+  confirmations do not mutate setup or access metadata. Structural events retain
+  broad reconciliation; disconnect, reconnect, and visibility handling retain
+  synchronous projection clearing. Tournament leaderboard loading still fetches
+  rounds before validating the response, including after score-only invalidation.
 - Target-bearing frontend DTOs are decoded against the requested tournament,
   round, player, owner, metric, invitation predecessor, and course-configuration
   identities before cache insertion. Roster, round, team, pairing, invitation,

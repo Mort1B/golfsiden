@@ -1120,6 +1120,13 @@ refetching the focused resource.
 
 ## Leaderboards
 
+Tournament totals can remain unchanged after a successful update: only the
+highest-numbered open round contributes provisionally, and best-N selection can
+exclude a changed optional round. The mandatory round reserves its own slot.
+Inspect the contribution and selected metric before treating an unchanged total
+as stale. An unstarted player has no position and cannot cause a sporting tie
+with an even-par player who has registered scores.
+
 Round leaderboards are available at
 `GET /api/rounds/{round_id}/leaderboards/gross` and `/net`. They return all
 preserved player owners for individual play or frozen round teams for scramble,
@@ -1226,12 +1233,38 @@ state instead of calculating or merging score state in the browser. The stream
 requires exact membership, revalidates the active session and membership before
 each matching event, and emits only an event type plus the fixed `invalidate`
 marker, with no identifiers or mutable state.
+Ordinary score-save/confirmation events refresh leaderboard, round completion,
+and read/scoring-card queries without refetching unchanged tournament setup,
+roster, or score-access queries. The tournament leaderboard loader still refreshes
+round metadata for lifecycle validation. Structural events retain the broader
+refresh. Failed writes do not publish score events or appear as saved results.
 Initial connection and every reconnect invalidate the current user's private
 workspace. Visibility events and stream errors first clear every role-projected
 result query, preventing a previously released back nine from remaining visible
 while disconnected or refetching; authorized `/scoring` queries are excluded.
 A lagged server receiver closes the stream so native reconnection
 triggers that same authoritative resync instead of silently leaving stale state.
+
+### Repeating live leaderboard browser validation
+
+Use fresh disposable PostgreSQL, migrate and seed it, and build `golf-api` first.
+Run the frontend development server on port 5173 and leave port 3000 free:
+
+```bash
+cargo build -p golf-api --bin golf-api
+DATABASE_URL=postgres://golf:golf@localhost:5432/golf \
+  GOLF_LEADERBOARD_LIVE_BROWSER=1 npm --prefix frontend run test:browser:leaderboards
+```
+
+This opt-in suite owns its API subprocess, deliberately crashes/restarts that
+process, and mutates the disposable seed. It tests separate same-account desktop
+and mobile Chrome sessions, then member-only final visibility. Native SSE connects
+directly to the local API with the configured development CORS origin; this avoids
+Vite's proxy keeping a downstream stream open after its upstream process crashes.
+The test does not establish behavior on physical iOS/Safari or production Caddy.
+Request measurements go to `/tmp/golf-leaderboard-measurements.json` unless
+`GOLF_LEADERBOARD_MEASUREMENTS` specifies another file. Mobile/desktop screenshots
+are written to `/tmp/golf-leaderboard-live-*.png`.
 
 ## Development workflow
 

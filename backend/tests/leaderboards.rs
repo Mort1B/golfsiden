@@ -777,3 +777,36 @@ async fn repeatable_read_does_not_mix_player_names_during_a_request(pool: PgPool
             .any(|entry| entry["owner_name"] == "Ada")
     );
 }
+
+#[sqlx::test(migrations = "../migrations")]
+async fn provisional_even_par_api_does_not_tie_with_unstarted_players(pool: PgPool) {
+    seed(&pool).await;
+    open(&pool, ROUND_ONE).await;
+    let app = api::router(AppState::new(pool.clone()));
+    for (metric, gross) in [("gross", 4), ("net", 3)] {
+        save(
+            &pool,
+            ROUND_ONE,
+            HOLE_TWO,
+            ScoreOwner::Player { id: PLAYER_PLUS },
+            gross,
+        )
+        .await;
+        let (status, response) = get(
+            &app,
+            format!("/api/tournaments/{TOURNAMENT}/leaderboards/{metric}"),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        let entries = response["entries"].as_array().unwrap();
+        assert_eq!(entries[0]["player_id"], PLAYER_PLUS.to_string());
+        assert_eq!(entries[0]["score_to_par"], 0);
+        assert_eq!(entries[0]["position"], 1);
+        assert_eq!(entries[0]["tied"], false);
+        assert!(
+            entries[1..]
+                .iter()
+                .all(|entry| entry["position"].is_null() && entry["tied"] == false)
+        );
+    }
+}
