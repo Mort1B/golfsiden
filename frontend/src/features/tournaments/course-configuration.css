@@ -62,3 +62,4 @@
   .manual-hole-row { gap: 8px; }
   .course-save { width: fit-content; justify-self: end; }
 }
+.course-provider-fields { min-width: 0; margin: 0; padding: 0; border: 0; }

@@ -7,6 +7,7 @@ import { StatusBadge } from '../ui/StatusBadge'
 import { tournamentKeys } from '../api/tournaments'
 import { useAuth } from '../features/auth/authContext'
 import { useTournamentLive } from '../features/live/useTournamentLive'
+import { roundManagementUrl } from '../features/tournaments/lifecycle/lifecycleState'
 
 export function RoundPage() {
   const { roundId = '' } = useParams()
@@ -17,6 +18,8 @@ function RoundWorkspace({ roundId }: { roundId: string }) {
   const auth = useAuth()
   const userId = auth.session?.user_id ?? ''
   const round = useQuery({ queryKey: tournamentKeys.round(userId, roundId), queryFn: () => api.round(roundId) })
+  const memberships = useQuery({ queryKey: tournamentKeys.mine(userId), queryFn: api.myTournaments, enabled: userId.length > 0 })
+  const isAdmin = !memberships.error && memberships.data?.some((entry) => entry.tournament.id === round.data?.tournament_id && entry.role === 'admin')
   useTournamentLive(round.data?.tournament_id ?? '')
   const teams = useQuery({
     queryKey: tournamentKeys.teams(userId, roundId),
@@ -32,6 +35,7 @@ function RoundWorkspace({ roundId }: { roundId: string }) {
         <div><p className="brand">Runde {round.data.round_number}</p><h1>{round.data.name}</h1></div>
         <StatusBadge status={round.data.status} />
       </header>
+      {isAdmin && <div className="tournament-admin-actions"><Link to={roundManagementUrl(round.data.tournament_id, roundId)}>Administrer runden</Link></div>}
       <div className="round-meta"><span><MapPin />{round.data.course_name}</span><span><Flag />{round.data.tee_name} · {round.data.number_of_holes} hull</span></div>
       <div className="section-heading"><h2>Lag</h2><span>{teams.data?.length ?? 0}</span></div>
       {teams.isPending && <LoadingState />}

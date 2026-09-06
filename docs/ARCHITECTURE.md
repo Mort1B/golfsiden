@@ -330,6 +330,21 @@ and reapplies runtime grants before the API is started.
   a new open/completed projection is never validated against stale round status;
   the extra authoritative fetch is an explicit correctness cost for later
   performance review.
+- Administrator round lifecycle controls compose the exact management membership
+  gate with one URL-selected round and the existing readiness endpoints. Opening,
+  completion and locking use CSRF-protected typed mutations and validate returned
+  round/tournament identity plus resulting status. The frontend does not infer
+  readiness from card counts or synthesize a lifecycle transition. Completion
+  readiness reuses the scoring route's identity-scoped key, with full projection
+  and matching status required before an action becomes available.
+- Lifecycle reconciliation invalidates only the affected round, tournament,
+  membership/list and gross/net leaderboard consumers. It replaces pre-outcome
+  reads and inspects current active query state after invalidation, so a later SSE
+  refetch replacing its request is not mistaken for a failed read. Loading,
+  authority and readiness gates hold pending actions. Late mutation responses
+  never insert private cache data after their workspace is unmounted. Confirmation
+  state is tied to action and readiness version, while mounted manual course
+  drafts remain disabled after opening instead of being discarded.
 - Protected result-history routes project one exact player from the canonical
   metric-specific tournament leaderboard. Contribution links use the preserved
   tagged historical owner, never the player's current team. Protected result-card

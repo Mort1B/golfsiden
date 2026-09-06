@@ -11,7 +11,8 @@ than a global role or player directory, owns access.
 Exact tournament admins configure counted and optional mandatory rounds, select
 or manually register one immutable course/tee revision per draft round, manage
 teams and flights, start the tournament, and open, complete, or lock individual
-rounds through separate lifecycle actions. Opening calculates and freezes
+rounds through separate controls in the management workspace's Lifecycle section.
+Opening calculates and freezes
 handicap snapshots from the selected tee. Individual stroke play, two-player
 scramble, and two-player foursomes have distinct preserved score ownership and
 handicap rules.
@@ -662,6 +663,64 @@ that scorecard's current confirmation, so the round cannot be locked until it is
 confirmed again. Once locked, ordinary score changes remain rejected. Migration
 4 also fails fast when upgrading a database that already contains an invalid
 completed or locked round.
+
+### Administrator round controls
+
+Open **Administrasjon → Livsløp → Administrer en runde**, or use
+**Administrer runden** on a round detail page. Only the exact tournament admin
+receives these controls. The management URL retains the selected round as
+`?round={round_id}#lifecycle`; another tournament's round identifier is not
+silently replaced with an actionable round.
+
+- **Åpne runden** is available for a ready draft round in an active tournament.
+  The readiness overview names missing/invalid entrants, teams and flights and
+  links to the relevant setup section while retaining the selected round.
+  Course and pairing links expand that round's existing editor. Confirmation
+  explains that opening freezes configuration and captures handicap snapshots.
+- **Fullfør runden** requires every necessary player/team card to be complete
+  and confirmed. The overview shows scored/required holes and confirmation state.
+  **Fyll ut scorekort** and **Bekreft scorekort** open the exact tagged owner in
+  the existing score workflow; **Les scorekort** uses the separate read-only
+  result-card route. Completion makes results count in tournament standings;
+  corrections remain possible until locking.
+- **Lås runden** requires a completed round whose cards remain confirmed.
+  A subsequent correction removes confirmation, so its card must be confirmed
+  again. Locking requires explicit confirmation and leaves the round read-only;
+  there is no reopen, unlock or locked-score correction control.
+
+Confirmation moves keyboard focus to **Avbryt**. Escape cancels and restores
+focus; saving prevents duplicate submission and announces the server-confirmed
+result. Read failures, inconsistent status, unavailable authority and pending
+checks disable mutations. **Oppdater kontrollen** reconciles status, readiness
+and related private data after failures, conflicts or uncertain responses.
+Another administrator's changes and score corrections refresh the same data
+through SSE. A newer live refetch may supersede reconciliation without reporting
+a false failure; reads started before a mutation outcome cannot restore an older
+actionable status.
+
+Opening keeps any mounted unsaved manual course draft visible but disabled;
+those local fields are not the persisted course revision and cannot be saved
+after opening. Existing pairing drafts retain their explicit conflict handling.
+Final-back-nine release/re-hide remains a separate administrator control:
+completion and locking never change its visibility.
+
+### Repeating the lifecycle browser checks
+
+With Node 22.13+ and Google Chrome installed, use a freshly migrated and seeded
+**disposable local database**, an API on port 3000 with development cookies, and
+the frontend on `http://127.0.0.1:5173`. Run from `frontend/`:
+
+```bash
+GOLF_LIFECYCLE_BROWSER=1 npm run test:browser:lifecycle
+```
+
+The opt-in suite uses development seed identities and changes their tournament,
+scores and round states. It requires all seeded rounds to begin draft and leaves
+round four draft for injected loading/error/empty-state checks. Use a fresh
+disposable database for a complete repeat; do not run it against hosted data.
+Screenshots and failure artifacts go under `/tmp/golf-lifecycle-*`; traces are
+disabled to avoid retaining authentication payloads. The normal frontend test
+command runs the unit and React Testing Library tests without these mutations.
 
 ### Administrator-controlled final visibility
 

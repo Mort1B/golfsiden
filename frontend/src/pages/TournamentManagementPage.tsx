@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft } from 'lucide-react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { isCanonicalUuid } from '../api/decoder'
 import { tournamentApi, tournamentKeys } from '../api/tournaments'
 import { useAuth } from '../features/auth/authContext'
@@ -9,14 +9,18 @@ import { MANAGEMENT_SECTIONS, managementSectionFromHash, resolveManagementAccess
 import { TournamentManagementSections } from '../features/tournaments/TournamentManagementSections'
 import { ErrorState, LoadingState } from '../ui/AsyncState'
 import { useTournamentLive } from '../features/live/useTournamentLive'
+import { roundManagementUrl } from '../features/tournaments/lifecycle/lifecycleState'
 
 export function TournamentManagementPage() {
   const { tournamentId = '' } = useParams()
-  return <TournamentManagementWorkspace key={tournamentId} tournamentId={tournamentId} />
+  const userId = useAuth().session?.user_id ?? ''
+  return <TournamentManagementWorkspace key={`${userId}:${tournamentId}`} tournamentId={tournamentId} />
 }
 
 function TournamentManagementWorkspace({ tournamentId }: { tournamentId: string }) {
   const location = useLocation()
+  const navigate = useNavigate()
+  const selectedRoundId = new URLSearchParams(location.search).get('round')
   const userId = useAuth().session?.user_id ?? ''
   const canonical = isCanonicalUuid(tournamentId)
   useTournamentLive(canonical ? tournamentId : '')
@@ -80,6 +84,10 @@ function TournamentManagementWorkspace({ tournamentId }: { tournamentId: string 
       </nav>
       <TournamentManagementSections
         tournament={access.tournament}
+        selectedRoundId={selectedRoundId}
+        activeSection={managementSectionFromHash(location.hash)}
+        onSelectRound={(id) => void navigate(roundManagementUrl(tournamentId, id))}
+        authorityRefreshing={memberships.isFetching || tournament.isFetching || rounds.isFetching}
         roster={{ data: roster.data, pending: roster.isPending, error: roster.error, retry: () => void roster.refetch() }}
         rounds={{ data: rounds.data, pending: rounds.isPending, error: rounds.error, retry: () => void rounds.refetch() }}
       />

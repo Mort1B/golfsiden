@@ -188,12 +188,28 @@ export function decodeOpenRoundResult(value: unknown, expectedRoundId: string): 
   return { round, handicap_snapshots: handicapSnapshots, team_handicap_snapshots: teamSnapshots }
 }
 
+export type RoundTransition = 'open' | 'complete' | 'lock'
+
+export function decodeRoundTransition(
+  value: unknown, roundId: string, tournamentId: string, action: RoundTransition,
+): Round {
+  const round = action === 'open' ? decodeOpenRoundResult(value, roundId).round : decodeRound(value, 'transition.round')
+  const status = action === 'complete' ? 'completed' : action === 'lock' ? 'locked' : 'open'
+  if (round.id !== roundId || round.tournament_id !== tournamentId || round.status !== status) {
+    invalid('transition.identity')
+  }
+  return round
+}
+
 export const roundLifecycleKeys = {
   validation: (userId: string, roundId: string) =>
     [...privateWorkspaceKeys.user(userId), 'rounds', roundId, 'pairing-validation'] as const,
 }
 
 export const roundLifecycleApi = {
+  transition: (roundId: string, tournamentId: string, action: RoundTransition, csrfToken: string) =>
+    requestDecoded(`/api/rounds/${roundId}/${action}`,
+      (value) => decodeRoundTransition(value, roundId, tournamentId, action), jsonRequest('POST', {}, csrfToken)),
   validation: (roundId: string) => requestDecoded(`/api/rounds/${roundId}/pairing-validation`,
     (value) => decodePairingValidation(value, roundId)),
   open: (roundId: string, csrfToken: string) => requestDecoded(`/api/rounds/${roundId}/open`,

@@ -107,7 +107,7 @@ export function TournamentStartPanel(props: TournamentStartPanelProps) {
         <CheckCircle2 aria-hidden="true" />
         <div>
           <h3>Turneringen er startet</h3>
-          <p>Rundene er fortsatt i kladd og åpnes separat når hver runde er klar.</p>
+          <p>Rundene åpnes separat når hver runde er klar.</p>
           {receipt && <p className="tournament-start-receipt" role="status" aria-live="polite">{receipt}</p>}
         </div>
       </div>

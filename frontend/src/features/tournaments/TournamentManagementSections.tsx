@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Round, Tournament, TournamentPlayerRoster } from '../../api/types'
 import { EmptyState, ErrorState, LoadingState } from '../../ui/AsyncState'
@@ -9,6 +9,8 @@ import { PairingSection } from './pairings/PairingSection'
 import { TournamentStartPanel } from './TournamentStartPanel'
 import { FinalRoundVisibilityControl } from './FinalRoundVisibilityControl'
 import { applicableFinalRound } from './finalRoundVisibility'
+import { RoundLifecyclePanel } from './lifecycle/RoundLifecyclePanel'
+import type { ManagementSectionId } from './managementWorkspace'
 
 interface ReadState<T> {
   data: T | undefined
@@ -21,6 +23,10 @@ interface Props {
   tournament: Tournament
   roster: ReadState<TournamentPlayerRoster>
   rounds: ReadState<Round[]>
+  selectedRoundId: string | null
+  activeSection: ManagementSectionId | null
+  onSelectRound: (id: string) => void
+  authorityRefreshing: boolean
 }
 
 const dateFormatter = new Intl.DateTimeFormat('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -63,7 +69,7 @@ function RosterState({ state }: { state: ReadState<TournamentPlayerRoster> }) {
   )
 }
 
-export function TournamentManagementSections({ tournament, roster, rounds }: Props) {
+export function TournamentManagementSections({ tournament, roster, rounds, selectedRoundId, activeSection, onSelectRound, authorityRefreshing }: Props) {
   const finalRound = rounds.data === undefined ? null : applicableFinalRound(tournament, rounds.data)
   return (
     <div className="management-sections">
@@ -110,14 +116,14 @@ export function TournamentManagementSections({ tournament, roster, rounds }: Pro
       <section id="courses" className="management-section" aria-labelledby="courses-heading" tabIndex={-1}>
         <header><p className="eyebrow">Lagrede rundefakta</p><h2 id="courses-heading">Baner</h2></header>
         <RoundState state={rounds}>{(items) => (
-          <CourseConfigurationSection tournamentId={tournament.id} rounds={items} />
+          <CourseConfigurationSection tournamentId={tournament.id} rounds={items} linkedRoundId={activeSection === 'courses' ? selectedRoundId : null} />
         )}</RoundState>
       </section>
 
       <section id="pairings" className="management-section" aria-labelledby="pairings-heading" tabIndex={-1}>
         <header><p className="eyebrow">Rundespesifikt oppsett</p><h2 id="pairings-heading">Spillegrupper</h2></header>
         <RoundState state={rounds}>{(items) => (
-          <PairingSection tournamentId={tournament.id} rounds={items} />
+          <PairingSection tournamentId={tournament.id} rounds={items} linkedRoundId={activeSection === 'pairings' ? selectedRoundId : null} />
         )}</RoundState>
       </section>
 
@@ -127,9 +133,7 @@ export function TournamentManagementSections({ tournament, roster, rounds }: Pro
         <TournamentStartPanel tournament={tournament} roster={roster} rounds={rounds} />
         {finalRound && <FinalRoundVisibilityControl tournament={tournament} finalRound={finalRound} />}
         <RoundState state={rounds}>{(items) => (
-          <ul className="management-detail-list">
-            {items.map((round) => <li key={round.id}><CalendarDays aria-hidden="true" /><span><strong>{formatName(round)}</strong>{formatDate(round.round_date)} · {round.number_of_holes} hull · <StatusBadge status={round.status} /></span></li>)}
-          </ul>
+          <RoundLifecyclePanel tournament={tournament} rounds={items} selectedRoundId={selectedRoundId} onSelectRound={onSelectRound} authorityRefreshing={authorityRefreshing} />
         )}</RoundState>
       </section>
     </div>

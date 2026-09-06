@@ -18,6 +18,7 @@ import './features/tournaments/tournament-players.css'
 import './features/tournaments/tournament-management.css'
 import './features/tournaments/course-configuration.css'
 import './features/tournaments/pairings/pairings.css'
+import './features/tournaments/lifecycle/lifecycle.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {

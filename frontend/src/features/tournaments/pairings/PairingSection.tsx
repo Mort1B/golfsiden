@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import type { Round, ScoringFormat } from '../../../api/types'
 import { StatusBadge } from '../../../ui/StatusBadge'
 import { PairingEditor } from './PairingEditor'
 
-interface Props { tournamentId: string; rounds: Round[] }
+interface Props { tournamentId: string; rounds: Round[]; linkedRoundId?: string | null }
 
 const pairingFormatLabels = {
   individual_stroke_play: 'Individuell · flighter',
@@ -12,8 +12,9 @@ const pairingFormatLabels = {
   two_player_foursomes: 'Foursomes · lag og flighter',
 } satisfies Record<ScoringFormat, string>
 
-export function PairingSection({ tournamentId, rounds }: Props) {
+export function PairingSection({ tournamentId, rounds, linkedRoundId }: Props) {
   const [expandedRoundId, setExpandedRoundId] = useState<string | null>(null)
+  useEffect(() => { if (linkedRoundId) setExpandedRoundId(linkedRoundId) }, [linkedRoundId])
   return <div className="round-pairings">
     {rounds.map((round) => {
       const expanded = round.id === expandedRoundId
