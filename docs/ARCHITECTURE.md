@@ -120,7 +120,7 @@ and reapplies runtime grants before the API is started.
   requires active exact-admin workflow context and records actor/database time in
   append-only `tournament_archives`. Actor deletion may null its FK without losing
   identity/time. Legacy closed rows are retained without fabricated audit evidence.
-  Archiving does not filter list reads, change memberships or release final results.
+  Archiving does not filter API list reads, change memberships or release final results.
 - Invitation issue/rotation, redemption, entrant and membership creation hold a
   shared parent lock through commit and reject completed/archived parents.
   Identity-changing member/entrant updates also check the destination. Completion
@@ -398,6 +398,19 @@ and reapplies runtime grants before the API is started.
   leaderboard queries without inserting response data. Duplicate submissions,
   unresolved reads and failed reconciliation block further completion. Independent
   final visibility and historical score ownership remain unchanged.
+- Archive controls compose the same keyed exact-admin management gate with a
+  completed-only panel/hook. Confirmation binds to authoritative read versions and
+  expires permanently during refresh. The typed archive response must match the
+  requested identity and archived status. Completion and archive share one private
+  query reconciliation function, preserving pre-outcome read cancellation, newer
+  SSE refetch handling and no late mutation-response insertion.
+- The tournament list filters the unmodified user-scoped membership collection
+  locally, using URL view selection. Current includes every non-archived status;
+  archived/all views retain direct private history links. Failed authoritative
+  reads hide cached cards. No per-view cache or global SSE feed is introduced:
+  return/focus refresh stale data under the shared 20-second freshness window;
+  manual refresh always fetches. The target-scoped management subscription
+  continues live reconciliation.
 - Protected result-history routes project one exact player from the canonical
   metric-specific tournament leaderboard. Contribution links use the preserved
   tagged historical owner, never the player's current team. Protected result-card

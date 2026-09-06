@@ -12,6 +12,7 @@
     "test:browser:rounds": "playwright test --config playwright.lifecycle.config.ts roundDetails.browser.ts",
     "test:browser:progress": "playwright test --config playwright.lifecycle.config.ts flightProgress.browser.ts",
     "test:browser:completion": "playwright test --config playwright.lifecycle.config.ts tournamentCompletion.browser.ts",
+    "test:browser:archive": "playwright test --config playwright.lifecycle.config.ts tournamentArchive.browser.ts",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview"
   },

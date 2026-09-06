@@ -1,0 +1,10 @@
+.tournament-archive { display: grid; gap: 14px; border-top: 1px solid #dbe1dc; margin-top: 24px; padding-top: 20px; overflow-wrap: anywhere; }
+.tournament-archive button, .tournament-archive a { min-height: 44px; display: inline-flex; align-items: center; padding: 9px 12px; }
+.tournament-archive button { justify-self: start; color: #176640; border: 1px solid #176640; background: #fff; border-radius: 6px; font-weight: 750; }
+.tournament-archive .archive-action { color: #fff; background: #176640; }
+.tournament-archive button:disabled { opacity: .55; cursor: not-allowed; }
+.tournament-archive :is(a,button):focus-visible { outline: 3px solid #176640; outline-offset: 3px; }
+.tournament-archive li { margin: 8px 0; }
+.tournament-archive li a { max-width: 100%; }
+.tournament-archive fieldset { min-width: 0; padding: 12px; border: 2px solid #176640; border-radius: 6px; }
+.tournament-archive fieldset div { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }

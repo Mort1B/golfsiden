@@ -33,6 +33,15 @@ export function withCreatedTournament(current: Tournament[] | undefined, created
 }
 
 export const tournamentApi = {
+  archive: (tournamentId: string, expectedUpdatedAt: string, csrfToken: string) => requestDecoded(
+    `/api/tournaments/${tournamentId}/archive`,
+    (value) => {
+      const tournament = decodeExpectedTournament(value, tournamentId)
+      if (tournament.status !== 'archived') throw new Error('Ugyldig arkiveringsstatus fra serveren.')
+      return tournament
+    },
+    jsonRequest('POST', { expected_tournament_updated_at: expectedUpdatedAt }, csrfToken),
+  ),
   complete: (tournamentId: string, expectedUpdatedAt: string, csrfToken: string) => requestDecoded(
     `/api/tournaments/${tournamentId}/complete`,
     (value) => {

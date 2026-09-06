@@ -12,6 +12,7 @@ import { applicableFinalRound } from './finalRoundVisibility'
 import { RoundLifecyclePanel } from './lifecycle/RoundLifecyclePanel'
 import type { ManagementSectionId } from './managementWorkspace'
 import { TournamentCompletionPanel } from './completion/TournamentCompletionPanel'
+import { TournamentArchivePanel } from './archive/TournamentArchivePanel'
 
 interface ReadState<T> {
   data: T | undefined
@@ -138,6 +139,7 @@ export function TournamentManagementSections({ tournament, roster, rounds, selec
           <RoundLifecyclePanel tournament={tournament} rounds={items} selectedRoundId={selectedRoundId} onSelectRound={onSelectRound} authorityRefreshing={authorityRefreshing} />
         )}</RoundState>
         <TournamentCompletionPanel tournament={tournament} rounds={rounds} authorityRefreshing={authorityRefreshing} snapshotVersion={completionSnapshotVersion} />
+        <TournamentArchivePanel tournament={tournament} authorityRefreshing={authorityRefreshing} snapshotVersion={completionSnapshotVersion} />
       </section>
     </div>
   )

@@ -6,14 +6,7 @@ belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. Approval is required before starting the next candidate.
-
-## Next candidate
-
-**Archive administrator UI and history filtering:** reuse the guarded archive
-action with exact-admin confirmation, live private-query reconciliation and
-deliberate archived/current list selection. Retain member history access and
-independent final visibility; no deletion or reversal.
+None. Choose an explicit priority from the later queue before starting new work.
 
 ## Later
 

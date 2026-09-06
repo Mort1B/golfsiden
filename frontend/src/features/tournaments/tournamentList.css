@@ -1,0 +1,7 @@
+.tournament-list-views { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.tournament-list-views a, .tournament-list-refresh { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 9px 12px; border: 1px solid #176640; border-radius: 6px; color: #176640; background: #fff; font-weight: 750; }
+.tournament-list-views a[aria-current="page"] { color: #fff; background: #176640; }
+.tournament-list-refresh { margin-bottom: 14px; }
+.tournament-list-refresh:disabled { opacity: .55; cursor: not-allowed; }
+.tournament-list-page :is(a,button):focus-visible { outline: 3px solid #176640; outline-offset: 3px; }
+.tournament-list-page .list-card { overflow-wrap: anywhere; min-width: 0; }

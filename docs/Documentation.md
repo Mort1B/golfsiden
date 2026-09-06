@@ -727,10 +727,48 @@ another audit record, timestamp change or live event.
 
 Archive records the administrator and database time. It changes no scores,
 snapshots, confirmations, teams, members or final visibility. Existing members
-retain private reads and gross/net history; current lists still include archived
+retain private reads and gross/net history; API collections still include archived
 tournaments. New invitations, rotations and joining remain closed. Invitation
 revocation and independent release/re-hide of the final nine remain available.
-There is no archive UI, history filtering, deletion or reversal in this step.
+There is no deletion or reversal.
+
+### Archive controls and tournament history
+
+Exact tournament administrators use **Administrasjon → Livsløp → Arkiver
+turneringen** after completion. Draft/active tournaments explain the completion
+prerequisite. Confirmation explains that the tournament moves from Nåværende to
+Arkiv without deleting results, removing member access or changing final-nine
+visibility. **Avbryt** receives focus; Escape cancels. **Bekreft og arkiver
+turneringen** submits once with the current tournament timestamp.
+
+An authority/read refresh discards confirmation, even if the same facts return.
+Success, conflicts and uncertain responses refresh authoritative private reads;
+failed reconciliation blocks archive until **Oppdater arkiveringskontrollen**
+succeeds. A second administrator's archive arrives through the existing management
+live subscription and removes pending controls. Archived state links to history;
+there is no undo. Leaving the workspace or switching accounts cannot cause a late
+mutation response to recreate private cache data.
+
+**Dine turneringer** has URL-backed **Nåværende**, **Arkiv** and **Alle** views.
+Nåværende is the default and includes draft, active and completed tournaments;
+only archived tournaments move to Arkiv. Use `/tournaments?view=archived` for
+history or `?view=all` for both. Links show counts and retain browser back/forward
+selection. Filtering happens over the unfiltered private membership collection;
+management authority, other selectors and direct history links are unchanged.
+No-membership and empty-view messages are distinct, and failed reads hide stale
+cards until retry succeeds.
+
+**Oppdater turneringer** always requests current data. Returning to the list or
+focusing the window refreshes stale data; the shared query freshness window is
+20 seconds. The list has no global live subscription, so another administrator's
+archive can remain unseen until a manual refresh or a return/focus after that
+window. This does not affect management's live updates.
+
+For repeatable Chrome validation, use a fresh disposable migrated/seeded backend
+with the frontend on port 5173. From `frontend`, run
+`GOLF_TOURNAMENT_ARCHIVE_BROWSER=1 npm run test:browser:archive`.
+This mutates all five seed rounds and completes/archives the seed tournament;
+never run it against retained or production data.
 
 ### Round transitions
 
@@ -1035,11 +1073,10 @@ restore, and rollback procedures are maintained in `docs/deployment_guide.md`.
   one API replica. A future multi-replica topology requires a shared limiter.
 - Tournament settings currently edit only the atomic pre-start best-N and
   optional mandatory-round configuration and expose the explicit
-  tournament-start action. Explicit tournament completion has a guarded backend
-  API and administrator readiness/confirmation UI. General tournament editing
-  and archive UI remain unimplemented; the explicit archive API is available.
-  The Courses section
-  supports draft-round configuration; non-draft rounds are deliberately read-only.
+  tournament-start action. Explicit completion and archive APIs have administrator
+  confirmation controls; the tournament list offers current/archive/all views.
+  General tournament editing remains unimplemented. The Courses section supports
+  draft-round configuration; non-draft rounds are deliberately read-only.
 - Pairing roster reads, atomic admin replacement, the mobile draft editor,
   flight-aware opening readiness, and representative ready seed assignments
   exist together with membership-wide scoring authority. There is still no

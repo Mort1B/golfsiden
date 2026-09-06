@@ -46,6 +46,7 @@ describe('management lifecycle authority gate', () => {
     expect(roundLifecycleApi.validation).not.toHaveBeenCalled()
     expect(screen.queryByRole('button', { name: 'Åpne runden' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Fullfør turneringen' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Arkiver turneringen' })).toBeNull()
   })
   it('removes lifecycle data and controls after exact admin membership is revoked', async () => {
     render(tree())
@@ -57,6 +58,7 @@ describe('management lifecycle authority gate', () => {
     expect(screen.queryByRole('button', { name: 'Åpne runden' })).toBeNull()
     expect(screen.queryByText('Runden er klar til å åpnes.')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Fullfør turneringen' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Arkiver turneringen' })).toBeNull()
   })
   it('does not show the prior account controls during an identity switch', async () => {
     const view = render(tree())
@@ -66,6 +68,7 @@ describe('management lifecycle authority gate', () => {
     view.rerender(tree({ ...auth, session: { ...session, user_id: '00000000-0000-0000-0000-000000000099' } }))
     expect(screen.queryByRole('button', { name: 'Åpne runden' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Fullfør turneringen' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Arkiver turneringen' })).toBeNull()
     await screen.findByRole('heading', { name: 'Ingen tilgang' })
   })
   it('renders an empty round list without lifecycle actions', async () => {
