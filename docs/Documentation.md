@@ -222,7 +222,8 @@ single API instance. Each sensitive route has a narrow client-and-resource key
 plus a broader per-client ceiling: login allows 10 attempts per normalized
 account and 40 per client per minute; creator onboarding allows 3/6 per hour;
 invitation preview allows 30/100 per minute; registration allows 5/20 per ten
-minutes; and authenticated invitation acceptance allows 10/40 per minute.
+minutes; authenticated invitation acceptance allows 10/40 per minute; profile
+credential changes share a 5-per-client/account and 20-per-client minute limit.
 Rejected requests return the stable `rate_limited` JSON error, `429`,
 `Retry-After`, and `Cache-Control: no-store`. A narrow-key rejection does not
 charge the broad bucket, stale buckets are evicted, storage is capped, and the
@@ -291,6 +292,56 @@ enroll players through tournament invitations, never by submitting a global
 player identifier. `GET
 /api/me/tournaments` returns only the active user's tournament roles and linked
 entrant identities.
+
+## User profile
+
+Choose **Profil** in the main navigation, or open `/profile` while signed in.
+The page lists all your tournament memberships, including archived tournaments,
+with their current role and a link to each tournament. It also links to creating
+another tournament and the full tournament overview.
+
+- **Name and handicap:** names are trimmed and limited to 100 characters. A name
+  change updates the account and linked player, so the new name also appears in
+  past results. Profile handicap accepts comma or point, −10.0 through 54.0 with
+  at most one decimal, and displays Norwegian comma formatting. A changed or
+  newly created handicap requires a reason (up to 500 characters), recorded with
+  the actor in `handicap_history`. Existing tournament handicaps, including draft
+  entries, and preserved round handicaps/results do not change. New entries use
+  the current profile handicap. Corrections within an existing tournament remain
+  the separate administrator workflow.
+- **Unlinked or inactive accounts:** an unlinked account can explicitly create
+  its own player profile by entering handicap and a reason; this does not enroll
+  it into existing trips. An inactive linked player cannot self-change handicap
+  or reactivate the player; name/credential editing remains available.
+- **Username:** changing it requires the current password. The existing 3–32
+  ASCII letter/digit/underscore/hyphen grammar and lowercase normalization apply;
+  occupied usernames are rejected. Use the new username at the next login.
+  Existing sessions remain active.
+- **Password:** the current password and repeated new password are required in
+  the UI. The account contract remains 12–128 UTF-8 bytes. A successful change
+  logs the account out on every device and returns to sign-in with confirmation.
+  There is no current-password bypass or account-recovery operation here.
+
+The API is self-only and all responses use `Cache-Control: private, no-store`.
+`GET /api/me/profile` returns `user_id`, `username`, `display_name`, `version`,
+and nullable `player_id`, `handicap`, `player_active`, `player_updated_at`.
+`PUT /api/me/profile` accepts `version`, `player_updated_at`, `display_name`,
+`handicap` and `reason`. `POST /api/me/profile/username` accepts `version`,
+`username`, `current_password`; the password POST accepts `version`,
+`new_password`, `current_password`. Both credential POSTs return 204; the details
+PUT returns the authoritative profile. Mutations require the session CSRF header,
+reject unknown fields, and have an 8 KiB body limit. Passwords/hashes/generations
+are never included in profile responses.
+
+Stale edits return `409 profile_stale`; an occupied username returns
+`409 username_unavailable`, incorrect current password returns
+`409 current_password_incorrect`, and inactive handicap editing returns
+`409 profile_inactive`. Expired/replaced sessions return 401, missing/wrong CSRF
+403, malformed input 400, oversized input 413 and credential throttling 429.
+Refresh/retry reads authoritative state and may replace unsaved form fields.
+After an uncertain response, refresh before retrying; if a password change may
+have committed, try signing in with the new password. Email, avatars, account
+deletion, recovery and editing someone else's account are outside this page.
 
 ## Creator onboarding
 

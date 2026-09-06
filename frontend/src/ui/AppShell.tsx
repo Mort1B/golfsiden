@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BarChart3, ClipboardPen, LogIn, LogOut, Trophy } from 'lucide-react'
+import { BarChart3, ClipboardPen, LogIn, LogOut, Trophy, UserRound } from 'lucide-react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../features/auth/authContext'
 import { useScoringGuard } from '../features/scoring/scoringGuardContext'
@@ -8,6 +8,7 @@ const baseNavItems = [
   { to: '/tournaments', label: 'Turnering', icon: Trophy },
   { to: '/score', label: 'Score', icon: ClipboardPen },
   { to: '/leaderboard', label: 'Resultater', icon: BarChart3 },
+  { to: '/profile', label: 'Profil', icon: UserRound },
 ]
 
 export function AppShell() {

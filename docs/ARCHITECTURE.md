@@ -140,6 +140,34 @@ and reapplies runtime grants before the API is started.
   complete draft round plan, invitation, and session. Client-supplied roles,
   actor IDs, lifecycle status, round count, and tournament scoring summary are
   absent from the contract. The server derives them from preserved facts.
+- Self-service profile reads/writes resolve only the session user at
+  `/api/me/profile`; no caller-supplied user/player identity or global authority
+  is accepted. Details updates lock session/user and linked player, compare the
+  account version plus player timestamp, then update account/player names and
+  append actor/reason handicap history atomically. Creating an explicitly
+  requested player link never enrolls existing tournaments; inactive player
+  handicaps cannot be self-edited. Existing tournament handicaps and all round
+  snapshots/results are untouched. Name changes use existing identity joins and
+  therefore appear in historical views; targeted tournament SSE signals follow
+  commit.
+- Schema 23 adds monotonically increasing account profile versions and credential
+  generations. A narrow user trigger advances the profile version on updates
+  and the credential generation only when the password hash changes. Sessions
+  capture the current generation at creation. Central session reads/locks and
+  supplemental completion/archive/visibility guards require equality, preserving
+  existing lifecycle error contracts. Password changes invalidate all devices
+  without locking other session rows. Bounded Argon2 verification/hashing occurs
+  outside transactions; current password hash/generation and version are checked
+  again under exclusive session/user locks, with wall-clock expiry after waits.
+  Login rechecks its verified hash, username and generation under a user share
+  lock through session insertion, preventing an old verification from minting a
+  newly valid session after password or username changes.
+- Profile caches remain user-rooted. Their reads reject responses after session
+  replacement; mutation reconciliation compares both user ID and CSRF token.
+  Successful mutations reconcile even after page departure, while local feedback
+  remains mount-bound. Password success leaves the protected route before null
+  identity publication so its sign-in confirmation survives normal route guards.
+  Credential-bearing inactive mutation state is removed immediately.
 - Signed-in creation uses the same pure tournament-plan normalization and
   transactional draft-plan insertion, but never creates or replaces an account,
   session or invitation. Any authenticated account can create an independent
@@ -503,6 +531,10 @@ Implemented resources:
 | `GET` | `/api/auth/session` | Retrieve the current session and CSRF value |
 | `POST` | `/api/auth/logout` | Revoke and clear the current session |
 | `GET` | `/api/me/tournaments` | List the session user's tournament memberships and player links |
+| `GET` | `/api/me/profile` | Private self-only account and linked player details with optimistic versions |
+| `PUT` | `/api/me/profile` | CSRF-protected own name/current handicap update; reason history and no tournament rewrites |
+| `POST` | `/api/me/profile/username` | Current-password-confirmed canonical username change; sessions retained |
+| `POST` | `/api/me/profile/password` | Current-password-confirmed password change; invalidate every session and clear cookie |
 | `PATCH` | `/api/tournaments/{tournament_id}/counted-rounds` | Atomically update best-N and optional mandatory-round configuration before tournament start |
 | `GET` | `/api/tournaments/{tournament_id}/course-catalog` | Search the bundled curated course shortlist as a tournament admin |
 | `GET` | `/api/tournaments/{tournament_id}/course-presets` | Read only registered immutable supplied layouts as an exact tournament admin; private, no-store |

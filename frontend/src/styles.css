@@ -25,6 +25,7 @@ h1, h2, h3 { letter-spacing: 0; }
 .description { color: #5b655f; margin: -8px 0 18px 50px; }
 .bottom-nav { position: fixed; z-index: 10; bottom: 0; left: 0; right: 0; display: grid; min-height: 66px; padding: 6px 6px calc(5px + env(safe-area-inset-bottom)); border-top: 1px solid #d8ded8; background: rgba(255,255,255,.97); }
 .nav-count-3 { grid-template-columns: repeat(3, 1fr); }
+.nav-count-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .nav-link { display: flex; min-width: 0; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #68736c; font-size: .68rem; font-weight: 650; }
 .nav-link span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .nav-link.active { color: #176640; }

@@ -164,6 +164,26 @@ recovery if rollback is required, never a SQL downgrade or development seed on
 retained data. This implementation was validated only on disposable PostgreSQL;
 production deployment is a separate operator action.
 
+### Schema 23 self-service profile
+
+Migration 0023 adds account profile versions and account/session credential
+generations, plus narrow update and tournament authorization guards. Existing
+valid sessions start with matching generations and remain valid; existing
+expired/revoked sessions stay invalid. The next real password change invalidates
+all of that user's sessions. No tournament, score, handicap snapshot, ownership
+or membership data is rewritten. Profile handicap changes are a separate runtime
+self-service action, not a migration or seed operation.
+
+Back up first, apply the forward migration with owner authority, refresh runtime
+permissions using the normal action, and deploy matching API/frontend binaries.
+Keep `RUN_MIGRATIONS=false`. Schema-22 binaries cannot serve schema 23; rollback
+requires the pre-upgrade backup/fresh-volume recovery, not dropping generation
+columns or downgrading SQL. Verify readiness, login, profile loading and a
+representative existing tournament read. Validate password change/sign-out with
+a designated test account, never by changing an operator's real password as an
+implicit deployment check. This implementation was validated on disposable
+PostgreSQL only and does not itself deploy or migrate production.
+
 ### Upgrade sequence
 
 Before every upgrade:

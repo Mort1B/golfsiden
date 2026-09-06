@@ -1,0 +1,13 @@
+.profile-page { overflow-wrap: anywhere; }
+.profile-form { border-top: 1px solid #d8ded8; margin-top: 1.5rem; padding-top: 1rem; }
+.profile-form h2 { margin-bottom: .75rem; }
+.profile-form fieldset { display: grid; gap: 1rem; border: 0; padding: 0; margin: 0; min-width: 0; }
+.profile-form label { display: grid; gap: .4rem; font-weight: 600; }
+.profile-form input { min-width: 0; width: 100%; min-height: 44px; padding: .65rem; border: 1px solid #bfcac1; border-radius: 6px; background: #fff; font-weight: 400; }
+.profile-form input:focus-visible { outline: 3px solid #76b88d; outline-offset: 2px; }
+.profile-form input:disabled { background: #e9ede8; color: #59665d; }
+.profile-page button { min-height: 44px; white-space: normal; }
+.profile-page > section { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #d8ded8; }
+.profile-page > section h2 { margin-bottom: .75rem; }
+.profile-page .item-list { margin-block: 1rem; }
+.profile-page .list-card h3 { overflow-wrap: anywhere; }

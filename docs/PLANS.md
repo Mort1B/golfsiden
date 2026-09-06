@@ -6,9 +6,8 @@ belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. Signed-in tournament creation and the related wording corrections are
-closed. Choose a new bounded priority before beginning queued implementation;
-deployment follows the operator runbook.
+None. The self-service user profile is closed. Choose a new bounded priority
+before beginning queued implementation; deployment follows the operator runbook.
 
 ## Later
 

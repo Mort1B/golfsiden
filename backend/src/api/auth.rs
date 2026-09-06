@@ -127,19 +127,25 @@ async fn login(
         .as_ref()
         .and_then(|user| user.password_hash.clone())
         .unwrap_or_else(|| DUMMY_PASSWORD_HASH.to_owned());
-    if !verify_password_bounded(input.password, encoded_hash)
+    if !verify_password_bounded(input.password, encoded_hash.clone())
         .await
         .map_err(|_| ApiError::Internal)?
     {
         return Err(ApiError::InvalidCredentials);
     }
-    let user_id = user
-        .map(|user| user.id)
-        .ok_or(ApiError::InvalidCredentials)?;
+    let user = user.ok_or(ApiError::InvalidCredentials)?;
     let token = generate_session_token().map_err(|_| ApiError::Internal)?;
     let token_hash = hash_session_token(&token);
     let expires_at = Utc::now() + Duration::hours(state.auth.session_ttl_hours);
-    let principal = auth::create_session(&state.pool, user_id, &token_hash, expires_at).await?;
+    let principal = auth::create_verified_session(
+        &state.pool,
+        user.id,
+        &token_hash,
+        expires_at,
+        (&encoded_hash, &username, user.credential_generation),
+    )
+    .await?
+    .ok_or(ApiError::InvalidCredentials)?;
     let csrf_token = derive_csrf_token(&token);
     let cookie = session_cookie(&state, token, expires_at);
     Ok((

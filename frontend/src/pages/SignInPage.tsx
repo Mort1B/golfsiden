@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { LogIn } from 'lucide-react'
 import { useAuth } from '../features/auth/authContext'
 import { safeReturnTo } from '../features/auth/navigation'
@@ -7,6 +7,9 @@ import { USERNAME_HTML_PATTERN } from '../features/auth/username'
 
 export function SignInPage() {
   const auth = useAuth()
+  const location = useLocation()
+  const state: unknown = location.state
+  const passwordChanged = typeof state === 'object' && state !== null && 'profilePasswordChanged' in state && state.profilePasswordChanged === true
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const [username, setUsername] = useState('')
@@ -15,7 +18,7 @@ export function SignInPage() {
   const [error, setError] = useState<string | null>(null)
   const returnTo = safeReturnTo(params.get('returnTo'))
 
-  if (auth.session) return <Navigate replace to={returnTo} />
+  if (auth.session && !passwordChanged) return <Navigate replace to={returnTo} />
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -35,7 +38,8 @@ export function SignInPage() {
     <main className="sign-in-page">
       <section className="sign-in-panel" aria-labelledby="sign-in-heading">
         <p className="brand">Guttas Golf</p>
-        <h1 id="sign-in-heading">Logg inn for scoring</h1>
+        <h1 id="sign-in-heading">Logg inn</h1>
+        {passwordChanged && <p role="status">Passordet er endret. Du er logget ut på alle enheter. Logg inn med det nye passordet.</p>}
         <form onSubmit={(event) => void submit(event)}>
           <label>
             <span>Brukernavn</span>

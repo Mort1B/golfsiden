@@ -14,6 +14,7 @@ import { InvitationAdminPage } from './pages/InvitationAdminPage'
 import { TournamentManagementPage } from './pages/TournamentManagementPage'
 import { PlayerHistoryPage } from './pages/PlayerHistoryPage'
 import { DirectScorecardPage } from './pages/DirectScorecardPage'
+import { ProfilePage } from './pages/ProfilePage'
 
 export const router = createBrowserRouter([
   { path: '/', element: <HomePage /> },
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
   {
     element: <AppShell />,
     children: [
+      { path: '/profile', element: <RequireSession><ProfilePage /></RequireSession> },
       { path: '/tournaments', element: <RequireSession><TournamentsPage /></RequireSession> },
       { path: '/tournaments/:tournamentId', element: <RequireSession><TournamentPage /></RequireSession> },
       { path: '/tournaments/:tournamentId/invitations', element: <RequireSession><InvitationAdminPage /></RequireSession> },

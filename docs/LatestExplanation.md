@@ -1,86 +1,82 @@
-# Latest iteration: Create another tournament and clearer result wording
+# Latest iteration: Self-service user profile
 
-Existing accounts can now create additional tournaments from Dine turneringer
-through Opprett ny turnering, or by visiting /create while signed in. The
-three-step wizard reuses tournament, round-plan and review fields without asking
-for another username, password or player profile. Anonymous first-account
-onboarding retains its original four-step/account/session/invitation behavior.
+Signed-in users can choose **Profil** to see current/archived tournament
+memberships and change name, username, password and current profile handicap.
+The page also links to creating another tournament.
 
-## Identity and transaction boundaries
+## Behavior and boundaries
 
-The new CSRF-protected POST /api/tournaments uses a per-user request UUID. It
-creates the draft trip, complete round plan and exact admin membership atomically.
-An active linked player is entered with their current handicap captured for
-this new tournament; otherwise the creator is a non-playing administrator.
-Existing accounts, sessions, profiles, memberships and historical snapshots are
-unchanged. Courses, pairings and invitations use existing administration after
-creation; this path does not issue an invitation automatically.
+The API is self-only: no global user/player editing authority is restored.
+Names update the account and linked player, including names displayed in past
+results. Handicap accepts comma or point and displays Norwegian formatting.
+Changes require an actor-attributed reason. Existing tournament handicaps,
+including draft entries, and preserved round snapshots, scores, confirmations,
+team ownership and membership are never rewritten. An unlinked account can
+explicitly create its own player profile without entering existing tournaments;
+inactive players cannot self-change handicap or reactivate themselves.
 
-Onboarding and signed-in creation share a pure normalized plan and transaction-
-owned draft-plan insert. Schema 22 stores retry receipts with intentional
-user/tournament cascade behavior. Session/user locks serialize separate sessions
-of one account. Player facts are locked, and wall-clock session expiry is checked
-after waits. Exact retries reauthorize admin access and return the same trip;
-different payloads using the same key conflict. A successful plan remains
-replayable after its end date; only a new creation checks today's UTC date.
+Username and password changes require the current password. Optimistic account
+versions and player timestamps reject stale edits. The UI explains duplicate
+usernames, incorrect passwords, disabled handicaps, saving, refetch errors and
+uncertain outcomes. Successful edits refresh authoritative profile/session data.
 
-The UI retains the submitted payload/key after an uncertain outcome, including
-subsequent throttling or rejections. It blocks editing and duplicate submissions
-until recovery, and never changes account identity. Account transitions unmount
-the wizard so late responses cannot navigate or recreate private cache data.
-Prior tournament lists are invalidated/refreshed, not overwritten.
+Schema 23 adds profile versions and credential generations. Existing valid
+sessions survive migration; a password change invalidates every session and
+returns the browser to sign-in with confirmation. Central session authorization
+and supplemental database lifecycle guards enforce generation equality without
+acquiring other sessions' locks. Bounded Argon2 work occurs outside transactions;
+the verified hash/generation, version and session are rechecked under locks, with
+wall-clock expiry after waits. Login rechecks verified username, hash and
+generation through session insertion, preventing stale verification races.
 
-## Wording corrections, not scoring changes
-
-Completion now explains that visible open-round scores may already contribute
-provisionally, while completion establishes a completed contribution for
-qualification and counted-round selection. Standings and player history explain
-qualification separately from displayed best-N selection. A mandatory round
-reserves one counted slot even when not among the best scores.
-
-A fully entered card now says Alle hull ført rather than implying the round is
-completed. History uses Med / Ikke med i vist sammenlagtresultat instead of
-suggesting excluded results were discarded. Completion, card confirmation,
-locking and independent final-nine visibility remain distinct. No scoring,
-ranking, qualification, lifecycle or visibility calculation changed.
+Frontend reconciliation matches user ID and CSRF token even after page departure.
+Late private reads reject replacement sessions. Password success leaves the
+protected route before publishing null identity, preserving its confirmation
+instead of triggering the ordinary route redirect. Inactive credential-bearing
+mutation state is removed immediately.
 
 ## Validation and review
 
-- Rust formatting, 114 workspace/all-target tests and all-feature Clippy with
+- Formatting, 114 Rust workspace/all-target tests and all-feature Clippy with
   warnings denied passed.
-- Full PostgreSQL 17 database ladder passed: 342 tests, including six creation
-  tests covering multi-trip identity preservation, linked/unlinked/inactive
-  players, cross-session concurrency, per-account keys, strict authority/input,
-  rollback, expiry after a player-lock wait, and replay after the end date.
-- Schema-21 upgrade preserves existing seed facts. Fresh schema-22 migration and
-  repeated development seeding passed in a separate disposable database.
-- All 348 frontend tests across 58 files, strict typecheck, ESLint and production
-  build passed. Tests include sticky lost-response -> 429 -> retry, duplicate
-  submissions, logout/account changes, unchanged anonymous onboarding, typed
-  receipts and rendered wording regressions.
-- Two real Chrome scenarios passed at 320, 390 and 1280px: an ordinary signed-in
-  player created multiple independent trips with unchanged session and preserved
-  previous memberships; a real committed request with a lost response recovered
-  after a throttled retry without creating another trip. Live round standings,
-  provisional qualification, player history, card completeness and lifecycle
-  explanations were checked. Happy-path creation console/page errors and failing
-  HTTP responses were empty before deliberate failure injection. Mobile review/
-  standings and desktop completion screenshots were visually inspected.
-- Independent read-only review found two retry edge cases; both were fixed and
-  covered with regression tests. Final review reported no remaining findings.
-  One full frontend run under concurrent build/database load timed out in an
-  existing list-loading test; its focused rerun and subsequent full ladder passed
-  without weakening test configuration or assertions.
+- All 355 PostgreSQL-backed tests passed. New coverage includes self-only/CSRF
+  authority, strict payloads, throttling, duplicate/stale/password failures,
+  unlinked/inactive profiles, audited handicap changes, actual locked scores
+  and snapshots remaining unchanged, all-device invalidation, controlled login
+  lock races, expiry after waits, and completion/archive/visibility guards.
+- Schema-22 upgrade preserves valid versus expired/revoked sessions. Fresh
+  schema-23 migration and two development seed runs passed on PostgreSQL 17.
+  Historical migration fixtures now use their original schema contracts rather
+  than current-schema session helpers; preserved-fact assertions remain intact.
+- All 359 frontend tests across 60 files, strict typecheck, ESLint and production
+  build passed. Tests cover delayed responses, departure, fresh same-user
+  sessions, late reads, private cache clearing and authoritative refetch.
+- Two real Chrome scenarios passed at 320, 390 and 1280px. Real writes covered
+  names, comma handicap, preserved existing tournament handicap, duplicate and
+  incorrect-password failures, cross-device stale edits, password confirmation,
+  other-device rejection and fresh login. Loading, retry, empty/unlinked,
+  archived and inactive states used explicit browser response fixtures.
+  Screenshots were inspected; width and primary touch targets were checked.
+  No unexpected console/network errors remained. Deliberate 409s, anonymous
+  session 401s, SSE closure and Chrome's aborted reads after confirmed 204s were
+  classified explicitly.
+- Independent read-only review found a late-response navigation issue, which
+  was fixed and regression-tested. Final review reported no blocking findings.
 
-## Release verdict and limitations
+An initial concurrent full run hit the existing score-ordering test's 50ms timing
+assumption. Its focused rerun and subsequent complete database ladder passed
+without changing scoring code or that test. The existing Vite bundle warning
+remains non-blocking (approximately 604kB before gzip).
 
-**READY WITH KNOWN LIMITATIONS.** The existing Vite bundle-size warning remains
-non-blocking. Retry keys live only in the mounted wizard: after refreshing or
-leaving an uncertain attempt, check Dine turneringer before starting a fresh one.
+## Example and release boundary
 
-This change is code publication, not production deployment. Only disposable
-PostgreSQL databases were changed. Deployment requires schema 22, refreshed
-runtime permissions and matching API/frontend binaries, following the normal
-backup/recovery runbook; no development seed belongs on retained data. A separate
-production rollout/least-privilege rehearsal was not performed. Unrelated queued
-product work remains out of scope.
+A player entered a trip at 8.2, then changes profile handicap to 14.4 with a
+reason. That trip keeps 8.2 and its preserved results; a later entry uses 14.4.
+Renaming changes the displayed name, not historical ownership or score data.
+
+**READY WITH KNOWN LIMITATIONS:** the bounded profile workflow is validated.
+Email/avatars, account deletion/recovery and editing other users are excluded.
+Production migration/deployment is separate: back up, migrate schema 23 with
+owner authority, refresh permissions and deploy matching binaries with
+RUN_MIGRATIONS=false, following deployment_guide.md. No retained or production
+database was migrated or seeded by this task.

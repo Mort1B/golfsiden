@@ -1,4 +1,6 @@
 #![cfg(feature = "database-tests")]
+#[path = "support/legacy_sessions.rs"]
+mod legacy_sessions;
 
 use axum::{
     body::Body,
@@ -24,7 +26,71 @@ const PLAYER: Uuid = uuid!("19000000-0000-0000-0000-000000000004");
 const HOLE: Uuid = uuid!("19000000-0000-0000-0000-000000000007");
 const TOKEN: &str = "completion-test-admin";
 
+#[sqlx::test(migrations = "../migrations")]
+async fn self_profile_handicap_change_preserves_actual_locked_scores_and_snapshots(pool: PgPool) {
+    use golf_api::repositories::profile::{self, DetailsChange};
+    let session = seed(&pool, true).await;
+    sqlx::query("UPDATE users SET player_id=$2 WHERE id=$1")
+        .bind(ADMIN)
+        .bind(PLAYER)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let p = profile::get(&pool, session).await.unwrap();
+    let facts = "SELECT jsonb_build_object('players',(SELECT jsonb_agg(to_jsonb(t)) FROM tournament_players t),'snapshots',(SELECT jsonb_agg(to_jsonb(s)) FROM round_handicap_snapshots s),'scores',(SELECT jsonb_agg(to_jsonb(s)) FROM scores s),'confirmations',(SELECT jsonb_agg(to_jsonb(c)) FROM scorecard_confirmations c))";
+    let before: Value = sqlx::query_scalar(facts).fetch_one(&pool).await.unwrap();
+    assert_eq!(before["snapshots"].as_array().unwrap().len(), 1);
+    assert_eq!(before["scores"].as_array().unwrap().len(), 1);
+    profile::update_details(
+        &pool,
+        session,
+        DetailsChange {
+            version: p.version,
+            player_updated_at: p.player_updated_at,
+            display_name: "Updated name".into(),
+            handicap: Some(18.5),
+            reason: "Official update after the round".into(),
+        },
+    )
+    .await
+    .unwrap();
+    let after: Value = sqlx::query_scalar(facts).fetch_one(&pool).await.unwrap();
+    assert_eq!(after, before);
+}
+
+#[sqlx::test(migrations = "../migrations")]
+async fn password_changed_session_cannot_complete_through_database_guard(pool: PgPool) {
+    let session = seed(&pool, true).await;
+    sqlx::query("UPDATE users SET password_hash='new-credential' WHERE id=$1")
+        .bind(ADMIN)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let mut tx = pool.begin().await.unwrap();
+    sqlx::query("SELECT set_config('app.tournament_completion_id',$1::text,true),set_config('app.tournament_completion_session_id',$2::text,true)").bind(TRIP).bind(session).execute(&mut *tx).await.unwrap();
+    let error = sqlx::query("UPDATE tournaments SET status='completed' WHERE id=$1")
+        .bind(TRIP)
+        .execute(&mut *tx)
+        .await
+        .unwrap_err();
+    assert_eq!(
+        error.as_database_error().unwrap().constraint(),
+        Some("tournament_completion_admin_required")
+    );
+    tx.rollback().await.unwrap();
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM tournament_completions")
+            .fetch_one(&pool)
+            .await
+            .unwrap(),
+        0
+    );
+}
+
 async fn seed(pool: &PgPool, locked: bool) -> Uuid {
+    seed_at_schema(pool, locked, false).await
+}
+async fn seed_at_schema(pool: &PgPool, locked: bool, legacy: bool) -> Uuid {
     sqlx::raw_sql("INSERT INTO users(id,username,display_name,role) VALUES
       ('19000000-0000-0000-0000-000000000003','completion_admin','Admin','player');
       INSERT INTO players(id,display_name,current_handicap_index) VALUES
@@ -47,6 +113,13 @@ async fn seed(pool: &PgPool, locked: bool) -> Uuid {
       INSERT INTO flight_memberships(flight_id,round_id,tournament_id,player_id) VALUES
       ('19000000-0000-0000-0000-000000000008','19000000-0000-0000-0000-000000000002','19000000-0000-0000-0000-000000000001','19000000-0000-0000-0000-000000000004');")
       .execute(pool).await.unwrap();
+    if legacy {
+        let session = legacy_sessions::create_and_start(pool, ADMIN, TRIP, TOKEN).await;
+        if locked {
+            lock_round(pool).await;
+        }
+        return session;
+    }
     let session = auth::create_session(
         pool,
         ADMIN,
@@ -522,7 +595,7 @@ async fn schema18_upgrade_preserves_valid_closed_history_without_fabricating_act
     {
         sqlx::raw_sql(&migration.sql).execute(&pool).await.unwrap();
     }
-    seed(&pool, true).await;
+    seed_at_schema(&pool, true, true).await;
     sqlx::query("UPDATE tournaments SET status='completed' WHERE id=$1")
         .bind(TRIP)
         .execute(&pool)
@@ -567,7 +640,7 @@ async fn schema18_upgrade_rejects_incompatible_closed_history_without_rewriting_
     {
         sqlx::raw_sql(&migration.sql).execute(&pool).await.unwrap();
     }
-    seed(&pool, false).await;
+    seed_at_schema(&pool, false, true).await;
     sqlx::query("UPDATE tournaments SET status='completed' WHERE id=$1")
         .bind(TRIP)
         .execute(&pool)

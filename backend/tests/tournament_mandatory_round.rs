@@ -42,7 +42,7 @@ const MIGRATIONS_1_TO_15: [&str; 15] = [
 ];
 const MIGRATION_16: &str = include_str!("../../migrations/0016_tournament_mandatory_round.sql");
 
-async fn seed(pool: &PgPool) {
+async fn seed_data(pool: &PgPool) {
     sqlx::raw_sql(
         "INSERT INTO users (id, username, display_name, role)
          VALUES ('16000000-0000-0000-0000-000000000002', 'mandatory_admin', 'Admin', 'player');
@@ -67,6 +67,9 @@ async fn seed(pool: &PgPool) {
     .execute(pool)
     .await
     .unwrap();
+}
+async fn seed(pool: &PgPool) {
+    seed_data(pool).await;
     auth::create_session(
         pool,
         ADMIN,
@@ -152,7 +155,7 @@ async fn upgrade_enforces_same_tournament_delete_and_parent_cascade(pool: PgPool
     for migration in MIGRATIONS_1_TO_15 {
         sqlx::raw_sql(migration).execute(&pool).await.unwrap();
     }
-    seed(&pool).await;
+    seed_data(&pool).await;
     let other_tournament = Uuid::new_v4();
     let other_round = Uuid::new_v4();
     sqlx::query(

@@ -219,7 +219,11 @@ async fn schema20_upgrade_retains_existing_rounds_and_seed_stays_idempotent(pool
     for migration in golf_api::schema::MIGRATOR.iter().filter(|m| m.version < 21) {
         sqlx::raw_sql(&migration.sql).execute(&pool).await.unwrap();
     }
-    seed(&pool).await;
+    // Historical-schema fixtures must not use current-schema session helpers.
+    sqlx::raw_sql(include_str!("../seed.sql"))
+        .execute(&pool)
+        .await
+        .unwrap();
     let before: Value =
         sqlx::query_scalar("SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM rounds r")
             .fetch_one(&pool)
@@ -255,20 +259,20 @@ async fn schema20_upgrade_preserves_opened_handicap_snapshots_and_team_ownership
     for migration in golf_api::schema::MIGRATOR.iter().filter(|m| m.version < 21) {
         sqlx::raw_sql(&migration.sql).execute(&pool).await.unwrap();
     }
-    seed(&pool).await;
-    let session_id: Uuid = sqlx::query_scalar("SELECT id FROM user_sessions WHERE user_id=$1")
-        .bind(ADMIN)
-        .fetch_one(&pool)
+    sqlx::raw_sql(include_str!("../seed.sql"))
+        .execute(&pool)
         .await
         .unwrap();
-    let version = sqlx::query_scalar("SELECT updated_at FROM tournaments WHERE id=$1")
+    // Reproduce schema-20's trusted start context without calling schema-23 auth.
+    let mut start = pool.begin().await.unwrap();
+    sqlx::query("SELECT set_config('app.tournament_start_tournament_id',$1::text,true),set_config('app.tournament_start_user_id',$2::text,true)")
+        .bind(TRIP).bind(ADMIN).execute(&mut *start).await.unwrap();
+    sqlx::query("UPDATE tournaments SET status='active' WHERE id=$1")
         .bind(TRIP)
-        .fetch_one(&pool)
+        .execute(&mut *start)
         .await
         .unwrap();
-    golf_api::repositories::tournaments::start_authorized(&pool, session_id, TRIP, version)
-        .await
-        .unwrap();
+    start.commit().await.unwrap();
     golf_api::repositories::round_lifecycle::open(
         &pool,
         uuid!("00000000-0000-0000-0000-000000004001"),
