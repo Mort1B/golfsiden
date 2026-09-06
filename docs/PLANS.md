@@ -6,19 +6,18 @@ belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. Awaiting approval of the next bounded step.
+None. Approval is required before starting the next candidate.
 
 ## Next candidate
 
-**Tournament completion UI:** reuse the approved backend action with explicit
-confirmation, readiness/blockers, round links, exact-admin authority and live
-private-query reconciliation. Bound separately after backend completion.
+**Archive backend/database:** separate exact-admin action for completed tournaments;
+retain private history and existing membership, no deletion or reversal. Define
+authorization, concurrency, audit and database guards before introducing UI or
+history filtering.
 
 ## Later
 
-- **Archive:** separate exact-admin action for completed tournaments; retain
-  private history and existing membership, no deletion or reversal. Implement
-  database/backend guards before UI and history filtering.
+- Archive administrator UI and history filtering after the guarded backend action.
 - Configurable tie-breaks, public share links, offline scoring, and account
   recovery.
 - Decide whether PostgreSQL should enforce at most one open round per tournament;

@@ -88,6 +88,7 @@ function TournamentManagementWorkspace({ tournamentId }: { tournamentId: string 
         activeSection={managementSectionFromHash(location.hash)}
         onSelectRound={(id) => void navigate(roundManagementUrl(tournamentId, id))}
         authorityRefreshing={memberships.isFetching || tournament.isFetching || rounds.isFetching}
+        completionSnapshotVersion={`${memberships.dataUpdatedAt}:${tournament.dataUpdatedAt}:${rounds.dataUpdatedAt}`}
         roster={{ data: roster.data, pending: roster.isPending, error: roster.error, retry: () => void roster.refetch() }}
         rounds={{ data: rounds.data, pending: rounds.isPending, error: rounds.error, retry: () => void rounds.refetch() }}
       />

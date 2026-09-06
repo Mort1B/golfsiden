@@ -676,10 +676,36 @@ concurrent registration that loses the parent lock (its new identity data rolls
 back). Existing members retain private access; harmless already-joined retries
 retain their existing semantics. Invitation listing/revocation remains available.
 
-This iteration provides the backend/database contract only. The completion
-confirmation/readiness UI is queued separately. Archiving will be a separate
-action for completed tournaments that retains private history and membership;
-no archive endpoint, history filtering or reversal is implemented yet.
+### Tournament completion controls
+
+Exact tournament administrators use **Administrasjon → Livsløp → Fullfør
+turneringen**. The panel checks all configured rounds, including rounds excluded
+from the standings count, and links each unlocked round to its lifecycle controls.
+Draft tournaments explain the start/lock prerequisites; an incomplete or invalid
+round plan blocks completion. The completion panel is read-only for completed and
+archived tournaments; final visibility and invitation revocation remain available.
+
+Once every round is locked, **Fullfør turneringen** opens a confirmation explaining
+closed joining, retained member access, no reopening and unchanged final-result
+visibility. **Avbryt** receives focus; Escape cancels. **Bekreft og fullfør
+turneringen** submits once with the current tournament timestamp. Refreshing
+authority or readiness discards the confirmation, even if the returned facts are
+unchanged. Loading, read failures and pending mutations disable completion.
+
+Successful, conflicting and uncertain responses trigger authoritative private
+query refreshes. Failed reconciliation keeps completion disabled until the
+explicit **Oppdater fullføringskontrollen** succeeds. A completion in another
+administrator session removes the action through live updates. Mutation responses
+never recreate private cache data after leaving the workspace or changing accounts.
+
+The repeatable Chrome suite requires a fresh disposable migrated/seeded backend
+and frontend on port 5173: from `frontend`, run
+`GOLF_TOURNAMENT_COMPLETION_BROWSER=1 npm run test:browser:completion`.
+It scores, confirms, completes and locks all seeded rounds, then completes the
+tournament; never point it at retained or production data.
+
+Archiving will be a separate action for completed tournaments that retains private
+history and membership; no archive endpoint, history filtering or reversal exists.
 
 ### Round transitions
 
@@ -984,9 +1010,9 @@ restore, and rollback procedures are maintained in `docs/deployment_guide.md`.
   one API replica. A future multi-replica topology requires a shared limiter.
 - Tournament settings currently edit only the atomic pre-start best-N and
   optional mandatory-round configuration and expose the explicit
-  tournament-start action; general tournament editing and
-  completion now has a guarded backend API, while completion UI and archive
-  controls remain unimplemented. The Courses section
+  tournament-start action. Explicit tournament completion has a guarded backend
+  API and administrator readiness/confirmation UI. General tournament editing
+  and archive controls remain unimplemented. The Courses section
   supports draft-round configuration; non-draft rounds are deliberately read-only.
 - Pairing roster reads, atomic admin replacement, the mobile draft editor,
   flight-aware opening readiness, and representative ready seed assignments

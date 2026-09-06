@@ -33,6 +33,15 @@ export function withCreatedTournament(current: Tournament[] | undefined, created
 }
 
 export const tournamentApi = {
+  complete: (tournamentId: string, expectedUpdatedAt: string, csrfToken: string) => requestDecoded(
+    `/api/tournaments/${tournamentId}/complete`,
+    (value) => {
+      const tournament = decodeExpectedTournament(value, tournamentId)
+      if (tournament.status !== 'completed') throw new Error('Ugyldig fullføringsstatus fra serveren.')
+      return tournament
+    },
+    jsonRequest('POST', { expected_tournament_updated_at: expectedUpdatedAt }, csrfToken),
+  ),
   mine: () => requestDecoded('/api/me/tournaments', decodeMyTournaments),
   detail: (id: string) => requestDecoded(`/api/tournaments/${id}`, (value) => decodeExpectedTournament(value, id)),
   rounds: (id: string) => requestDecoded(`/api/tournaments/${id}/rounds`, (value) => decodeTournamentRounds(value, id)),

@@ -11,6 +11,7 @@ import { FinalRoundVisibilityControl } from './FinalRoundVisibilityControl'
 import { applicableFinalRound } from './finalRoundVisibility'
 import { RoundLifecyclePanel } from './lifecycle/RoundLifecyclePanel'
 import type { ManagementSectionId } from './managementWorkspace'
+import { TournamentCompletionPanel } from './completion/TournamentCompletionPanel'
 
 interface ReadState<T> {
   data: T | undefined
@@ -27,6 +28,7 @@ interface Props {
   activeSection: ManagementSectionId | null
   onSelectRound: (id: string) => void
   authorityRefreshing: boolean
+  completionSnapshotVersion: string
 }
 
 const dateFormatter = new Intl.DateTimeFormat('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -69,7 +71,7 @@ function RosterState({ state }: { state: ReadState<TournamentPlayerRoster> }) {
   )
 }
 
-export function TournamentManagementSections({ tournament, roster, rounds, selectedRoundId, activeSection, onSelectRound, authorityRefreshing }: Props) {
+export function TournamentManagementSections({ tournament, roster, rounds, selectedRoundId, activeSection, onSelectRound, authorityRefreshing, completionSnapshotVersion }: Props) {
   const finalRound = rounds.data === undefined ? null : applicableFinalRound(tournament, rounds.data)
   return (
     <div className="management-sections">
@@ -135,6 +137,7 @@ export function TournamentManagementSections({ tournament, roster, rounds, selec
         <RoundState state={rounds}>{(items) => (
           <RoundLifecyclePanel tournament={tournament} rounds={items} selectedRoundId={selectedRoundId} onSelectRound={onSelectRound} authorityRefreshing={authorityRefreshing} />
         )}</RoundState>
+        <TournamentCompletionPanel tournament={tournament} rounds={rounds} authorityRefreshing={authorityRefreshing} snapshotVersion={completionSnapshotVersion} />
       </section>
     </div>
   )

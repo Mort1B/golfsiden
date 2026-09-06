@@ -377,6 +377,16 @@ and reapplies runtime grants before the API is started.
   never insert private cache data after their workspace is unmounted. Confirmation
   state is tied to action and readiness version, while mounted manual course
   drafts remain disabled after opening instead of being discarded.
+- Tournament completion uses the same exact-admin management gate and a separate
+  focused panel/hook. Its client readiness requires the complete configured round
+  identity/number set, all locked, and an active tournament; the backend remains
+  authoritative. Confirmation is bound to membership, tournament and round read
+  versions and is permanently discarded during refresh. The typed POST validates
+  both returned identity and completed status. Every mutation outcome invalidates
+  existing user-scoped tournament, membership/list, invitation and tournament
+  leaderboard queries without inserting response data. Duplicate submissions,
+  unresolved reads and failed reconciliation block further completion. Independent
+  final visibility and historical score ownership remain unchanged.
 - Protected result-history routes project one exact player from the canonical
   metric-specific tournament leaderboard. Contribution links use the preserved
   tagged historical owner, never the player's current team. Protected result-card
