@@ -67,7 +67,8 @@ async fn seed(pool: &PgPool, locked: bool) -> Uuid {
 
 async fn lock_round(pool: &PgPool) {
     round_lifecycle::open(pool, ROUND).await.unwrap();
-    let holes = sqlx::query_scalar::<_, Uuid>("SELECT id FROM holes ORDER BY hole_number")
+    let holes = sqlx::query_scalar::<_, Uuid>("SELECT h.id FROM holes h JOIN rounds r ON r.tee_id=h.tee_id WHERE r.id=$1 ORDER BY h.hole_number")
+        .bind(ROUND)
         .fetch_all(pool)
         .await
         .unwrap();

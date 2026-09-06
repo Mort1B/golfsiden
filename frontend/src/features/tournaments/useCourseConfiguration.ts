@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { CourseSelection, ProviderTee } from '../../api/courses'
 import { courseApi, courseKeys } from '../../api/courses'
@@ -25,6 +25,8 @@ export function useCourseConfiguration({ tournamentId, round, providerCourseId, 
   const userId = auth.session?.user_id ?? ''
   const queryClient = useQueryClient()
   const submitting = useRef(false)
+  const alive = useRef(false)
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
   const catalogSearch = validateCatalogSearch(catalogQuery)
   const catalog = useQuery({
     queryKey: courseKeys.catalog(userId, tournamentId, catalogSearch.normalized),
@@ -52,6 +54,7 @@ export function useCourseConfiguration({ tournamentId, round, providerCourseId, 
     mutation.reset()
     try {
       const configured = await mutation.mutateAsync(selection)
+      if (!alive.current) return { configured: null, failure: null }
       queryClient.setQueryData(tournamentKeys.round(userId, round.id), configured)
       queryClient.setQueryData<Round[]>(tournamentKeys.rounds(userId, tournamentId), (current) =>
         current?.map((item) => item.id === configured.id ? configured : item))
@@ -61,6 +64,7 @@ export function useCourseConfiguration({ tournamentId, round, providerCourseId, 
       ])
       return { configured, failure: null }
     } catch (error) {
+      if (!alive.current) return { configured: null, failure: null }
       const failure = configurationFailure(error instanceof Error ? error : new Error('Ukjent feil'))
       if (failure === 'stale' || failure === 'not-draft') {
         await Promise.all([

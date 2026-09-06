@@ -6,6 +6,7 @@ import { StatusBadge } from '../../ui/StatusBadge'
 import { configurationErrorMessage, configurationFailure } from './courseConfiguration'
 import { ManualCourseForm } from './ManualCourseForm'
 import { ProviderCoursePicker } from './ProviderCoursePicker'
+import { SavedCoursePicker } from './SavedCoursePicker'
 import { useCourseConfiguration } from './useCourseConfiguration'
 
 interface Props { tournamentId: string; rounds: Round[]; linkedRoundId?: string | null }
@@ -39,7 +40,7 @@ interface RoundConfigurationProps {
 
 function RoundCourseConfiguration({ tournamentId, round, expanded, onToggle, onCollapse }: RoundConfigurationProps) {
   const toggleRef = useRef<HTMLButtonElement>(null)
-  const [mode, setMode] = useState<'provider' | 'manual'>('provider')
+  const [mode, setMode] = useState<'saved' | 'provider' | 'manual'>('saved')
   const [providerCourseId, setProviderCourseId] = useState('')
   const [catalogQuery, setCatalogQuery] = useState('')
   const [receipt, setReceipt] = useState<string | null>(null)
@@ -50,7 +51,7 @@ function RoundCourseConfiguration({ tournamentId, round, expanded, onToggle, onC
     onCollapse()
     requestAnimationFrame(() => toggleRef.current?.focus())
   }
-  const changeMode = (nextMode: 'provider' | 'manual') => {
+  const changeMode = (nextMode: 'saved' | 'provider' | 'manual') => {
     state.mutation.reset()
     setMode(nextMode)
   }
@@ -82,10 +83,11 @@ function RoundCourseConfiguration({ tournamentId, round, expanded, onToggle, onC
       )}
         <div id={`course-editor-${round.id}`} className="course-editor" hidden={!expanded}>
           <fieldset className="course-mode" disabled={!effectivelyDraft}><legend>Registreringsmåte</legend>
+            <label><input type="radio" name={`course-mode-${round.id}`} checked={mode === 'saved'} onChange={() => changeMode('saved')} disabled={state.mutation.isPending} /> Velg lagret bane</label>
             <label><input type="radio" name={`course-mode-${round.id}`} checked={mode === 'provider'} onChange={() => changeMode('provider')} disabled={state.mutation.isPending} /> Velg fra katalog</label>
             <label><input type="radio" name={`course-mode-${round.id}`} checked={mode === 'manual'} onChange={() => changeMode('manual')} disabled={state.mutation.isPending} /> Registrer manuelt</label>
           </fieldset>
-          {mode === 'provider' ? (
+          {mode === 'saved' ? <SavedCoursePicker tournamentId={tournamentId} enabled={expanded && effectivelyDraft} saving={state.mutation.isPending} error={configurationErrorMessage(state.mutation.error)} onSave={saveManual} /> : mode === 'provider' ? (
             <fieldset disabled={!effectivelyDraft} className="course-provider-fields" aria-label="Bane fra katalog">
             <ProviderCoursePicker
               catalog={{ data: state.catalog.data, pending: state.catalog.isPending, fetching: state.catalog.isFetching, error: state.catalog.error, retry: () => void state.catalog.refetch() }}

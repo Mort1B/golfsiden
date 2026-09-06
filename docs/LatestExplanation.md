@@ -1,78 +1,65 @@
-# Latest iteration: Archive UI and tournament history filtering
+# Latest iteration: Supplied men's red-tee course presets
 
-Exact tournament administrators can now archive a completed tournament from
-the management lifecycle section. Confirmation explains preserved member access
-and results, unchanged final-nine visibility, and no reversal. Draft/active
-tournaments cannot archive; the archived panel links directly to history.
+Hacienda del Alamo Golf Club (72.5/125), Saurines Golf Course (66.2/116), and
+Mar Menor Golf Course (66.9/118) are now built-in selectable layouts. Each uses
+the user's men's Red Tees rating, exact supplied 18-hole pars and stroke indexes,
+and totals par 72. Distances and location remain null. No provider provenance or
+external verification is claimed.
 
-Dine turneringer now defaults to Nåværende (draft, active and completed) and offers
-Arkiv and Alle views with counts. Selection is URL-backed, including browser
-back/forward and direct archive links. Filtering never replaces the shared
-membership cache or changes other tournament selectors.
+## Behavior and boundaries
 
-## Safety and interaction
+Schema 21 creates finalized manual course/tee/hole revisions and an explicit
+preset registry. Existing private course revisions never become presets merely
+because they exist. The new exact-tournament-admin GET authorizes and assembles
+facts within one repeatable-read transaction, retaining membership locks and
+private/no-store responses.
 
-The typed API validates returned tournament identity and archived status.
-Confirmation is permanently discarded when authoritative reads refresh, including
-unchanged responses. Escape cancels and restores focus; duplicate submissions are
-blocked. Success, conflicts and uncertain responses reconcile server state before
-another action. Failed reconciliation requires a successful explicit refresh.
+In administration, select Baner, expand a draft round, and choose Velg lagret
+bane. Inspect the men's tee, rating, slope, total par, and expandable ordered hole
+table. Bruk lagret bane på runden explicitly saves an independent 18-hole revision
+through the existing manual configuration endpoint. It retains CSRF, exact
+authority, optimistic version, draft-state, duplicate-submit and atomic rollback
+protections. Other rounds and historical results are unchanged. Provider catalog
+and manual entry remain separate alternatives.
 
-Completion and archive share the extracted closure-query reconciliation function
-without changing completion behavior. Late responses never insert private cache
-data after unmount/account change. Existing exact-admin access remains authoritative.
-
-List loading, refreshing, error/retry, no-membership and empty-view states are
-explicit. Failed reads hide stale cards. The list has no global SSE subscription:
-return/window-focus refresh stale data under the shared 20-second freshness window;
-manual refresh always requests current data after another administrator's archive.
-Target-scoped management still receives live archive updates.
-
-No backend, schema, score, membership, snapshot, final visibility or deployment
-configuration changes are included. Archived history remains private and accessible
-to existing members. There are no deletion or reversal controls.
+The shared save hook now discards late responses after workspace unmount,
+preventing private cache reinsertion after an account change. A regression test
+clears the cache before a pending successful response resolves.
 
 ## Validation and review
 
-- All 326 frontend tests passed across 54 files, including 22 new archive API,
-  panel, list-state and list-page tests. The full completion regression suite also
-  passed after the shared reconciliation extraction.
-- Coverage includes exact API shape/result identity, completed-only eligibility,
-  confirmation/focus/Escape, refresh expiry, conflicts, lost successful responses,
-  failed reconciliation recovery, duplicates/unmount, both live-refetch race orders,
-  archive links, current/archive/all partitioning, browser-style back navigation,
-  unfiltered cache preservation, empty/error/retry and identity transitions.
-  Management tests assert no archive controls for non-admin roles, revocation or
-  account change.
-- Type checking, lint and production build passed. The existing Vite warning for a
-  minified JavaScript chunk over 500 kB remains; bundle splitting is outside scope.
-- Fresh PostgreSQL 17 migration/seed succeeded. Real Chrome scored, confirmed,
-  completed and locked all five seed rounds, explicitly completed the tournament
-  and archived it through a second administrator's UI. The first administrator's
-  pending confirmation disappeared through live refresh. Members retained archive
-  list/detail and hidden final-nine access, with no management controls.
-- Chrome passed at 320, 390 and 1280 pixels for archive draft/blocker, confirmation,
-  terminal, long-name, pending mutation and injected conflict states; list archive,
-  loading, empty, long-name and error/retry states also passed. The suite verifies
-  overflow, minimum button/link heights and actionability. Mobile/desktop
-  screenshots were visually inspected.
-- The real authenticated workflow produced no collected page, console or
-  failed-network diagnostics. Deliberate conflict/read errors were injected only
-  afterwards. Browser back navigation and current/archive/all list behavior passed.
-- Independent read-only plan/source/test review found no concrete issues. Its
-  documentation review clarified the stale-dependent return/focus refresh timing.
+- Rust formatting, workspace/all-target tests (114), and all-feature Clippy with
+  warnings denied passed.
+- Full PostgreSQL 17 workspace/all-target database ladder passed: 336 tests,
+  including five new preset tests. Fresh migration, migration no-op and repeated
+  development seed passed on a disposable database.
+- Schema-20 upgrade tests preserve existing rounds, opened handicap snapshots
+  and round-specific team ownership. Exact arrays, immutable revisions,
+  registry-only reads, authorization, independent saves and stale/no-orphan
+  behavior are covered.
+- Existing configuration, lifecycle and archive fixtures now scope their counts,
+  mutations and scoring holes to their own rows instead of assuming there are
+  no built-in finalized courses. Production guards were not weakened.
+- Frontend tests (338), strict typecheck, ESLint and production build passed.
+- Two real Chrome scenarios passed at 320, 390 and 1280px: all three selections,
+  exact 18-hole tables, successful independent saves, persisted round summaries,
+  focus restoration, loading, empty, unavailable/retry and long-content states.
+  Happy-path console/page errors and failing HTTP responses were empty. Mobile
+  populated and desktop long-content screenshots were visually inspected.
+- Independent read-only review reported no actionable implementation findings.
 
-Backend unit/integration/Clippy and production deployment/recovery drills were not
-repeated: backend and migrations are unchanged, and browser validation used only a
-disposable local database. No checks were substituted for browser validation.
+## Release and deployment limits
 
-## Example and release verdict
+**READY WITH KNOWN LIMITATIONS** for code publication. The existing production
+bundle remains above Vite's 500 kB warning threshold; the build succeeds.
 
-A completed tournament remains under Nåværende. After explicit archive confirmation,
-it appears under Arkiv and Alle instead. Its member history links still work and
-hidden final-nine results stay hidden until the independent visibility action.
+Only the disposable validation database was migrated. The workspace-configured
+database at localhost:5432 refused connections; no retained or production
+database was changed. Availability in the deployed application requires the
+normal backup, schema-21 owner migration, runtime permissions refresh, and
+matching API/frontend release described in deployment_guide.md. Do not run the
+development seed on a retained database. Production rollout and a separate
+production least-privilege deployment rehearsal were not performed.
 
-**READY WITH KNOWN LIMITATIONS:** this archive UI/history step and affected checks
-pass. List-only cross-session updates use stale-dependent focus/navigation or manual refresh;
-the bundle-size warning and production deployment checks remain outside scope.
-The lifecycle UI queue is closed; further roadmap work needs an explicit priority.
+General-purpose editable course libraries and additional courses are outside
+this step. Supplied values remain user-authoritative, not externally verified.

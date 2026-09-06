@@ -795,12 +795,14 @@ async fn readiness_rejects_tournament_and_course_configuration_errors(pool: PgPo
         .await
         .unwrap();
     sqlx::query(
-        "UPDATE holes SET hole_number = hole_number + 10, stroke_index = stroke_index + 10",
+        "UPDATE holes SET hole_number = hole_number + 10, stroke_index = stroke_index + 10 WHERE tee_id = $1",
     )
+    .bind(TEE_ID)
     .execute(&pool)
     .await
     .unwrap();
-    sqlx::query("UPDATE holes SET hole_number = hole_number - 9, stroke_index = stroke_index - 9")
+    sqlx::query("UPDATE holes SET hole_number = hole_number - 9, stroke_index = stroke_index - 9 WHERE tee_id = $1")
+        .bind(TEE_ID)
         .execute(&pool)
         .await
         .unwrap();
@@ -814,7 +816,8 @@ async fn readiness_rejects_tournament_and_course_configuration_errors(pool: PgPo
     assert!(codes.contains(&ReadinessIssueCode::InvalidHoleNumbers));
     assert!(codes.contains(&ReadinessIssueCode::InvalidStrokeIndexes));
 
-    sqlx::query("DELETE FROM holes WHERE hole_number = 3")
+    sqlx::query("DELETE FROM holes WHERE hole_number = 3 AND tee_id = $1")
+        .bind(TEE_ID)
         .execute(&pool)
         .await
         .unwrap();

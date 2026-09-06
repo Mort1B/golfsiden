@@ -138,6 +138,21 @@ Keep `RUN_MIGRATIONS=false`. Schema-19 binaries cannot serve schema 20; rollback
 requires the normal pre-upgrade backup/fresh-volume recovery, not SQL downgrades.
 For upgrades from schema 18, the schema 19 preflight above still applies.
 
+### Schema 21 supplied-course presets
+
+Migration 0021 adds three finalized, user-supplied men's Red Tees layouts and the
+`course_presets` registry. It does not update existing rounds, scores, course
+revisions or handicap snapshots. The preset picker becomes available after this
+migration and the matching API/frontend are deployed; no development seed is
+required or appropriate on a retained database.
+
+Apply with owner authority and run the normal permissions action for the new
+registry table. Keep `RUN_MIGRATIONS=false`; schema-20 binaries cannot serve
+schema 21. Use the normal pre-upgrade backup and fresh-volume recovery for
+rollback, never delete finalized presets or edit previously applied migrations.
+The data was validated on disposable PostgreSQL 17, not deployed to production
+by the implementation task.
+
 ### Upgrade sequence
 
 Before every upgrade:

@@ -198,8 +198,15 @@ and reapplies runtime grants before the API is started.
   ancestor reads serialize finalization with child writes. Finalized hierarchies
   are append-only. Pre-migration rows keep null revision metadata instead of
   receiving invented provenance.
+- Schema 21 adds an explicit `course_presets` registry over finalized manual
+  revisions for administrator-supplied layouts. Its exact-admin read holds the
+  tournament membership lock through assembly in a repeatable-read transaction;
+  ordinary private round revisions are never discovered as presets. The picker
+  sends inspected facts through the existing validated manual save boundary,
+  creating an independent revision rather than attaching the registry's IDs.
+  Presets have no provider provenance or general-purpose editing API.
 - Manual course configuration creates one round-specific immutable course/tee
-  revision, not a reusable course library or multi-tee catalog. Round opening
+  revision, not a shared mutable course or multi-tee catalog. Round opening
   derives and freezes each eligible owner's Course and Playing Handicap from
   that selected tee; net scoring allocates received strokes from the preserved
   Playing Handicap through the revision's unique hole stroke indexes.
@@ -483,6 +490,7 @@ Implemented resources:
 | `GET` | `/api/me/tournaments` | List the session user's tournament memberships and player links |
 | `PATCH` | `/api/tournaments/{tournament_id}/counted-rounds` | Atomically update best-N and optional mandatory-round configuration before tournament start |
 | `GET` | `/api/tournaments/{tournament_id}/course-catalog` | Search the bundled curated course shortlist as a tournament admin |
+| `GET` | `/api/tournaments/{tournament_id}/course-presets` | Read only registered immutable supplied layouts as an exact tournament admin; private, no-store |
 | `GET` | `/api/tournaments/{tournament_id}/course-provider/courses/{provider_course_id}` | Retrieve normalized provider tee and hole detail as a tournament admin |
 | `POST` | `/api/onboarding/tournaments` | Atomically create a first-time creator, draft tournament plan, invitation, and session |
 | `POST` | `/api/invitations/{invitation_id}/preview` | Preview minimal tournament data for an authenticated invitation token |
@@ -502,5 +510,6 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 - Configurable tie-break ordering beyond shared competition positions.
 - Public leaderboard token/link design.
 - Offline mutation queue and score conflict presentation.
-- Reusable course and multi-tee library behavior, including whether the UI should
+- General-purpose editable course and multi-tee library behavior beyond supplied
+  immutable presets, including whether the UI should
   show explicit per-hole received-stroke badges.

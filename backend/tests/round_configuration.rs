@@ -224,7 +224,8 @@ async fn response_json(response: axum::response::Response) -> Value {
 }
 
 async fn revision_count(pool: &PgPool) -> i64 {
-    sqlx::query_scalar("SELECT count(*) FROM courses WHERE source IS NOT NULL")
+    // Built-in presets are finalized revisions, but not writes from these requests.
+    sqlx::query_scalar("SELECT count(*) FROM courses c WHERE source IS NOT NULL AND NOT EXISTS (SELECT 1 FROM course_presets p WHERE p.course_id = c.id)")
         .fetch_one(pool)
         .await
         .unwrap()

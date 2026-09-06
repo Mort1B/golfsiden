@@ -6,7 +6,8 @@ belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. Choose an explicit priority from the later queue before starting new work.
+None. The supplied-course preset step is closed; choose a new bounded priority
+before beginning additional implementation. Deployment follows the operator runbook.
 
 ## Later
 

@@ -1,0 +1,5 @@
+.saved-course-picker { overflow-wrap: anywhere; }
+.saved-course-picker summary { min-height: 44px; padding: 12px 0; cursor: pointer; }
+.saved-course-picker summary:focus-visible { outline: 3px solid #176640; outline-offset: 2px; }
+.saved-course-picker table { width: 100%; border-collapse: collapse; }
+.saved-course-picker th, .saved-course-picker td { padding: 6px 12px; text-align: left; border-bottom: 1px solid #d9e2da; }

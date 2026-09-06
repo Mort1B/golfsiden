@@ -478,7 +478,32 @@ upstream-failure, incomplete-catalog, and missing-course states use the standard
 error envelope. The provider's live `{ "course": ... }` envelope is decoded,
 and empty tees or missing/duplicate stroke indexes fail closed.
 
-The approved configuration fallback for a missing or incomplete provider course
+Saved user-supplied presets are available without a provider key. In tournament
+administration, open **Baner**, choose **Endre** or **Konfigurer** for a draft
+round, and use **Velg lagret bane**. Inspect the men's red tee rating, slope, par,
+and expandable 18-hole par/stroke-index table, then explicitly click **Bruk
+lagret bane på runden**. Saving sets that round to 18 holes and creates its own
+immutable revision; other rounds and historical results are unchanged.
+
+| Saved course | Tee category/name | Rating | Slope | Par |
+| --- | --- | --- | --- | --- |
+| Hacienda del Alamo Golf Club | Men / Red Tees | 72.5 | 125 | 72 |
+| Saurines Golf Course | Men / Red Tees | 66.2 | 116 | 72 |
+| Mar Menor Golf Course | Men / Red Tees | 66.9 | 118 | 72 |
+
+Migration 0021 stores the administrator-supplied ordered pars and stroke indexes.
+These facts are not provider-verified; distances and location remain null.
+`GET /api/tournaments/{tournament_id}/course-presets` returns only explicitly
+registered layouts, never arbitrary private course revisions, and requires exact
+tournament-admin membership (`401`/`403`/`404`, `Cache-Control: private, no-store`).
+Its response is an array of `{id, course_name, location, tee}`; tee contains
+`category`, `name`, `course_rating`, `slope_rating`, and ordered `holes` with
+`number`, `par`, `stroke_index`, and nullable `distance`. The frontend validates
+this contract before caching under the current user and tournament. Loading,
+empty, retryable error, pending save and non-draft states disable unsafe saves;
+late save responses cannot repopulate private caches after workspace unmount.
+
+The configuration fallback for other missing or incomplete provider courses
 is manual tournament-admin entry. The admin chooses or names one tee and must
 provide its category, course rating, slope, plus every ordered hole's par and
 complete unique stroke-index permutation. Hole distance in yards is optional.
@@ -522,7 +547,9 @@ new query loads, and shows each unavailable row's reason. A usable row loads
 complete tee facts—category, rating, slope, optional length, par, and hole
 completeness—before the admin sends only its provider ID plus exact tee selector.
 No bundled row is presently verified as usable, so the production UI points all
-eight entries to manual entry while remaining ready for a future verified row.
+eight provider entries to manual entry while remaining ready for a future
+verified row. The separate saved-course picker above does not depend on those
+provider identities being available.
 
 The manual form accepts 1–36 ordered holes, Norwegian comma or dot course
 ratings, required tee/category/rating/slope/par/stroke-index facts, and optional

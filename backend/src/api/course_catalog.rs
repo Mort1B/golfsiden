@@ -15,11 +15,28 @@ use crate::{
     api::{auth::AuthenticatedSession, authorization::map_authorization_error},
     course_catalog::{self, CourseCatalogItem},
     error::ApiError,
-    repositories::tournament_authorization,
+    repositories::{course_presets, tournament_authorization},
 };
 
 pub fn routes() -> Router<Arc<AppState>> {
-    Router::new().route("/api/tournaments/{tournament_id}/course-catalog", get(list))
+    Router::new()
+        .route("/api/tournaments/{tournament_id}/course-catalog", get(list))
+        .route(
+            "/api/tournaments/{tournament_id}/course-presets",
+            get(presets),
+        )
+}
+
+async fn presets(
+    State(state): State<Arc<AppState>>,
+    Path(tournament_id): Path<Uuid>,
+    authenticated: AuthenticatedSession,
+) -> Result<impl IntoResponse, CatalogApiError> {
+    let courses =
+        course_presets::list_for_admin(&state.pool, authenticated.principal.user_id, tournament_id)
+            .await
+            .map_err(map_authorization_error)?;
+    Ok(([(CACHE_CONTROL, "private, no-store")], Json(courses)))
 }
 
 #[derive(Deserialize)]

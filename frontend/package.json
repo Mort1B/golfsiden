@@ -13,6 +13,7 @@
     "test:browser:progress": "playwright test --config playwright.lifecycle.config.ts flightProgress.browser.ts",
     "test:browser:completion": "playwright test --config playwright.lifecycle.config.ts tournamentCompletion.browser.ts",
     "test:browser:archive": "playwright test --config playwright.lifecycle.config.ts tournamentArchive.browser.ts",
+    "test:browser:courses": "playwright test --config playwright.lifecycle.config.ts coursePresets.browser.ts",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview"
   },
