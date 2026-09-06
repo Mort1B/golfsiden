@@ -643,6 +643,46 @@ commas.
 
 ## Round completion and locking
 
+### Tournament completion API
+
+After every configured round is locked, an exact tournament administrator can
+explicitly complete an active tournament with:
+
+```http
+POST /api/tournaments/{tournament_id}/complete
+Content-Type: application/json
+X-CSRF-Token: <session CSRF token>
+
+{"expected_tournament_updated_at":"<timestamp from the tournament read>"}
+```
+
+The request requires the active session cookie, the exact timestamp field and no
+unknown fields. Success returns the existing tournament object with `completed`
+status and `Cache-Control: private, no-store`. Completion is not automatic and
+requires all configured rounds, not merely the counted standings rounds.
+Completed retries are idempotent: no extra completion record, timestamp change or
+live event. Active stale requests return `409 tournament_completion_stale`;
+unlocked/missing rounds return `409 tournament_completion_not_ready`; draft or
+archived source states return `409 tournament_completion_invalid_state`.
+Authentication, CSRF, membership and missing-resource checks retain 401/403/404.
+
+Completion records its administrator and database time. No score, handicap,
+confirmation or team data changes. Finish corrections before locking the rounds;
+there is no reopen/unlock operation. Completion never releases hidden final
+results: the administrator's separate visibility control remains available.
+
+Closed tournaments block new invitations, rotations and joins, including a
+concurrent registration that loses the parent lock (its new identity data rolls
+back). Existing members retain private access; harmless already-joined retries
+retain their existing semantics. Invitation listing/revocation remains available.
+
+This iteration provides the backend/database contract only. The completion
+confirmation/readiness UI is queued separately. Archiving will be a separate
+action for completed tournaments that retains private history and membership;
+no archive endpoint, history filtering or reversal is implemented yet.
+
+### Round transitions
+
 `GET /api/rounds/{round_id}/completion-validation` returns a repeatable-read,
 deterministically ordered view of every required player or team scorecard. Exact
 admins receive authoritative progress, confirmation, and lifecycle readiness.
@@ -945,7 +985,8 @@ restore, and rollback procedures are maintained in `docs/deployment_guide.md`.
 - Tournament settings currently edit only the atomic pre-start best-N and
   optional mandatory-round configuration and expose the explicit
   tournament-start action; general tournament editing and
-  later completion/archive controls remain unimplemented. The Courses section
+  completion now has a guarded backend API, while completion UI and archive
+  controls remain unimplemented. The Courses section
   supports draft-round configuration; non-draft rounds are deliberately read-only.
 - Pairing roster reads, atomic admin replacement, the mobile draft editor,
   flight-aware opening readiness, and representative ready seed assignments

@@ -94,6 +94,37 @@ visible startup failure.
 
 ## Upgrade and rollback
 
+### Schema 19 completion preflight
+
+Migration 0019 requires every already completed/archived tournament to have its
+entire configured round plan locked. It preserves valid historical rows and does
+not fabricate completion actors. New completions receive workflow-managed audit
+records. Before upgrading from schema 18, check for incompatible history using
+owner/migration access (this query does not modify data):
+
+```sql
+SELECT t.id, t.status
+FROM tournaments t
+WHERE t.status IN ('completed', 'archived')
+  AND (
+    (SELECT count(*) FROM rounds r WHERE r.tournament_id = t.id) <> t.number_of_rounds
+    OR EXISTS (
+      SELECT 1 FROM rounds r WHERE r.tournament_id = t.id
+        AND (r.status <> 'locked' OR r.round_number NOT BETWEEN 1 AND t.number_of_rounds)
+    )
+  );
+```
+
+If rows are returned, stop and investigate the historical state before upgrade.
+The migration fails atomically with `tournament_completion_legacy_not_ready`;
+do not bypass triggers, auto-lock scores or rewrite history to force deployment.
+Any remediation requires a separately reviewed operator decision and backup.
+Run the normal post-migration permissions action for the new
+`tournament_completions` table. Keep `RUN_MIGRATIONS=false`; the API readiness gate
+requires the compiled schema. A schema-18 binary cannot serve a schema-19 database.
+
+### Upgrade sequence
+
 Before every upgrade:
 
 1. create and copy off-host a verified backup;

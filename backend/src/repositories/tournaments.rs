@@ -1,7 +1,9 @@
+mod complete;
 mod counted_rounds;
 mod handicaps;
 mod start;
 
+pub use complete::{CompleteTournamentResult, complete_authorized};
 pub use counted_rounds::{UpdateCountedRoundsResult, update_counted_rounds_authorized};
 pub use handicaps::{change_player_handicap_authorized, list_players, list_players_for_member};
 pub use start::{StartTournamentResult, start_authorized};
@@ -40,6 +42,12 @@ pub enum TournamentMutationError {
     StartInvalidState,
     #[error("tournament has changed")]
     StartStale,
+    #[error("every configured round must be locked")]
+    CompletionNotReady,
+    #[error("tournament cannot be completed from its current state")]
+    CompletionInvalidState,
+    #[error("tournament has changed")]
+    CompletionStale,
     #[error(transparent)]
     Authorization(#[from] AuthorizationError),
     #[error("database operation failed")]

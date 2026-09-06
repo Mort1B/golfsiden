@@ -28,6 +28,10 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/api/me/tournaments", get(list_mine))
         .route("/api/tournaments/{tournament_id}", get(get_one))
         .route(
+            "/api/tournaments/{tournament_id}/complete",
+            axum::routing::post(complete),
+        )
+        .route(
             "/api/tournaments/{tournament_id}/start",
             axum::routing::post(start),
         )
@@ -212,6 +216,32 @@ async fn start(
     ))
 }
 
+async fn complete(
+    State(state): State<Arc<AppState>>,
+    Path(tournament_id): Path<Uuid>,
+    MutationSession(authenticated): MutationSession,
+    input: Result<Json<StartTournament>, JsonRejection>,
+) -> ApiResult<impl IntoResponse> {
+    let Json(input) = input.map_err(|_| {
+        ApiError::BadRequest("request must contain only expected_tournament_updated_at".to_owned())
+    })?;
+    let result = tournaments::complete_authorized(
+        &state.pool,
+        authenticated.principal.session_id,
+        tournament_id,
+        input.expected_tournament_updated_at,
+    )
+    .await
+    .map_err(map_mutation_error)?;
+    if result.changed {
+        state.notify("tournament", tournament_id, tournament_id);
+    }
+    Ok((
+        [(CACHE_CONTROL, "private, no-store")],
+        Json(result.tournament),
+    ))
+}
+
 fn map_mutation_error(error: TournamentMutationError) -> ApiError {
     match error {
         TournamentMutationError::NotFound => ApiError::NotFound,
@@ -250,6 +280,18 @@ fn map_mutation_error(error: TournamentMutationError) -> ApiError {
             message: "tournament changed; refresh and try again",
         },
         TournamentMutationError::Authorization(error) => map_authorization_error(error),
+        TournamentMutationError::CompletionNotReady => ApiError::DomainConflict {
+            code: "tournament_completion_not_ready",
+            message: "every configured round must be locked",
+        },
+        TournamentMutationError::CompletionInvalidState => ApiError::DomainConflict {
+            code: "tournament_completion_invalid_state",
+            message: "tournament cannot be completed from its current state",
+        },
+        TournamentMutationError::CompletionStale => ApiError::DomainConflict {
+            code: "tournament_completion_stale",
+            message: "tournament changed; refresh and try again",
+        },
         TournamentMutationError::Database(error) => ApiError::Database(error),
     }
 }

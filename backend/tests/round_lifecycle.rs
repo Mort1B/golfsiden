@@ -775,8 +775,17 @@ async fn scramble_allows_multiple_teams_per_flight_but_reports_split_teams(pool:
 #[sqlx::test(migrations = "../migrations")]
 async fn readiness_rejects_tournament_and_course_configuration_errors(pool: PgPool) {
     seed_ready(&pool).await;
+    // Synthetic legacy invalid parent for defensive round-readiness coverage.
+    sqlx::query("ALTER TABLE tournaments DISABLE TRIGGER tournaments_guard_completion")
+        .execute(&pool)
+        .await
+        .unwrap();
     sqlx::query("UPDATE tournaments SET status = 'completed' WHERE id = $1")
         .bind(TOURNAMENT_ID)
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("ALTER TABLE tournaments ENABLE TRIGGER tournaments_guard_completion")
         .execute(&pool)
         .await
         .unwrap();

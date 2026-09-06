@@ -218,6 +218,12 @@ async fn exact_admin_starts_ready_plan_once_without_changing_rounds(pool: PgPool
         Err(TryRecvError::Empty | TryRecvError::Closed)
     ));
 
+    // Synthetic pre-schema-19 terminal history: this test checks start rejection,
+    // not the newly guarded completion workflow (covered in tournament_completion).
+    sqlx::query("ALTER TABLE tournaments DISABLE TRIGGER tournaments_guard_completion")
+        .execute(&pool)
+        .await
+        .unwrap();
     sqlx::query("UPDATE tournaments SET status = 'completed' WHERE id = $1")
         .bind(TOURNAMENT_A)
         .execute(&pool)
@@ -253,6 +259,10 @@ async fn exact_admin_starts_ready_plan_once_without_changing_rounds(pool: PgPool
         .await
         .unwrap();
     assert_eq!(archived.status(), StatusCode::CONFLICT);
+    sqlx::query("ALTER TABLE tournaments ENABLE TRIGGER tournaments_guard_completion")
+        .execute(&pool)
+        .await
+        .unwrap();
     assert_eq!(
         body(archived).await["error"]["code"],
         "tournament_start_invalid_state"

@@ -98,6 +98,24 @@ and reapplies runtime grants before the API is started.
   persistence model has no designated-scorekeeper relation. Existing team data
   is not inferred or migrated into flights.
 - A score has exactly one owner through an exclusive player/team check constraint.
+- Tournament completion is explicit and exact-admin only. The repository locks
+  rounds in UUID order, reauthorizes session/membership, locks the parent, then
+  rechecks wall-clock session expiry and the complete configured locked-round
+  plan. An expected tournament timestamp rejects stale active transitions;
+  completed retries return the current tournament without another event or record.
+  One post-commit tournament invalidation follows a changed transition.
+- Migration 0019 independently guards active-to-completed transitions with exact
+  session context and locked-round readiness, records actor/time in append-only
+  `tournament_completions`, and blocks unimplemented archiving. The audit actor FK
+  may become null on account deletion; completion identity/time remain preserved.
+  Valid pre-19 closed history remains unchanged without invented audit actors;
+  incompatible closed history fails the upgrade instead of being silently repaired.
+- Invitation issue/rotation, redemption, entrant and membership creation hold a
+  shared parent lock through commit and reject completed/archived parents.
+  Identity-changing member/entrant updates also check the destination. Completion
+  never locks/revokes invitation rows, avoiding a parent-to-invitation lock cycle.
+  Closed round plans cannot be inserted into, moved or deleted. Existing member
+  reads, invitation revocation and independent final visibility remain available.
 - Accounts use a canonical lowercase username matching `[a-z0-9_-]{3,32}` and a
   password. Usernames are case-insensitively unique; account email is not stored
   or accepted. Session tokens are opaque 256-bit values stored only as SHA-256
@@ -412,6 +430,7 @@ Implemented resources:
 | `GET` | `/api/rounds/{round_id}/score-access` | Retrieve writable score owners for the session |
 | `POST` | `/api/rounds/{round_id}/complete` | Complete a ready open round atomically |
 | `POST` | `/api/rounds/{round_id}/lock` | Lock a ready completed round atomically |
+| `POST` | `/api/tournaments/{tournament_id}/complete` | Exact-admin explicit completion after every configured round is locked |
 | `GET` | `/api/rounds/{round_id}/leaderboards/gross` | Retrieve the live gross round leaderboard |
 | `GET` | `/api/rounds/{round_id}/leaderboards/net` | Retrieve the live net round leaderboard |
 | `PUT` | `/api/rounds/{round_id}/scores` | Save or correct one hole score |

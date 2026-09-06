@@ -247,7 +247,7 @@ fn classify_database(error: sqlx::Error) -> InvitationError {
         match database.constraint() {
             Some("invitation_redemption_expired") => return InvitationError::Expired,
             Some("invitation_redemption_revoked") => return InvitationError::Revoked,
-            Some("invitation_redemption_tournament_closed") => {
+            Some("invitation_redemption_tournament_closed" | "tournament_closed_to_joining") => {
                 return InvitationError::TournamentNotJoinable;
             }
             Some("invitation_redemption_capacity_exhausted") => {

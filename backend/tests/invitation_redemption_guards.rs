@@ -237,11 +237,6 @@ async fn direct_sql_rejects_invalid_lifecycle_linkage_and_capacity(pool: PgPool)
                 .await
                 .unwrap();
             lifecycle.commit().await.unwrap();
-            sqlx::query("UPDATE tournaments SET status = 'completed' WHERE id = $1")
-                .bind(tournament_id)
-                .execute(&pool)
-                .await
-                .unwrap();
             tournament_id
         } else {
             seed.tournament_id
@@ -272,6 +267,23 @@ async fn direct_sql_rejects_invalid_lifecycle_linkage_and_capacity(pool: PgPool)
         .execute(&pool)
         .await
         .unwrap();
+        if state == "closed" {
+            // Deliberately reproduce terminal legacy state for this redemption
+            // guard test; normal schema-19 completion has separate full coverage.
+            sqlx::query("ALTER TABLE tournaments DISABLE TRIGGER tournaments_guard_completion")
+                .execute(&pool)
+                .await
+                .unwrap();
+            sqlx::query("UPDATE tournaments SET status='completed' WHERE id=$1")
+                .bind(state_tournament_id)
+                .execute(&pool)
+                .await
+                .unwrap();
+            sqlx::query("ALTER TABLE tournaments ENABLE TRIGGER tournaments_guard_completion")
+                .execute(&pool)
+                .await
+                .unwrap();
+        }
         let error = direct_redeem(
             &pool,
             invitation_id,

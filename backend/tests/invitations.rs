@@ -672,8 +672,10 @@ async fn redemption_guard_lifecycle_errors_keep_the_api_contract(pool: PgPool) {
         CREATE FUNCTION test_force_closed_before_redemption() RETURNS trigger
         LANGUAGE plpgsql AS $$
         BEGIN
-            UPDATE tournaments SET status = 'completed' WHERE id = NEW.tournament_id;
-            RETURN NEW;
+            -- Inject the database guard failure to test transaction rollback;
+            -- schema 19 forbids forced completion with an unlocked round.
+            RAISE EXCEPTION 'test: tournament closed while joining'
+                USING ERRCODE = '23514', CONSTRAINT = 'tournament_closed_to_joining';
         END;
         $$;
         CREATE TRIGGER aaa_test_force_closed_before_redemption
