@@ -168,6 +168,25 @@ completion validation as the stable authority for eligible players or teams.
 Gross and net values always come from decoded backend scorecards; the browser
 does not duplicate handicap calculations.
 
+The main **Score** navigation resumes the last successfully loaded tournament,
+round, and player/team in the current mounted application session. It waits for
+fresh tournament, round, access, completion, and card reads, then opens the
+lowest-numbered hole without a persisted score. A fully registered writable card
+opens its summary for confirmation. Failed reads show retry rather than choosing
+from a cached card. Signing out or changing account clears the remembered IDs;
+a full reload starts fresh unless the URL itself contains the selection.
+Explicit hole/summary URLs and browser Back/Forward keep their intended selection.
+Saving or background refresh does not automatically advance the current hole.
+Read-only and restricted cards continue to select only returned visible holes.
+
+The owner, tournament, and round identity precede the active hole or summary.
+Hole selection and the view toggle stay visible below it. The labeled tournament,
+round, and player/team selectors expand under **Bytt turnering, runde eller
+spiller/lag**; the quick card rail and totals follow. The tournament list separates
+**Opprett ny turnering** from its current/archive/all filters with vertical space.
+The tournament standings start with their heading and table, without introductory
+explanation paragraphs; provisional, qualification, and visibility labels remain.
+
 Each hole has large par, minus, and plus actions bounded to 1-20 strokes. An
 owner-and-hole-scoped coordinator serializes writes, coalesces rapid taps to the
 latest desired score, and refetches the exact scorecard before showing

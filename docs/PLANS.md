@@ -6,44 +6,9 @@ belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. Choose the next bounded candidate before beginning implementation.
+No active implementation step.
 
-## Next candidate — 3. Improve scoring flow and page spacing
-
-- **Goal:** Make entering the next score the primary task and reduce page clutter.
-- **Scope:** Score route selection, scoring composition/selectors, tournament-list
-  spacing, and tournament-results introductory copy.
-- **Behavior:** On ordinary exit and re-entry to scoring, choose the lowest-numbered
-  hole without a persisted score for the selected round and tagged owner, after
-  authoritative card loading. Preserve that round/owner context within the session;
-  clear private context on identity change. Do not count unsaved/failed input as a
-  registered score. If every hole is scored, open the summary/confirmation view.
-- Preserve intentional explicit hole links and in-page manual navigation. Define
-  ordinary return through the Score navigation separately from a direct hole URL;
-  browser Back/Forward retain their explicit route selection. Do not jump holes
-  on each save or background refresh. Keep quick owner switches at the same hole.
-  Read-only or restricted cards retain visible-hole canonicalization.
-- Put active hole entry near the top, after a compact owner/round identity and any
-  essential save/error/lock notice. Proposed selector design: show current
-  tournament, round, and owner with an expandable “Bytt turnering, runde eller
-  spiller/lag” section containing the existing labeled selects. Keep quick card
-  switching and hole navigation easily reachable. Check this arrangement in the
-  browser before settling spacing; no custom dropdown widget is required.
-- Add clear vertical spacing between “Opprett ny turnering” and the current/
-  archive/all filter row on the tournament list. Remove introductory explanation
-  text above Resultater → Turnering's leaderboard; retain column labels, live/
-  provisional indicators, visibility notices, and error/empty states.
-- **Invariants:** Preserve serialized score writes, retry/discard and navigation
-  guards, tagged player/team ownership, confirmation/correction gates, private
-  reads, and administrator-controlled final-nine visibility.
-- **Validation:** Return with gaps, no scores, all scores, failed saves, refreshed
-  data, multiple rounds/owners, explicit links, Back/Forward, quick switching,
-  locked/restricted cards, and identity changes. Run the frontend ladder and real
-  browser checks at 320px, 390px, and desktop with long names and async states.
-- **Stop:** Scoring navigation/layout and the two small list/results presentation
-  changes are complete; leaderboard synchronization is handled separately.
-
-## Queued candidates
+## Next candidate
 
 ### 4. Diagnose and repair tournament leaderboard live updates
 

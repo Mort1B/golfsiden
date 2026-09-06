@@ -24,6 +24,17 @@ export function ReadScorecardExperience(props: ReadScorecardExperienceProps) {
   const hidden = props.card.visibility.mode === 'front_nine'
   return (
     <>
+      <header className="scorecard-owner">
+        <div><p>{props.selectedOwner.owner.type === 'team' ? 'Lagscore' : 'Individuell score'}</p><h2>{props.selectedOwner.owner_name}</h2></div>
+        <span>{props.tournaments.find((item) => item.id === props.round.tournament_id)?.name}<br />Runde {props.round.round_number}: {props.round.name}</span>
+      </header>
+      <div className="scoring-notice">Du kan se dette scorekortet, men ikke føre score for det.</div>
+      {hidden && <div className="scoring-notice warning" role="status">Hull 10–18 er skjult til administratoren frigir finalens bakni.</div>}
+      {props.view === 'hole' ? <ReadHole card={props.card} hole={props.hole} onHole={props.onHole} /> : (
+        <ScorecardSummaryView card={props.card} disabled={false} readOnly confirming={false}
+          confirmationError={null} confirmationRetryable={false} onHole={props.onHole} onConfirm={() => undefined} />
+      )}
+
       <ScoreSelectors
         tournaments={props.tournaments}
         rounds={props.rounds}
@@ -41,22 +52,12 @@ export function ReadScorecardExperience(props: ReadScorecardExperienceProps) {
         onHole={props.onHole}
         onView={props.onView}
       />
-      <header className="scorecard-owner">
-        <div><p>{props.selectedOwner.owner.type === 'team' ? 'Lagscore' : 'Individuell score'}</p><h2>{props.selectedOwner.owner_name}</h2></div>
-        <span>{props.round.name}</span>
-      </header>
-      <div className="scoring-notice">Du kan se dette scorekortet, men ikke føre score for det.</div>
-      {hidden && <div className="scoring-notice warning" role="status">Hull 10–18 er skjult til administratoren frigir finalens bakni.</div>}
       <dl className="scorecard-strip">
         <div><dt>Brutto</dt><dd>{props.card.holes_scored > 0 ? props.card.gross_total : '–'}</dd></div>
         <div><dt>Netto</dt><dd>{props.card.holes_scored > 0 ? props.card.net_total : '–'}</dd></div>
         <div><dt>Synlige hull</dt><dd>{props.card.holes_scored}/{props.card.visible_hole_count}</dd></div>
         <div><dt>Spille-HCP</dt><dd>{props.card.playing_handicap}</dd></div>
       </dl>
-      {props.view === 'hole' ? <ReadHole card={props.card} hole={props.hole} onHole={props.onHole} /> : (
-        <ScorecardSummaryView card={props.card} disabled={false} readOnly confirming={false}
-          confirmationError={null} confirmationRetryable={false} onHole={props.onHole} onConfirm={() => undefined} />
-      )}
     </>
   )
 }

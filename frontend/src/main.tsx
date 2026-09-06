@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from 'react-router-dom'
 import { router } from './router'
 import { AuthProvider } from './features/auth/AuthProvider'
+import { ScoreResumeProvider } from './features/scoring/ScoreResumeProvider'
 import { ScoringGuardProvider } from './features/scoring/ScoringGuardProvider'
 import './styles.css'
 import './features/leaderboards/leaderboards.css'
@@ -31,7 +32,9 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ScoringGuardProvider>
-          <RouterProvider router={router} />
+          <ScoreResumeProvider>
+            <RouterProvider router={router} />
+          </ScoreResumeProvider>
         </ScoringGuardProvider>
       </AuthProvider>
     </QueryClientProvider>

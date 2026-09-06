@@ -109,3 +109,11 @@
   .score-view-toggle { grid-column: 1 / -1; }
   .score-stepper { grid-template-columns: 96px minmax(0, 1fr) 96px; padding-inline: 28px; }
 }
+
+.score-context { margin-top: 12px; border-bottom: 1px solid #d8ded8; }
+.score-context summary { min-height: 44px; padding: 12px 2px; color: #155f3a; font-size: .82rem; font-weight: 750; cursor: pointer; overflow-wrap: anywhere; }
+.score-context summary:focus-visible { outline: 3px solid #176640; outline-offset: 2px; }
+.score-context .score-selectors label { grid-column: 1 / -1; }
+.score-hole-controls { margin-top: 12px; border: 0; padding-bottom: 0; }
+.score-hole-controls label:first-child { grid-column: 1 / -1; }
+.scorecard-owner { padding-top: 0; }

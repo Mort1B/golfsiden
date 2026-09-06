@@ -492,6 +492,14 @@ and reapplies runtime grants before the API is started.
   score access, preserves the hole on quick switches, and replaces rapid switch
   history. The route prefetches only adjacent writable owner keys; TanStack Query
   remains the sole owner of authoritative scorecard reads.
+  Bare `/score` is the ordinary resume entry; it forces fresh reads on the same
+  canonical keys and waits for successful post-mount fetches before replacing
+  the URL with the first missing hole or a complete writable card's summary.
+  Explicit URL navigation never applies this resume decision. A narrow transient
+  provider remembers only validated tournament/round/tagged-owner IDs during the
+  mounted application session. It clears that state synchronously on identity
+  changes without remounting the router or discarding onboarding/invitation
+  success receipts. It stores no card, permission, score intent, or server data.
 - Visibility events synchronously clear role-projected leaderboard, completion,
   history, drilldown, and actor-free scorecard query state before authoritative
   refetch. An EventSource error performs the same transition without refetching

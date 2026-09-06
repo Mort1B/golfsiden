@@ -107,7 +107,7 @@ test('live standings, card completeness and completion explanation use consisten
   await expect(page.getByText('Alle hull ført · venter på bekreftelse').first()).toBeVisible()
   await layout(page,'cards','.standings-section')
   await page.goto(`/leaderboard?tournament=${trip.id}&scope=tournament&round=${round.id}&metric=net`)
-  await expect(page.getByText(LIVE_RESULTS_EXPLANATION,{exact:true})).toBeVisible()
+  await expect(page.getByText(LIVE_RESULTS_EXPLANATION,{exact:true})).toHaveCount(0)
   await expect(page.getByText(/Kvalifisering: 0 av 3 nødvendige fullførte runder/).first()).toBeVisible()
   await layout(page,'standings','.standings-section')
   await page.locator('.leaderboard-row-link').first().click()

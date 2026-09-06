@@ -211,6 +211,7 @@ test('creator and invitation forms accept multibyte minimum and explain overflow
   const data = decodeObject(await created.json(), 'onboarding')
   const tournament = decodeTournament(data.tournament)
   const session = decodeAuthSession(data.session)
+  await expect(page.getByLabel('Lenke til deltakerne')).toHaveValue(/#token=.+/)
   const inviteResponse = await page.request.post(`/api/tournaments/${tournament.id}/invitations`, {
     headers: { 'x-csrf-token': session.csrf_token },
     data: { expires_at: new Date(Date.now() + 86_400_000).toISOString(), max_uses: 1 },
@@ -235,6 +236,7 @@ test('creator and invitation forms accept multibyte minimum and explain overflow
     await registration.getByLabel(/^Passord/).fill('ø'.repeat(6))
     await registration.getByRole('button', { name: 'Opprett konto og bli med' }).click()
     await expect(registration).toBeHidden()
+    await expect(guest.getByRole('heading', { name: 'Du er med!' })).toBeVisible()
     const joined = await guest.request.get('/api/auth/session')
     expect(joined.status()).toBe(200)
     expect(decodeAuthSession(await joined.json()).username).toMatch(/^guest_/)

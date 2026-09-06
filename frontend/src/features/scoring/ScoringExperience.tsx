@@ -95,35 +95,9 @@ export function ScoringExperience(props: ScoringExperienceProps) {
 
   return (
     <>
-      <ScoreSelectors
-        tournaments={props.tournaments}
-        rounds={props.rounds}
-        owners={props.owners}
-        holes={props.card.holes}
-        tournamentId={props.round.tournament_id}
-        roundId={props.round.id}
-        owner={props.selectedOwner.owner}
-        holeNumber={props.hole.hole_number}
-        view={props.view}
-        disabled={navigationLocked}
-        onTournament={props.onTournament}
-        onRound={props.onRound}
-        onOwner={props.onOwner}
-        onHole={(number) => props.onHole(number)}
-        onView={props.onView}
-      />
-
-      <WritableCardSwitcher
-        owners={writableCards}
-        selectedOwner={props.selectedOwner.owner}
-        disabled={navigationLocked}
-        onSelect={props.onQuickOwner}
-        onPrefetch={props.onPrefetchOwner}
-      />
-
       <header className="scorecard-owner">
         <div><p>{props.selectedOwner.owner.type === 'team' ? 'Lagscore' : 'Individuell score'}</p><h2>{props.selectedOwner.owner_name}</h2></div>
-        <span>{props.round.name}</span>
+        <span>{props.tournaments.find((item) => item.id === props.round.tournament_id)?.name}<br />Runde {props.round.round_number}: {props.round.name}</span>
       </header>
 
       {!csrfToken && <div className="scoring-notice error" role="alert">Økten er utløpt. Logg inn på nytt for å lagre.</div>}
@@ -138,13 +112,6 @@ export function ScoringExperience(props: ScoringExperienceProps) {
         </div>
       )}
       {correctionMode && props.card.confirmed && <div className="scoring-notice warning">Korrigeringsmodus er aktiv. Første endring fjerner bekreftelsen.</div>}
-
-      <dl className="scorecard-strip">
-        <div><dt>Brutto</dt><dd>{props.card.holes_scored > 0 ? props.card.gross_total : '–'}</dd></div>
-        <div><dt>Netto</dt><dd>{props.card.holes_scored > 0 ? props.card.net_total : '–'}</dd></div>
-        <div><dt>Hull</dt><dd>{props.card.holes_scored}/{props.card.number_of_holes}</dd></div>
-        <div><dt>Spille-HCP</dt><dd>{props.card.playing_handicap}</dd></div>
-      </dl>
 
       {props.view === 'hole' ? (
         <HoleEntry
@@ -171,6 +138,40 @@ export function ScoringExperience(props: ScoringExperienceProps) {
           onConfirm={confirmation.confirm}
         />
       )}
+
+      <ScoreSelectors
+        tournaments={props.tournaments}
+        rounds={props.rounds}
+        owners={props.owners}
+        holes={props.card.holes}
+        tournamentId={props.round.tournament_id}
+        roundId={props.round.id}
+        owner={props.selectedOwner.owner}
+        holeNumber={props.hole.hole_number}
+        view={props.view}
+        disabled={navigationLocked}
+        onTournament={props.onTournament}
+        onRound={props.onRound}
+        onOwner={props.onOwner}
+        onHole={(number) => props.onHole(number)}
+        onView={props.onView}
+      />
+
+      <WritableCardSwitcher
+        owners={writableCards}
+        selectedOwner={props.selectedOwner.owner}
+        disabled={navigationLocked}
+        onSelect={props.onQuickOwner}
+        onPrefetch={props.onPrefetchOwner}
+      />
+
+      <dl className="scorecard-strip">
+        <div><dt>Brutto</dt><dd>{props.card.holes_scored > 0 ? props.card.gross_total : '–'}</dd></div>
+        <div><dt>Netto</dt><dd>{props.card.holes_scored > 0 ? props.card.net_total : '–'}</dd></div>
+        <div><dt>Hull</dt><dd>{props.card.holes_scored}/{props.card.number_of_holes}</dd></div>
+        <div><dt>Spille-HCP</dt><dd>{props.card.playing_handicap}</dd></div>
+      </dl>
+
     </>
   )
 }

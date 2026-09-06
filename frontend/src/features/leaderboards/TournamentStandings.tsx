@@ -13,7 +13,6 @@ import {
 } from './format'
 import { validateMandatoryRound } from '../../api/mandatoryRounds'
 import { playerHistoryUrl } from './drilldownRoutes'
-import { LIVE_RESULTS_EXPLANATION, MANDATORY_ROUND_EXPLANATION } from './resultExplanations'
 
 function entryState(entry: TournamentLeaderboardEntry, requiredCount: number): string {
   const progress = bestRoundsProgressLabel(entry, requiredCount)
@@ -103,8 +102,6 @@ export function TournamentStandings({ leaderboard, rounds }: { leaderboard: Tour
         <div><p>Sammenlagt</p><h2>{metricLabel(leaderboard.metric)} resultat</h2></div>
         <span>Beste {leaderboard.required_counted_rounds} av {rounds.length}</span>
       </div>
-      <p>{LIVE_RESULTS_EXPLANATION}</p>
-      {mandatoryRound && <p>{MANDATORY_ROUND_EXPLANATION}</p>}
       <ol className="leaderboard-list" aria-label={`${metricLabel(leaderboard.metric)} resultat for turneringen`}>
         {leaderboard.entries.map((entry) => (
           <TournamentRow
