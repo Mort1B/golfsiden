@@ -25,6 +25,7 @@ interface Props {
   tournament: Tournament
   roster: ReadState<TournamentPlayerRoster>
   rounds: ReadState<Round[]>
+  navigationKey: string
   selectedRoundId: string | null
   activeSection: ManagementSectionId | null
   onSelectRound: (id: string) => void
@@ -72,7 +73,7 @@ function RosterState({ state }: { state: ReadState<TournamentPlayerRoster> }) {
   )
 }
 
-export function TournamentManagementSections({ tournament, roster, rounds, selectedRoundId, activeSection, onSelectRound, authorityRefreshing, completionSnapshotVersion }: Props) {
+export function TournamentManagementSections({ tournament, roster, rounds, navigationKey, selectedRoundId, activeSection, onSelectRound, authorityRefreshing, completionSnapshotVersion }: Props) {
   const finalRound = rounds.data === undefined ? null : applicableFinalRound(tournament, rounds.data)
   return (
     <div className="management-sections">
@@ -119,19 +120,19 @@ export function TournamentManagementSections({ tournament, roster, rounds, selec
       <section id="courses" className="management-section" aria-labelledby="courses-heading" tabIndex={-1}>
         <header><p className="eyebrow">Lagrede rundefakta</p><h2 id="courses-heading">Baner</h2></header>
         <RoundState state={rounds}>{(items) => (
-          <CourseConfigurationSection tournamentId={tournament.id} rounds={items} linkedRoundId={activeSection === 'courses' ? selectedRoundId : null} />
+          <CourseConfigurationSection tournamentId={tournament.id} rounds={items} navigationKey={navigationKey} linkedRoundId={activeSection === 'courses' ? selectedRoundId : null} />
         )}</RoundState>
       </section>
 
       <section id="pairings" className="management-section" aria-labelledby="pairings-heading" tabIndex={-1}>
         <header><p className="eyebrow">Rundespesifikt oppsett</p><h2 id="pairings-heading">Spillegrupper</h2></header>
         <RoundState state={rounds}>{(items) => (
-          <PairingSection tournamentId={tournament.id} rounds={items} linkedRoundId={activeSection === 'pairings' ? selectedRoundId : null} />
+          <PairingSection tournamentId={tournament.id} rounds={items} navigationKey={navigationKey} linkedRoundId={activeSection === 'pairings' ? selectedRoundId : null} />
         )}</RoundState>
       </section>
 
       <section id="lifecycle" className="management-section" aria-labelledby="lifecycle-heading" tabIndex={-1}>
-        <header><p className="eyebrow">Gjeldende status</p><h2 id="lifecycle-heading">Livsløp</h2></header>
+        <header><p className="eyebrow">Gjeldende status</p><h2 id="lifecycle-heading">Rundestyring</h2></header>
         <p className="management-current-status">Turneringen er <StatusBadge status={tournament.status} />.</p>
         <TournamentStartPanel tournament={tournament} roster={roster} rounds={rounds} />
         {finalRound && <FinalRoundVisibilityControl tournament={tournament} finalRound={finalRound} />}

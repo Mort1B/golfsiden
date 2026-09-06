@@ -9,6 +9,7 @@ import { MANAGEMENT_SECTIONS, managementSectionFromHash, resolveManagementAccess
 import { TournamentManagementSections } from '../features/tournaments/TournamentManagementSections'
 import { ErrorState, LoadingState } from '../ui/AsyncState'
 import { useTournamentLive } from '../features/live/useTournamentLive'
+import { OrganizerSummary } from '../features/tournaments/organizer/OrganizerSummary'
 import { roundManagementUrl } from '../features/tournaments/lifecycle/lifecycleState'
 
 export function TournamentManagementPage() {
@@ -63,7 +64,7 @@ function TournamentManagementWorkspace({ tournamentId }: { tournamentId: string 
     if (!section) return
     section.scrollIntoView({ block: 'start' })
     section.focus({ preventScroll: true })
-  }, [access.state, location.hash])
+  }, [access.state, location.hash, location.key, selectedRoundId])
 
   if (access.state === 'invalid') return <ManagementState title="Ugyldig turnering" message="Turneringsadressen er ikke gyldig." />
   if (access.state === 'loading') return <section className="page"><LoadingState /></section>
@@ -79,11 +80,17 @@ function TournamentManagementWorkspace({ tournamentId }: { tournamentId: string 
         <Link to={`/tournaments/${tournamentId}`} className="back-button" aria-label="Tilbake til turneringen"><ChevronLeft /></Link>
         <div><p className="brand">Administrasjon</p><h1>{access.tournament.name}</h1></div>
       </header>
+      <OrganizerSummary tournament={access.tournament} rounds={rounds.data}
+        pending={rounds.isPending} error={rounds.error}
+        authorityRefreshing={memberships.isFetching || tournament.isFetching || rounds.isFetching}
+        onRefresh={() => { void memberships.refetch(); void tournament.refetch(); void rounds.refetch() }}
+      />
       <nav className="management-section-nav" aria-label="Administrasjonsområder">
         {MANAGEMENT_SECTIONS.map((section) => <a key={section.id} href={`#${section.id}`}>{section.label}</a>)}
       </nav>
       <TournamentManagementSections
         tournament={access.tournament}
+        navigationKey={location.key}
         selectedRoundId={selectedRoundId}
         activeSection={managementSectionFromHash(location.hash)}
         onSelectRound={(id) => void navigate(roundManagementUrl(tournamentId, id))}

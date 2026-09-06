@@ -1,65 +1,65 @@
-# Profile presentation and self-service handicap audit
+# Organizer summary and clearer round navigation
 
-The profile now starts with “Mine turneringer”, including historical membership
-links and tournament creation. Name and handicap remain visible below the list.
-“Endre brukernavn” and “Endre passord” start collapsed and use native disclosure
-controls with keyboard operation and visible focus. Mutation status and errors
-remain visible when a section closes.
+Tournament administration now starts with “Dette trenger oppfølging”, a concise
+summary ordered by round number. Organizers can see rounds ready to open,
+complete, or lock; missing-flight counts; setup work; and scorecards needing
+attention. Each entry leads to the existing round control or scorecard.
+“Rundestyring” replaces the visible “Livsløp” label, while existing `#lifecycle`
+links remain valid.
 
-Self-service handicap editing no longer asks for an explanation. The details API
-accepts version, player timestamp, name, and handicap; the repository writes
-“Egen profilendring” into the existing history in the same transaction as the
-change, retaining actor and timestamps. No migration was needed. Administrator
-corrections to tournament handicap still require an explicit reason. Existing
-entries, snapshots, score data, and historical ownership remain untouched.
+For example, an open round with one incomplete card and one complete,
+unconfirmed card shows those as separate tasks. Only the second card gets a
+confirmation shortcut. A team scorecard counts once, preserving its tagged team
+owner rather than treating its members as separate cards.
 
-For example, changing profile handicap from 8,2 to 14,4 needs no reason field and
-creates an audited current-handicap change. A tournament already entered at 8,2
-keeps 8,2, including its preserved results.
+The summary reuses existing private readiness endpoints and canonical query keys.
+Opening requires the active tournament and the server's readiness result;
+completion and locking use the corresponding server flags. Full projection,
+matching identity/status, and settled authoritative reads are required before
+suggestions appear. Loading, failed/paused reads, and authority refresh suppress
+suggestions. Exact-admin membership remains the workspace boundary; losing that
+membership removes the summary and controls. Summary links never mutate state.
 
-Password advice now suggests a long password or phrase. Profile, creator
-onboarding, and invitation registration share a validator that preserves the
-12–128 UTF-8-byte contract and whitespace. Invalid values get distinct short/long
-messages with the exact applicable limit; normal guidance contains no encoding
-explanation. Character-based HTML length restrictions no longer reject valid
-multibyte passwords or truncate overflow before it can be explained. Current
-password verification, duplicate username errors, session invalidation, stale
-versions, and private-cache handling retain their existing behavior.
+There is one applicable readiness read per non-locked round, shared with mounted
+lifecycle/scoring consumers. No backend, migration, new cache, or notification
+service was introduced. “Oppdater oversikten” refreshes membership, tournament,
+rounds and their readiness queries. Empty/all-locked states remain calm and link
+to tournament status where appropriate.
 
-## Validation and review
+Review identified that an already-selected setup editor could stay collapsed
+when its summary link was followed again. Navigation activation now reopens that
+exact course or pairing editor and focuses its section, without discarding drafts.
 
-- Frontend: 368 tests passed; typecheck, lint, production build, and separate
-  browser-test TypeScript compilation passed.
-- Rust: 114 tests passed with `cargo test --workspace --all-targets`; formatting
-  and strict all-target/all-feature Clippy passed.
-- PostgreSQL: the full database-enabled ladder passed 355 tests (including the
-  114 unit tests). A fresh disposable PostgreSQL 17 container on port 55432 was
-  migrated and seeded successfully. Tests cover self-only/CSRF checks, rejected
-  caller-provided reasons, audit actor/timestamps, initial player history,
-  stale/concurrent edits, immutable tournament results, and required reasons for
-  administrator tournament corrections.
-- Chrome: profile editing, collapsed sections and keyboard use, password overflow
-  while collapsed, historical handicap preservation, duplicate/wrong-password/
-  stale errors, logout on all devices, loading/retry/empty/inactive states, and
-  long content passed at 320px, 390px, and 1280px. Creator and invitation flows
-  exercise overflow rejection and real registration with a valid multibyte
-  minimum password. Screenshots are under `/tmp/golf-profile-*.png`.
-- Read-only specialist review found no correctness, security, or invariant
-  findings. Its requested multibyte registration coverage was added.
+## Validation
 
-Initial socket-dependent Rust checks were blocked by the sandbox and passed
-with local socket access enabled. Docker access was unavailable; validation used
-an isolated rootless Podman container. Initial test failures exposed a remaining
-Rust test caller, native-disclosure limitations in jsdom, strict test typing,
-and browser assertions that needed to distinguish simultaneous alerts and
-expected signed-out 401 responses; these were corrected without weakening the
-application contract. No required validation gate was skipped.
+- All 380 frontend tests passed. Unit/interaction coverage includes task ordering, authoritative readiness,
+  missing flights versus teams, tagged confirmation owners, incomplete cards,
+  empty/all-locked states, refresh/failure/retry, paused requests, restricted or
+  mismatched projections, live disconnect/reconnect, and membership changes.
+- Typecheck, lint, production build, and browser-test TypeScript compilation
+  passed. Browser TypeScript now explicitly
+  includes Vite's environment types alongside Node types; strictness is unchanged.
+- The dedicated Chrome organizer scenario passed, exercising mixed round states, long
+  content, keyboard navigation, exact destinations, repeat visits after collapsing
+  both editors, refresh errors/retry, empty/all-locked views, and membership loss
+  at 320px, 390px and 1280px. It asserts no API mutations from summary interaction.
+  Screenshots are in `/tmp/golf-organizer-*.png`.
+- Both existing lifecycle Chrome scenarios passed, covering real opening, score entry and SSE,
+  confirmation, completion, cross-session corrections, locking, permissions and
+  final-round visibility, plus loading/error/empty layouts. Their two confirmation
+  locators distinguish the original control from the new summary shortcut.
+- A disposable rootless PostgreSQL 17 container on port 55432 was migrated and
+  seeded for real browser validation. Backend/database ladders are not applicable
+  to this frontend-only change; no backend or migration source changed.
 
-## Delivery limits
+## Scope and delivery
 
-Verdict: **READY** for this bounded step. The frontend build retains its existing
-large-chunk advisory. Deploy the frontend and backend together: older open
-clients sending the removed `reason` property receive a validation error and
-must reload. This iteration does not deploy production or change administration,
-scoring navigation, or tournament leaderboard behavior; those candidates remain
-queued in `PLANS.md`.
+Verdict: **READY** for this bounded step. Read-only review found one repeated-link
+issue, which was fixed and browser-tested; final review has no remaining findings.
+No applicable validation gate was skipped.
+
+The existing frontend large-chunk build advisory remains. No administration
+transition rule, automatic team setup, notification, scoring-page navigation,
+or leaderboard aggregation changed. Candidate 3 (scoring flow and spacing) and
+candidate 4 (leaderboard troubleshooting) remain queued; production deployment
+is separate from Git publication.

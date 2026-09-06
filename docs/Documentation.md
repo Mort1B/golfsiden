@@ -11,7 +11,7 @@ than a global role or player directory, owns access.
 Exact tournament admins configure counted and optional mandatory rounds, select
 or manually register one immutable course/tee revision per draft round, manage
 teams and flights, start the tournament, and open, complete, or lock individual
-rounds through separate controls in the management workspace's Lifecycle section.
+rounds through separate controls in the management workspace's Rundestyring section.
 Opening calculates and freezes
 handicap snapshots from the selected tee. Individual stroke play, two-player
 scramble, and two-player foursomes have distinct preserved score ownership and
@@ -484,6 +484,28 @@ memberships, loading, retryable failures, empty collections, and populated data
 have distinct states. Client gating controls presentation only; every private
 read and invitation mutation remains protected by backend membership policy.
 
+The workspace starts with **Dette trenger oppfølging**, an administrator-only
+summary ordered by round number. It uses current opening/completion validation
+to show ready-to-open/complete/lock rounds, missing-flight counts, other setup
+needs, and scorecards needing attention. Incomplete cards are separate from
+complete cards awaiting confirmation; team cards count once per team. A single
+confirmation task links to the exact tagged player/team card, while multiple
+cards link to that round's existing controls. No summary link changes state.
+
+Opening suggestions require an active tournament and server readiness; completion
+and locking suggestions require the corresponding server flag and full,
+matching round projection. Loading, paused/failed reads, status mismatches, or
+authority refresh hide actionable suggestions. **Oppdater oversikten** refreshes
+membership, tournament, rounds, and their existing readiness queries. Empty
+round lists and all-locked rounds have calm states. Existing tournament live
+signals refresh the shared queries; membership loss removes the summary.
+
+The navigation calls lifecycle controls **Rundestyring** and retains the
+`#lifecycle` anchor so existing links work. Setup links select the exact round
+and open its course/flight editor, including when the same link is followed again
+after manually closing it. The summary is an on-page aid, with no notifications,
+automatic team assignment, or new lifecycle rules.
+
 The workspace provides semantic anchors for settings, entrants, invitations,
 rounds, courses, pairings, and lifecycle. Most sections report only facts already
 preserved by the existing private APIs and link to the invitation and round
@@ -499,7 +521,7 @@ durable opening/snapshot markers even if later data is removed. An unchanged
 pair preserves `updated_at` and emits no event; a real change returns the
 authoritative private tournament and publishes one post-commit invalidation.
 
-The Lifecycle section exposes `Start turneringen` only to the exact tournament
+The Rundestyring section exposes `Start turneringen` only to the exact tournament
 admin. `POST /api/tournaments/{tournament_id}/start` requires CSRF plus the
 current tournament `updated_at`. Under deterministic locks it revalidates the
 active session and exact `admin` membership, requires rounds numbered exactly
@@ -810,7 +832,7 @@ retain their existing semantics. Invitation listing/revocation remains available
 
 ### Tournament completion controls
 
-Exact tournament administrators use **Administrasjon → Livsløp → Fullfør
+Exact tournament administrators use **Administrasjon → Rundestyring → Fullfør
 turneringen**. The panel checks all configured rounds, including rounds excluded
 from the standings count, and links each unlocked round to its lifecycle controls.
 Draft tournaments explain the start/lock prerequisites; an incomplete or invalid
@@ -866,7 +888,7 @@ There is no deletion or reversal.
 
 ### Archive controls and tournament history
 
-Exact tournament administrators use **Administrasjon → Livsløp → Arkiver
+Exact tournament administrators use **Administrasjon → Rundestyring → Arkiver
 turneringen** after completion. Draft/active tournaments explain the completion
 prerequisite. Confirmation explains that the tournament moves from Nåværende to
 Arkiv without deleting results, removing member access or changing final-nine
@@ -994,7 +1016,7 @@ Screenshots go to `/tmp/golf-round-details-*`; failure artifacts use the shared
 
 ### Administrator round controls
 
-Open **Administrasjon → Livsløp → Administrer en runde**, or use
+Open **Administrasjon → Rundestyring → Administrer en runde**, or use
 **Administrer runden** on a round detail page. Only the exact tournament admin
 receives these controls. The management URL retains the selected round as
 `?round={round_id}#lifecycle`; another tournament's round identifier is not

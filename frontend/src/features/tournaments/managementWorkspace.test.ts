@@ -43,7 +43,7 @@ describe('management workspace sections', () => {
       { id: 'rounds', label: 'Runder' },
       { id: 'courses', label: 'Baner' },
       { id: 'pairings', label: 'Spillegrupper' },
-      { id: 'lifecycle', label: 'Livsløp' },
+      { id: 'lifecycle', label: 'Rundestyring' },
     ])
   })
 

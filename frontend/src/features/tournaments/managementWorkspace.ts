@@ -10,7 +10,7 @@ export const MANAGEMENT_SECTIONS = [
   { id: 'rounds', label: 'Runder' },
   { id: 'courses', label: 'Baner' },
   { id: 'pairings', label: 'Spillegrupper' },
-  { id: 'lifecycle', label: 'Livsløp' },
+  { id: 'lifecycle', label: 'Rundestyring' },
 ] as const
 
 export type ManagementSectionId = typeof MANAGEMENT_SECTIONS[number]['id']

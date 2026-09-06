@@ -9,15 +9,15 @@ import { ProviderCoursePicker } from './ProviderCoursePicker'
 import { SavedCoursePicker } from './SavedCoursePicker'
 import { useCourseConfiguration } from './useCourseConfiguration'
 
-interface Props { tournamentId: string; rounds: Round[]; linkedRoundId?: string | null }
+interface Props { tournamentId: string; rounds: Round[]; linkedRoundId?: string | null; navigationKey?: string }
 
 function roundName(round: Round): string {
   return `Runde ${round.round_number}: ${round.name}`
 }
 
-export function CourseConfigurationSection({ tournamentId, rounds, linkedRoundId }: Props) {
+export function CourseConfigurationSection({ tournamentId, rounds, linkedRoundId, navigationKey }: Props) {
   const [expandedRoundId, setExpandedRoundId] = useState<string | null>(null)
-  useEffect(() => { if (linkedRoundId) setExpandedRoundId(linkedRoundId) }, [linkedRoundId])
+  useEffect(() => { if (linkedRoundId) setExpandedRoundId(linkedRoundId) }, [linkedRoundId, navigationKey])
   return (
     <div className="round-course-configurations">
       {rounds.map((round) => <RoundCourseConfiguration

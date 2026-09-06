@@ -6,35 +6,9 @@ belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. Candidate 1 is complete. The next candidate remains queued until
-implementation is requested; deployment follows the operator runbook.
+None. Choose the next bounded candidate before beginning implementation.
 
-## Next candidate — 2. Make administration task-oriented
-
-- **Goal:** Give organizers a concise starting point with actionable links.
-- **Scope:** Existing tournament management/lifecycle UI and authoritative
-  readiness queries. Prefer existing endpoints and bounded per-round reads.
-- **Behavior:** Add an organizer summary above the controls, ordered by round and
-  next relevant action. Examples, only when supported by current server data:
-  “Runde 2 er klar til å åpnes”, “Runde 3 har 2 spillere uten flight”, and
-  “1 scorekort må bekreftes”. Link to the exact round's existing opening,
-  flight-assignment, or confirmation control/card. Distinguish incomplete cards
-  from complete cards awaiting confirmation. Show a calm all-clear/empty state.
-  Use “Rundestyring” in place of user-facing “Livsløp”.
-- **Invariants:** Summary links do not execute transitions or bypass readiness,
-  exact-admin authorization, confirmation, or refresh gates. Stale/failed reads
-  cannot claim readiness. Preserve administrator-managed teams and final-round
-  visibility. This is an on-page summary, not missing-score alerts or notifications.
-- **Validation:** Correct counts and destinations across draft/open/completed/
-  locked rounds; incomplete versus unconfirmed cards; refresh/error/retry and
-  membership changes. Run the frontend ladder and mobile/desktop browser checks;
-  add backend/PostgreSQL ladders only if an API change proves necessary.
-- **Stop:** Summary and navigation wording are complete; existing lifecycle
-  controls and business rules remain authoritative.
-
-## Queued candidates
-
-### 3. Improve scoring flow and page spacing
+## Next candidate — 3. Improve scoring flow and page spacing
 
 - **Goal:** Make entering the next score the primary task and reduce page clutter.
 - **Scope:** Score route selection, scoring composition/selectors, tournament-list
@@ -68,6 +42,8 @@ implementation is requested; deployment follows the operator runbook.
   browser checks at 320px, 390px, and desktop with long names and async states.
 - **Stop:** Scoring navigation/layout and the two small list/results presentation
   changes are complete; leaderboard synchronization is handled separately.
+
+## Queued candidates
 
 ### 4. Diagnose and repair tournament leaderboard live updates
 

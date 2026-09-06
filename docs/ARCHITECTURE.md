@@ -432,6 +432,19 @@ and reapplies runtime grants before the API is started.
   readiness from card counts or synthesize a lifecycle transition. Completion
   readiness reuses the scoring route's identity-scoped key, with full projection
   and matching status required before an action becomes available.
+- The organizer summary mounts only inside the exact-admin management workspace.
+  It reuses the canonical per-user pairing/completion validation keys, with one
+  applicable readiness read per non-locked round (up to the existing 30-round
+  creation limit). There is no summary endpoint or duplicate cache. The canonical
+  round list selects which read applies; completion status/identity and full
+  projection must match before any counts or suggestions render. Fetching,
+  paused/error reads, or authority refresh suppress suggestions. Ready flags
+  remain server-owned; counting complete-unconfirmed tagged owners only describes
+  navigation tasks and never authorizes a mutation. Shared live/visibility
+  invalidation therefore reaches the summary alongside lifecycle/scoring views.
+  URL navigation keys also reactivate exact linked course/pairing editors when
+  the destination is revisited after manual collapse; existing drafts remain
+  mounted and lifecycle confirmations remain owned by their current controls.
 - Lifecycle reconciliation invalidates only the affected round, tournament,
   membership/list and gross/net leaderboard consumers. It replaces pre-outcome
   reads and inspects current active query state after invalidation, so a later SSE

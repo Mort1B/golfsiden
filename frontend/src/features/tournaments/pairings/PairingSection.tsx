@@ -4,7 +4,7 @@ import type { Round, ScoringFormat } from '../../../api/types'
 import { StatusBadge } from '../../../ui/StatusBadge'
 import { PairingEditor } from './PairingEditor'
 
-interface Props { tournamentId: string; rounds: Round[]; linkedRoundId?: string | null }
+interface Props { tournamentId: string; rounds: Round[]; linkedRoundId?: string | null; navigationKey?: string }
 
 const pairingFormatLabels = {
   individual_stroke_play: 'Individuell · flighter',
@@ -12,9 +12,9 @@ const pairingFormatLabels = {
   two_player_foursomes: 'Foursomes · lag og flighter',
 } satisfies Record<ScoringFormat, string>
 
-export function PairingSection({ tournamentId, rounds, linkedRoundId }: Props) {
+export function PairingSection({ tournamentId, rounds, linkedRoundId, navigationKey }: Props) {
   const [expandedRoundId, setExpandedRoundId] = useState<string | null>(null)
-  useEffect(() => { if (linkedRoundId) setExpandedRoundId(linkedRoundId) }, [linkedRoundId])
+  useEffect(() => { if (linkedRoundId) setExpandedRoundId(linkedRoundId) }, [linkedRoundId, navigationKey])
   return <div className="round-pairings">
     {rounds.map((round) => {
       const expanded = round.id === expandedRoundId
