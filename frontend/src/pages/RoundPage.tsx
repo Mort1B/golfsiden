@@ -13,6 +13,7 @@ import { RoundGroups } from '../features/rounds/RoundGroups'
 import { scoringSearch } from '../features/scoring/selection'
 import { leaderboardSearch } from '../features/leaderboards/selection'
 import { isCanonicalUuid } from '../api/decoder'
+import { FlightProgressPanel } from '../features/rounds/FlightProgressPanel'
 
 export function RoundPage() {
   const { roundId = '' } = useParams()
@@ -57,6 +58,7 @@ function RoundWorkspace({ roundId }: { roundId: string }) {
       {round.data.status === 'draft' && <p>Scorekort blir tilgjengelig når runden åpnes.</p>}
       {pairings.isFetching && <LoadingState />}
       {pairings.data && <RoundGroups pairings={pairings.data} />}
+      {pairings.data && <FlightProgressPanel pairings={pairings.data} onRefreshRound={retry} />}
     </section>
   )
 }

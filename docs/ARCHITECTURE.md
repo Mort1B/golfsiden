@@ -199,6 +199,14 @@ and reapplies runtime grants before the API is started.
   and aggregate status/format disagreements require refresh, and failed reads
   suppress retained detail data. Scorecard navigation carries only the exact
   tournament and round; the scoring workspace resolves owner/access itself.
+- Flight progress joins that frozen pairing membership to the canonical
+  user/round completion projection, without persisting a derived cache. Individual
+  snapshot owners map by player ID; each team card maps only when all preserved
+  members belong to one flight. Missing historical flight mappings fail explicitly.
+  Aggregates sum projected hole counts once per owner. Front-nine projections
+  never derive complete/confirmed counts from totals or round lifecycle status.
+  Reusing the completion key retains synchronous projection clearing on visibility
+  signals, stream opening/reconnection and errors.
 - Pairing replacement keeps one transaction but separates orchestration,
   identity/roster and legacy/schedule validation, and persistence writes. The
   split preserves optimistic concurrency, validation precedence, deterministic

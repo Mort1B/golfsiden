@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:browser:lifecycle": "playwright test --config playwright.lifecycle.config.ts",
     "test:browser:rounds": "playwright test --config playwright.lifecycle.config.ts roundDetails.browser.ts",
+    "test:browser:progress": "playwright test --config playwright.lifecycle.config.ts flightProgress.browser.ts",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview"
   },

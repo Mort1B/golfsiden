@@ -1,62 +1,67 @@
-# Latest iteration: Member round details and navigation
+# Latest iteration: Visibility-safe flight progress
 
-Round details now show the member-readable flight aggregate instead of legacy
-team schedules. Flights show stored members, start times and starting holes,
-with explicit missing-schedule states. Scramble and foursomes retain separate
-score-owning teams. Individual rounds no longer show a misleading empty team
-section; legacy individual groups remain explicitly separate.
+Opened round details now show **Fremdrift per flight** below the stored setup.
+Each flight displays registered/required hole entries across its scorecards and
+each card's progress. Shared team cards count once; full projections also display
+completed and confirmed card counts. Drafts explain when progress becomes available.
 
-Result links preserve the exact tournament and round. A neutral scorecard-summary
-link appears after opening; the destination resolves owners and permissions.
-Drafts omit it because the scoring page excludes drafts and would otherwise
-select another round. Exact tournament admins retain their round-specific
-management link. Missing course/tee setup is explained.
+## Boundaries
 
-## Boundaries and review
+The frontend reuses member-readable pairings and completion-validation. Individual
+owners come from preserved opening snapshots; team cards map through every stored
+member of that exact round team. Current roster activity, current teams, start
+times and starting holes never determine ownership or progress. Older rounds
+without stored flight mappings show an explicit unavailable message, not an
+inferred assignment. Backend contracts and database schema are unchanged.
 
-The page reuses the decoded member pairings API, canonical user-rooted cache key
-and existing SSE invalidation. It is keyed by account and round. Failed reads
-hide retained private data and offer retry; mismatched status/format between
-round and pairings reads requires refresh. Flight schedules never grant score
-authority. No score/progress reads, mutations, backend contracts or database
-schema were added. Final visibility and historical ownership are unchanged.
+Non-admin members viewing a hidden final see only holes 1–9. Aggregates sum only
+the projected counts, with no completion/confirmation totals or percentages
+suggesting full-round completion. Round completed/locked status does not override
+redaction. Exact admins retain their authorized full projection.
 
-Final read-only review found no concrete defects. Suggested exact-admin link and
-cross-account cache tests were added. Flight progress and tournament closure
-remain outside this iteration.
+The canonical account/round completion query participates in existing score/SSE
+invalidation and synchronous cache clearing on visibility signals, stream opening,
+reconnection and stream errors. No derived progress is retained in local state.
+Failed reads hide retained progress; lifecycle/mapping mismatches offer a refresh
+of both the round setup and progress. No score mutations, missing-score alerts,
+automatic team setup or administrator readiness redesign were added.
 
-## Validation
+## Validation and review
 
-- Frontend: all 270 tests in 45 files, strict typecheck, lint and production build
-  passed. Fourteen new page tests cover three formats, lifecycle navigation,
-  missing setup/groups, legacy groups, pending reads, failed refresh/retry, mixed
-  lifecycle snapshots, invalid routes, exact admin links and cache isolation.
-- PostgreSQL 17: migrations and seed passed in disposable databases. The real API
-  backed Chrome checks for all three formats, member presentation, tournament
-  start, round opening and live member-page refresh.
-- Chrome: the opt-in round-details suite passed at 320px, 390px and 1280px,
-  including navigation touch targets and no horizontal overflow. Mobile and
-  desktop screenshots were inspected. Scoring and results navigation retained
-  the exact round. Detail requests did not fetch legacy teams, score access,
-  completion, scoring cards or score mutations.
-- Scoped browser injection covered pending, empty, long unbroken flight names,
-  missing schedules, denied reads and retry. Happy-path diagnostics had no
-  uncaught page/console errors, unexpected error responses or failed requests.
-  The intentional denied response was checked separately. Initial harness
-  errors (missing tournament-start version and a loading interception race) were
-  fixed before the successful complete rerun on a fresh seed.
+- All 285 frontend tests in 47 files passed, plus strict typecheck, lint and
+  production build. Fifteen new mapping/component cases cover all three formats,
+  shared cards, preserved-owner mapping independent of active rosters, hidden
+  open/completed/locked rounds, missing/split historical mappings, draft/empty/error
+  states and visibility/disconnect/reconnect cache clearing. Existing auth/cache
+  and decoder tests also passed.
+- PostgreSQL 17 migrations and development seed passed in an isolated disposable
+  database. All 21 focused integration tests passed: final-round visibility (4),
+  private workspace reads (4), and round pairings (13).
+- The opt-in Chrome flight-progress suite passed against the real local API:
+  all formats, shared-card counts, live score increments, final hidden/released/
+  re-hidden projection, confirmation, correction and reconfirmation. No unexpected
+  page/console errors, error responses or failed requests occurred in these flows.
+- Browser loading, empty, long-name, denied-read and retry states used scoped
+  response injection after the real API checks. All states were checked at
+  320px, 390px and 1280px without horizontal overflow. Mobile hidden and desktop
+  released screenshots were inspected. The intentional 403 was checked separately.
+- Read-only review found no production defects. A P3 documentation ambiguity was
+  corrected to distinguish non-admin front-nine views from full admin projections.
 
-The existing Vite warning remains: 570.31 kB minified, 165.34 kB gzip. Backend
-unit/Clippy and full PostgreSQL suites, the separate lifecycle browser suite and
-deployment/recovery drills were not repeated: only frontend presentation changed.
-Browser evidence uses the local development proxy, not production.
+Initial test-harness syntax, notification-timing and repeated-text assertions were
+corrected before the passing ladder. The existing Vite chunk warning remains
+(573.88 kB minified, 166.27 kB gzip). Backend unit/Clippy, the full PostgreSQL suite,
+separate lifecycle/round-details browser suites and deployment/recovery drills
+were not repeated: production backend/schema/deployment code did not change.
+Browser checks use the development proxy, not production.
 
 ## Example and verdict
 
-A foursomes member sees their four-player flight's start hole and separate
-two-player score-owning teams. Opening makes the exact-round scorecard link
-appear live; schedule facts do not determine edit access.
+A four-player scramble flight has two shared cards. Its denominator is 36 hole
+entries for 18-hole cards, not 72. A restricted final view with four individual
+cards uses 36 visible entries; reaching 36/36 never claims full-round completion.
 
-**READY WITH KNOWN LIMITATIONS:** affected checks pass; the existing bundle
-warning and skipped broader checks above remain explicit. Browser run instructions
-are in Documentation.md. Stop before the next queued step.
+**READY WITH KNOWN LIMITATIONS:** affected validation passed; the existing bundle
+warning and skipped broader checks remain documented. Repeatable browser commands
+are in Documentation.md. Tournament closure requires a separate contract decision;
+no closure action is introduced here.

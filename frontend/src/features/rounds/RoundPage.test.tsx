@@ -7,7 +7,7 @@ import { api } from '../../api/client'
 import { pairingApi, pairingKeys, type RoundPairings } from '../../api/pairings'
 import { RoundPage } from '../../pages/RoundPage'
 import { AuthContext, type AuthContextValue } from '../auth/authContext'
-import { round, session, tournament } from '../tournaments/lifecycle/__tests__/fixtures'
+import { completion, round, session, tournament } from '../tournaments/lifecycle/__tests__/fixtures'
 
 vi.mock('../live/useTournamentLive', () => ({ useTournamentLive: vi.fn() }))
 let client: QueryClient
@@ -30,7 +30,7 @@ beforeEach(() => {
   vi.spyOn(api, 'myTournaments').mockResolvedValue([])
   vi.spyOn(pairingApi, 'get').mockImplementation(async () => data)
   vi.spyOn(api, 'teams')
-  vi.spyOn(api, 'completionValidation')
+  vi.spyOn(api, 'completionValidation').mockResolvedValue(completion())
 })
 afterEach(() => { cleanup(); client.clear(); vi.restoreAllMocks() })
 

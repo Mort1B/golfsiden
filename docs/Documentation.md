@@ -677,13 +677,46 @@ or tee setup, empty groups, loading and retryable errors have explicit states.
 **Åpne scorekort** opens this round's scorecard summary; the scoring workspace
 decides the authorized owner and whether editing is allowed. Drafts omit that
 link because the scoring workspace only accepts opened rounds. Flight times and
-starting holes never confer scoring authority. No scores, completion counts or
-hidden final-round progress are loaded by this detail page. Exact tournament
+starting holes never confer scoring authority. No raw scores are loaded by this
+detail page; progress respects the server's role-specific visibility projection.
+Exact tournament
 admins retain the round-specific **Administrer runden** link.
 
 Live tournament events refresh the shared private queries. Failed reads hide
 retained detail data, and conflicting round/pairings status or format prompts
 refresh instead of combining inconsistent snapshots.
+
+**Fremdrift per flight** appears below the setup. Drafts explain that progress
+starts after opening. Opened rounds load the existing visibility-projected
+completion read and join exact preserved player/team owners to stored flights.
+Shared team cards count once, even with two teams in one flight. Each flight
+shows registered/required hole entries across its cards and per-card progress;
+full projections also show completed and confirmed card counts. These counts are
+not the current physical hole or a claim about consecutive holes played.
+
+For non-admin members, when the final back nine is hidden, the overview says that only holes
+1–9 are visible. It shows only visible-hole entries: no completion, confirmation,
+readiness or inferred full-round percentages, even for a completed/locked round.
+Exact tournament admins retain full progress while the final is hidden.
+Release, re-hide, reconnect and stream errors use the existing fail-closed private
+completion cache. Score changes and confirmations refresh through SSE.
+
+Old rounds without preserved flight assignments display an unavailable-mapping
+message rather than guessing from legacy groups. Failed reads suppress retained
+progress and offer retry; drafts, empty owner sets and pending reads have explicit
+states. Current roster activity and team membership never replace historical IDs.
+
+Repeat flight-progress browser checks on a fresh disposable seed with the same
+local prerequisites as the round-details suite:
+
+```bash
+GOLF_FLIGHT_PROGRESS_BROWSER=1 npm run test:browser:progress
+```
+
+This suite opens rounds, submits seed scores, confirms/corrects/reconfirms a card,
+and releases/re-hides the final for a live member view. It covers all formats and
+320/390/1280px widths. Loading, empty, error and long-name states are injected.
+Screenshots use `/tmp/golf-flight-progress-*`; never run against hosted data.
 
 For the opt-in Chrome checks, use the same local prerequisites described below
 and a freshly migrated/seeded disposable database, then run from `frontend/`:
