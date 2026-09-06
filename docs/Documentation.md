@@ -296,21 +296,26 @@ entrant identities.
 ## User profile
 
 Choose **Profil** in the main navigation, or open `/profile` while signed in.
-The page lists all your tournament memberships, including archived tournaments,
-with their current role and a link to each tournament. It also links to creating
-another tournament and the full tournament overview.
+The page starts with **Mine turneringer**, listing all your tournament
+memberships, including archived tournaments, with their current role and a link
+to each tournament. It also links to creating
+another tournament and the full tournament overview. Name and handicap stay visible
+below the list. **Endre brukernavn** and **Endre passord** are separate, initially
+collapsed sections operable by keyboard. Save/error feedback remains visible
+when a section is collapsed.
 
 - **Name and handicap:** names are trimmed and limited to 100 characters. A name
   change updates the account and linked player, so the new name also appears in
   past results. Profile handicap accepts comma or point, −10.0 through 54.0 with
   at most one decimal, and displays Norwegian comma formatting. A changed or
-  newly created handicap requires a reason (up to 500 characters), recorded with
-  the actor in `handicap_history`. Existing tournament handicaps, including draft
+  newly created handicap needs no typed explanation. The server records
+  “Egen profilendring” with the actor, timestamp, and handicap in
+  `handicap_history`. Existing tournament handicaps, including draft
   entries, and preserved round handicaps/results do not change. New entries use
   the current profile handicap. Corrections within an existing tournament remain
-  the separate administrator workflow.
+  the separate administrator workflow with an explicit audit reason.
 - **Unlinked or inactive accounts:** an unlinked account can explicitly create
-  its own player profile by entering handicap and a reason; this does not enroll
+  its own player profile by entering handicap; this does not enroll
   it into existing trips. An inactive linked player cannot self-change handicap
   or reactivate the player; name/credential editing remains available.
 - **Username:** changing it requires the current password. The existing 3–32
@@ -318,7 +323,11 @@ another tournament and the full tournament overview.
   occupied usernames are rejected. Use the new username at the next login.
   Existing sessions remain active.
 - **Password:** the current password and repeated new password are required in
-  the UI. The account contract remains 12–128 UTF-8 bytes. A successful change
+  the UI. Normal guidance suggests a long password or phrase. Profile, creator
+  onboarding, and invitation registration use the same validator: the account
+  contract remains 12–128 UTF-8 bytes, with spaces preserved. Too-short/too-long
+  messages explain the applicable byte limit and how to adjust the password;
+  multibyte characters are not treated as single bytes. A successful change
   logs the account out on every device and returns to sign-in with confirmation.
   There is no current-password bypass or account-recovery operation here.
 
@@ -326,7 +335,9 @@ The API is self-only and all responses use `Cache-Control: private, no-store`.
 `GET /api/me/profile` returns `user_id`, `username`, `display_name`, `version`,
 and nullable `player_id`, `handicap`, `player_active`, `player_updated_at`.
 `PUT /api/me/profile` accepts `version`, `player_updated_at`, `display_name`,
-`handicap` and `reason`. `POST /api/me/profile/username` accepts `version`,
+`handicap`. The server owns the self-service audit description; caller-supplied
+`reason` is rejected as an unknown field. Older open clients must reload after
+this contract update. `POST /api/me/profile/username` accepts `version`,
 `username`, `current_password`; the password POST accepts `version`,
 `new_password`, `current_password`. Both credential POSTs return 204; the details
 PUT returns the authoritative profile. Mutations require the session CSRF header,

@@ -1,4 +1,5 @@
 import type { CreatorDraft, RoundDraft, TournamentDraft, WizardDraft } from './wizardState'
+import { passwordValidationMessage } from '../auth/password'
 import { parseHandicap } from '../handicap/format'
 import { isScoringFormat } from '../../api/scoringFormats'
 
@@ -67,10 +68,8 @@ export function validateCreator(creator: CreatorDraft): FieldErrors {
   if (!/^[A-Za-z0-9_-]{3,32}$/.test(creator.username.trim())) {
     errors['creator.username'] = 'Bruk 3–32 bokstaver, tall, bindestrek eller understrek.'
   }
-  const passwordBytes = byteLength(creator.password)
-  if (passwordBytes < 12 || passwordBytes > 128) {
-    errors['creator.password'] = 'Passordet må være mellom 12 og 128 byte.'
-  }
+  const passwordError = passwordValidationMessage(creator.password)
+  if (passwordError) errors['creator.password'] = passwordError
   const handicap = parseHandicap(creator.handicap)
   if (!handicap.ok) errors['creator.handicap'] = handicap.message
   return errors

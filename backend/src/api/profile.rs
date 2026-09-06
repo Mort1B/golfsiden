@@ -45,7 +45,6 @@ struct DetailsRequest {
     player_updated_at: Option<DateTime<Utc>>,
     display_name: String,
     handicap: Option<f64>,
-    reason: String,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -84,9 +83,7 @@ fn map_error(error: ProfileError) -> ApiError {
             code: "profile_inactive",
             message: "inactive player handicap cannot be changed",
         },
-        ProfileError::MissingHandicap | ProfileError::MissingReason => {
-            ApiError::BadRequest(error.to_string())
-        }
+        ProfileError::MissingHandicap => ApiError::BadRequest(error.to_string()),
         ProfileError::Database(sqlx::Error::Database(ref db))
             if db.constraint() == Some("users_username_normalized_idx") =>
         {
@@ -116,14 +113,9 @@ async fn update_details(
 ) -> ApiResult<Json<Profile>> {
     let Json(input) = input.map_err(input_error)?;
     let display_name = input.display_name.trim().to_owned();
-    let reason = input.reason.trim().to_owned();
-    if display_name.is_empty()
-        || display_name.chars().count() > 100
-        || reason.chars().count() > 500
-        || input.version < 0
-    {
+    if display_name.is_empty() || display_name.chars().count() > 100 || input.version < 0 {
         return Err(ApiError::BadRequest(
-            "name must contain 1 to 100 characters; reason at most 500 characters".into(),
+            "name must contain 1 to 100 characters".into(),
         ));
     }
     if input.handicap.is_some_and(|value| {
@@ -143,7 +135,6 @@ async fn update_details(
             player_updated_at: input.player_updated_at,
             display_name,
             handicap: input.handicap,
-            reason,
         },
     )
     .await

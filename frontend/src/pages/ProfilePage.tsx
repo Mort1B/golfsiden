@@ -36,18 +36,6 @@ function ProfileWorkspace({ session }: { session: AuthSession }) {
   const disabled = actions.pending || profile.isFetching
   return <section className="page profile-page">
     <header className="page-header"><p className="brand">Guttas Golf</p><h1>Min profil</h1><p>Kontoinnstillinger og turneringene dine.</p></header>
-    <button className="button secondary" type="button" disabled={disabled} onClick={() => { void profile.refetch(); void tournaments.refetch() }}>Oppdater profil og turneringer</button>
-    <p className="muted">Oppdatering henter lagrede opplysninger. Endringer som ikke er lagret, kan bli erstattet.</p>
-    {profile.isPending && <LoadingState />}
-    {profile.error && <ErrorState error={profile.error} onRetry={() => void profile.refetch()} />}
-    {profile.isFetching && !profile.isPending && <p role="status">Oppdaterer profil …</p>}
-    {actions.pending && <p role="status">Lagrer og kontrollerer endringen …</p>}
-    {actions.feedback && <p role={actions.feedback.error ? 'alert' : 'status'}>{actions.feedback.text}</p>}
-    {data && <div key={`${data.version}-${data.player_updated_at}`}>
-      <ProfileDetailsForm profile={data} session={session} disabled={disabled} run={actions.run} />
-      <ProfileCredentialsForm kind="username" profile={data} session={session} disabled={disabled} run={actions.run} />
-      <ProfileCredentialsForm kind="password" profile={data} session={session} disabled={disabled} run={actions.run} />
-    </div>}
     <section aria-labelledby="profile-tournaments"><h2 id="profile-tournaments">Mine turneringer</h2>
       <Link className="button primary" to="/create">Opprett ny turnering</Link>
       {tournaments.isPending && <LoadingState />}
@@ -60,5 +48,17 @@ function ProfileWorkspace({ session }: { session: AuthSession }) {
       </>}
       <Link to="/tournaments">Gå til turneringsoversikten</Link>
     </section>
+    <button className="button secondary" type="button" disabled={disabled} onClick={() => { void profile.refetch(); void tournaments.refetch() }}>Oppdater profil og turneringer</button>
+    <p className="muted">Oppdatering henter lagrede opplysninger. Endringer som ikke er lagret, kan bli erstattet.</p>
+    {profile.isPending && <LoadingState />}
+    {profile.error && <ErrorState error={profile.error} onRetry={() => void profile.refetch()} />}
+    {profile.isFetching && !profile.isPending && <p role="status">Oppdaterer profil …</p>}
+    {actions.pending && <p role="status">Lagrer og kontrollerer endringen …</p>}
+    {actions.feedback && <p role={actions.feedback.error ? 'alert' : 'status'}>{actions.feedback.text}</p>}
+    {data && <div key={`${data.version}-${data.player_updated_at}`}>
+      <ProfileDetailsForm profile={data} session={session} disabled={disabled} run={actions.run} />
+      <ProfileCredentialsForm kind="username" profile={data} session={session} disabled={disabled} run={actions.run} />
+      <ProfileCredentialsForm kind="password" profile={data} session={session} disabled={disabled} run={actions.run} />
+    </div>}
   </section>
 }

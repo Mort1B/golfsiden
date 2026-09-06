@@ -30,8 +30,6 @@ pub enum ProfileError {
     Inactive,
     #[error("handicap cannot be removed")]
     MissingHandicap,
-    #[error("handicap changes require a reason")]
-    MissingReason,
     #[error(transparent)]
     Database(#[from] sqlx::Error),
 }
@@ -65,7 +63,6 @@ pub struct DetailsChange {
     pub player_updated_at: Option<DateTime<Utc>>,
     pub display_name: String,
     pub handicap: Option<f64>,
-    pub reason: String,
 }
 
 pub struct ProfileChangeResult {
@@ -101,9 +98,6 @@ pub async fn update_details(
         if input.handicap.is_none() {
             return Err(ProfileError::MissingHandicap);
         }
-        if input.reason.is_empty() {
-            return Err(ProfileError::MissingReason);
-        }
     }
     let player = if principal.player_id.is_none() && input.handicap.is_some() {
         let player = Uuid::new_v4();
@@ -130,7 +124,7 @@ pub async fn update_details(
         }
         if handicap_changed {
             sqlx::query("INSERT INTO handicap_history(id,player_id,handicap_index,changed_by,reason) VALUES($1,$2,$3,$4,$5)")
-                .bind(Uuid::new_v4()).bind(player).bind(input.handicap).bind(principal.user_id).bind(&input.reason).execute(&mut *tx).await?;
+                .bind(Uuid::new_v4()).bind(player).bind(input.handicap).bind(principal.user_id).bind("Egen profilendring").execute(&mut *tx).await?;
         }
     }
     if previous.display_name != input.display_name || handicap_changed {

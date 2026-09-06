@@ -11,3 +11,8 @@
 .profile-page > section h2 { margin-bottom: .75rem; }
 .profile-page .item-list { margin-block: 1rem; }
 .profile-page .list-card h3 { overflow-wrap: anywhere; }
+.profile-disclosure summary { cursor: pointer; min-height: 44px; padding-block: .65rem; }
+.profile-disclosure summary h2 { display: inline; font-size: 1.15rem; }
+.profile-disclosure summary:focus-visible { outline: 3px solid #76b88d; outline-offset: 2px; border-radius: 4px; }
+.profile-disclosure[open] summary { margin-bottom: .75rem; }
+.profile-page > section:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; margin-bottom: 1.5rem; }

@@ -50,6 +50,11 @@ mod tests {
     fn password_length_uses_account_contract_bytes() {
         assert!(validate_password_length("123456789012").is_ok());
         assert!(validate_password_length("short").is_err());
-        assert!(validate_password_length(&"a".repeat(129)).is_err());
+        for unit in ["a", "ø", "🏌"] {
+            assert!(validate_password_length(&unit.repeat(12 / unit.len())).is_ok());
+            assert!(validate_password_length(&unit.repeat(128 / unit.len())).is_ok());
+            assert!(validate_password_length(&unit.repeat(12 / unit.len() - 1)).is_err());
+            assert!(validate_password_length(&unit.repeat(128 / unit.len() + 1)).is_err());
+        }
     }
 }

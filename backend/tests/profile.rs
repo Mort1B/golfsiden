@@ -71,7 +71,7 @@ async fn body(r: axum::response::Response) -> Value {
 }
 async fn details(pool: &PgPool, sid: Uuid) -> Value {
     let p = profile::get(pool, sid).await.unwrap();
-    json!({"version":p.version,"player_updated_at":p.player_updated_at,"display_name":p.display_name,"handicap":p.handicap,"reason":""})
+    json!({"version":p.version,"player_updated_at":p.player_updated_at,"display_name":p.display_name,"handicap":p.handicap})
 }
 
 #[sqlx::test(migrations = "../migrations")]
@@ -123,7 +123,7 @@ async fn profile_is_self_only_private_csrf_and_strictly_validated(pool: PgPool) 
         ("handicap", json!(54.1)),
         ("handicap", json!(1.23)),
         ("display_name", json!(" ")),
-        ("reason", json!("a".repeat(501))),
+        ("reason", json!("Caller-supplied audit reason")),
     ] {
         let mut invalid = original.clone();
         invalid[field] = value;
@@ -155,7 +155,6 @@ async fn details_preserve_tournament_history_append_handicap_audit_and_reject_st
     let mut input = details(&pool, sid).await;
     input["display_name"] = json!("Updated profile name");
     input["handicap"] = json!(14.4);
-    input["reason"] = json!("New official handicap");
     let result = app
         .clone()
         .oneshot(request(
@@ -172,14 +171,14 @@ async fn details_preserve_tournament_history_append_handicap_audit_and_reject_st
     assert_eq!(p["handicap"], 14.4);
     assert_eq!(p["display_name"], "Updated profile name");
     assert_eq!(events.try_recv().unwrap().resource, "tournament");
-    let audit: (String, Uuid) = sqlx::query_as(
-        "SELECT reason,changed_by FROM handicap_history WHERE player_id=$1 AND handicap_index=14.4",
+    let audit: (String, Uuid, bool) = sqlx::query_as(
+        "SELECT reason,changed_by,created_at <= now() AND effective_from <= now() FROM handicap_history WHERE player_id=$1 AND handicap_index=14.4",
     )
     .bind(USER)
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(audit, ("New official handicap".into(), USER));
+    assert_eq!(audit, ("Egen profilendring".into(), USER, true));
     let after:Value=sqlx::query_scalar("SELECT jsonb_build_object('entrants',(SELECT jsonb_agg(to_jsonb(t)) FROM tournament_players t),'rounds',(SELECT jsonb_agg(to_jsonb(r)) FROM round_handicap_snapshots r),'teams',(SELECT jsonb_agg(to_jsonb(t)) FROM round_team_handicap_snapshots t),'scores',(SELECT jsonb_agg(to_jsonb(s)) FROM scores s))").fetch_one(&pool).await.unwrap();
     assert_eq!(before, after);
     let stale = app
@@ -215,13 +214,20 @@ async fn unlinked_self_profile_never_enrolls_old_trips_and_inactive_handicap_fai
             player_updated_at: None,
             display_name: old.display_name,
             handicap: Some(9.1),
-            reason: "Created my player profile".into(),
         },
     )
     .await
     .unwrap();
     assert!(result.profile.player_id.is_some());
     assert_ne!(result.profile.player_id, Some(USER));
+    let audit: (String, Uuid, f64) = sqlx::query_as(
+        "SELECT reason,changed_by,handicap_index::float8 FROM handicap_history WHERE player_id=$1",
+    )
+    .bind(result.profile.player_id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(audit, ("Egen profilendring".into(), ADMIN, 9.1));
     assert_eq!(
         sqlx::query_scalar::<_, i64>("SELECT count(*) FROM tournament_players")
             .fetch_one(&pool)
@@ -243,7 +249,6 @@ async fn unlinked_self_profile_never_enrolls_old_trips_and_inactive_handicap_fai
             player_updated_at: p.player_updated_at,
             display_name: p.display_name,
             handicap: Some(9.1),
-            reason: "Self edit".into(),
         },
     )
     .await

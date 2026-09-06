@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { LogIn, UserPlus } from 'lucide-react'
 import type { InvitationRegistrationInput } from '../../api/invitations'
 import { USERNAME_HTML_PATTERN } from '../auth/username'
+import { PASSWORD_GUIDANCE, passwordValidationMessage } from '../auth/password'
 import { parseHandicap } from '../handicap/format'
 
 interface RegistrationFormProps {
@@ -19,6 +20,8 @@ export function RegistrationForm({ disabled, error, onSubmit }: RegistrationForm
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    const passwordError = passwordValidationMessage(password)
+    if (passwordError) { setValidationError(passwordError); return }
     const parsedHandicap = parseHandicap(handicap)
     if (!parsedHandicap.ok) {
       setValidationError(parsedHandicap.message)
@@ -37,7 +40,7 @@ export function RegistrationForm({ disabled, error, onSubmit }: RegistrationForm
       <form className="invitation-form" onSubmit={(event) => void submit(event)}>
         <label><span>Visningsnavn</span><input autoComplete="name" required maxLength={120} value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></label>
         <label><span>Brukernavn</span><input autoComplete="username" minLength={3} maxLength={32} pattern={USERNAME_HTML_PATTERN} required aria-describedby="join-username-help" value={username} onChange={(event) => setUsername(event.target.value)} /><small id="join-username-help">3–32 bokstaver, tall, bindestrek eller understrek.</small></label>
-        <label><span>Passord</span><input type="password" autoComplete="new-password" minLength={12} maxLength={128} required aria-describedby="join-password-help" value={password} onChange={(event) => setPassword(event.target.value)} /><small id="join-password-help">Minst 12 tegn.</small></label>
+        <label><span>Passord</span><input type="password" autoComplete="new-password" required aria-describedby="join-password-help" value={password} onChange={(event) => setPassword(event.target.value)} /><small id="join-password-help">{PASSWORD_GUIDANCE}</small></label>
         <label><span>Handicapindeks</span><input type="text" inputMode="decimal" required aria-describedby="join-handicap-help" value={handicap} onChange={(event) => setHandicap(event.target.value)} /><small id="join-handicap-help">Bruk komma eller punktum, for eksempel 14,4.</small></label>
         {(validationError || error) && <p className="invitation-error" role="alert">{validationError ?? error}</p>}
         <button className="invitation-primary" type="submit" disabled={disabled}><UserPlus aria-hidden="true" />{disabled ? 'Melder på …' : 'Opprett konto og bli med'}</button>

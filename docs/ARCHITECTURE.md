@@ -144,7 +144,9 @@ and reapplies runtime grants before the API is started.
   `/api/me/profile`; no caller-supplied user/player identity or global authority
   is accepted. Details updates lock session/user and linked player, compare the
   account version plus player timestamp, then update account/player names and
-  append actor/reason handicap history atomically. Creating an explicitly
+  append handicap history with actor, timestamp, and the server-owned
+  “Egen profilendring” description atomically. The details request has no reason
+  field; administrator tournament-handicap corrections retain explicit reasons. Creating an explicitly
   requested player link never enrolls existing tournaments; inactive player
   handicaps cannot be self-edited. Existing tournament handicaps and all round
   snapshots/results are untouched. Name changes use existing identity joins and
@@ -532,7 +534,7 @@ Implemented resources:
 | `POST` | `/api/auth/logout` | Revoke and clear the current session |
 | `GET` | `/api/me/tournaments` | List the session user's tournament memberships and player links |
 | `GET` | `/api/me/profile` | Private self-only account and linked player details with optimistic versions |
-| `PUT` | `/api/me/profile` | CSRF-protected own name/current handicap update; reason history and no tournament rewrites |
+| `PUT` | `/api/me/profile` | CSRF-protected own name/current handicap update; server-owned audit description and no tournament rewrites |
 | `POST` | `/api/me/profile/username` | Current-password-confirmed canonical username change; sessions retained |
 | `POST` | `/api/me/profile/password` | Current-password-confirmed password change; invalidate every session and clear cookie |
 | `PATCH` | `/api/tournaments/{tournament_id}/counted-rounds` | Atomically update best-N and optional mandatory-round configuration before tournament start |

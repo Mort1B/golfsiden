@@ -6,48 +6,10 @@ belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The following sequence is planning-only, requested on 2026-09-06.
-No application changes or runtime troubleshooting are authorized by this plan.
-Promote exactly one candidate to the active step when implementation is requested;
-complete, validate, review, document, and publish it before starting another.
+None. Candidate 1 is complete. The next candidate remains queued until
+implementation is requested; deployment follows the operator runbook.
 
-## Next candidate — 1. Simplify the profile
-
-- **Goal:** Put tournament access first and reduce the prominence of occasional
-  account actions.
-- **Scope:** Profile page/forms/styles, profile request validation and persistence,
-  affected account guidance, tests, and current contract documentation.
-- **Behavior:** Place “Mine turneringer” directly after the page heading, before
-  profile forms and refresh guidance. Keep name and handicap readily visible
-  below it. “Endre brukernavn” and “Endre passord” are separate, initially collapsed,
-  keyboard-accessible sections with visible focus and clear pending/error states.
-  Keep mutation feedback visible when a section is collapsed.
-- Remove “Begrunnelse for handicapendring” from the self-service profile. This is
-  a contract change: the current form and repository require a reason on handicap
-  changes. Update client/server together; use a server-owned description such as
-  “Egen profilendring” for self-service history while retaining actor, timestamp,
-  and handicap history. Do not invent a user-provided explanation. Preserve the
-  explicit reason requirement for administrator tournament-handicap corrections.
-- Replace prominent UTF-8 guidance with simple password advice. Preserve the
-  actual 12–128 UTF-8-byte contract; do not label it as 12–128 characters or change
-  password policy implicitly. On invalid input, explain whether the password is
-  too short or too long and how to fix it; show the exact byte limit and explain
-  that some characters use more space only where needed. Check shared guidance
-  across profile, creator onboarding, and invitation registration for consistency.
-- **Invariants:** Preserve session/CSRF checks, optimistic versions, credential
-  verification, private-cache isolation, inactive-player restrictions, comma/point
-  handicap input, and fixed tournament/historical handicap snapshots.
-- **Validation:** Profile/credential interaction and failure coverage; ASCII,
-  Norwegian, and emoji password boundaries measured in bytes; profile handicap
-  changes without typed reasons still audited; administrator corrections still
-  require reasons. Run affected frontend, backend, and PostgreSQL ladders and
-  inspect mobile/desktop layout, keyboard use, and async states.
-- **Stop:** Profile changes and directly affected contracts documented and checked;
-  no administration, scoring, or leaderboard work in this step.
-
-## Queued candidates
-
-### 2. Make administration task-oriented
+## Next candidate — 2. Make administration task-oriented
 
 - **Goal:** Give organizers a concise starting point with actionable links.
 - **Scope:** Existing tournament management/lifecycle UI and authoritative
@@ -70,11 +32,13 @@ complete, validate, review, document, and publish it before starting another.
 - **Stop:** Summary and navigation wording are complete; existing lifecycle
   controls and business rules remain authoritative.
 
+## Queued candidates
+
 ### 3. Improve scoring flow and page spacing
 
 - **Goal:** Make entering the next score the primary task and reduce page clutter.
 - **Scope:** Score route selection, scoring composition/selectors, tournament-list
-  spacing, and tournament-results introductory copy. Profile requests are in step 1.
+  spacing, and tournament-results introductory copy.
 - **Behavior:** On ordinary exit and re-entry to scoring, choose the lowest-numbered
   hole without a persisted score for the selected round and tagged owner, after
   authoritative card loading. Preserve that round/owner context within the session;

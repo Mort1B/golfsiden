@@ -16,7 +16,6 @@ export interface ProfileDetails {
   player_updated_at: string | null
   display_name: string
   handicap: number | null
-  reason: string
 }
 export function decodeProfile(value: unknown, userId: string): Profile {
   const data = decodeObject(value, 'profile')

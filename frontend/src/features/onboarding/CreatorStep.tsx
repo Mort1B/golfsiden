@@ -3,6 +3,7 @@ import type { CreatorDraft } from './wizardState'
 import { FieldError, WizardControls } from './WizardControls'
 import type { RefObject } from 'react'
 import { USERNAME_HTML_PATTERN } from '../auth/username'
+import { PASSWORD_GUIDANCE } from '../auth/password'
 
 interface CreatorStepProps {
   value: CreatorDraft
@@ -31,8 +32,8 @@ export function CreatorStep({ value, errors, onChange, onBack, onNext, headingRe
         </label>
         <label>
           <span>Passord</span>
-          <input type="password" autoComplete="new-password" minLength={12} required value={value.password} aria-invalid={Boolean(errors['creator.password'])} aria-describedby="creator-password-help creator-password-error" onChange={(event) => onChange({ ...value, password: event.target.value })} />
-          <small id="creator-password-help" className="field-help">Minst 12 tegn. Mellomrom beholdes.</small>
+          <input type="password" autoComplete="new-password" required value={value.password} aria-invalid={Boolean(errors['creator.password'])} aria-describedby="creator-password-help creator-password-error" onChange={(event) => onChange({ ...value, password: event.target.value })} />
+          <small id="creator-password-help" className="field-help">{PASSWORD_GUIDANCE}</small>
           <FieldError id="creator-password-error">{errors['creator.password']}</FieldError>
         </label>
         <label>

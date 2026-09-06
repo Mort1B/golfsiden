@@ -25,6 +25,11 @@ function Workspace({ value }: { value: AuthContextValue }) {
 function tree(value = auth) {
   return <QueryClientProvider client={client}><MemoryRouter initialEntries={['/profile']}><Workspace value={value} /></MemoryRouter></QueryClientProvider>
 }
+function expand(heading: string) {
+  const details = screen.getByRole('heading', { name: heading }).closest('details')
+  if (!details) throw new Error('Missing disclosure')
+  details.open = true
+}
 function form(heading: string) {
   const node = screen.getByRole('heading', { name: heading }).closest('form')
   if (!node) throw new Error('Missing form')
@@ -40,7 +45,7 @@ beforeEach(() => {
 })
 afterEach(() => { cleanup(); client.clear(); vi.restoreAllMocks() })
 
-it('lists historical memberships and saves comma handicap with audit reason and authoritative refetch', async () => {
+it('lists historical memberships and saves comma handicap without a typed reason and with authoritative refetch', async () => {
   const save = vi.spyOn(profileApi, 'details').mockImplementation(async (_user, input) => {
     profile = { ...profile, display_name: input.display_name, handicap: input.handicap, version: 3 }; return profile
   })
@@ -48,13 +53,10 @@ it('lists historical memberships and saves comma handicap with audit reason and 
   await screen.findByRole('heading', { name: 'Navn og handicap' })
   expect(screen.getByRole('link', { name: /Tidligere turnering/ }).getAttribute('href')).toBe(`/tournaments/${tournament.id}`)
   fireEvent.change(screen.getByLabelText('Handicap'), { target: { value: '14,4' } })
-  fireEvent.submit(form('Navn og handicap'))
-  expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Skriv en begrunnelse for handicapendringen.')
-  expect(save).not.toHaveBeenCalled()
-  fireEvent.change(screen.getByLabelText('Begrunnelse for handicapendring'), { target: { value: 'Oppdatert handicap' } })
+  expect(screen.queryByLabelText('Begrunnelse for handicapendring')).toBeNull()
   fireEvent.submit(form('Navn og handicap'))
   await screen.findByText('Endringen er lagret og profilen er oppdatert.')
-  expect(save).toHaveBeenCalledWith(session.user_id, { version: 2, player_updated_at: original.player_updated_at, display_name: original.display_name, handicap: 14.4, reason: 'Oppdatert handicap' }, session.csrf_token)
+  expect(save).toHaveBeenCalledWith(session.user_id, { version: 2, player_updated_at: original.player_updated_at, display_name: original.display_name, handicap: 14.4 }, session.csrf_token)
   expect(profileApi.get).toHaveBeenCalledTimes(2)
   expect(screen.getByLabelText('Handicap')).toHaveProperty('value', '14,4')
 })
@@ -62,6 +64,7 @@ it('lists historical memberships and saves comma handicap with audit reason and 
 it('shows duplicate username, clears passwords, and reloads stale forms deliberately', async () => {
   vi.spyOn(profileApi, 'username').mockRejectedValue(new ApiHttpError(409, 'username_unavailable', 'duplicate'))
   render(tree()); await screen.findByRole('heading', { name: 'Endre brukernavn' })
+  expand('Endre brukernavn')
   const fields = within(form('Endre brukernavn'))
   fireEvent.change(fields.getByLabelText('Nåværende passord'), { target: { value: 'current-password' } })
   fireEvent.submit(form('Endre brukernavn'))
@@ -99,18 +102,19 @@ it('hides stale profile data on refresh failure, offers retry, and restores form
 })
 
 function passwordSubmit() {
-  const fields = within(form('Bytt passord'))
+  expand('Endre passord')
+  const fields = within(form('Endre passord'))
   fireEvent.change(fields.getByLabelText('Nytt passord'), { target: { value: 'my-new-password' } })
   fireEvent.change(fields.getByLabelText('Gjenta nytt passord'), { target: { value: 'my-new-password' } })
   fireEvent.change(fields.getByLabelText('Nåværende passord'), { target: { value: 'my-old-password' } })
-  fireEvent.submit(form('Bytt passord'))
+  fireEvent.submit(form('Endre passord'))
 }
 it('clears authentication and private caches after password success without calling logout', async () => {
   vi.spyOn(profileApi, 'password').mockResolvedValue()
-  render(tree()); await screen.findByRole('heading', { name: 'Bytt passord' })
+  render(tree()); await screen.findByRole('heading', { name: 'Endre passord' })
   passwordSubmit()
   await waitFor(() => expect(client.getQueryData(authKeys.session)).toBeNull())
-  await waitFor(() => expect(screen.queryByRole('heading', { name: 'Bytt passord' })).toBeNull())
+  await waitFor(() => expect(screen.queryByRole('heading', { name: 'Endre passord' })).toBeNull())
   for (const query of client.getQueryCache().findAll({ queryKey: ['private-workspace'] })) expect(query.state.data).toBeUndefined()
   expect(auth.signOut).not.toHaveBeenCalled()
   expect(screen.getByTestId('location').textContent).toBe('/login')
@@ -119,8 +123,8 @@ it('clears authentication and private caches after password success without call
 it('prevents double submission and reconciles password success even after page departure', async () => {
   let finish: () => void = () => { throw new Error('Not started') }
   const save = vi.spyOn(profileApi, 'password').mockImplementation(() => new Promise<void>((resolve) => { finish = resolve }))
-  const view = render(tree()); await screen.findByRole('heading', { name: 'Bytt passord' })
-  passwordSubmit(); fireEvent.submit(form('Bytt passord'))
+  const view = render(tree()); await screen.findByRole('heading', { name: 'Endre passord' })
+  passwordSubmit(); fireEvent.submit(form('Endre passord'))
   await waitFor(() => expect(save).toHaveBeenCalledTimes(1))
   expect(screen.getByRole('button', { name: 'Lagre navn og handicap' }).closest('fieldset')).toHaveProperty('disabled', true)
   view.unmount()
@@ -132,7 +136,7 @@ it('prevents double submission and reconciles password success even after page d
 it('does not let an old password response clear a fresh session for the same account', async () => {
   let finish: () => void = () => { throw new Error('Not started') }
   vi.spyOn(profileApi, 'password').mockImplementation(() => new Promise<void>((resolve) => { finish = resolve }))
-  const view = render(tree()); await screen.findByRole('heading', { name: 'Bytt passord' }); passwordSubmit()
+  const view = render(tree()); await screen.findByRole('heading', { name: 'Endre passord' }); passwordSubmit()
   await waitFor(() => expect(profileApi.password).toHaveBeenCalledTimes(1)); view.unmount()
   const fresh = { ...session, csrf_token: 'new-login-token' }
   client.setQueryData(authKeys.session, fresh)
@@ -162,4 +166,45 @@ it('rejects an in-flight profile read after its session is replaced', async () =
   // the previous request must never supply that page or cache with data.
   expect(screen.queryByRole('heading', { name: 'Navn og handicap' })).toBeNull()
   for (const query of client.getQueryCache().findAll({ queryKey: ['private-workspace', session.user_id, 'profile'] })) expect(query.state.data).toBeUndefined()
+})
+
+it('puts tournaments first and keeps credential forms collapsed initially', async () => {
+  render(tree()); await screen.findByRole('heading', { name: 'Navn og handicap' })
+  const headings = screen.getAllByRole('heading').map(node => node.textContent)
+  expect(headings.indexOf('Mine turneringer')).toBeLessThan(headings.indexOf('Navn og handicap'))
+  for (const title of ['Endre brukernavn', 'Endre passord']) {
+    expect(screen.getByRole('heading', { name: title }).closest('details')).toHaveProperty('open', false)
+  }
+})
+
+it('keeps pending and failed mutation feedback visible after collapsing its section', async () => {
+  let fail: (error: Error) => void = () => { throw new Error('Not started') }
+  vi.spyOn(profileApi, 'username').mockImplementation(() => new Promise<void>((_resolve, reject) => { fail = reject }))
+  render(tree()); await screen.findByRole('heading', { name: 'Endre brukernavn' })
+  expand('Endre brukernavn')
+  fireEvent.change(within(form('Endre brukernavn')).getByLabelText('Nåværende passord'), { target: { value: 'current-password' } })
+  fireEvent.submit(form('Endre brukernavn'))
+  const details = form('Endre brukernavn').querySelector('details')
+  if (!details) throw new Error('Missing disclosure')
+  details.open = false
+  await screen.findByText('Lagrer og kontrollerer endringen …')
+  await act(async () => fail(new ApiHttpError(409, 'username_unavailable', 'duplicate')))
+  expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Brukernavnet er opptatt. Velg et annet.')
+  expect(screen.getByRole('alert').closest('details')).toBeNull()
+})
+
+it('shows precise password overflow outside the collapsed section and accepts multibyte minimum', async () => {
+  const save = vi.spyOn(profileApi, 'password').mockResolvedValue()
+  render(tree()); await screen.findByRole('heading', { name: 'Endre passord' }); expand('Endre passord')
+  const fields = within(form('Endre passord'))
+  expect(fields.getByText(/Bruk et langt passord/)).toBeTruthy()
+  for (const label of ['Nytt passord', 'Gjenta nytt passord']) fireEvent.change(fields.getByLabelText(label), { target: { value: 'ø'.repeat(65) } })
+  fireEvent.change(fields.getByLabelText('Nåværende passord'), { target: { value: 'current-password' } })
+  fireEvent.submit(form('Endre passord'))
+  expect(await screen.findByRole('alert')).toHaveProperty('textContent', expect.stringContaining('Grensen er 128 byte'))
+  expect(screen.getByRole('alert').closest('details')).toBeNull()
+  expect(save).not.toHaveBeenCalled()
+  for (const label of ['Nytt passord', 'Gjenta nytt passord']) fireEvent.change(fields.getByLabelText(label), { target: { value: 'ø'.repeat(6) } })
+  fireEvent.submit(form('Endre passord'))
+  await waitFor(() => expect(save).toHaveBeenCalledWith(2, 'ø'.repeat(6), 'current-password', session.csrf_token))
 })

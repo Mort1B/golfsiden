@@ -1,82 +1,65 @@
-# Latest iteration: Self-service user profile
+# Profile presentation and self-service handicap audit
 
-Signed-in users can choose **Profil** to see current/archived tournament
-memberships and change name, username, password and current profile handicap.
-The page also links to creating another tournament.
+The profile now starts with “Mine turneringer”, including historical membership
+links and tournament creation. Name and handicap remain visible below the list.
+“Endre brukernavn” and “Endre passord” start collapsed and use native disclosure
+controls with keyboard operation and visible focus. Mutation status and errors
+remain visible when a section closes.
 
-## Behavior and boundaries
+Self-service handicap editing no longer asks for an explanation. The details API
+accepts version, player timestamp, name, and handicap; the repository writes
+“Egen profilendring” into the existing history in the same transaction as the
+change, retaining actor and timestamps. No migration was needed. Administrator
+corrections to tournament handicap still require an explicit reason. Existing
+entries, snapshots, score data, and historical ownership remain untouched.
 
-The API is self-only: no global user/player editing authority is restored.
-Names update the account and linked player, including names displayed in past
-results. Handicap accepts comma or point and displays Norwegian formatting.
-Changes require an actor-attributed reason. Existing tournament handicaps,
-including draft entries, and preserved round snapshots, scores, confirmations,
-team ownership and membership are never rewritten. An unlinked account can
-explicitly create its own player profile without entering existing tournaments;
-inactive players cannot self-change handicap or reactivate themselves.
+For example, changing profile handicap from 8,2 to 14,4 needs no reason field and
+creates an audited current-handicap change. A tournament already entered at 8,2
+keeps 8,2, including its preserved results.
 
-Username and password changes require the current password. Optimistic account
-versions and player timestamps reject stale edits. The UI explains duplicate
-usernames, incorrect passwords, disabled handicaps, saving, refetch errors and
-uncertain outcomes. Successful edits refresh authoritative profile/session data.
-
-Schema 23 adds profile versions and credential generations. Existing valid
-sessions survive migration; a password change invalidates every session and
-returns the browser to sign-in with confirmation. Central session authorization
-and supplemental database lifecycle guards enforce generation equality without
-acquiring other sessions' locks. Bounded Argon2 work occurs outside transactions;
-the verified hash/generation, version and session are rechecked under locks, with
-wall-clock expiry after waits. Login rechecks verified username, hash and
-generation through session insertion, preventing stale verification races.
-
-Frontend reconciliation matches user ID and CSRF token even after page departure.
-Late private reads reject replacement sessions. Password success leaves the
-protected route before publishing null identity, preserving its confirmation
-instead of triggering the ordinary route redirect. Inactive credential-bearing
-mutation state is removed immediately.
+Password advice now suggests a long password or phrase. Profile, creator
+onboarding, and invitation registration share a validator that preserves the
+12–128 UTF-8-byte contract and whitespace. Invalid values get distinct short/long
+messages with the exact applicable limit; normal guidance contains no encoding
+explanation. Character-based HTML length restrictions no longer reject valid
+multibyte passwords or truncate overflow before it can be explained. Current
+password verification, duplicate username errors, session invalidation, stale
+versions, and private-cache handling retain their existing behavior.
 
 ## Validation and review
 
-- Formatting, 114 Rust workspace/all-target tests and all-feature Clippy with
-  warnings denied passed.
-- All 355 PostgreSQL-backed tests passed. New coverage includes self-only/CSRF
-  authority, strict payloads, throttling, duplicate/stale/password failures,
-  unlinked/inactive profiles, audited handicap changes, actual locked scores
-  and snapshots remaining unchanged, all-device invalidation, controlled login
-  lock races, expiry after waits, and completion/archive/visibility guards.
-- Schema-22 upgrade preserves valid versus expired/revoked sessions. Fresh
-  schema-23 migration and two development seed runs passed on PostgreSQL 17.
-  Historical migration fixtures now use their original schema contracts rather
-  than current-schema session helpers; preserved-fact assertions remain intact.
-- All 359 frontend tests across 60 files, strict typecheck, ESLint and production
-  build passed. Tests cover delayed responses, departure, fresh same-user
-  sessions, late reads, private cache clearing and authoritative refetch.
-- Two real Chrome scenarios passed at 320, 390 and 1280px. Real writes covered
-  names, comma handicap, preserved existing tournament handicap, duplicate and
-  incorrect-password failures, cross-device stale edits, password confirmation,
-  other-device rejection and fresh login. Loading, retry, empty/unlinked,
-  archived and inactive states used explicit browser response fixtures.
-  Screenshots were inspected; width and primary touch targets were checked.
-  No unexpected console/network errors remained. Deliberate 409s, anonymous
-  session 401s, SSE closure and Chrome's aborted reads after confirmed 204s were
-  classified explicitly.
-- Independent read-only review found a late-response navigation issue, which
-  was fixed and regression-tested. Final review reported no blocking findings.
+- Frontend: 368 tests passed; typecheck, lint, production build, and separate
+  browser-test TypeScript compilation passed.
+- Rust: 114 tests passed with `cargo test --workspace --all-targets`; formatting
+  and strict all-target/all-feature Clippy passed.
+- PostgreSQL: the full database-enabled ladder passed 355 tests (including the
+  114 unit tests). A fresh disposable PostgreSQL 17 container on port 55432 was
+  migrated and seeded successfully. Tests cover self-only/CSRF checks, rejected
+  caller-provided reasons, audit actor/timestamps, initial player history,
+  stale/concurrent edits, immutable tournament results, and required reasons for
+  administrator tournament corrections.
+- Chrome: profile editing, collapsed sections and keyboard use, password overflow
+  while collapsed, historical handicap preservation, duplicate/wrong-password/
+  stale errors, logout on all devices, loading/retry/empty/inactive states, and
+  long content passed at 320px, 390px, and 1280px. Creator and invitation flows
+  exercise overflow rejection and real registration with a valid multibyte
+  minimum password. Screenshots are under `/tmp/golf-profile-*.png`.
+- Read-only specialist review found no correctness, security, or invariant
+  findings. Its requested multibyte registration coverage was added.
 
-An initial concurrent full run hit the existing score-ordering test's 50ms timing
-assumption. Its focused rerun and subsequent complete database ladder passed
-without changing scoring code or that test. The existing Vite bundle warning
-remains non-blocking (approximately 604kB before gzip).
+Initial socket-dependent Rust checks were blocked by the sandbox and passed
+with local socket access enabled. Docker access was unavailable; validation used
+an isolated rootless Podman container. Initial test failures exposed a remaining
+Rust test caller, native-disclosure limitations in jsdom, strict test typing,
+and browser assertions that needed to distinguish simultaneous alerts and
+expected signed-out 401 responses; these were corrected without weakening the
+application contract. No required validation gate was skipped.
 
-## Example and release boundary
+## Delivery limits
 
-A player entered a trip at 8.2, then changes profile handicap to 14.4 with a
-reason. That trip keeps 8.2 and its preserved results; a later entry uses 14.4.
-Renaming changes the displayed name, not historical ownership or score data.
-
-**READY WITH KNOWN LIMITATIONS:** the bounded profile workflow is validated.
-Email/avatars, account deletion/recovery and editing other users are excluded.
-Production migration/deployment is separate: back up, migrate schema 23 with
-owner authority, refresh permissions and deploy matching binaries with
-RUN_MIGRATIONS=false, following deployment_guide.md. No retained or production
-database was migrated or seeded by this task.
+Verdict: **READY** for this bounded step. The frontend build retains its existing
+large-chunk advisory. Deploy the frontend and backend together: older open
+clients sending the removed `reason` property receive a validation error and
+must reload. This iteration does not deploy production or change administration,
+scoring navigation, or tournament leaderboard behavior; those candidates remain
+queued in `PLANS.md`.

@@ -123,7 +123,6 @@ async fn edits_waiting_on_user_recheck_version_and_session_wall_clock(pool: PgPo
                 player_updated_at: None,
                 display_name: "stale".into(),
                 handicap: None,
-                reason: String::new(),
             },
         )
         .await

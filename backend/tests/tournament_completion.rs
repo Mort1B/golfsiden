@@ -49,7 +49,6 @@ async fn self_profile_handicap_change_preserves_actual_locked_scores_and_snapsho
             player_updated_at: p.player_updated_at,
             display_name: "Updated name".into(),
             handicap: Some(18.5),
-            reason: "Official update after the round".into(),
         },
     )
     .await
