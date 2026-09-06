@@ -12,6 +12,7 @@ use crate::proxy::ClientIdentity;
 pub enum RateLimitRoute {
     Login,
     Onboarding,
+    TournamentCreation,
     InvitationPreview,
     InvitationRegister,
     InvitationAccept,
@@ -62,6 +63,12 @@ impl RateLimiter {
         Self::with_rules(
             [
                 (RateLimitRoute::Login, Duration::from_secs(60), 10, 40),
+                (
+                    RateLimitRoute::TournamentCreation,
+                    Duration::from_secs(3600),
+                    20,
+                    40,
+                ),
                 (
                     RateLimitRoute::Onboarding,
                     Duration::from_secs(60 * 60),

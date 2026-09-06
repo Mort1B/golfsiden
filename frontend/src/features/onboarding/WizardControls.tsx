@@ -5,13 +5,14 @@ interface WizardControlsProps {
   next?: () => void
   submit?: boolean
   submitting?: boolean
+  backDisabled?: boolean
 }
 
-export function WizardControls({ back, next, submit = false, submitting = false }: WizardControlsProps) {
+export function WizardControls({ back, next, submit = false, submitting = false, backDisabled = false }: WizardControlsProps) {
   return (
     <div className="wizard-controls">
       {back ? (
-        <button className="button secondary" type="button" onClick={back} disabled={submitting}>
+        <button className="button secondary" type="button" onClick={back} disabled={submitting || backDisabled}>
           <ArrowLeft aria-hidden="true" /> Tilbake
         </button>
       ) : <span />}

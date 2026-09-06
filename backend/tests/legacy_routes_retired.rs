@@ -89,9 +89,7 @@ async fn json_body(response: axum::response::Response) -> Value {
 }
 
 #[sqlx::test(migrations = "../migrations")]
-async fn legacy_player_and_tournament_creation_methods_are_unrouted_for_every_session(
-    pool: PgPool,
-) {
+async fn legacy_player_routes_stay_retired_and_empty_creation_requests_write_nothing(pool: PgPool) {
     seed(&pool).await;
     let state = AppState::new(pool.clone());
     let mut events = state.live_events.subscribe();
@@ -131,7 +129,14 @@ async fn legacy_player_and_tournament_creation_methods_are_unrouted_for_every_se
             .oneshot(request(Method::POST, "/api/tournaments", token))
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+        assert_eq!(
+            response.status(),
+            if token.is_some() {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::UNAUTHORIZED
+            }
+        );
         let response = app
             .clone()
             .oneshot(request(

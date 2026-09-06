@@ -1,65 +1,86 @@
-# Latest iteration: Supplied men's red-tee course presets
+# Latest iteration: Create another tournament and clearer result wording
 
-Hacienda del Alamo Golf Club (72.5/125), Saurines Golf Course (66.2/116), and
-Mar Menor Golf Course (66.9/118) are now built-in selectable layouts. Each uses
-the user's men's Red Tees rating, exact supplied 18-hole pars and stroke indexes,
-and totals par 72. Distances and location remain null. No provider provenance or
-external verification is claimed.
+Existing accounts can now create additional tournaments from Dine turneringer
+through Opprett ny turnering, or by visiting /create while signed in. The
+three-step wizard reuses tournament, round-plan and review fields without asking
+for another username, password or player profile. Anonymous first-account
+onboarding retains its original four-step/account/session/invitation behavior.
 
-## Behavior and boundaries
+## Identity and transaction boundaries
 
-Schema 21 creates finalized manual course/tee/hole revisions and an explicit
-preset registry. Existing private course revisions never become presets merely
-because they exist. The new exact-tournament-admin GET authorizes and assembles
-facts within one repeatable-read transaction, retaining membership locks and
-private/no-store responses.
+The new CSRF-protected POST /api/tournaments uses a per-user request UUID. It
+creates the draft trip, complete round plan and exact admin membership atomically.
+An active linked player is entered with their current handicap captured for
+this new tournament; otherwise the creator is a non-playing administrator.
+Existing accounts, sessions, profiles, memberships and historical snapshots are
+unchanged. Courses, pairings and invitations use existing administration after
+creation; this path does not issue an invitation automatically.
 
-In administration, select Baner, expand a draft round, and choose Velg lagret
-bane. Inspect the men's tee, rating, slope, total par, and expandable ordered hole
-table. Bruk lagret bane på runden explicitly saves an independent 18-hole revision
-through the existing manual configuration endpoint. It retains CSRF, exact
-authority, optimistic version, draft-state, duplicate-submit and atomic rollback
-protections. Other rounds and historical results are unchanged. Provider catalog
-and manual entry remain separate alternatives.
+Onboarding and signed-in creation share a pure normalized plan and transaction-
+owned draft-plan insert. Schema 22 stores retry receipts with intentional
+user/tournament cascade behavior. Session/user locks serialize separate sessions
+of one account. Player facts are locked, and wall-clock session expiry is checked
+after waits. Exact retries reauthorize admin access and return the same trip;
+different payloads using the same key conflict. A successful plan remains
+replayable after its end date; only a new creation checks today's UTC date.
 
-The shared save hook now discards late responses after workspace unmount,
-preventing private cache reinsertion after an account change. A regression test
-clears the cache before a pending successful response resolves.
+The UI retains the submitted payload/key after an uncertain outcome, including
+subsequent throttling or rejections. It blocks editing and duplicate submissions
+until recovery, and never changes account identity. Account transitions unmount
+the wizard so late responses cannot navigate or recreate private cache data.
+Prior tournament lists are invalidated/refreshed, not overwritten.
+
+## Wording corrections, not scoring changes
+
+Completion now explains that visible open-round scores may already contribute
+provisionally, while completion establishes a completed contribution for
+qualification and counted-round selection. Standings and player history explain
+qualification separately from displayed best-N selection. A mandatory round
+reserves one counted slot even when not among the best scores.
+
+A fully entered card now says Alle hull ført rather than implying the round is
+completed. History uses Med / Ikke med i vist sammenlagtresultat instead of
+suggesting excluded results were discarded. Completion, card confirmation,
+locking and independent final-nine visibility remain distinct. No scoring,
+ranking, qualification, lifecycle or visibility calculation changed.
 
 ## Validation and review
 
-- Rust formatting, workspace/all-target tests (114), and all-feature Clippy with
+- Rust formatting, 114 workspace/all-target tests and all-feature Clippy with
   warnings denied passed.
-- Full PostgreSQL 17 workspace/all-target database ladder passed: 336 tests,
-  including five new preset tests. Fresh migration, migration no-op and repeated
-  development seed passed on a disposable database.
-- Schema-20 upgrade tests preserve existing rounds, opened handicap snapshots
-  and round-specific team ownership. Exact arrays, immutable revisions,
-  registry-only reads, authorization, independent saves and stale/no-orphan
-  behavior are covered.
-- Existing configuration, lifecycle and archive fixtures now scope their counts,
-  mutations and scoring holes to their own rows instead of assuming there are
-  no built-in finalized courses. Production guards were not weakened.
-- Frontend tests (338), strict typecheck, ESLint and production build passed.
-- Two real Chrome scenarios passed at 320, 390 and 1280px: all three selections,
-  exact 18-hole tables, successful independent saves, persisted round summaries,
-  focus restoration, loading, empty, unavailable/retry and long-content states.
-  Happy-path console/page errors and failing HTTP responses were empty. Mobile
-  populated and desktop long-content screenshots were visually inspected.
-- Independent read-only review reported no actionable implementation findings.
+- Full PostgreSQL 17 database ladder passed: 342 tests, including six creation
+  tests covering multi-trip identity preservation, linked/unlinked/inactive
+  players, cross-session concurrency, per-account keys, strict authority/input,
+  rollback, expiry after a player-lock wait, and replay after the end date.
+- Schema-21 upgrade preserves existing seed facts. Fresh schema-22 migration and
+  repeated development seeding passed in a separate disposable database.
+- All 348 frontend tests across 58 files, strict typecheck, ESLint and production
+  build passed. Tests include sticky lost-response -> 429 -> retry, duplicate
+  submissions, logout/account changes, unchanged anonymous onboarding, typed
+  receipts and rendered wording regressions.
+- Two real Chrome scenarios passed at 320, 390 and 1280px: an ordinary signed-in
+  player created multiple independent trips with unchanged session and preserved
+  previous memberships; a real committed request with a lost response recovered
+  after a throttled retry without creating another trip. Live round standings,
+  provisional qualification, player history, card completeness and lifecycle
+  explanations were checked. Happy-path creation console/page errors and failing
+  HTTP responses were empty before deliberate failure injection. Mobile review/
+  standings and desktop completion screenshots were visually inspected.
+- Independent read-only review found two retry edge cases; both were fixed and
+  covered with regression tests. Final review reported no remaining findings.
+  One full frontend run under concurrent build/database load timed out in an
+  existing list-loading test; its focused rerun and subsequent full ladder passed
+  without weakening test configuration or assertions.
 
-## Release and deployment limits
+## Release verdict and limitations
 
-**READY WITH KNOWN LIMITATIONS** for code publication. The existing production
-bundle remains above Vite's 500 kB warning threshold; the build succeeds.
+**READY WITH KNOWN LIMITATIONS.** The existing Vite bundle-size warning remains
+non-blocking. Retry keys live only in the mounted wizard: after refreshing or
+leaving an uncertain attempt, check Dine turneringer before starting a fresh one.
 
-Only the disposable validation database was migrated. The workspace-configured
-database at localhost:5432 refused connections; no retained or production
-database was changed. Availability in the deployed application requires the
-normal backup, schema-21 owner migration, runtime permissions refresh, and
-matching API/frontend release described in deployment_guide.md. Do not run the
-development seed on a retained database. Production rollout and a separate
-production least-privilege deployment rehearsal were not performed.
-
-General-purpose editable course libraries and additional courses are outside
-this step. Supplied values remain user-authoritative, not externally verified.
+This change is code publication, not production deployment. Only disposable
+PostgreSQL databases were changed. Deployment requires schema 22, refreshed
+runtime permissions and matching API/frontend binaries, following the normal
+backup/recovery runbook; no development seed belongs on retained data. A separate
+production rollout/least-privilege rehearsal was not performed. Unrelated queued
+product work remains out of scope.

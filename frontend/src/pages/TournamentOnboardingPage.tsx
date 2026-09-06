@@ -1,4 +1,3 @@
-import { Navigate } from 'react-router-dom'
 import { useState, type ReactNode } from 'react'
 import { useAuth } from '../features/auth/authContext'
 import { OnboardingWizard } from '../features/onboarding/OnboardingWizard'
@@ -9,7 +8,7 @@ export function TournamentOnboardingPage() {
   const [createdHere, setCreatedHere] = useState(false)
   if (auth.loading) return <OnboardingState><LoadingState /></OnboardingState>
   if (auth.error) return <OnboardingState><ErrorState error={auth.error} onRetry={() => void auth.retry()} /></OnboardingState>
-  if (auth.session && !createdHere) return <Navigate replace to="/tournaments" />
+  if (auth.session && !createdHere) return <OnboardingWizard key={auth.session.user_id} existingSession={auth.session} onCreated={() => {}} />
   return <OnboardingWizard onCreated={() => setCreatedHere(true)} />
 }
 

@@ -37,7 +37,7 @@ export function TournamentCompletionPanel(props: CompletionProps) {
     <button type="button" disabled={state.busy || props.authorityRefreshing} onClick={() => { setConfirmation(null); void state.refresh() }}>Oppdater fullføringskontrollen</button>
     {closed ? <p>Eksisterende medlemmer beholder tilgangen. Nye invitasjoner og påmeldinger er stengt. Turneringen kan ikke åpnes igjen.</p> : <>
       {status === 'draft' && <p>Start turneringen, og fullfør og lås alle rundene før turneringen avsluttes.</p>}
-      <p>Alle {props.tournament.number_of_rounds} planlagte runder må være låst, også runder som ikke teller i sammendraget.</p>
+      <p>Alle {props.tournament.number_of_rounds} planlagte runder må være låst, også runder som ikke teller i sammenlagtresultatet.</p>
       {props.rounds.pending ? <LoadingState /> : props.rounds.error ? <p role="alert">Rundeplanen kunne ikke kontrolleres. Prøv å oppdatere kontrollen.</p> : <>
         {!state.readiness.valid && <p role="alert">Rundeplanen er ufullstendig eller ugyldig. Kontroller at alle planlagte runder finnes.</p>}
         {state.readiness.unlocked.length > 0 && <ul aria-label="Runder som må låses">{state.readiness.unlocked.map((round) => <li key={round.id}>

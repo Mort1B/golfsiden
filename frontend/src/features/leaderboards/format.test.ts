@@ -71,13 +71,13 @@ describe('leaderboard format labels', () => {
   it('formats selected score-to-par and best-N qualification progress', () => {
     expect(scoreToParLabel(-3)).toBe('-3')
     expect(bestRoundsProgressLabel(entry, 3))
-      .toBe('2 av 3 fullførte tellende · 2 fullførte runder · Ikke kvalifisert ennå')
+      .toBe('Kvalifisering: 2 av 3 nødvendige fullførte runder · 2 fullførte runder · Ikke kvalifisert ennå')
     expect(bestRoundsProgressLabel({
       ...entry,
       completed_rounds: 4,
       counted_contributions: 3,
       eligible: true,
-    }, 3)).toBe('3 av 3 fullførte tellende · 4 fullførte runder · Kvalifisert')
+    }, 3)).toBe('Kvalifisering: 3 av 3 nødvendige fullførte runder · 4 fullførte runder · Kvalifisert')
     expect(bestRoundsProgressLabel({
       ...entry,
       completed_rounds: 0,

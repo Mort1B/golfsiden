@@ -6,8 +6,9 @@ belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The supplied-course preset step is closed; choose a new bounded priority
-before beginning additional implementation. Deployment follows the operator runbook.
+None. Signed-in tournament creation and the related wording corrections are
+closed. Choose a new bounded priority before beginning queued implementation;
+deployment follows the operator runbook.
 
 ## Later
 

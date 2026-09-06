@@ -4,6 +4,7 @@ import type { LeaderboardMetric, Round, TournamentLeaderboard, TournamentLeaderb
 import { metricLabel, scoreToParLabel } from './format'
 import { scorecardUrl } from './drilldownRoutes'
 import { contributionStateLabels, mandatoryPlayerHistoryLabel, orderedPlayerContributions } from './playerHistory'
+import { LIVE_RESULTS_EXPLANATION, MANDATORY_ROUND_EXPLANATION } from './resultExplanations'
 
 interface PlayerHistoryProps {
   leaderboard: TournamentLeaderboard
@@ -26,9 +27,11 @@ export function PlayerHistory({ leaderboard, player, rounds }: PlayerHistoryProp
         <span>Beste {leaderboard.required_counted_rounds} av {rounds.length}</span>
       </div>
       <p className="history-qualification">
-        {player.counted_contributions} av {leaderboard.required_counted_rounds} fullførte tellende ·{' '}
+        Kvalifisering: {player.counted_contributions} av {leaderboard.required_counted_rounds} nødvendige fullførte runder ·{' '}
         {player.eligible ? 'Kvalifisert' : 'Ikke kvalifisert ennå'}
       </p>
+      <p>{LIVE_RESULTS_EXPLANATION}</p>
+      {mandatoryLabel && <p>{MANDATORY_ROUND_EXPLANATION}</p>}
       {mandatoryLabel && (
         <p className="history-mandatory"><Flag aria-hidden="true" />{mandatoryLabel}</p>
       )}

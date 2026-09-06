@@ -29,7 +29,7 @@ afterEach(() => { cleanup(); client.clear(); vi.restoreAllMocks(); refresh.mockC
 it('loads the canonical projection and renders full card and flight counts', async () => {
   mount()
   await screen.findByText('20/36 hullregistreringer fordelt på 2 scorekort')
-  expect(screen.getByText('1/2 fullført · 1/2 bekreftet')).toBeTruthy()
+  expect(screen.getByText('1/2 scorekort med alle hull ført · 1/2 bekreftet')).toBeTruthy()
   expect(api.completionValidation).toHaveBeenCalledWith('round', 'individual_stroke_play')
   expect(client.getQueryData(key)).toEqual(progress())
 })
@@ -37,6 +37,13 @@ it('does not request progress for a draft', () => {
   mount({ ...pairings(), status: 'draft' })
   expect(screen.getByText('Fremdrift blir tilgjengelig når runden åpnes.')).toBeTruthy()
   expect(api.completionValidation).not.toHaveBeenCalled()
+})
+it('distinguishes all holes entered from round completion and card confirmation', async () => {
+  const data = progress()
+  vi.mocked(api.completionValidation).mockResolvedValue({ ...data, owners: data.owners.map((owner) => ({ ...owner, confirmed: false })) })
+  mount()
+  await screen.findByText(/Alle hull ført, ikke bekreftet/)
+  expect(screen.queryByText(/Fullført, ikke bekreftet/)).toBeNull()
 })
 it('keeps loading, empty and failed refresh states explicit and retries both snapshots', async () => {
   vi.mocked(api.completionValidation).mockImplementation(() => new Promise(() => {}))
@@ -55,12 +62,12 @@ it('keeps loading, empty and failed refresh states explicit and retries both sna
 })
 it('clears released progress immediately on visibility/reconnect/error, then renders only projected counts', async () => {
   mount()
-  await screen.findByText('1/2 fullført · 1/2 bekreftet')
+  await screen.findByText('1/2 scorekort med alle hull ført · 1/2 bekreftet')
   let resolve: ((data: RoundCompletionValidation) => void) | undefined
   vi.mocked(api.completionValidation).mockImplementation(() => new Promise((done) => { resolve = done }))
   await act(async () => { void handleTournamentLiveSignal(client, session.user_id, 'visibility') })
   expect(client.getQueryData(key)).toBeUndefined()
-  await waitFor(() => expect(screen.queryByText('1/2 fullført · 1/2 bekreftet')).toBeNull())
+  await waitFor(() => expect(screen.queryByText('1/2 scorekort med alle hull ført · 1/2 bekreftet')).toBeNull())
   expect(screen.getByRole('status')).toBeTruthy()
   await waitFor(() => expect(resolve).toBeDefined())
   const hidden: RoundCompletionValidation = { ...progress(), visibility: { mode: 'front_nine' }, ready_to_complete: null, ready_to_lock: null,
@@ -73,7 +80,7 @@ it('clears released progress immediately on visibility/reconnect/error, then ren
   await waitFor(() => expect(screen.queryByText(/18\/18/)).toBeNull())
   vi.mocked(api.completionValidation).mockResolvedValue(progress())
   await act(async () => { await handleTournamentLiveSignal(client, session.user_id, 'open') })
-  await screen.findByText('1/2 fullført · 1/2 bekreftet')
+  await screen.findByText('1/2 scorekort med alle hull ført · 1/2 bekreftet')
 })
 it('suppresses incompatible or missing historical mappings', async () => {
   mount({ ...pairings(), flights: [] })

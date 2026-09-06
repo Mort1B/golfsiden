@@ -1,4 +1,5 @@
 import type { OnboardingRequest } from '../../api/onboarding'
+import type { TournamentPlanRequest } from '../../api/tournamentCreation'
 import type { ScoringFormat } from '../../api/types'
 import { parseHandicap } from '../handicap/format'
 
@@ -117,6 +118,12 @@ export function toOnboardingRequest(draft: WizardDraft): OnboardingRequest {
         handicap_index: parseHandicapOrThrow(draft.creator.handicap),
       },
     },
+    ...toTournamentPlanRequest(draft),
+  }
+}
+
+export function toTournamentPlanRequest(draft: WizardDraft): TournamentPlanRequest {
+  return {
     tournament: {
       name: draft.tournament.name.trim(),
       description: draft.tournament.description.trim(),

@@ -9,6 +9,7 @@ mod onboarding;
 mod rounds;
 mod scorecards;
 mod teams;
+mod tournament_creation;
 mod tournament_visibility;
 mod tournaments;
 
@@ -37,6 +38,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .merge(onboarding::routes())
         .merge(leaderboards::routes())
         .merge(tournaments::routes())
+        .merge(tournament_creation::routes())
         .merge(rounds::routes())
         .merge(scorecards::routes())
         .merge(teams::routes())

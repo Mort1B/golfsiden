@@ -11,7 +11,7 @@ export const transitionLabels: Record<RoundTransition, string> = {
 
 export const transitionExplanations: Record<RoundTransition, string> = {
   open: 'Åpning fryser bane, utslagssted og spillegrupper og lagrer rundens handicapgrunnlag. Oppsettet kan ikke endres etterpå.',
-  complete: 'Fullføring gjør at rundens resultater teller i turneringen. Scorekort kan fortsatt korrigeres, men må da bekreftes på nytt før låsing.',
+  complete: 'Synlig score fra den åpne runden kan allerede inngå foreløpig i sammenlagtresultatet. Fullføring gjør runden til et fullført resultat i beregningen av tellende runder og kvalifisering. Scorekort kan fortsatt korrigeres, men må da bekreftes på nytt før låsing.',
   lock: 'Låsing stenger for ordinære scoreendringer. Det finnes ingen funksjon for å låse opp runden. Kontroller scorekortene før du fortsetter.',
 }
 

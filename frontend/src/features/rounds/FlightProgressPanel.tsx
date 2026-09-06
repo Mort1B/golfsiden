@@ -46,11 +46,11 @@ function ProgressContent({ pairings, progress, onRetry }: {
       <header><h3>{flight.name}</h3></header>
       {flight.owners.length === 0 ? <EmptyState>Ingen scorekort er knyttet til denne flighten.</EmptyState> : <>
         <p className="flight-progress-summary">{flight.scored}/{flight.required} {visibleOnly ? 'synlige hullregistreringer' : 'hullregistreringer'} fordelt på {flight.owners.length} scorekort</p>
-        {!visibleOnly && <p className="flight-progress-summary">{flight.completed}/{flight.owners.length} fullført · {flight.confirmed}/{flight.owners.length} bekreftet</p>}
+        {!visibleOnly && <p className="flight-progress-summary">{flight.completed}/{flight.owners.length} scorekort med alle hull ført · {flight.confirmed}/{flight.owners.length} bekreftet</p>}
         <ol>{flight.owners.map((owner) => <li key={`${owner.owner.type}:${owner.owner.id}`}>
           <span>{owner.owner_name}</span>
           <p>{owner.holes_scored}/{owner.required_holes} {visibleOnly ? 'synlige hull' : 'hull'}
-            {!visibleOnly && (owner.confirmed ? ' · Bekreftet' : owner.complete ? ' · Fullført, ikke bekreftet' : '')}</p>
+            {!visibleOnly && (owner.confirmed ? ' · Bekreftet' : owner.complete ? ' · Alle hull ført, ikke bekreftet' : '')}</p>
         </li>)}</ol>
       </>}
     </article>)}</div>

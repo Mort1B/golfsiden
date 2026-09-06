@@ -22,6 +22,7 @@ export function TournamentsPage() {
   return (
     <section className="page tournament-list-page">
       <header className="page-header"><p className="brand">Guttas Golf</p><h1>Dine turneringer</h1></header>
+      {!auth.error && <Link className="button primary" to="/create">Opprett ny turnering</Link>}
       <nav className="tournament-list-views" aria-label="Turneringsvisning">
         {TOURNAMENT_LIST_VIEWS.map((option) => <Link key={option.id} to={{ search: tournamentViewSearch(params, option.id) }} aria-current={view === option.id ? 'page' : undefined}>
           {option.label}{data && ` (${data.filter(({ tournament }) => matchesTournamentView(tournament, option.id)).length})`}

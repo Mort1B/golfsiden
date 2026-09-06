@@ -179,7 +179,7 @@ async fn create(
         invitation: InvitationResponse {
             id: created.invitation_id,
             token: invitation_token,
-            expires_at: input.invitation_expires_at,
+            expires_at: input.plan.invitation_expires_at,
             max_uses: None,
         },
     };

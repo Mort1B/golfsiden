@@ -34,7 +34,7 @@ describe('player history', () => {
   it('labels metric selection, provisional progress, and mandatory state explicitly', () => {
     expect(contributionStateLabels({
       ...contribution, counted: false, provisional: true, holes_scored: 9, mandatory: true,
-    })).toEqual(['Forkastet', 'Foreløpig · 9 av 18 hull', 'Obligatorisk runde'])
+    })).toEqual(['Ikke med i vist sammenlagtresultat', 'Foreløpig · 9 av 18 hull', 'Obligatorisk runde'])
   })
 
   it('labels a missing completed mandatory result as missing', () => {

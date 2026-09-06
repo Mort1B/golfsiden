@@ -4,6 +4,7 @@ import { FieldError, WizardControls } from './WizardControls'
 import type { RefObject } from 'react'
 
 interface TournamentStepProps {
+  totalSteps?: number
   value: TournamentDraft
   errors: FieldErrors
   onChange: (value: TournamentDraft) => void
@@ -11,10 +12,10 @@ interface TournamentStepProps {
   headingRef: RefObject<HTMLHeadingElement | null>
 }
 
-export function TournamentStep({ value, errors, onChange, onNext, headingRef }: TournamentStepProps) {
+export function TournamentStep({ value, errors, onChange, onNext, headingRef, totalSteps = 4 }: TournamentStepProps) {
   return (
     <section className="wizard-step" aria-labelledby="tournament-step-heading">
-      <header><p className="eyebrow">Steg 1 av 4</p><h1 id="tournament-step-heading" ref={headingRef} tabIndex={-1}>Om turneringen</h1><p>Start med navn og datoer. Alt annet blir knyttet til denne turneringen.</p></header>
+      <header><p className="eyebrow">Steg 1 av {totalSteps}</p><h1 id="tournament-step-heading" ref={headingRef} tabIndex={-1}>Om turneringen</h1><p>Start med navn og datoer. Alt annet blir knyttet til denne turneringen.</p></header>
       <div className="form-fields">
         <label>
           <span>Turneringsnavn</span>

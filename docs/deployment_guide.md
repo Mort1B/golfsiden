@@ -153,6 +153,17 @@ rollback, never delete finalized presets or edit previously applied migrations.
 The data was validated on disposable PostgreSQL 17, not deployed to production
 by the implementation task.
 
+### Schema 22 authenticated tournament creation
+
+Schema 22 adds `tournament_creation_requests` for authenticated-creation retry
+receipts. Existing accounts, tournaments and historical facts are unchanged.
+Back up first, migrate with owner authority, refresh runtime permissions for the
+new table, and deploy matching API/frontend binaries. Keep `RUN_MIGRATIONS=false`.
+Schema-21 binaries cannot serve schema 22; use the normal backup/fresh-volume
+recovery if rollback is required, never a SQL downgrade or development seed on
+retained data. This implementation was validated only on disposable PostgreSQL;
+production deployment is a separate operator action.
+
 ### Upgrade sequence
 
 Before every upgrade:

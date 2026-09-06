@@ -25,7 +25,7 @@ function userMessage(error: unknown): string {
       return 'Brukernavnet er allerede tatt. Velg et annet brukernavn eller logg inn.'
     }
     if (error.code === 'already_authenticated') {
-      return 'Du er allerede logget inn. Gå til turneringene dine eller logg ut før du oppretter en ny konto.'
+      return 'Du er allerede logget inn. Åpne «Opprett ny turnering» fra turneringene dine for å bruke den eksisterende kontoen.'
     }
     if (error.status === 400) return 'Opplysningene ble ikke godkjent. Kontroller feltene og prøv igjen.'
   }

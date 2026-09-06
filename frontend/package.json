@@ -14,6 +14,7 @@
     "test:browser:completion": "playwright test --config playwright.lifecycle.config.ts tournamentCompletion.browser.ts",
     "test:browser:archive": "playwright test --config playwright.lifecycle.config.ts tournamentArchive.browser.ts",
     "test:browser:courses": "playwright test --config playwright.lifecycle.config.ts coursePresets.browser.ts",
+    "test:browser:creation": "playwright test --config playwright.lifecycle.config.ts tournamentCreation.browser.ts",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview"
   },

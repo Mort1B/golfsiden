@@ -140,6 +140,21 @@ and reapplies runtime grants before the API is started.
   complete draft round plan, invitation, and session. Client-supplied roles,
   actor IDs, lifecycle status, round count, and tournament scoring summary are
   absent from the contract. The server derives them from preserved facts.
+- Signed-in creation uses the same pure tournament-plan normalization and
+  transactional draft-plan insertion, but never creates or replaces an account,
+  session or invitation. Any authenticated account can create an independent
+  trip and receives admin membership only there. Its active linked player, if
+  present, is enrolled with a locked current-handicap snapshot; otherwise the
+  creator is a non-playing administrator. Prior tournaments are untouched.
+- Schema 22 stores a per-user request UUID, normalized-plan SHA-256 hash and
+  resulting tournament UUID. Exclusive session/user locks serialize requests
+  across sessions of one account; current activity/handicap is read under a
+  player lock and wall-clock session expiry is rechecked after waits. Exact
+  retries reauthorize current admin membership and return the same ID; changed
+  payloads conflict. Stable structural normalization precedes receipt lookup,
+  while only a new creation rejects an end date before today's UTC date.
+  Receipt FKs cascade with user/tournament deletion; receipts are retry state,
+  not historical score or ownership evidence.
 - Invitation URLs contain a non-secret UUID in the path and a 256-bit secret in
   the fragment. PostgreSQL stores only its SHA-256 hash. The invitation creator
   must be a member of the same tournament, and the raw secret is returned once
@@ -154,7 +169,7 @@ and reapplies runtime grants before the API is started.
   compatible state is repaired, while inactive or withdrawn identities fail
   closed. Joining never creates team or flight membership.
 - Direct `POST /api/tournaments/{tournament_id}/players` registration is retired.
-  Creator onboarding and invitation registration/acceptance are the only HTTP
+  Creator onboarding, signed-in creation and invitation registration/acceptance are the only HTTP
   paths that establish participation, so no product route accepts an arbitrary
   global player ID or exposes a global player search.
 - Public invitation handlers authenticate an extractable token before strict
@@ -493,6 +508,7 @@ Implemented resources:
 | `GET` | `/api/tournaments/{tournament_id}/course-presets` | Read only registered immutable supplied layouts as an exact tournament admin; private, no-store |
 | `GET` | `/api/tournaments/{tournament_id}/course-provider/courses/{provider_course_id}` | Retrieve normalized provider tee and hole detail as a tournament admin |
 | `POST` | `/api/onboarding/tournaments` | Atomically create a first-time creator, draft tournament plan, invitation, and session |
+| `POST` | `/api/tournaments` | Authenticated CSRF-protected independent draft creation with a per-account retry key; no account/session replacement |
 | `POST` | `/api/invitations/{invitation_id}/preview` | Preview minimal tournament data for an authenticated invitation token |
 | `POST` | `/api/invitations/{invitation_id}/register` | Atomically register and join a new player account |
 | `POST` | `/api/invitations/{invitation_id}/accept` | Join the exact session-linked player idempotently |

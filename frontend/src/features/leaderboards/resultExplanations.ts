@@ -1,0 +1,2 @@
+export const LIVE_RESULTS_EXPLANATION = 'Synlig score fra en åpen runde kan inngå foreløpig i sammenlagtresultatet. Bare fullførte og låste runder teller for kvalifisering. Hvilke runder som inngår i det viste resultatet, kan endre seg underveis.'
+export const MANDATORY_ROUND_EXPLANATION = 'En obligatorisk runde reserverer én av de tellende plassene, selv om den ikke er blant de beste resultatene.'

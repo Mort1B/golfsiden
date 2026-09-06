@@ -38,7 +38,7 @@ export function roundsLabel(count: number): string {
 export function bestRoundsProgressLabel(entry: TournamentLeaderboardEntry, requiredCount: number): string {
   const completed = entry.completed_rounds === 0 ? 'Ingen fullførte runder' : roundsLabel(entry.completed_rounds)
   const eligibility = entry.eligible ? 'Kvalifisert' : 'Ikke kvalifisert ennå'
-  return `${entry.counted_contributions} av ${requiredCount} fullførte tellende · ${completed} · ${eligibility}`
+  return `Kvalifisering: ${entry.counted_contributions} av ${requiredCount} nødvendige fullførte runder · ${completed} · ${eligibility}`
 }
 
 export function selectedProvisional(entry: TournamentLeaderboardEntry): TournamentContribution | null {

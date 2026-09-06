@@ -12,3 +12,4 @@ pub mod round_pairings;
 pub mod score_visibility;
 pub mod scorecards;
 pub mod scoring;
+pub mod tournament_plan;

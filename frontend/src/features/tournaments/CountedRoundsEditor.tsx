@@ -93,6 +93,7 @@ export function CountedRoundsEditor(props: CountedRoundsEditorProps) {
       <div>
         <h3>Tellende runder</h3>
         <p>Lagret valg: Beste {props.tournament.counted_rounds} av {props.tournament.number_of_rounds} runder. Obligatorisk: {savedMandatoryLabel}.</p>
+        <p>En obligatorisk runde reserverer én av de tellende plassene, selv om den ikke er blant de beste resultatene.</p>
       </div>
       {!tournamentLocked && props.roundsPending && <p className="counted-rounds-state" role="status">Kontrollerer om valget kan endres …</p>}
       {!tournamentLocked && props.roundsError && (

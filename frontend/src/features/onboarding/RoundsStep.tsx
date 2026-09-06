@@ -4,8 +4,10 @@ import type { RoundDraft, TournamentDraft } from './wizardState'
 import { FieldError, WizardControls } from './WizardControls'
 import type { RefObject } from 'react'
 import { isScoringFormat } from '../../api/scoringFormats'
+import { MANDATORY_ROUND_EXPLANATION } from '../leaderboards/resultExplanations'
 
 interface RoundsStepProps {
+  totalSteps?: number
   tournament: TournamentDraft
   rounds: RoundDraft[]
   countedRounds: number
@@ -24,7 +26,7 @@ interface RoundsStepProps {
 export function RoundsStep(props: RoundsStepProps) {
   return (
     <section className="wizard-step" aria-labelledby="rounds-step-heading">
-      <header><p className="eyebrow">Steg 2 av 4</p><h1 id="rounds-step-heading" ref={props.headingRef} tabIndex={-1}>Planlegg rundene</h1><p>Velg spilleform for hver runde. Bane og utslagssted kan settes senere.</p></header>
+      <header><p className="eyebrow">Steg 2 av {props.totalSteps ?? 4}</p><h1 id="rounds-step-heading" ref={props.headingRef} tabIndex={-1}>Planlegg rundene</h1><p>Velg spilleform for hver runde. Bane og utslagssted kan settes senere.</p></header>
       <div className="counted-rounds-choice">
         <label htmlFor="counted-rounds">
           <span>Tellende runder</span>
@@ -56,7 +58,7 @@ export function RoundsStep(props: RoundsStepProps) {
             ))}
           </select>
         </label>
-        <p id="mandatory-round-help">Den valgte runden bruker én av de {props.countedRounds} tellende plassene.</p>
+        <p id="mandatory-round-help">{MANDATORY_ROUND_EXPLANATION}</p>
       </div>
       <div className="round-editor-list">
         {props.rounds.map((round, index) => {

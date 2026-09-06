@@ -21,7 +21,7 @@ export function orderedPlayerContributions(
 
 export function contributionStateLabels(contribution: TournamentContribution): string[] {
   return [
-    contribution.counted ? 'Tellende' : 'Forkastet',
+    contribution.counted ? 'Med i vist sammenlagtresultat' : 'Ikke med i vist sammenlagtresultat',
     contribution.provisional
       ? `Foreløpig · ${contribution.holes_scored} av ${contribution.number_of_holes} hull`
       : 'Fullført',

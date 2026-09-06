@@ -52,6 +52,14 @@ async function enabledButton(name: string) {
 }
 
 describe('administrator round lifecycle', () => {
+  it('explains provisional standings before completion without implying scoring starts then', async () => {
+    serverRound = { ...round, status: 'open' }
+    client.setQueryData(tournamentKeys.rounds(session.user_id, tournament.id), [serverRound])
+    mount()
+    fireEvent.click(await enabledButton('Fullfør runden'))
+    expect(screen.getByText(/Synlig score fra den åpne runden kan allerede inngå foreløpig/)).toBeTruthy()
+    expect(screen.queryByText(/Fullføring gjør at rundens resultater teller/)).toBeNull()
+  })
   it('requires explicit confirmation, supports Escape/focus, and opens once', async () => {
     mount()
     const open = await enabledButton('Åpne runden')

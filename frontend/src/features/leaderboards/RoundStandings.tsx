@@ -9,7 +9,7 @@ function progressLabel(entry: RoundLeaderboardEntry, visibleHoleCount: number): 
   if (entry.holes_scored === 0) return `Ikke startet · 0 av ${entry.number_of_holes} hull`
   if (!entry.complete) return `Pågår · ${entry.holes_scored} av ${entry.number_of_holes} hull`
   if (entry.confirmed) return `Bekreftet · ${entry.number_of_holes} av ${entry.number_of_holes} hull`
-  return `Fullført · venter på bekreftelse`
+  return 'Alle hull ført · venter på bekreftelse'
 }
 
 export function RoundStandings({ leaderboard }: { leaderboard: RoundLeaderboard }) {

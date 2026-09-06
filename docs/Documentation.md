@@ -282,9 +282,10 @@ validation. Existing unauthorized targets therefore return `403` without
 revealing those facts; missing targets return `404`, and the insert transaction
 reauthorizes before writing and publishing its post-commit invalidation. The
 former global player/profile/handicap routes and legacy
-`POST /api/tournaments` platform-admin route are no longer registered. Player
-discovery is available only from a target tournament's private roster, and
-product-facing tournament creation uses creator onboarding. Direct `POST
+`POST /api/tournaments` platform-admin contract are retired. The same POST path
+now exposes authenticated per-account creation, described below; it does not
+restore global administrator authority. Player discovery is available only from
+a target tournament's private roster. Direct `POST
 /api/tournaments/{tournament_id}/players` registration is also retired: admins
 enroll players through tournament invitations, never by submitting a global
 player identifier. `GET
@@ -329,6 +330,48 @@ round, score, and leaderboard routes are session-protected. Same-user background
 session refreshes keep the workspace mounted, and SSE invalidation excludes the
 auth query while refetching affected workspace data.
 
+## Signed-in tournament creation
+
+Choose **Opprett ny turnering** from **Dine turneringer**, or visit `/create`
+while signed in. The three steps are tournament details, round plan, and review;
+no new username, password or player profile is requested. You become administrator
+of the new trip, independently of your role in other trips. Your active linked
+player is enrolled with their current handicap captured as the new fixed
+tournament handicap. An account with no active linked player creates as a
+non-playing administrator. No existing account, session, profile, membership,
+score or handicap snapshot is replaced.
+
+After creation, administration opens at **Baner**. Configure saved courses/tees,
+set up teams/flights, and issue invitations through the existing controls. Unlike
+first-account onboarding, this path does not issue an invitation automatically.
+The existing tournament list is preserved and refreshed, including prior tests
+and real trips.
+
+`POST /api/tournaments` requires an active session and CSRF token. Its strict
+64 KiB JSON contract is `{request_id, tournament, rounds}`. The latter two fields
+match first-account onboarding; `request_id` is a non-nil UUID. Actors, roles,
+entrant IDs, status, round count and scoring summary cannot be supplied. The
+server creates the complete draft plan, exact admin membership, optional entrant
+and initial tournament-handicap history atomically. Requests are throttled at
+20 attempts per client/account and 40 per client per hour in the process-local
+production limiter; `429` includes `Retry-After`.
+
+The private/no-store response is `{request_id, tournament_id, created}`: `201`
+for a new creation and `200` with `created:false` for an identical retry. No
+session cookie or invitation token is returned. Schema 22 retains the request's
+normalized hash and resulting ID per account; reusing the key with different
+facts gives `409 tournament_creation_key_reused`. Retries still require current
+admin access. Previously successful plans can be retried after their end date,
+while new plans cannot end before today's UTC date.
+
+The wizard prevents duplicate submissions. If the outcome is uncertain, it
+freezes the submitted plan and keeps the same retry key even when a later retry
+is throttled or rejected. Retry without editing to recover safely. The key is
+held only in that mounted wizard, not persisted across refresh/navigation; check
+**Dine turneringer** before starting a fresh attempt after leaving it. Account
+changes unmount the wizard; late responses cannot navigate or recreate private
+cache data for the previous account.
+
 ## Invitation onboarding
 
 `POST /api/invitations/{invitation_id}/preview` authenticates the fragment token
@@ -339,7 +382,7 @@ entrant, player membership, append-only redemption, and session. Authenticated
 visitors use the CSRF-protected `/accept` route, which relies only on the exact
 session-linked player and never infers identity from email.
 
-Together with creator onboarding, these are the only HTTP participation entry
+Together with creator onboarding and signed-in creation, these are the only HTTP participation entry
 points. Registration or acceptance creates or verifies the membership and
 entrant in the same target tournament and records the initial tournament
 handicap and redemption atomically. There is no admin account/player lookup or
@@ -1019,6 +1062,14 @@ provisional until lifecycle completion. Current player handicaps are never read
 for historical net totals. All leaderboard reads use one repeatable-read snapshot
 and bounded bulk queries; inconsistent completed or open-round owner data fails
 closed instead of producing plausible partial standings.
+UI wording distinguishes these states without changing calculations: visible
+open-round scores may contribute provisionally, completed/locked rounds qualify,
+and the displayed best-N selection can change while play continues. Qualification
+progress is labelled separately from included/excluded displayed contributions;
+excluded results are retained, not discarded. A mandatory round reserves one
+counted slot even when it is not among the best scores. A scorecard with every
+hole entered is labelled **Alle hull ført**, not a completed round. Confirmation,
+round completion, locking and independent final-nine release remain separate.
 Both round and tournament leaderboard routes require membership in the target
 tournament and are returned as private, non-cacheable responses.
 
@@ -1045,7 +1096,7 @@ Every tournament row links to
 protected page reuses the canonical metric-specific tournament leaderboard and
 shows every visibility-projected contribution in round order, including its
 preserved player/team owner, gross/net/par totals, completed qualification, and
-explicit counted, discarded, provisional, and mandatory state. Each contribution
+explicit included/excluded-from-displayed-total, provisional, and mandatory state. Each contribution
 links to
 `/tournaments/{tournament_id}/rounds/{round_id}/scorecards/{owner_type}/{owner_id}`;
 scored round-leaderboard rows link directly to the same read-only route.
@@ -1092,8 +1143,9 @@ restore, and rollback procedures are maintained in `docs/deployment_guide.md`.
 
 ## Known limitations
 
-- The legacy global player/profile/handicap directory and platform-admin
-  tournament creation are retired. Scorecards and target-tournament SSE are
+- The legacy global player/profile/handicap directory is retired. Tournament
+  creation grants authority only over the new trip, not other users' trips.
+  Scorecards and target-tournament SSE are
   membership-private. Later public tournament, scorecard, or leaderboard access
   requires an explicit share-token contract.
 - Request throttling is process-local, so the supported production topology is
