@@ -704,8 +704,33 @@ and frontend on port 5173: from `frontend`, run
 It scores, confirms, completes and locks all seeded rounds, then completes the
 tournament; never point it at retained or production data.
 
-Archiving will be a separate action for completed tournaments that retains private
-history and membership; no archive endpoint, history filtering or reversal exists.
+### Tournament archive API
+
+Archiving is a separate exact-admin action for completed tournaments:
+
+```http
+POST /api/tournaments/{tournament_id}/archive
+Content-Type: application/json
+X-CSRF-Token: <session CSRF token>
+
+{"expected_tournament_updated_at":"<timestamp from the tournament read>"}
+```
+
+The request requires the active session cookie and only that timestamp field.
+Success returns the existing tournament object with `archived` status and
+`Cache-Control: private, no-store`. A stale completed request returns
+`409 tournament_archive_stale`; draft/active sources return
+`409 tournament_archive_invalid_state`. Authentication, CSRF, exact membership and
+missing-resource failures retain 401/403/404. An authorized archived retry returns
+the current resource unchanged, even with the earlier expected timestamp, without
+another audit record, timestamp change or live event.
+
+Archive records the administrator and database time. It changes no scores,
+snapshots, confirmations, teams, members or final visibility. Existing members
+retain private reads and gross/net history; current lists still include archived
+tournaments. New invitations, rotations and joining remain closed. Invitation
+revocation and independent release/re-hide of the final nine remain available.
+There is no archive UI, history filtering, deletion or reversal in this step.
 
 ### Round transitions
 
@@ -1012,7 +1037,8 @@ restore, and rollback procedures are maintained in `docs/deployment_guide.md`.
   optional mandatory-round configuration and expose the explicit
   tournament-start action. Explicit tournament completion has a guarded backend
   API and administrator readiness/confirmation UI. General tournament editing
-  and archive controls remain unimplemented. The Courses section
+  and archive UI remain unimplemented; the explicit archive API is available.
+  The Courses section
   supports draft-round configuration; non-draft rounds are deliberately read-only.
 - Pairing roster reads, atomic admin replacement, the mobile draft editor,
   flight-aware opening readiness, and representative ready seed assignments

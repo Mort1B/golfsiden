@@ -10,14 +10,13 @@ None. Approval is required before starting the next candidate.
 
 ## Next candidate
 
-**Archive backend/database:** separate exact-admin action for completed tournaments;
-retain private history and existing membership, no deletion or reversal. Define
-authorization, concurrency, audit and database guards before introducing UI or
-history filtering.
+**Archive administrator UI and history filtering:** reuse the guarded archive
+action with exact-admin confirmation, live private-query reconciliation and
+deliberate archived/current list selection. Retain member history access and
+independent final visibility; no deletion or reversal.
 
 ## Later
 
-- Archive administrator UI and history filtering after the guarded backend action.
 - Configurable tie-breaks, public share links, offline scoring, and account
   recovery.
 - Decide whether PostgreSQL should enforce at most one open round per tournament;

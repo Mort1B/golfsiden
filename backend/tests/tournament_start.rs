@@ -244,11 +244,22 @@ async fn exact_admin_starts_ready_plan_once_without_changing_rounds(pool: PgPool
         body(completed).await["error"]["code"],
         "tournament_start_invalid_state"
     );
-    sqlx::query("UPDATE tournaments SET status = 'archived' WHERE id = $1")
-        .bind(TOURNAMENT_A)
-        .execute(&pool)
-        .await
-        .unwrap();
+    // Archive now has its own guarded workflow; do not bypass that guard when
+    // constructing the terminal state used to verify start rejection.
+    let session_id =
+        sqlx::query_scalar::<_, Uuid>("SELECT id FROM user_sessions WHERE user_id = $1")
+            .bind(ADMIN_A)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    golf_api::repositories::tournaments::archive_authorized(
+        &pool,
+        session_id,
+        TOURNAMENT_A,
+        updated_at(&pool, TOURNAMENT_A).await,
+    )
+    .await
+    .unwrap();
     let archived = app
         .oneshot(start_request(
             TOURNAMENT_A,

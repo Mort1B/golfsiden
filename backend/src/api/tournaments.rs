@@ -28,6 +28,10 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/api/me/tournaments", get(list_mine))
         .route("/api/tournaments/{tournament_id}", get(get_one))
         .route(
+            "/api/tournaments/{tournament_id}/archive",
+            axum::routing::post(archive),
+        )
+        .route(
             "/api/tournaments/{tournament_id}/complete",
             axum::routing::post(complete),
         )
@@ -74,7 +78,7 @@ where
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct StartTournament {
+struct TournamentTransition {
     expected_tournament_updated_at: DateTime<Utc>,
 }
 
@@ -194,7 +198,7 @@ async fn start(
     State(state): State<Arc<AppState>>,
     Path(tournament_id): Path<Uuid>,
     MutationSession(authenticated): MutationSession,
-    input: Result<Json<StartTournament>, JsonRejection>,
+    input: Result<Json<TournamentTransition>, JsonRejection>,
 ) -> ApiResult<impl IntoResponse> {
     let Json(input) = input.map_err(|_| {
         ApiError::BadRequest("request must contain only expected_tournament_updated_at".to_owned())
@@ -220,12 +224,38 @@ async fn complete(
     State(state): State<Arc<AppState>>,
     Path(tournament_id): Path<Uuid>,
     MutationSession(authenticated): MutationSession,
-    input: Result<Json<StartTournament>, JsonRejection>,
+    input: Result<Json<TournamentTransition>, JsonRejection>,
 ) -> ApiResult<impl IntoResponse> {
     let Json(input) = input.map_err(|_| {
         ApiError::BadRequest("request must contain only expected_tournament_updated_at".to_owned())
     })?;
     let result = tournaments::complete_authorized(
+        &state.pool,
+        authenticated.principal.session_id,
+        tournament_id,
+        input.expected_tournament_updated_at,
+    )
+    .await
+    .map_err(map_mutation_error)?;
+    if result.changed {
+        state.notify("tournament", tournament_id, tournament_id);
+    }
+    Ok((
+        [(CACHE_CONTROL, "private, no-store")],
+        Json(result.tournament),
+    ))
+}
+
+async fn archive(
+    State(state): State<Arc<AppState>>,
+    Path(tournament_id): Path<Uuid>,
+    MutationSession(authenticated): MutationSession,
+    input: Result<Json<TournamentTransition>, JsonRejection>,
+) -> ApiResult<impl IntoResponse> {
+    let Json(input) = input.map_err(|_| {
+        ApiError::BadRequest("request must contain only expected_tournament_updated_at".to_owned())
+    })?;
+    let result = tournaments::archive_authorized(
         &state.pool,
         authenticated.principal.session_id,
         tournament_id,
@@ -293,5 +323,13 @@ fn map_mutation_error(error: TournamentMutationError) -> ApiError {
             message: "tournament changed; refresh and try again",
         },
         TournamentMutationError::Database(error) => ApiError::Database(error),
+        TournamentMutationError::ArchiveInvalidState => ApiError::DomainConflict {
+            code: "tournament_archive_invalid_state",
+            message: "tournament cannot be archived from its current state",
+        },
+        TournamentMutationError::ArchiveStale => ApiError::DomainConflict {
+            code: "tournament_archive_stale",
+            message: "tournament changed; refresh and try again",
+        },
     }
 }

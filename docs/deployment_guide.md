@@ -123,6 +123,21 @@ Run the normal post-migration permissions action for the new
 `tournament_completions` table. Keep `RUN_MIGRATIONS=false`; the API readiness gate
 requires the compiled schema. A schema-18 binary cannot serve a schema-19 database.
 
+### Schema 20 archive upgrade
+
+Migration 0020 adds the guarded completed-to-archived workflow and append-only
+`tournament_archives` actor/time records. Existing completed/archived rows and
+completion evidence are unchanged; historical archive actors are not invented.
+The migration replaces schema 19's temporary archive rejection without relaxing
+its completion, closed joining or historical round protections. Archive is not
+deletion: it retains member access and independent final visibility.
+
+Apply the forward migration with owner authority, then run the normal permissions
+action so the runtime role receives access to the new audit table and functions.
+Keep `RUN_MIGRATIONS=false`. Schema-19 binaries cannot serve schema 20; rollback
+requires the normal pre-upgrade backup/fresh-volume recovery, not SQL downgrades.
+For upgrades from schema 18, the schema 19 preflight above still applies.
+
 ### Upgrade sequence
 
 Before every upgrade:

@@ -106,10 +106,21 @@ and reapplies runtime grants before the API is started.
   One post-commit tournament invalidation follows a changed transition.
 - Migration 0019 independently guards active-to-completed transitions with exact
   session context and locked-round readiness, records actor/time in append-only
-  `tournament_completions`, and blocks unimplemented archiving. The audit actor FK
+  `tournament_completions`. Migration 0020 replaces only its temporary archive
+  rejection with a separate archive workflow guard. The completion audit actor FK
   may become null on account deletion; completion identity/time remain preserved.
   Valid pre-19 closed history remains unchanged without invented audit actors;
   incompatible closed history fails the upgrade instead of being silently repaired.
+- Tournament archive is a separate exact-admin completed-to-archived transition.
+  The repository holds session/user and exact membership share locks before the
+  parent update lock, then rechecks wall-clock expiry, including idempotent archived
+  retries. No round locks are needed: archive never accesses rounds and the completed
+  plan is already immutable. Expected parent timestamps reject stale transitions;
+  only a changed commit emits a tournament event. Migration 0020 independently
+  requires active exact-admin workflow context and records actor/database time in
+  append-only `tournament_archives`. Actor deletion may null its FK without losing
+  identity/time. Legacy closed rows are retained without fabricated audit evidence.
+  Archiving does not filter list reads, change memberships or release final results.
 - Invitation issue/rotation, redemption, entrant and membership creation hold a
   shared parent lock through commit and reject completed/archived parents.
   Identity-changing member/entrant updates also check the destination. Completion
@@ -441,6 +452,7 @@ Implemented resources:
 | `POST` | `/api/rounds/{round_id}/complete` | Complete a ready open round atomically |
 | `POST` | `/api/rounds/{round_id}/lock` | Lock a ready completed round atomically |
 | `POST` | `/api/tournaments/{tournament_id}/complete` | Exact-admin explicit completion after every configured round is locked |
+| `POST` | `/api/tournaments/{tournament_id}/archive` | Exact-admin explicit archive of a completed tournament; preserves private history |
 | `GET` | `/api/rounds/{round_id}/leaderboards/gross` | Retrieve the live gross round leaderboard |
 | `GET` | `/api/rounds/{round_id}/leaderboards/net` | Retrieve the live net round leaderboard |
 | `PUT` | `/api/rounds/{round_id}/scores` | Save or correct one hole score |

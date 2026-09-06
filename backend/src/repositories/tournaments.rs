@@ -1,8 +1,10 @@
+mod archive;
 mod complete;
 mod counted_rounds;
 mod handicaps;
 mod start;
 
+pub use archive::{ArchiveTournamentResult, archive_authorized};
 pub use complete::{CompleteTournamentResult, complete_authorized};
 pub use counted_rounds::{UpdateCountedRoundsResult, update_counted_rounds_authorized};
 pub use handicaps::{change_player_handicap_authorized, list_players, list_players_for_member};
@@ -48,6 +50,10 @@ pub enum TournamentMutationError {
     CompletionInvalidState,
     #[error("tournament has changed")]
     CompletionStale,
+    #[error("tournament cannot be archived from its current state")]
+    ArchiveInvalidState,
+    #[error("tournament has changed")]
+    ArchiveStale,
     #[error(transparent)]
     Authorization(#[from] AuthorizationError),
     #[error("database operation failed")]
