@@ -1,82 +1,62 @@
-# Latest explanation
+# Latest iteration: Member round details and navigation
 
-## Round lifecycle controls
+Round details now show the member-readable flight aggregate instead of legacy
+team schedules. Flights show stored members, start times and starting holes,
+with explicit missing-schedule states. Scramble and foursomes retain separate
+score-owning teams. Individual rounds no longer show a misleading empty team
+section; legacy individual groups remain explicitly separate.
 
-The management workspace now lets the exact tournament administrator open,
-complete and lock an existing round. Previously those backend actions were
-implemented but had no UI controls. The Lifecycle section owns one URL-selected
-round, and round detail pages link administrators directly to it.
+Result links preserve the exact tournament and round. A neutral scorecard-summary
+link appears after opening; the destination resolves owners and permissions.
+Drafts omit it because the scoring page excludes drafts and would otherwise
+select another round. Exact tournament admins retain their round-specific
+management link. Missing course/tee setup is explained.
 
-Opening shows the existing server readiness report with affected entrants,
-teams and flights and links to the selected round's setup. Completion and locking
-show each required player/team scorecard, its hole progress and confirmation.
-Editable links preserve the tagged owner in the existing scoring route;
-read-only links use the existing historical card route.
+## Boundaries and review
 
-Each transition requires explicit confirmation. Opening explains frozen setup
-and handicap snapshots; completion explains counted results and continued
-correction access; locking explains the end of ordinary correction access.
-The final-back-nine visibility control remains independent.
+The page reuses the decoded member pairings API, canonical user-rooted cache key
+and existing SSE invalidation. It is keyed by account and round. Failed reads
+hide retained private data and offer retry; mismatched status/format between
+round and pairings reads requires refresh. Flight schedules never grant score
+authority. No score/progress reads, mutations, backend contracts or database
+schema were added. Final visibility and historical ownership are unchanged.
 
-## State and review decisions
-
-No backend lifecycle policy or database schema changed. The frontend validates
-mutation responses against the requested tournament, round and resulting status.
-Actions fail closed during unavailable authority, loading, failed reads,
-inconsistent state and incomplete or redacted readiness.
-
-Reconciliation refreshes the affected private round, tournament, membership/list
-and leaderboard consumers. It replaces reads started before the mutation outcome,
-then inspects current query state rather than interpreting a newer SSE refetch
-cancelling its request as a read failure. Tests cover both orderings: pre-commit
-snapshots arriving late, and newer live reads replacing reconciliation.
-Late mutation responses do not recreate private cache entries after unmount.
-
-Review identified the pre-commit-read ordering risk and the existing manual
-course form being discarded when a round opens. Both were resolved. Unsaved
-manual fields remain mounted and disabled after opening; pairing drafts retain
-their existing conflict flow. Cancellation restores keyboard focus after the
-action becomes enabled again. Final read-only review found no remaining concrete
-findings.
+Final read-only review found no concrete defects. Suggested exact-admin link and
+cross-account cache tests were added. Flight progress and tournament closure
+remain outside this iteration.
 
 ## Validation
 
-- Frontend: 256 tests in 44 files, strict typecheck, lint and production build
-  passed. React Testing Library covers controls, confirmations, exact-owner links,
-  failure/retry, membership revocation, account changes and private cache cleanup.
-- Backend: formatting, 114 workspace tests and strict all-target/all-feature
-  Clippy passed.
-- PostgreSQL 17: all 35 focused tests passed across round lifecycle, completion,
-  completion concurrency, tournament authorization, private workspace reads and
-  final visibility. Fresh migrations and development seed passed in isolated
-  disposable databases.
-- Chrome: both opt-in browser tests passed. The real local API/database flow
-  covered tournament start, opening, one UI score entry, bulk score preparation
-  through the authorized API, UI confirmation, completion, a second admin's UI
-  correction, reconfirmation and locking. Scramble, foursomes, individual play
-  and the 18-hole final were exercised. Real SSE updated readiness and another
-  admin's lock. The final remained hidden for a non-admin member after locking;
-  that member could not access management or its round administration link.
-- Browser state/layout checks covered 320px, 390px and desktop widths, touch
-  target height, keyboard confirmation/cancellation, retained disabled manual
-  drafts, loading, retryable failure, empty owners/rounds and long names.
-  Loading/error/empty fixtures used scoped response injection. The lifecycle run
-  had no uncaught page errors, post-login console errors or unexpected network
-  failures; the signed-out session probe's expected 401 was accounted for.
+- Frontend: all 270 tests in 45 files, strict typecheck, lint and production build
+  passed. Fourteen new page tests cover three formats, lifecycle navigation,
+  missing setup/groups, legacy groups, pending reads, failed refresh/retry, mixed
+  lifecycle snapshots, invalid routes, exact admin links and cache isolation.
+- PostgreSQL 17: migrations and seed passed in disposable databases. The real API
+  backed Chrome checks for all three formats, member presentation, tournament
+  start, round opening and live member-page refresh.
+- Chrome: the opt-in round-details suite passed at 320px, 390px and 1280px,
+  including navigation touch targets and no horizontal overflow. Mobile and
+  desktop screenshots were inspected. Scoring and results navigation retained
+  the exact round. Detail requests did not fetch legacy teams, score access,
+  completion, scoring cards or score mutations.
+- Scoped browser injection covered pending, empty, long unbroken flight names,
+  missing schedules, denied reads and retry. Happy-path diagnostics had no
+  uncaught page/console errors, unexpected error responses or failed requests.
+  The intentional denied response was checked separately. Initial harness
+  errors (missing tournament-start version and a loading interception race) were
+  fixed before the successful complete rerun on a fresh seed.
 
-Run instructions for the opt-in browser suite are in Documentation.md. The
-browser checks used the local development proxy, not a production deployment.
-The entire PostgreSQL suite and deployment/recovery drills were not repeated:
-backend/schema and production wiring were unchanged, and the focused reused
-contracts were exercised instead. The existing Vite chunk warning remains
-(568.20 kB minified, 165.03 kB gzip); bundle splitting is outside this step.
+The existing Vite warning remains: 570.31 kB minified, 165.34 kB gzip. Backend
+unit/Clippy and full PostgreSQL suites, the separate lifecycle browser suite and
+deployment/recovery drills were not repeated: only frontend presentation changed.
+Browser evidence uses the local development proxy, not production.
 
-## Example and boundary
+## Example and verdict
 
-If a completed scramble card is corrected, its confirmation disappears and
-"Lås runden" becomes disabled. The administrator follows "Bekreft scorekort" for
-that exact team, confirms the corrected card and returns to lock the round.
-Locking never releases the final's hidden holes.
+A foursomes member sees their four-player flight's start hole and separate
+two-player score-owning teams. Opening makes the exact-round scorecard link
+appear live; schedule facts do not determine edit access.
 
-Member flight presentation, flight progress and tournament closure remain queued.
-This iteration stops after the round lifecycle UI.
+**READY WITH KNOWN LIMITATIONS:** affected checks pass; the existing bundle
+warning and skipped broader checks above remain explicit. Browser run instructions
+are in Documentation.md. Stop before the next queued step.

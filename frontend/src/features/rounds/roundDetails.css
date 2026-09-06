@@ -1,0 +1,11 @@
+.round-details .detail-header { grid-template-columns: 44px minmax(0, 1fr) auto; }
+.round-details .back-button { min-width: 44px; min-height: 44px; }
+.round-details .round-meta { padding-left: 0; overflow-wrap: anywhere; }
+.round-details .round-meta span { min-width: 0; }
+.round-details .round-meta svg { flex-shrink: 0; }
+.round-detail-links { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 16px 0; }
+.round-detail-links a { display: inline-flex; align-items: center; min-height: 44px; }
+.round-group { overflow-wrap: anywhere; }
+.round-group h3 { font-size: 1rem; margin: 0; }
+.flight-schedule { display: flex; flex-wrap: wrap; gap: 8px 20px; padding: 12px 14px 0; }
+.round-detail-note { margin-top: 20px; color: #606b64; }

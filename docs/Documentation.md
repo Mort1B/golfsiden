@@ -664,6 +664,40 @@ confirmed again. Once locked, ordinary score changes remain rejected. Migration
 4 also fails fast when upgrading a database that already contains an invalid
 completed or locked round.
 
+### Member round details
+
+Open a round from the tournament page to see its flighter: names, start times,
+starting holes and stored members. Missing schedules are explicitly marked as
+not set. Scramble and foursomes show their score-owning teams separately, without
+using legacy team schedule fields. Individual rounds show flights, not an empty
+team list; any older individual grouping is labelled separately. Missing course
+or tee setup, empty groups, loading and retryable errors have explicit states.
+
+**Se rundens resultater** opens this exact round's net results. After opening,
+**Åpne scorekort** opens this round's scorecard summary; the scoring workspace
+decides the authorized owner and whether editing is allowed. Drafts omit that
+link because the scoring workspace only accepts opened rounds. Flight times and
+starting holes never confer scoring authority. No scores, completion counts or
+hidden final-round progress are loaded by this detail page. Exact tournament
+admins retain the round-specific **Administrer runden** link.
+
+Live tournament events refresh the shared private queries. Failed reads hide
+retained detail data, and conflicting round/pairings status or format prompts
+refresh instead of combining inconsistent snapshots.
+
+For the opt-in Chrome checks, use the same local prerequisites described below
+and a freshly migrated/seeded disposable database, then run from `frontend/`:
+
+```bash
+GOLF_ROUND_DETAILS_BROWSER=1 npm run test:browser:rounds
+```
+
+This suite logs in with local seed identities, starts the tournament and opens
+an individual round. It exercises all three formats and real SSE/navigation;
+loading, empty, long-content and denied-read states use scoped response injection.
+Screenshots go to `/tmp/golf-round-details-*`; failure artifacts use the shared
+`/tmp/golf-lifecycle-browser-results` directory. Do not use hosted data.
+
 ### Administrator round controls
 
 Open **Administrasjon → Livsløp → Administrer en runde**, or use

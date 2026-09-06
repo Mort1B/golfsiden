@@ -10,22 +10,14 @@ None. Awaiting approval of the next bounded step.
 
 ## Next candidate
 
-**Member round details and navigation:** Replace `RoundPage.tsx`'s legacy
-team-schedule presentation with the member-readable pairings aggregate.
-Show flight names, tee times, starting holes and members, and separate
-score-owning teams for scramble/foursomes. Individual rounds should show their
-flights rather than a misleading empty team section. Add round-scoped links to
-scoring and results, unconfigured-course messaging, and deliberate retry/empty
-states. Validate all three formats and mobile/desktop layouts. No authority
-may be inferred from schedule facts. Bound this separately before implementation.
+**Flight progress:** Build a member-visible progress overview using stored
+flight membership and visibility-projected owner progress. Count shared team
+cards once; do not infer hidden final completeness from flight totals. Reuse
+the existing admin readiness where appropriate. Bound any missing read
+contract before implementation and validate redaction plus live updates.
 
 ## Later
 
-- **Flight progress:** Build a member-visible progress overview using stored
-  flight membership and visibility-projected owner progress. Count shared team
-  cards once; do not infer hidden final completeness from flight totals. Reuse
-  the existing admin readiness where appropriate. Bound any missing read
-  contract before implementation and validate redaction plus live updates.
 - **Tournament closure contract decision:** Tournament start is implemented,
   but `backend/src/api/tournaments.rs` has no complete/archive action. Define
   whether and when a tournament closes, required round states, invitation and

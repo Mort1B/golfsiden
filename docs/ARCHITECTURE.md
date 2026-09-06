@@ -193,6 +193,12 @@ and reapplies runtime grants before the API is started.
   membership order, and timestamps. Scramble and foursomes teams remain durable score-owner
   identities; old team schedule moves only to an explicitly named flight with
   identical members and facts. One round event follows commit.
+- Member round details consume that same decoded aggregate and canonical
+  user/round pairings query as management. Flight schedules are presentation
+  facts only; team cards and legacy individual groups remain distinct. Round
+  and aggregate status/format disagreements require refresh, and failed reads
+  suppress retained detail data. Scorecard navigation carries only the exact
+  tournament and round; the scoring workspace resolves owner/access itself.
 - Pairing replacement keeps one transaction but separates orchestration,
   identity/roster and legacy/schedule validation, and persistence writes. The
   split preserves optimistic concurrency, validation precedence, deterministic
