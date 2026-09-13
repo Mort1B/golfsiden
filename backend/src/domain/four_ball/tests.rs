@@ -1,5 +1,5 @@
 use super::*;
-use crate::domain::{handicap, models::ScoringFormat};
+use crate::domain::{handicap, models::ScoringFormat, player_score_input::InvalidGrossScore};
 
 const A: Uuid = Uuid::from_u128(1);
 const B: Uuid = Uuid::from_u128(2);
@@ -111,10 +111,7 @@ fn zero_allowance_and_disabled_handicaps_have_different_snapshot_semantics() {
 #[test]
 fn validates_numeric_inputs_without_conflating_missing_states() {
     for value in [i32::MIN, -1, 0, 21, i32::MAX] {
-        assert_eq!(
-            GrossScore::new(value),
-            Err(FourBallError::InvalidGrossScore)
-        );
+        assert_eq!(GrossScore::new(value), Err(InvalidGrossScore));
     }
     for value in 1..=20 {
         assert_eq!(GrossScore::new(value).unwrap().value(), value);

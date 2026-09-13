@@ -783,8 +783,13 @@ Full-card aggregation accepts exactly 18 holes and a complete stroke-index
 permutation, rejects duplicate partners, and reports optional totals and the count
 of scored side-holes. No scored holes means no total. Arithmetic completeness is
 not persisted confirmation, readiness authorization or a sporting adjudication.
-These types have no transport serialization, persistence or format-policy wiring;
-future visibility projections must filter before exposing derived results.
+The identical numeric/unentered/no-score types now live in
+`domain/player_score_input.rs` and are re-exported at the original four-ball paths.
+Numeric construction returns the shared `InvalidGrossScore` error; the isolated
+four-ball error no longer owns input validation. No runtime caller or payload
+contract changes. These types have no transport serialization, persistence or
+format-policy wiring; future visibility projections must filter before exposing
+derived results.
 
 ### Rules basis and initial variant
 
@@ -1028,11 +1033,35 @@ The other format foundations and later integration remain separate queued steps.
 
 ## Planned individual Stableford contract
 
-**Status: defined, not implemented.** The user chose to include
-Stableford in mixed-format overall standings using **36 minus points** for a
-completed 18-hole round. This is a points-derived contribution, not an actual
-stroke total. The first variant and design defaults below preserve the existing
-formats; implementation remains a separate step. Sources checked 2026-09-13.
+**Status: pure domain foundation implemented; playable support remains planned.**
+The user chose to include Stableford in mixed-format overall standings using
+**36 minus points** for a completed 18-hole round. This is a points-derived
+contribution, not an actual stroke total. The foundation below preserves existing
+formats and does not make Stableford selectable. Later integration remains
+separately scoped. Sources checked 2026-09-13.
+
+`backend/src/domain/stableford/` owns the implemented pure points and conversion
+boundary. It consumes the shared `domain/player_score_input.rs` numeric/unentered/
+no-score states, a preserved signed i16 Playing Handicap and the complete 18-hole
+layout. Pars are validated against the existing 2–7 range and stroke indexes must
+form a permutation of 1–18, even on empty cards. No Stableford-specific allowance
+or opening/snapshot entry point is introduced by this foundation.
+
+`calculate_hole` returns independent gross/net points, with optional uncapped
+numeric strokes. Pickups have zero points and no strokes; blanks have no result.
+`calculate_card` produces resolved progress and optional totals. `StablefordPoints`,
+`OverallEquivalent` and `StrokeTotal` are separate opaque units: native points,
+`2 * resolved - points` comparison values, and actual gross/adjusted-net strokes
+cannot be substituted as one typed value. A complete card uses 36 minus points.
+Full stroke totals require all 18 holes to be numeric; no resolved holes produce
+no contribution. Completeness is arithmetic only, not confirmation or authority.
+
+`project_card` accepts a caller-authorized visibility mask and skips hidden inputs
+before computing any result or metadata, while retaining full-layout handicap
+allocation. It does not implement membership authorization, final-round exclusion
+or public DTO policy. Existing leaderboard types, result ordering, best-N,
+confirmation, storage, queues and serialization remain unchanged. Tests cover the
+new calculations and projection plus unchanged four-ball behavior.
 
 ### Variant and scoring rules
 
@@ -1082,7 +1111,7 @@ recommendation. Retain the existing integer 0–100% draft configuration range a
 freeze it with the course/tee, fixed tournament handicap and opening snapshots.
 Use the uncapped unrounded Course Handicap for this 18-hole layout, apply the
 allowance once and round to an integer with exact halves toward positive infinity.
-As with the planned four-ball policy, keep existing formats' stored and calculated
+As with the four-ball foundation policy, keep existing formats' stored and calculated
 behavior unchanged rather than globally replacing their rounding helper.
 [NGF Handicapreglene 2024, rule 6.2 and appendix C](https://www.golfforbundet.no/files/documents/whs-handicapreglene-2024-%E2%80%93-ny-versjon-juni-2024.pdf),
 [NGF handicap allowances](https://www.golfforbundet.no/spiller/regler/world-handicap-system/test).
@@ -1096,7 +1125,7 @@ Golfside's overall conversion do not constitute handicap-adjusted gross scores.
 
 ### Hole state, completeness and corrections
 
-Use the same explicit numeric/no-score input boundary planned for four-ball,
+Use the shared explicit numeric/no-score input boundary also used by four-ball,
 without importing four-ball's side-level completion rule. A player hole is
 resolved when it has numeric strokes or an explicitly submitted no-score state.
 An unentered hole remains distinct even though its currently displayed points
@@ -1280,11 +1309,10 @@ they retain the applicable shared place. Do not compare raw points ascending.
 
 ### First implementation candidate and release conditions
 
-After all three format definitions, the first bounded Stableford candidate is
-pure domain work: numeric/no-score-to-points conversion, resolved progress and
-typed native-versus-comparable results, with the acceptance examples above.
-Keep the format unavailable and existing calculations unchanged at that stop.
-Review and run the affected backend checks before publishing that foundation.
+The pure domain points/conversion foundation, resolved progress, typed units and
+permitted-hole arithmetic projection are implemented and tested. Stableford remains
+unavailable and existing runtime calculations remain unchanged. The actual-stroke,
+points and comparison-value separation must survive all later integration layers.
 
 Playable release also requires closed format/creation policies, forward schema
 and no-score audit/revision/receipt guards, snapshots, state-aware completion and
@@ -1299,7 +1327,8 @@ disabled and allowance-boundary handicaps; best-N and mandatory/final-round
 comparisons; hidden-score noninterference; public labels; historical regression
 coverage and real Chrome at 320/390/1280px in offline/loading/error/empty/populated
 and long-content states. Follow the complete affected validation ladders and
-read-only review. No runtime test result is claimed by this definition.
+read-only review for each implementation slice. Passing the domain foundation
+checks is not a playable-format release verdict.
 
 ## Planned singles match-play contract
 

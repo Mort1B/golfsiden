@@ -4,6 +4,7 @@ mod handicap;
 
 pub use handicap::{DEFAULT_ALLOWANCE_PERCENT, calculate_handicap};
 
+pub use super::player_score_input::{GrossScore, PlayerHoleInput};
 use super::scoring::handicap_strokes_for_hole;
 use uuid::Uuid;
 
@@ -15,35 +16,10 @@ pub enum FourBallError {
     InvalidAllowance,
     #[error("handicap exceeds the supported snapshot range")]
     HandicapOutOfRange,
-    #[error("a numeric gross score must be between 1 and 20")]
-    InvalidGrossScore,
     #[error("four-ball requires two distinct players")]
     DuplicatePlayer,
     #[error("stroke indexes must be a permutation of 1 through 18")]
     InvalidStrokeIndex,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct GrossScore(u8);
-
-impl GrossScore {
-    pub fn new(value: i32) -> Result<Self, FourBallError> {
-        if !(1..=20).contains(&value) {
-            return Err(FourBallError::InvalidGrossScore);
-        }
-        Ok(Self(value as u8))
-    }
-
-    pub fn value(self) -> i32 {
-        i32::from(self.0)
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PlayerHoleInput {
-    Unentered,
-    Numeric(GrossScore),
-    NoScore,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
