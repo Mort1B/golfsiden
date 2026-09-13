@@ -916,8 +916,8 @@ rules. Select gross/net independently. Four-ball side score-to-par can join the
 existing stroke-based contributions from individual play, scramble and foursomes;
 label it as a team contribution rather than an individual's own performance.
 Assigning that benefit equally is a Golfside tournament rule, not an R&A rule or
-a normalization guarantee between formats. Do not infer conversions for later
-Stableford or match-play results.
+a normalization guarantee between formats. Stableford has its own explicitly selected conversion in the contract below;
+match-play aggregation remains separately undecided.
 
 Round ties keep shared competition positions. The existing optional overall
 final-round tie-break consumes the attributed complete, visible side result, even
@@ -1008,3 +1008,278 @@ API/database behavior. Stop after the reviewed domain contract passes backend
 checks. Subsequent persistence and UI slices must ship as one coherent supported
 format; an isolated enum or arithmetic helper must not be advertised as playable.
 Those implementation steps remain queued behind all three format definitions.
+
+## Planned individual Stableford contract
+
+**Status: defined, not implemented.** The user chose to include
+Stableford in mixed-format overall standings using **36 minus points** for a
+completed 18-hole round. This is a points-derived contribution, not an actual
+stroke total. The first variant and design defaults below preserve the existing
+formats; implementation remains a separate step. Sources checked 2026-09-13.
+
+### Variant and scoring rules
+
+The initial format is **18-hole individual Stableford**, with the configured hole
+par as its fixed target, separate gross/net views and player-owned input/results.
+No team membership is required or inferred. Existing flight setup and score
+permissions apply. Modified Stableford, different target scores, team Stableford,
+quota games, nine-hole play and per-player tees are excluded initially. The same
+nine-hole layout/handicap limitation documented for four-ball applies; reject
+non-18-hole configuration rather than claiming support through generic allocation.
+
+Stableford awards points against a hole target; the most points wins. Handicap
+strokes are applied before calculating net points. A hole not holed out returns
+zero points. These format rules come from
+[R&A Rule 21.1](https://www.randa.org/rog/the-rules-of-golf/rule-21).
+The following is the fixed Golfside points formula for the first variant:
+
+- Numeric gross score `g`, hole par `p`, signed received strokes `s`:
+  `gross_points = max(0, 2 + p - g)`;
+  `net_points = max(0, 2 + p - (g - s))`.
+- Explicit no-score: zero points in **both** metrics, with no invented strokes.
+- Unentered hole: unresolved; no points result or completed-hole credit yet.
+
+| Score relative to target, after handicap in the net view | Points |
+| --- | --- |
+| Double bogey or worse | 0 |
+| Bogey | 1 |
+| Par | 2 |
+| Birdie | 3 |
+| Eagle | 4 |
+| Three under | 5 |
+| Four under | 6 |
+
+The formula continues by one point per stroke for lower adjusted scores; do not
+hard-code a six-point ceiling or clamp negative net strokes to zero. The table's
+par/bogey/birdie mapping is also described by
+[NGF's Stableford guidance](https://www.golfforbundet.no/spiller/regler/world-handicap-system/godkjente-handicaptellende-spilleformer).
+Store actual numeric gross strokes, including applicable hole penalties; calculate
+points on the server. Do not accept client-supplied points as authoritative.
+Formal disqualification adjudication, handicap-index updates, handicap submission
+and GolfBox integration are outside the format implementation.
+
+### Handicap snapshots
+
+Default allowance is **100%**, consistent with NGF's individual Stableford
+recommendation. Retain the existing integer 0–100% draft configuration range and
+freeze it with the course/tee, fixed tournament handicap and opening snapshots.
+Use the uncapped unrounded Course Handicap for this 18-hole layout, apply the
+allowance once and round to an integer with exact halves toward positive infinity.
+As with the planned four-ball policy, keep existing formats' stored and calculated
+behavior unchanged rather than globally replacing their rounding helper.
+[NGF Handicapreglene 2024, rule 6.2 and appendix C](https://www.golfforbundet.no/files/documents/whs-handicapreglene-2024-%E2%80%93-ny-versjon-juni-2024.pdf),
+[NGF handicap allowances](https://www.golfforbundet.no/spiller/regler/world-handicap-system/test).
+
+Allocate the preserved signed Playing Handicap over all 18 stroke indexes before
+any visibility filtering. Plus handicaps give strokes back on the highest indexes.
+Disabled handicaps give `s = 0`, so numeric gross/net points coincide. Apply
+handicaps per hole, not by adding the total handicap to a gross points sum: the
+zero-point floor makes those calculations different. Competition points and
+Golfside's overall conversion do not constitute handicap-adjusted gross scores.
+
+### Hole state, completeness and corrections
+
+Use the same explicit numeric/no-score input boundary planned for four-ball,
+without importing four-ball's side-level completion rule. A player hole is
+resolved when it has numeric strokes or an explicitly submitted no-score state.
+An unentered hole remains distinct even though its currently displayed points
+might otherwise look like zero. Confirmation must never silently turn missing
+entries into picked-up holes.
+
+A scorer may record a no-score result using **Plukket opp / ingen score**, or
+correct a numeric entry to it with an explicit confirmation. The action represents
+the scorer declaring a zero-point hole; it does not infer why the hole was not
+finished or automatically adjudicate a rules breach. A gross zero-point outcome
+may still earn net points if actually holed out; the UI must not advise picking
+up merely because gross points are zero. Conversely, an explicit pickup awards
+zero in both views even if a hypothetical completed score could have earned points.
+
+Retain entry identity, positive revision, audit history and immutable receipts
+through numeric/no-score transitions. No physical score deletion/recreation,
+zero-stroke sentinel or fabricated net-double-bogey stroke value is permitted.
+A subsequent correction back to numeric strokes is conditional on that retained
+version. Existing formats that require numeric scores continue to reject no-score
+input. Reuse shared machinery only where the semantics are identical.
+
+Progress is the count of resolved holes, including explicit zero-point holes.
+All 18 resolved holes make the card complete even with pickups or zero total
+points. All 18 blank holes remain unstarted/unranked, and 17 resolved holes remain
+incomplete. Numeric totals must not be mistaken for completion evidence. A card
+of 18 explicitly resolved zero-point holes is complete with zero points and can
+be confirmed; a blank card cannot. The UI does not automatically fill an unplayed
+remainder when the scorer returns to or confirms a card.
+
+Confirmation remains online-only, with an empty local queue for the player card,
+finished verification and a fresh authorized read. Preserve current server-card
+confirmation semantics and the cross-tab lease. Any actual input change invalidates
+confirmation even if both old and new strokes earn zero points. True no-op writes
+and duplicate receipt delivery do not. Open/completed correction and locked-round
+rejection remain as today. Round completion requires all required player cards
+resolved and confirmed, using the new state-aware validator rather than counting
+only numeric score rows.
+
+### Native points and overall contributions
+
+A Stableford round leaderboard ranks the selected metric's points **descending**.
+Equal points keep shared competition positions; hole progress may stabilize
+presentation but must not become an undisclosed sporting tie-break. At least one
+resolved hole establishes a provisional result, including zero points. Completely
+unstarted players cannot create ties with players who have recorded zero-point
+holes. No extra countback, playoff or tie policy is introduced.
+
+**User-selected overall rule:** For a completed round, derive gross and net
+contributions independently as `36 - gross_points` and `36 - net_points`. For a
+permitted partial/open card, use `2 * resolved_visible_holes - visible_points`.
+Do not use 36 on a partial card, count unentered holes as zero-point finishes, or
+normalize a partial result to 18 holes. With no resolved visible holes there is
+no contribution, not an even-par entry.
+
+The equivalent is a tournament competition rule. Numeric holes worse than double
+bogey in the selected metric contribute at most +2; an explicit no-score hole
+also contributes +2. The underlying actual strokes, when known, remain unchanged.
+This intentionally preserves Stableford's reduced impact from bad holes when
+combined with uncapped stroke-play rounds. Explain that choice in configuration
+and contribution views; it does not make formats statistically equivalent.
+
+Other supported stroke-based formats retain their existing gross/net score-to-par
+contributions, including the agreed shared four-ball side result. Select best-N
+using the **lowest comparable contribution** for each metric. Preserve mandatory
+slots, completed-only qualification, highest-numbered-open provisional selection
+and one contribution per round/player. Do not recalculate older rounds as
+Stableford or add raw points directly to strokes.
+
+Overall ties use those same comparable totals. The optional final-round policy
+compares a completed visible final Stableford contribution on the selected metric;
+this is equivalent to preferring more final-round points even if that final is
+outside best-N. Equal final contributions remain shared, and incomplete/hidden
+or otherwise incomparable final groups retain their original shared places.
+All-Stableford tournaments may use the same overall equivalent: for the same N
+completed selected rounds, `36*N - total_points` preserves points ordering. The
+round page remains the native points display; mixed overall totals are never
+labelled as a sum of points or actual gross/net strokes.
+
+### Result types, UI and private/public projections
+
+The current actual-stroke contracts cannot safely carry a Stableford equivalent
+in fields named `gross_total`, `net_total` or `total`. Introduce explicit typed
+result/value representations for actual strokes, Stableford points and the
+comparison contribution, aligned across domain, API, runtime decoders and UI.
+The transport design must preserve existing stroke-only clients/contracts or
+version an intentional change; do not weaken decoders to accept inconsistent
+old fields or disguise `par + equivalent` as strokes.
+
+Private Stableford cards show original numeric entries, explicit no-score states,
+per-hole received strokes, gross/net points and resolved progress. An actual full
+stroke total is available only when every hole has numeric input; otherwise it
+is absent. Any optional numeric subtotal must be labelled with the number of
+numeric holes and kept distinct from a round score. History shows the round's
+native points and its labelled overall equivalent using preserved snapshots.
+The server owns all point/contribution arithmetic; mobile UI code only formats
+validated results and separates locally pending input from confirmed points.
+
+Project allowed holes **before** computing points, resolved progress, equivalent
+contributions, completion and tie explanations. Keep the full-layout handicap
+allocation. A hidden completed final remains excluded entirely under current
+visibility policy. A hidden back-nine no-score or numeric edit must not influence
+any non-admin or public result JSON.
+
+Public sharing remains limited to overall gross/net standings and existing display
+names; no scorecard, hole state, private identifier, handicap or account fields
+are added. It needs an explicit non-private value-basis discriminator/label so
+mixed comparable totals are not presented as actual strokes. Keep its current
+expiry/revocation, no-store and non-admin projection semantics. Public API and
+browser decoder changes must ship together; scope preservation does not mean
+silently preserving an inaccurate numeric field meaning.
+
+### Offline behavior and acceptance examples
+
+Queue numeric/no-score edits by the same account/player/round/hole identity.
+Persist before delivery; preserve immutable requests, exact-version conflicts,
+acknowledged-predecessor successors, account isolation and explicit discard.
+Conflicts must display both actual states, including no-score; a retained no-score
+entry expects a present revision rather than absence. Refetch canonical card data
+before claiming points are server-confirmed. A numeric correction from 9 to 10
+that leaves points at zero still changes the preserved score and revision.
+No queued confirmation, background sync or cold offline launch is added.
+
+Version the new outcome payload deliberately: existing numeric request bodies,
+normalized fingerprints and persisted receipts must continue to replay exactly.
+Do not inject a new default field into old fingerprint serialization. Preserve
+or explicitly migrate already-persisted numeric device queue entries without
+losing their immutable request IDs or acknowledged-predecessor expectations.
+Include legacy receipt/queue upgrade regressions before exposing the new format.
+
+| Par | Gross entry | Received strokes | Gross points | Net points | Overall gross/net hole contribution |
+| --- | --- | --- | --- | --- | --- |
+| 4 | 4 | 0 | 2 | 2 | 0 / 0 |
+| 4 | 5 | 1 | 1 | 2 | +1 / 0 |
+| 4 | 6 | 2 | 0 | 2 | +2 / 0 |
+| 4 | 9 | 1 | 0 | 0 | +2 / +2 |
+| 3 | 2 | 0 | 3 | 3 | −1 / −1 |
+| 5 | picked up | 2 | 0 | 0 | +2 / +2 |
+
+These six resolved holes yield 6 gross points and 9 net points, with comparable
+subtotals +6/+3 (`12 - points`). The card is still incomplete; the other 12 blank
+holes contribute nothing. If the pickup instead remains blank, there are only
+five resolved holes and the subtotals are +4/+1. Neither state is an 18-hole
+result. On an index-18 par-4 hole, gross 4 with one stroke given back earns gross
+2/net 1. A par-5 gross 1 with three received strokes earns gross 6/net 9 under the
+explicit formula; do not impose the visible table's six-point ceiling.
+
+Visibility example: a hidden-final front nine with nine resolved holes and 20
+permitted points contributes −2 (`18 - 20`), not +16. Altering the hidden back nine
+must change neither that value nor visible progress or metadata. This is a
+restricted view of an 18-hole round, not support for a nine-hole competition.
+
+Full-round cases: 18 pars with handicaps disabled earn 36 points and contribute
+0. Four birdies plus 14 pars earn 40 and contribute −4. A par-72 card containing
+17 pars and a holed-out 10 on the remaining par-4 has actual gross 78, earns 34
+points and contributes +2 rather than its actual +6. Replacing that 10 by an
+explicit pickup still earns 34 and contributes +2, but no actual full gross total
+exists. All 18 explicit pickups earn 0 and contribute +36; all 18 blanks have no
+result and cannot be confirmed.
+
+Mixed completed-round example, all confirmed and visible, no mandatory round,
+best-N 2, with gross/net comparable values:
+
+| Round | Format | Player A | Player B |
+| --- | --- | --- | --- |
+| 1 | Individual stroke play | +4 / +1 | +3 / 0 |
+| 2 | Individual Stableford | 32/40 points → +4 / −4 | 34/38 points → +2 / −2 |
+| 3 | Four-ball, A and B partners | −1 / −3 | −1 / −3 |
+
+A selects gross −1 and either tied +4 for +3; its net selection totals −7.
+B selects gross −1/+2 for +1 and net −3/−2 for −5. The raw Stableford points never
+enter the sum directly, and the four-ball contribution is credited once to each
+partner. With best-N 1 and round 2 mandatory, A must use +4/−4 and B +2/−2, even
+when another round has a better value in the selected metric.
+
+For a final-round comparison outside best-N, suppose two otherwise eligible
+players each have an earlier best net contribution of −6, with N=1. Their final
+Stableford round scores are net 40 and 38 points, equivalents −4 and −2. Both
+retain overall −6; `final_round_score` places the 40-point player first. With
+`shared_positions`, equal final points, or an incomparable/hidden final group,
+they retain the applicable shared place. Do not compare raw points ascending.
+
+### First implementation candidate and release conditions
+
+After all three format definitions, the first bounded Stableford candidate is
+pure domain work: numeric/no-score-to-points conversion, resolved progress and
+typed native-versus-comparable results, with the acceptance examples above.
+Keep the format unavailable and existing calculations unchanged at that stop.
+Review and run the affected backend checks before publishing that foundation.
+
+Playable release also requires closed format/creation policies, forward schema
+and no-score audit/revision/receipt guards, snapshots, state-aware completion and
+confirmation, unit-aware private/public DTOs and decoding, ranking/selection,
+history, offline state handling and mobile UI. Resolve those as explicit later
+slices; do not expose a format enum before all paths are coherent.
+
+Acceptance must include fresh and populated-schema migrations; numeric/no-score
+ABA and lost-response delivery; authority and lock races; zero-point completion
+versus empty cards; correction invalidation despite unchanged points; plus,
+disabled and allowance-boundary handicaps; best-N and mandatory/final-round
+comparisons; hidden-score noninterference; public labels; historical regression
+coverage and real Chrome at 320/390/1280px in offline/loading/error/empty/populated
+and long-content states. Follow the complete affected validation ladders and
+read-only review. No runtime test result is claimed by this definition.
