@@ -17,6 +17,11 @@ pub enum ApiError {
     PayloadTooLarge,
     #[error("resource not found")]
     NotFound,
+    #[error("{message}")]
+    DomainNotFound {
+        code: &'static str,
+        message: &'static str,
+    },
     #[error("{0}")]
     Conflict(String),
     #[error("{message}")]
@@ -66,6 +71,9 @@ impl IntoResponse for ApiError {
                 self.to_string(),
                 None,
             ),
+            Self::DomainNotFound { code, message } => {
+                (StatusCode::NOT_FOUND, *code, (*message).to_owned(), None)
+            }
             Self::NotFound => (StatusCode::NOT_FOUND, "not_found", self.to_string(), None),
             Self::Conflict(message) => (StatusCode::CONFLICT, "conflict", message.clone(), None),
             Self::DomainConflict { code, message } => {

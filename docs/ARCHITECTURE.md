@@ -458,6 +458,41 @@ and reapplies runtime grants before the API is started.
   fail-closed; only the deterministic highest-numbered open round may enter the
   displayed selection provisionally, while completed-only qualification remains
   unchanged.
+- Public result sharing is an explicit capability boundary, separate from member
+  authorization. Schema 0026 stores independent 256-bit token hashes, a fixed
+  30-day lifetime, immutable grant identity and derived immutable issue/replace/
+  revoke audits. A partial unique index permits one unrevoked grant per tournament;
+  replacement also terminates an expired previous grant. Composite audit foreign
+  keys retain tournament/grant consistency. Ordinary grant/audit deletion is
+  rejected; intentional parent tournament deletion cascades both. Audit actor UUIDs
+  are preserved snapshots rather than user foreign keys. Grants belong to the
+  tournament and survive issuer demotion; management rechecks current exact-admin
+  session, membership and credential generation under locks.
+- Public reads hold the grant `FOR SHARE` through repeatable-read fact loading and
+  assembly, with wall-clock expiry checks after grant waits and after loading.
+  Queued readers whose grant changed under repeatable read fail unavailable.
+  Rotation/revocation serialize with reads. The fact loader accepts explicit
+  Internal/Member/Public projection contexts; Public always uses the non-admin
+  visibility rule, regardless of ambient cookies. Private membership locks and
+  existing unrestricted internal callers keep their original contracts.
+- A dedicated public domain projection allowlists standings summaries after
+  visibility-aware scoring/ranking. It excludes global player/owner/account IDs,
+  roster/team details, contributions and hole scores. The anonymous API validates
+  a body-carried capability and never extracts session authority. Strict public
+  frontend decoders reject private response shapes; public rows have no private
+  drill-down links. Invalid, expired and revoked capabilities share unavailable
+  responses. Endpoint body limits, trusted-client throttles, no-store, no-referrer
+  and noindex/nofollow headers apply independently of the authenticated workspace.
+- The standalone shared-results route retains the reusable token fragment, keeps
+  it out of persistent storage/query keys and creates a new QueryClient for each
+  nonsecret visit identity. Native hash changes (including removal), router visits
+  and same-grant token changes cannot reuse prior authorization. Unmount clears
+  the visit cache; abort signals reject late responses. Visible-only 15-second
+  refresh, page return, metric changes and explicit retry clear previous metric
+  snapshots. Failures hide rows, terminal unavailable stops polling and bounded
+  expiry timers avoid JavaScript's maximum-delay overflow. Public reads omit
+  cookies and never subscribe to private SSE. Admin receipt state is isolated by
+  user, CSRF and tournament identity; metadata alone enters the private cache.
 - Server-Sent Events carry invalidation notifications, not full mutable state. Clients refetch through TanStack Query.
 - Live events carry internal tournament scope from every post-commit producer.
   `/api/tournaments/{tournament_id}/live` authenticates and authorizes the exact
@@ -665,6 +700,9 @@ Implemented resources:
 | `POST` | `/api/me/profile/username` | Current-password-confirmed canonical username change; sessions retained |
 | `POST` | `/api/me/profile/password` | Current-password-confirmed password change; invalidate every session and clear cookie |
 | `PATCH` | `/api/tournaments/{tournament_id}/counted-rounds` | Atomically update best-N, optional mandatory round and overall tie-break policy before tournament start |
+| `GET`, `POST` | `/api/tournaments/{tournament_id}/result-share` | Exact-admin latest link metadata and CSRF-protected issue/replacement with expected grant identity |
+| `DELETE` | `/api/tournaments/{tournament_id}/result-share/{grant_id}` | Exact-admin CSRF-protected revocation of the current result link |
+| `POST` | `/api/public/results/{grant_id}` | Capability-authorized limited gross/net standings with non-admin visibility |
 | `GET` | `/api/tournaments/{tournament_id}/course-catalog` | Search the bundled curated course shortlist as a tournament admin |
 | `GET` | `/api/tournaments/{tournament_id}/course-presets` | Read only registered immutable supplied layouts as an exact tournament admin; private, no-store |
 | `GET` | `/api/tournaments/{tournament_id}/course-provider/courses/{provider_course_id}` | Retrieve normalized provider tee and hole detail as a tournament admin |
@@ -681,11 +719,10 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 
 ## Deferred decisions
 
-- Public scorecard/share-link policy.
+- Public scorecard access beyond the implemented overall result-sharing link.
 - Regional alternatives to the implemented WHS course-handicap conversion.
 - Scramble formulas beyond the initial configurable 35%/15% implementation.
 - Additional tournament tie-break policies and configurable individual-round ties.
-- Public leaderboard token/link design.
 - Offline mutation queue and score conflict presentation.
 - General-purpose editable course and multi-tee library behavior beyond supplied
   immutable presets, including whether the UI should

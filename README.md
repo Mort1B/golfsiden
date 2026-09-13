@@ -30,6 +30,9 @@ access independently.
   workspaces and control when an 18-hole final round's back-nine results become
   visible to members. Scoring permissions and read-only result access remain
   separate.
+- **Share live results:** Organizers can create a revocable 30-day link to overall
+  gross/net standings. Visitors see player names and permitted results without an
+  account; hidden final results stay protected.
 - **Player accounts:** Manage profiles and passwords across tournaments. Organizers
   can create private recovery links for ordinary players without email
   integration; administrator accounts are recovered by the site operator.

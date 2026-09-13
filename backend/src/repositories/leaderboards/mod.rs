@@ -1,5 +1,6 @@
 mod load;
 mod rows;
+mod tournament;
 
 use sqlx::PgPool;
 use thiserror::Error;
@@ -135,93 +136,29 @@ async fn tournament_read(
     sqlx::query(transaction_mode)
         .execute(&mut *transaction)
         .await?;
-    let (counted_rounds, mandatory_round_id, final_round_number, tie_break_policy) = sqlx::query_as::<_, (i16, Option<Uuid>, i16, TournamentTieBreakPolicy)>(
-        "SELECT counted_rounds, mandatory_round_id, number_of_rounds, tie_break_policy FROM tournaments WHERE id = $1",
-    )
-    .bind(tournament_id)
-    .fetch_optional(&mut *transaction)
-    .await?
-    .ok_or(LeaderboardError::NotFound)?;
-    let counted_rounds = usize::try_from(counted_rounds)
-        .ok()
-        .filter(|count| *count > 0)
-        .ok_or(LeaderboardError::InvalidStoredData)?;
-    let role = if let Some(user_id) = user_id {
-        tournament_authorization::require_tournament_member_read(
-            &mut transaction,
-            user_id,
-            tournament_id,
-        )
-        .await?;
-        Some(member_role(&mut transaction, user_id, tournament_id).await?)
-    } else {
-        None
-    };
-    let round_rows = sqlx::query_as::<_, RoundRow>(
-        "SELECT r.id AS round_id, r.tournament_id, r.round_number, r.status, r.scoring_format, r.number_of_holes, r.handicap_enabled, r.handicap_allowance_percent, t.final_round_back_nine_hidden, t.number_of_rounds AS tournament_round_count FROM rounds r JOIN tournaments t ON t.id = r.tournament_id WHERE r.tournament_id = $1 AND r.status IN ('open', 'completed', 'locked') ORDER BY r.round_number, r.id",
-    )
-    .bind(tournament_id)
-    .fetch_all(&mut *transaction)
-    .await?;
-    let final_projection = round_rows
-        .iter()
-        .find(|row| row.round_number == row.tournament_round_count)
-        .map(|row| projection_for_round(row, role))
-        .unwrap_or_else(unrestricted);
-    let hidden_completed_round_id = round_rows
-        .iter()
-        .find(|row| {
-            row.round_number == row.tournament_round_count
-                && matches!(
-                    row.status,
-                    crate::domain::models::RoundStatus::Completed
-                        | crate::domain::models::RoundStatus::Locked
-                )
-                && final_projection.mode == VisibilityMode::FrontNine
-        })
-        .map(|row| row.round_id);
-    let current_projection = round_rows
-        .iter()
-        .filter(|row| row.status == crate::domain::models::RoundStatus::Open)
-        .max_by_key(|row| (row.round_number, row.round_id))
-        .map(|row| projection_for_round(row, role))
-        .unwrap_or_else(unrestricted);
-    let rounds = round_rows.into_iter().map(round_from_row).collect();
-    let rounds = load::related(&mut transaction, rounds).await?;
-    let participants = sqlx::query_as::<_, ParticipantRow>(
-        "SELECT tp.player_id, p.display_name, tp.status FROM tournament_players tp JOIN players p ON p.id = tp.player_id WHERE tp.tournament_id = $1 ORDER BY lower(p.display_name), p.display_name, tp.player_id",
-    )
-    .bind(tournament_id)
-    .fetch_all(&mut *transaction)
-    .await?
-    .into_iter()
-    .map(|row| ParticipantFact {
-        player_id: row.player_id,
-        display_name: row.display_name,
-        status: row.status,
-    })
-    .collect();
-    let facts = TournamentLeaderboardFacts {
-        final_round_number,
-        tie_break_policy,
-        tournament_id,
-        counted_rounds,
-        mandatory_round_id,
-        participants,
-        rounds,
-    };
-    let result = match role {
-        Some(_) => build_tournament_leaderboard_projected(
-            &facts,
-            metric,
-            final_projection,
-            hidden_completed_round_id,
-            current_projection,
-        )?,
-        None => build_tournament_leaderboard(&facts, metric)?,
-    };
+    let projection = user_id.map_or(
+        tournament::TournamentProjection::Internal,
+        tournament::TournamentProjection::Member,
+    );
+    let result = tournament::assemble(&mut transaction, tournament_id, metric, projection).await?;
     transaction.commit().await?;
     Ok(result)
+}
+
+/// Called only after a result-sharing capability has been locked and authorized
+/// by its owning repository, in that same repeatable-read transaction.
+pub(crate) async fn public_in_transaction(
+    transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    tournament_id: Uuid,
+    metric: LeaderboardMetric,
+) -> Result<TournamentLeaderboard, LeaderboardError> {
+    tournament::assemble(
+        transaction,
+        tournament_id,
+        metric,
+        tournament::TournamentProjection::Public,
+    )
+    .await
 }
 
 async fn member_role(

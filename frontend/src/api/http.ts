@@ -28,7 +28,7 @@ function errorDetails(value: unknown, status: number): { code: string; message: 
 }
 
 async function responseJson(path: string, init?: RequestInit): Promise<unknown> {
-  const response = await fetch(`${apiUrl}${path}`, { ...init, credentials: 'include' })
+  const response = await fetch(`${apiUrl}${path}`, { ...init, credentials: init?.credentials ?? 'include' })
   const body: unknown = await response.json().catch(() => undefined)
   if (!response.ok) {
     const details = errorDetails(body, response.status)
@@ -38,7 +38,7 @@ async function responseJson(path: string, init?: RequestInit): Promise<unknown> 
 }
 
 export async function requestNoContent(path: string, init?: RequestInit): Promise<void> {
-  const response = await fetch(`${apiUrl}${path}`, { ...init, credentials: 'include' })
+  const response = await fetch(`${apiUrl}${path}`, { ...init, credentials: init?.credentials ?? 'include' })
   if (!response.ok) {
     const body: unknown = await response.json().catch(() => undefined)
     const details = errorDetails(body, response.status)

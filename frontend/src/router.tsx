@@ -1,3 +1,4 @@
+import { SharedResultsPage } from './pages/SharedResultsPage'
 import { createBrowserRouter } from 'react-router-dom'
 import { AppShell } from './ui/AppShell'
 import { RoundPage } from './pages/RoundPage'
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
   { path: '/', element: <HomePage /> },
   { path: '/create', element: <TournamentOnboardingPage /> },
   { path: '/reset-password/:grantId', element: <ResetPasswordPage /> },
+  { path: '/results/shared/:grantId', element: <SharedResultsPage /> },
   { path: '/login', element: <SignInPage /> },
   { path: '/join/:invitationId', element: <JoinPage /> },
   {

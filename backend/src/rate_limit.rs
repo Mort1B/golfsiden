@@ -13,6 +13,8 @@ pub enum RateLimitRoute {
     Login,
     ProfileCredentials,
     RecoveryAdmin,
+    ResultShareAdmin,
+    PublicResults,
     RecoveryPreview,
     RecoveryRedeem,
     Onboarding,
@@ -67,6 +69,18 @@ impl RateLimiter {
         Self::with_rules(
             [
                 (RateLimitRoute::Login, Duration::from_secs(60), 10, 40),
+                (
+                    RateLimitRoute::ResultShareAdmin,
+                    Duration::from_secs(60),
+                    10,
+                    30,
+                ),
+                (
+                    RateLimitRoute::PublicResults,
+                    Duration::from_secs(60),
+                    60,
+                    240,
+                ),
                 (
                     RateLimitRoute::RecoveryAdmin,
                     Duration::from_secs(60),

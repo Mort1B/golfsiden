@@ -6,6 +6,7 @@ pub mod leaderboards;
 pub mod live;
 pub mod onboarding;
 pub mod profile;
+pub mod result_sharing;
 pub mod round_completion;
 pub mod round_configuration;
 pub mod round_lifecycle;

@@ -1,3 +1,4 @@
+import { ResultShareControl } from '../resultSharing/ResultShareControl'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Round, Tournament, TournamentPlayerRoster } from '../../api/types'
@@ -93,6 +94,7 @@ export function TournamentManagementSections({ tournament, roster, rounds, navig
           roundsError={rounds.error}
           onRetryRounds={rounds.retry}
         />
+        <ResultShareControl tournamentId={tournament.id} authorityRefreshing={authorityRefreshing} />
         {tournament.description && <p className="management-description">{tournament.description}</p>}
       </section>
 

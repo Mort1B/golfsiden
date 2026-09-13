@@ -237,6 +237,32 @@ Verify readiness, an existing tournament read and representative gross/net
 standings. Schema upgrades and historical preservation were tested against a
 disposable PostgreSQL database; this change does not migrate production itself.
 
+### Schema 26 public live result-sharing
+
+Migration 0026 adds tournament result capabilities and derived immutable audits.
+Existing tournament, score, snapshot and account history is unchanged; neither
+upgrade nor development seed creates a link. Links appear only after an exact
+admin deliberately issues one through the matching frontend/API. Tokens are
+independent of sessions, invitations and password recovery and persist only as
+hashes. There is no new origin or email configuration: the frontend builds the
+same-origin reusable fragment link.
+
+Back up first, migrate with owner authority, refresh runtime permissions and deploy
+matching API/frontend images, including the updated Caddyfile. Keep
+`RUN_MIGRATIONS=false`; schema-25 binaries cannot serve schema 26. Rollback uses
+the pre-upgrade backup and fresh-volume restoration. Retain existing PostgreSQL
+parameter/row-detail logging restrictions, and do not add capability bodies or
+browser fragments to logs, telemetry or cache keys. The updated proxy marks shared
+HTML and sharing API responses no-store, no-referrer and noindex/nofollow.
+
+Verify readiness and existing private tournament reads after rollout. Using a
+designated test tournament, deliberately issue a link, check anonymous limited
+standings and final visibility, then revoke it and verify unavailable on the next
+read. Never create or distribute a real tournament link as an implicit deployment
+check. The page refreshes every 15 seconds while visible; revocation prevents new
+reads but cannot recall results already delivered. This iteration used disposable
+local services and does not itself deploy or expose production results.
+
 ### Upgrade sequence
 
 Before every upgrade:

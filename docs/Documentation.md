@@ -23,6 +23,8 @@ and read-only preserved result cards. Server-Sent Events trigger authoritative
 private refetches. For the configured 18-hole final, holes 10–18 default to
 hidden from non-admin result projections until the exact tournament admin
 releases them; the admin can re-hide them without any time dependency.
+Admins can deliberately share limited overall standings through a revocable
+30-day link. Existing workspaces and scorecards remain membership-private.
 
 ## Production and operator behavior
 
@@ -277,7 +279,9 @@ minutes; authenticated invitation acceptance allows 10/40 per minute; profile
 credential changes share a 5-per-client/account and 20-per-client minute limit.
 Recovery issue/revoke share a separate 5-per-client/issuer and 20-per-client
 minute limit; public preview allows 30-per-client/grant and 60-per-client per
-minute, while redemption allows 5/20 per ten minutes.
+minute, while redemption allows 5/20 per ten minutes. Result-link issue/revoke
+allows 10-per-client/issuer and 30-per-client per minute; public result reads
+allow 60-per-client/grant and 240-per-client per minute.
 Rejected requests return the stable `rate_limited` JSON error, `429`,
 `Retry-After`, and `Cache-Control: no-store`. A narrow-key rejection does not
 charge the broad bucket, stale buckets are evicted, storage is capped, and the
@@ -1409,6 +1413,80 @@ Request measurements go to `/tmp/golf-leaderboard-measurements.json` unless
 `GOLF_LEADERBOARD_MEASUREMENTS` specifies another file. Mobile/desktop screenshots
 are written to `/tmp/golf-leaderboard-live-*.png`.
 
+## Public live result-sharing
+
+Under **Turneringsstyring → Innstillinger → Del resultater offentlig**, an exact
+tournament admin can deliberately create a result link, copy it, replace it or
+revoke it. The controls explain the audience and 30-day lifetime before issuance.
+Only the creation response contains the secret. After leaving the receipt, create
+a replacement if the original link was not saved. Replacement invalidates the
+previous link atomically; no message or link is sent to anyone automatically.
+
+Anyone holding `/results/shared/{grant_id}#token=...` can view the tournament name,
+existing player display names and overall gross/net summaries without signing in.
+The standalone page includes positions and ties, counted-result qualification,
+selected totals, provisional progress and evaluated final-round tie explanations.
+It has no player/account identifiers, usernames, handicaps, membership details,
+team assignments, contribution history, hole scores, private drill-down links or
+mutation controls. Duplicate display names are allowed. Existing private routes
+still require their normal membership and scoring authority.
+
+Public reads always use the ordinary non-admin final-round projection, even if
+the visitor has an administrator session cookie. A hidden open 18-hole final
+contributes only permitted front-nine results; a hidden completed/locked final is
+excluded. Totals, eligibility, positions and tie-break explanations are assembled
+from the permitted facts. Release and re-hide follow the existing visibility
+setting. Shared links grant no tournament membership or account-recovery rights.
+
+The page refreshes every 15 seconds while visible, on return to the tab and through
+**Oppdater resultater**. It shows the last successful refresh time. Each link visit
+owns a separate public query cache; metric changes and refreshes remove previous
+snapshots before new authorization. Errors hide earlier results and offer retry;
+invalid, expired or revoked links show a generic unavailable state and stop
+polling. A read has a 12-second client timeout. Switching the fragment, including
+removing it or replacing the token for the same grant, cannot reuse prior results.
+The fragment remains in the reusable URL for reload/bookmarks; tokens are not
+stored in browser local/session storage or query keys.
+
+A link expires 30 days after issuance, regardless of tournament lifecycle changes.
+It belongs to the tournament and survives its issuing admin losing that role;
+current exact admins retain management authority. Deleting the tournament removes
+its links and associated audit history. Previously delivered results cannot be
+recalled: an already-open page can show its last authorized snapshot until the
+next refresh, up to 15 seconds plus request latency. Every subsequent server read
+checks the grant again, and the page hides locally expired results.
+
+The API contract is:
+
+- `GET /api/tournaments/{tournament_id}/result-share` returns
+  `{tournament_id, grant}` where `grant` is null or the latest grant metadata:
+  `id`, `created_at`, `expires_at`, nullable `revoked_at`. Expired/revoked latest
+  metadata remains available to admins; no saved secret is returned.
+- `POST` on that path requires CSRF and explicit nullable `expected_grant_id`.
+  It returns `201` with `{tournament_id, grant, token}`. Omitted expected identity
+  is invalid; a changed latest grant returns `409 result_share_stale`.
+- `DELETE /api/tournaments/{tournament_id}/result-share/{grant_id}` requires CSRF
+  and returns `204`. Repeating revocation of the current revoked grant is a no-op;
+  targeting a replaced grant returns the same stale conflict.
+- `POST /api/public/results/{grant_id}` accepts `{token, metric}` with `gross` or
+  `net`. It returns `grant_id`, `expires_at`, `tournament_name`, `metric`,
+  `required_counted_rounds`, `final_round_number`, `tie_break_policy`, `visibility`
+  and `entries`. Each entry contains only `position`, `tied`, `display_name`,
+  `completed_rounds`, `counted_contributions`, `eligible`, `total`, `par_total`,
+  `score_to_par`, `provisional`, `provisional_holes_scored` and nullable
+  `tie_break_score_to_par`. Invalid/unknown/expired/revoked capabilities share
+  `404 result_share_unavailable`. Malformed requests and rate limits retain
+  deliberate validation/throttling responses.
+
+Sharing API responses, including errors, are `private, no-store` with no-referrer
+and noindex/nofollow headers. Production Caddy applies these to the shared HTML
+route as well. Capability secrets travel in request bodies, never HTTP URL paths
+or queries, logs or analytics. Schema 0026 stores only independent 256-bit token
+hashes and derives immutable issuance/replacement/revocation audits. Authorization,
+projected result assembly and wall-clock expiry checks share a transaction;
+grant locks serialize readers against replacement and revocation. New tournaments
+and upgrades do not create links automatically.
+
 ## Development workflow
 
 Follow `README.md` for setup and commands. Agents and contributors must also read
@@ -1425,17 +1503,18 @@ restore, and rollback procedures are maintained in `docs/deployment_guide.md`.
 - The legacy global player/profile/handicap directory is retired. Tournament
   creation grants authority only over the new trip, not other users' trips.
   Scorecards and target-tournament SSE are
-  membership-private. Later public tournament, scorecard, or leaderboard access
-  requires an explicit share-token contract.
+  membership-private. Public result links expose only the dedicated overall
+  summary; public scorecards and broader tournament access remain unimplemented.
 - Request throttling is process-local, so the supported production topology is
   one API replica. A future multi-replica topology requires a shared limiter.
 - Tournament settings currently edit only the atomic pre-start best-N and
-  optional mandatory-round and overall tie-break configuration and expose the
-  explicit tournament-start action. Explicit completion and archive APIs have administrator
+  optional mandatory-round and overall tie-break configuration, manage result
+  links and expose the explicit tournament-start action. Explicit completion and archive APIs have administrator
   confirmation controls; the tournament list offers current/archive/all views.
   General tournament editing remains unimplemented. The Courses section supports
   draft-round configuration; non-draft rounds are deliberately read-only.
 - Pairing roster reads, atomic admin replacement, the mobile draft editor,
   flight-aware opening readiness, and representative ready seed assignments
   exist together with membership-wide scoring authority. There is still no
-  offline score queue or public leaderboard link.
+  offline score queue. Public links provide only the limited overall standings
+  projection described above.

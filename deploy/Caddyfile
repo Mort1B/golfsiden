@@ -18,12 +18,20 @@
 
 	header {
 		Content-Security-Policy "default-src 'self'; base-uri 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self'; style-src 'self'"
-		Referrer-Policy "strict-origin-when-cross-origin"
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		-Server
 	}
+
+	@resultSharing path /results/shared/* /api/public/results/* /api/tournaments/*/result-share /api/tournaments/*/result-share/*
+	header @resultSharing {
+		Referrer-Policy "no-referrer"
+		X-Robots-Tag "noindex, nofollow"
+		Cache-Control "private, no-store"
+	}
+	@ordinary not path /results/shared/* /api/public/results/* /api/tournaments/*/result-share /api/tournaments/*/result-share/*
+	header @ordinary Referrer-Policy "strict-origin-when-cross-origin"
 
 	log
 }
