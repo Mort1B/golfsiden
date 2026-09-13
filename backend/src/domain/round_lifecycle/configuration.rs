@@ -4,14 +4,17 @@ use super::{ReadinessFacts, push_if};
 use crate::domain::models::{ReadinessIssue, ReadinessIssueCode};
 
 pub(super) fn validate(facts: &ReadinessFacts, issues: &mut Vec<ReadinessIssue>) {
-    if facts.scoring_format == crate::domain::models::ScoringFormat::FourBallStrokePlay
-        && facts.number_of_holes != 18
+    if matches!(
+        facts.scoring_format,
+        crate::domain::models::ScoringFormat::FourBallStrokePlay
+            | crate::domain::models::ScoringFormat::IndividualStableford
+    ) && facts.number_of_holes != 18
     {
         push_if(
             issues,
             true,
             ReadinessIssueCode::InvalidHoleCount,
-            "four-ball requires 18 holes",
+            "this format requires 18 holes",
         );
     }
     let configuration = &facts.configuration;

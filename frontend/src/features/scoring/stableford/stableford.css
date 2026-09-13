@@ -1,0 +1,3 @@
+.stableford-result > div { grid-template-columns: minmax(0, 1fr) auto; }
+.stableford-result dd { font-weight: 750; min-width: 2rem; text-align: right; }
+.stableford-result dt { overflow-wrap: anywhere; }

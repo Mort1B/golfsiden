@@ -81,9 +81,11 @@ pub(super) fn attribute_round(
                 continue;
             }
         } else if entry.complete != Some(true) {
-            if leaderboard.scoring_format
-                == crate::domain::models::ScoringFormat::FourBallStrokePlay
-            {
+            if matches!(
+                leaderboard.scoring_format,
+                crate::domain::models::ScoringFormat::FourBallStrokePlay
+                    | crate::domain::models::ScoringFormat::IndividualStableford
+            ) {
                 continue;
             }
             return Err(LeaderboardError::InvalidStoredData);
@@ -91,6 +93,7 @@ pub(super) fn attribute_round(
         let candidate = CandidateContribution {
             round_number,
             value: TournamentContribution {
+                stableford: entry.stableford.clone(),
                 round_id: leaderboard.round_id,
                 mandatory: mandatory_round_id == Some(leaderboard.round_id),
                 provisional,
@@ -101,7 +104,12 @@ pub(super) fn attribute_round(
                 gross_total: entry.gross_total,
                 net_total: entry.net_total,
                 par_total: entry.par_played,
-                score_to_par: entry.score_to_par,
+                score_to_par: entry.stableford.as_ref().map_or(entry.score_to_par, |v| {
+                    match leaderboard.metric {
+                        super::super::LeaderboardMetric::Gross => v.gross_equivalent,
+                        super::super::LeaderboardMetric::Net => v.net_equivalent,
+                    }
+                }),
                 counted: false,
             },
         };

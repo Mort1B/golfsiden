@@ -412,6 +412,12 @@ and reapplies runtime grants before the API is started.
 - Four-ball completion counts distinct side-holes with at least one numeric
   partner input. Pickups and duplicate partner entries cannot inflate progress.
   No team handicap snapshot or synthetic winning team score is stored.
+- Stableford uses dedicated player inputs and counts numeric or explicit pickup
+  entries as resolved holes. Eighteen resolved holes and current player
+  confirmation are required for completion/locking, including zero-point cards.
+  The closed format policy treats it as individual, with uncapped 100%-default
+  allowance applied before signed rounding once. Draft-only settings serialize
+  through the round lock with exact-admin/session and expected-version checks.
 - `tournaments.final_round_back_nine_hidden` is the database-owned visibility
   state for the configured final. It defaults to hidden and has an independent
   `visibility_updated_at` concurrency token. Migration 0018 preserves finals
@@ -723,6 +729,11 @@ Implemented resources:
 | `GET` | `/api/rounds/{round_id}/four-ball/scorecards/{team_id}` | Read an actor-free, visibility-projected side card |
 | `GET` | `/api/rounds/{round_id}/four-ball/scorecards/{team_id}/scoring` | Read the full side after authorizing both player cards |
 | `POST` | `/api/rounds/{round_id}/four-ball/scorecards/{team_id}/confirm` | Confirm the current side with one numeric result per hole |
+| `PUT` | `/api/rounds/{round_id}/stableford/settings` | Set draft Stableford handicap use and 0–100% allowance with an expected round version |
+| `PUT` | `/api/rounds/{round_id}/stableford/inputs/conditional` | Conditionally deliver a player's numeric or pickup input |
+| `GET` | `/api/rounds/{round_id}/stableford/scorecards/{player_id}` | Read an actor-free, visibility-projected Stableford card |
+| `GET` | `/api/rounds/{round_id}/stableford/scorecards/{player_id}/scoring` | Read a full Stableford card with current scoring authority and revisions |
+| `POST` | `/api/rounds/{round_id}/stableford/scorecards/{player_id}/confirm` | Confirm 18 explicitly resolved player holes |
 | `GET` | `/api/rounds/{round_id}/teams` | Compatibility read for round teams |
 | `GET` | `/api/tournaments/{tournament_id}/leaderboards/gross` | Retrieve individual tournament gross standings |
 | `GET` | `/api/tournaments/{tournament_id}/leaderboards/net` | Retrieve individual tournament net standings |
@@ -775,7 +786,7 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 The user chose to credit the side's round result to both partners in overall
 standings. The contract below governs setup, preserved player inputs, independent
 side results, confirmation, offline delivery and private scorecards. Stableford
-and match-play integration remain separately scoped. Rule references were checked
+has its own individual contract below; match-play integration remains planned. Rule references were checked
 on 2026-09-13.
 
 `backend/src/domain/four_ball/` owns the implemented pure boundary. Its allowance
@@ -1076,24 +1087,26 @@ The implemented boundaries and their validation cover:
 
 The pure foundation, persistence, lifecycle, results and frontend form one supported
 format. The latest iteration's concrete validation evidence belongs in
-`LatestExplanation.md`. Stableford and match-play remain unavailable until their
-own separately scoped playable integrations are complete.
+`LatestExplanation.md`. Stableford is also playable under its separate contract
+below; match-play remains unavailable until its playable integration is complete.
 
-## Planned individual Stableford contract
+## Individual Stableford contract
 
-**Status: pure domain foundation implemented; playable support remains planned.**
+**Status: playable 18-hole individual support implemented.**
 The user chose to include Stableford in mixed-format overall standings using
 **36 minus points** for a completed 18-hole round. This is a points-derived
-contribution, not an actual stroke total. The foundation below preserves existing
-formats and does not make Stableford selectable. Later integration remains
-separately scoped. Sources checked 2026-09-13.
+contribution, not an actual stroke total. The format is selectable as
+`individual_stableford`, with dedicated persistence, snapshots, player cards,
+offline delivery, confirmation, standings and history. Existing formats retain
+their contracts. Sources checked 2026-09-13.
 
 `backend/src/domain/stableford/` owns the implemented pure points and conversion
 boundary. It consumes the shared `domain/player_score_input.rs` numeric/unentered/
 no-score states, a preserved signed i16 Playing Handicap and the complete 18-hole
 layout. Pars are validated against the existing 2–7 range and stroke indexes must
-form a permutation of 1–18, even on empty cards. No Stableford-specific allowance
-or opening/snapshot entry point is introduced by this foundation.
+form a permutation of 1–18, even on empty cards. The closed round-format policy
+and opening repository own the Stableford allowance/snapshot integration; pure
+calculations consume the preserved result.
 
 `calculate_hole` returns independent gross/net points, with optional uncapped
 numeric strokes. Pickups have zero points and no strokes; blanks have no result.
@@ -1107,9 +1120,56 @@ no contribution. Completeness is arithmetic only, not confirmation or authority.
 `project_card` accepts a caller-authorized visibility mask and skips hidden inputs
 before computing any result or metadata, while retaining full-layout handicap
 allocation. It does not implement membership authorization, final-round exclusion
-or public DTO policy. Existing leaderboard types, result ordering, best-N,
-confirmation, storage, queues and serialization remain unchanged. Tests cover the
-new calculations and projection plus unchanged four-ball behavior.
+or public DTO policy. Dedicated repositories establish authority and assemble
+cards inside the private-read transaction. Leaderboards consume retained
+Stableford input facts and expose explicit point/equivalent values; the shared
+selection machinery compares equivalents while preserving existing format rules.
+
+### Persistence and transport boundaries
+
+Migration 0029 adds `stableford_inputs`, `stableford_input_audits` and
+`stableford_mutation_receipts`. Player input identity is retained through numeric
+and pickup transitions. Triggers enforce format, ownership, hole/round identity,
+current authority, managed positive revision, lifecycle and append-only audit
+rules. A pickup is a retained row with absent numeric strokes, not a deleted row
+or a sentinel score. Legacy score and four-ball tables/receipts are unchanged.
+
+`repositories/stableford/` locks the parent round before checking current session
+and owner authority. Exact account/request replay returns its immutable receipt
+only after those checks. Expected identity/revision applies to new commands;
+cross-round request-ID collisions roll back the losing input, audit and
+confirmation change. Wall-clock session validity is checked after waits and
+before commit. Actual changes clear confirmation even when points are unchanged;
+no-ops and replay do not. Settings use exact-admin authorization and optimistic
+round timestamps, and remain editable only while draft.
+
+`domain/stableford/card.rs` maps preserved facts to player cards; the API maps
+requests and error codes. Private read entries contain only `id` and `input`.
+Scoring entries add revisions and permitted mutation metadata. Cards carry
+`format: individual_stableford`, player owner/handicap, per-hole points, optional
+actual net strokes, nullable card `values`, resolved progress and permitted
+completion/confirmation metadata. All routes are private/no-store, with membership
+checked before private-read format errors.
+
+`domain/leaderboards/values.rs` serializes explicit version-1 value variants.
+Stableford round entries/contributions omit legacy gross/net/par/score-to-par
+fields and expose `value` tagged `stableford`: gross/net points, gross/net
+equivalents, and nullable actual gross/net totals. For any tournament configured
+with Stableford, all overall entries instead expose `value` tagged
+`overall_equivalent`: gross/net equivalents, selected value and nullable tie-break.
+The public allowlist contains only the selected equivalent and tie-break with
+their type/version. The basis comes from configured formats, never hidden input
+presence. Stroke-only serialized shapes remain compatible. Runtime decoders
+validate unit arithmetic, selection/ranks and private cross-resource format
+consistency, rejecting hybrid result fields.
+
+The existing device queue adds `stableford_v1` with player card ownership and
+numeric/pickup intent. Legacy untagged and `four_ball_v1` heads remain unchanged.
+Immutable requests, acknowledged-predecessor successors, account isolation,
+actual-state conflicts and unknown-delivery reconciliation remain shared queue
+invariants. A single player-card lease blocks cross-tab edits while confirmation
+performs its fresh read and online mutation. Pending verification and failed
+local persistence retain confirmation/navigation guards and retry/discard controls.
 
 ### Variant and scoring rules
 
@@ -1254,8 +1314,8 @@ labelled as a sum of points or actual gross/net strokes.
 
 ### Result types, UI and private/public projections
 
-The current actual-stroke contracts cannot safely carry a Stableford equivalent
-in fields named `gross_total`, `net_total` or `total`. Introduce explicit typed
+Actual-stroke contracts cannot safely carry a Stableford equivalent
+in fields named `gross_total`, `net_total` or `total`. Use explicit typed
 result/value representations for actual strokes, Stableford points and the
 comparison contribution, aligned across domain, API, runtime decoders and UI.
 The transport design must preserve existing stroke-only clients/contracts or
@@ -1355,18 +1415,15 @@ retain overall −6; `final_round_score` places the 40-point player first. With
 `shared_positions`, equal final points, or an incomparable/hidden final group,
 they retain the applicable shared place. Do not compare raw points ascending.
 
-### First implementation candidate and release conditions
+### Playable integration and validation boundary
 
-The pure domain points/conversion foundation, resolved progress, typed units and
-permitted-hole arithmetic projection are implemented and tested. Stableford remains
-unavailable and existing runtime calculations remain unchanged. The actual-stroke,
-points and comparison-value separation must survive all later integration layers.
-
-Playable release also requires closed format/creation policies, forward schema
-and no-score audit/revision/receipt guards, snapshots, state-aware completion and
-confirmation, unit-aware private/public DTOs and decoding, ranking/selection,
-history, offline state handling and mobile UI. Resolve those as explicit later
-slices; do not expose a format enum before all paths are coherent.
+The domain foundation and playable integration are implemented together through
+creation, forward schema, snapshots, no-score audit/revision/receipt guards,
+state-aware confirmation/completion, native ranking, mixed selection, typed
+private/public transport, offline delivery and mobile history/scoring UI.
+Actual strokes, native points and comparison values retain distinct meanings
+through every exposed path. Concrete validation evidence for this iteration is
+recorded in `LatestExplanation.md`.
 
 Acceptance must include fresh and populated-schema migrations; numeric/no-score
 ABA and lost-response delivery; authority and lock races; zero-point completion
@@ -1613,8 +1670,8 @@ same overall contribution exclusions and final-result protection.
 The pure domain foundation is implemented and tested for relative allocation,
 numeric proposals, ordered accepted outcomes, terminal/draw derivation and exact
 match-point arithmetic. Match play remains unavailable and existing result
-pipelines are unchanged. Four-ball and Stableford also have isolated foundations;
-playable integration remains separately scoped for each format.
+pipelines are unchanged by the match foundation. Four-ball and Stableford have
+their own completed playable integrations; match-play integration remains planned.
 
 Playable release requires separately scoped persistence/migrations, opponent
 readiness, snapshots, match authority and audit/correction paths, idempotency and

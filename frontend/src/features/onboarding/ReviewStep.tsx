@@ -8,6 +8,7 @@ import type { AuthSession } from '../../api/auth'
 import { MANDATORY_ROUND_EXPLANATION } from '../leaderboards/resultExplanations'
 
 const formatLabel = {
+  individual_stableford: 'Stableford (individuelt, 18 hull)',
   individual_stroke_play: 'Individuell slagkonkurranse',
   team_scramble: 'Lagscramble',
   two_player_foursomes: 'Foursomes (to spillere)',

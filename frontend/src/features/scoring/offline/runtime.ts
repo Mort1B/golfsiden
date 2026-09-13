@@ -1,6 +1,7 @@
 import { isCancelledError, type QueryClient } from '@tanstack/react-query'
 import type { ScoringScorecard } from '../../../api/scorecards'
 import type { FourBallScoringCard } from '../../../api/fourBall'
+import { stablefordApi, type StablefordScoringCard } from '../../../api/stableford'
 import { fourBallApi } from '../../../api/fourBall'
 import { api } from '../../../api/client'
 import { ApiHttpError } from '../../../api/http'
@@ -98,6 +99,7 @@ export class QueueRuntime {
       timer = window.setTimeout(() => controller.abort(), REQUEST_MS)
       const ack = item.protocol === 'four_ball_v1'
         ? await fourBallApi.save(item.roundId, item.head, this.csrfToken, controller.signal)
+        : item.protocol === 'stableford_v1' ? await stablefordApi.save(item.roundId, item.head, this.csrfToken, controller.signal)
         : await api.saveConditionalScore(item.roundId, item.head, this.csrfToken, controller.signal)
       if (!this.isCurrent()) return
       await queueDatabase.acknowledge(item.key, ack)
@@ -131,8 +133,8 @@ export class QueueRuntime {
       if (!this.isCurrent()) return
       await this.client.fetchQuery({ queryKey: key, staleTime: 0, retry: false,
         queryFn: async ({ signal }) => {
-          const card = await scoreRequest<ScoringScorecard | FourBallScoringCard>(child => item.protocol === 'four_ball_v1'
-            ? fourBallApi.scoring(item.roundId, item.sideId, child) : api.scorecardScoring(item.roundId, item.owner, child), signal)
+          const card = await scoreRequest<ScoringScorecard | FourBallScoringCard | StablefordScoringCard>(child => item.protocol === 'four_ball_v1'
+            ? fourBallApi.scoring(item.roundId, item.sideId, child) : item.protocol === 'stableford_v1' ? stablefordApi.scoring(item.roundId, item.owner.id, child) : api.scorecardScoring(item.roundId, item.owner, child), signal)
           if (!this.isCurrent()) throw new Error('Økten er endret')
           return card
         } })

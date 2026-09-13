@@ -52,7 +52,11 @@ pub(super) async fn in_transaction(
             loaded.facts.handicap_enabled,
             loaded.facts.scoring_format,
         );
-        if loaded.facts.scoring_format == crate::domain::models::ScoringFormat::FourBallStrokePlay {
+        if matches!(
+            loaded.facts.scoring_format,
+            crate::domain::models::ScoringFormat::FourBallStrokePlay
+                | crate::domain::models::ScoringFormat::IndividualStableford
+        ) {
             handicap = crate::domain::four_ball::calculate_handicap(
                 course_handicap_numerator(
                     effective_index_tenths,

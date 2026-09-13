@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo } from 'react'
+import { stablefordApi, type StablefordCard } from '../../api/stableford'
 import { fourBallApi, type FourBallCard } from '../../api/fourBall'
 import { api } from '../../api/client'
 import { ownerEquals, scoringKeys, type ScorecardSummary } from '../../api/scorecards'
@@ -75,12 +76,14 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
     && (effectiveRoundStatus === 'open' || effectiveRoundStatus === 'completed')
     && writableOwners.some((writable) => ownerEquals(writable, owner.owner))
   const queryOwner = owner?.owner ?? { type: 'player' as const, id: '' }
-  const cardQuery = useQuery<ScorecardSummary | FourBallCard>({
+  const cardQuery = useQuery<ScorecardSummary | FourBallCard | StablefordCard>({
     ...fresh,
     queryKey: canWrite
       ? scoringKeys.scoring(userId, round?.id ?? '', queryOwner)
       : scoringKeys.read(userId, round?.id ?? '', queryOwner),
-    queryFn: () => round?.scoring_format === 'four_ball_stroke_play'
+    queryFn: () => round?.scoring_format === 'individual_stableford'
+      ? canWrite ? stablefordApi.scoring(round.id, queryOwner.id) : stablefordApi.read(round.id, queryOwner.id)
+      : round?.scoring_format === 'four_ball_stroke_play'
       ? canWrite ? fourBallApi.scoring(round.id, queryOwner.id) : fourBallApi.read(round.id, queryOwner.id)
       : canWrite
       ? api.scorecardScoring(round?.id ?? '', queryOwner)
@@ -111,9 +114,9 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
 
   const prefetchOwner = useCallback((nextOwner: NonNullable<typeof owner>['owner']) => {
     if (!round) return
-    void queryClient.prefetchQuery<ScorecardSummary | FourBallCard>({
+    void queryClient.prefetchQuery<ScorecardSummary | FourBallCard | StablefordCard>({
       queryKey: scoringKeys.scoring(userId, round.id, nextOwner),
-      queryFn: () => round.scoring_format === 'four_ball_stroke_play' ? fourBallApi.scoring(round.id, nextOwner.id) : api.scorecardScoring(round.id, nextOwner),
+      queryFn: () => round.scoring_format === 'individual_stableford' ? stablefordApi.scoring(round.id, nextOwner.id) : round.scoring_format === 'four_ball_stroke_play' ? fourBallApi.scoring(round.id, nextOwner.id) : api.scorecardScoring(round.id, nextOwner),
     })
   }, [queryClient, round, userId])
 

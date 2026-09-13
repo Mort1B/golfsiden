@@ -269,8 +269,12 @@ async fn validate_create(
             tournament.number_of_rounds
         )));
     }
-    if input.scoring_format == ScoringFormat::FourBallStrokePlay && input.number_of_holes != 18 {
-        return Err(ApiError::BadRequest("four-ball requires 18 holes".into()));
+    if matches!(
+        input.scoring_format,
+        ScoringFormat::FourBallStrokePlay | ScoringFormat::IndividualStableford
+    ) && input.number_of_holes != 18
+    {
+        return Err(ApiError::BadRequest("this format requires 18 holes".into()));
     }
     if !(1..=36).contains(&input.number_of_holes) {
         return Err(ApiError::BadRequest(

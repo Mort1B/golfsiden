@@ -16,6 +16,7 @@ pub enum SnapshotHandicapPolicy {
     UncappedIndividualRoundAllowance,
     UncappedCourseHandicap,
     FourBallRoundAllowance,
+    StablefordRoundAllowance,
     IndexCappedCourseHandicap { maximum_index_tenths: i32 },
 }
 
@@ -61,6 +62,9 @@ impl RoundFormatPolicy {
     pub const fn for_format(format: ScoringFormat) -> Self {
         match format {
             ScoringFormat::FourBallStrokePlay => Self::FourBall,
+            ScoringFormat::IndividualStableford => Self::PlayerOwned {
+                snapshot_handicap: SnapshotHandicapPolicy::StablefordRoundAllowance,
+            },
             ScoringFormat::IndividualStrokePlay => Self::PlayerOwned {
                 snapshot_handicap: SnapshotHandicapPolicy::UncappedIndividualRoundAllowance,
             },
@@ -127,7 +131,8 @@ impl RoundFormatPolicy {
         match self.snapshot_handicap() {
             SnapshotHandicapPolicy::UncappedIndividualRoundAllowance
             | SnapshotHandicapPolicy::UncappedCourseHandicap
-            | SnapshotHandicapPolicy::FourBallRoundAllowance => registered_tenths,
+            | SnapshotHandicapPolicy::FourBallRoundAllowance
+            | SnapshotHandicapPolicy::StablefordRoundAllowance => registered_tenths,
             SnapshotHandicapPolicy::IndexCappedCourseHandicap {
                 maximum_index_tenths,
             } => registered_tenths.min(maximum_index_tenths),

@@ -37,14 +37,32 @@ export interface FourBallPendingScore extends PendingBase {
   head: FourBallOperation
   desired: FourBallInput
 }
-export type PendingScore = LegacyPendingScore | FourBallPendingScore
+export interface StablefordTarget extends QueueTarget {
+  protocol: 'stableford_v1'
+  owner: { type: 'player'; id: string }
+}
+export interface StablefordPendingScore extends PendingBase {
+  protocol: 'stableford_v1'
+  owner: { type: 'player'; id: string }
+  head: FourBallOperation
+  desired: FourBallInput
+}
+export type PendingScore = LegacyPendingScore | FourBallPendingScore | StablefordPendingScore
+export function enqueueStableford(current: PendingScore | null, target: StablefordTarget, desired: FourBallInput, expected: ExpectedScore): StablefordPendingScore {
+  if (desired.type === 'numeric' && (!Number.isInteger(desired.gross_strokes) || desired.gross_strokes < 1 || desired.gross_strokes > 20)) throw new Error('Ugyldig antall slag')
+  if (current && current.protocol !== 'stableford_v1') throw new Error('Uforenlig lokal score')
+  return current ? { ...current, desired, generation: crypto.randomUUID() } : {
+    ...target, key: queueKey(target), cardKey: cardKey(target), generation: crypto.randomUUID(),
+    head: fourBallOperation(target, desired, expected), desired, phase: 'queued', lease: null, attempts: 0, retryAt: 0,
+  }
+}
 export function pendingOwner(item: PendingScore): ScoreOwner {
   return item.protocol === 'four_ball_v1' ? { type: 'team', id: item.sideId } : item.owner
 }
 export function pendingLabel(item: PendingScore): string {
-  return item.protocol === 'four_ball_v1' ? inputLabel(item.desired) : `${item.desired} slag`
+  return item.protocol !== undefined ? inputLabel(item.desired) : `${item.desired} slag`
 }
-export function fourBallOperation(target: FourBallTarget, desired: FourBallInput, expected: ExpectedScore): FourBallOperation {
+export function fourBallOperation(target: FourBallTarget | StablefordTarget, desired: FourBallInput, expected: ExpectedScore): FourBallOperation {
   return { request_id: crypto.randomUUID(), hole_id: target.holeId, owner: target.owner, input: desired, expected_score: expected }
 }
 export function enqueueFourBall(current: PendingScore | null, target: FourBallTarget, desired: FourBallInput, expected: ExpectedScore): FourBallPendingScore {
@@ -57,7 +75,7 @@ export function enqueueFourBall(current: PendingScore | null, target: FourBallTa
 }
 export function resolveOperation(item: PendingScore, expected: ExpectedScore): PendingScore {
   const state = { generation: crypto.randomUUID(), phase: 'queued' as const, lease: null, attempts: 0, retryAt: 0 }
-  return item.protocol === 'four_ball_v1'
+  return item.protocol !== undefined
     ? { ...item, ...state, head: fourBallOperation(item, item.desired, expected) }
     : { ...item, ...state, head: operation(item, item.desired, expected) }
 }
@@ -74,7 +92,7 @@ export function operation(target: QueueTarget, desired: number, expected: Expect
   return { request_id: crypto.randomUUID(), hole_id: target.holeId, owner: target.owner, gross_strokes: desired, expected_score: expected }
 }
 export function enqueue(current: PendingScore | null, target: QueueTarget, desired: number, expected: ExpectedScore): LegacyPendingScore {
-  if (current?.protocol === 'four_ball_v1') throw new Error('Uforenlig lokal score')
+  if (current?.protocol !== undefined) throw new Error('Uforenlig lokal score')
   if (!Number.isInteger(desired) || desired < 1 || desired > 20) throw new Error('Ugyldig antall slag')
   // Even before dispatch, a persisted operation is immutable. Further input is a successor.
   return current ? { ...current, desired, generation: crypto.randomUUID() } : {
@@ -84,7 +102,7 @@ export function enqueue(current: PendingScore | null, target: QueueTarget, desir
 }
 export function acknowledge(current: PendingScore, ack: ScoreAcknowledgement): PendingScore | null {
   if (current.head.request_id !== ack.request_id) return current
-  if (current.protocol === 'four_ball_v1' ? equalInput(current.desired, current.head.input) : current.desired === current.head.gross_strokes) return null
+  if (current.protocol !== undefined ? equalInput(current.desired, current.head.input) : current.desired === current.head.gross_strokes) return null
   return resolveOperation(current, { type: 'present', ...ack.applied_score })
 }
 export function hasLease(item: PendingScore, now = Date.now()): boolean { return item.lease !== null && item.lease.until > now }

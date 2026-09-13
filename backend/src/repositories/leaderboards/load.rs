@@ -59,6 +59,7 @@ pub(super) async fn related(
     .bind(&round_ids)
     .fetch_all(&mut *connection)
     .await?;
+    let stableford_inputs=sqlx::query_as::<_,(Uuid,Uuid,Uuid,Option<i16>)>("SELECT round_id,hole_id,player_id,gross_strokes FROM stableford_inputs WHERE round_id=ANY($1) ORDER BY round_id,hole_id,player_id").bind(&round_ids).fetch_all(&mut *connection).await?;
     let confirmations = sqlx::query_as::<_, ConfirmationRow>(
         "SELECT round_id, player_id, team_id FROM scorecard_confirmations WHERE round_id = ANY($1) ORDER BY round_id, player_id, team_id",
     )
@@ -67,6 +68,24 @@ pub(super) async fn related(
     .await?;
 
     let mut related = Related::default();
+    for (round_id, hole_id, player_id, gross) in stableford_inputs {
+        let input = gross
+            .map(|n| {
+                crate::domain::player_score_input::GrossScore::new(i32::from(n))
+                    .map(crate::domain::player_score_input::PlayerHoleInput::Numeric)
+            })
+            .transpose()
+            .map_err(|_| sqlx::Error::Decode("invalid Stableford input".into()))?
+            .unwrap_or(crate::domain::player_score_input::PlayerHoleInput::NoScore);
+        related.stableford_inputs.entry(round_id).or_default().push(
+            crate::domain::leaderboards::StablefordInputFact {
+                round_id,
+                hole_id,
+                player_id,
+                input,
+            },
+        );
+    }
     for row in holes {
         related
             .holes
@@ -160,6 +179,7 @@ pub(super) async fn related(
 
 #[derive(Default)]
 struct Related {
+    stableford_inputs: HashMap<Uuid, Vec<crate::domain::leaderboards::StablefordInputFact>>,
     holes: HashMap<Uuid, Vec<HoleFact>>,
     snapshots: HashMap<Uuid, Vec<SnapshotFact>>,
     team_snapshots: HashMap<Uuid, Vec<TeamSnapshotFact>>,
@@ -173,6 +193,7 @@ impl Related {
     fn take(&mut self, round: RoundFact) -> RoundLeaderboardFacts {
         let id = round.round_id;
         RoundLeaderboardFacts {
+            stableford_inputs: self.stableford_inputs.remove(&id).unwrap_or_default(),
             round,
             holes: self.holes.remove(&id).unwrap_or_default(),
             snapshots: self.snapshots.remove(&id).unwrap_or_default(),

@@ -1,3 +1,4 @@
+import { contributionEquivalent } from './leaderboards/values'
 import { validateTournamentTieBreakRounds } from './leaderboards/tournamentRanks'
 import type { LeaderboardMetric, Round, TournamentContribution, TournamentLeaderboard } from './types'
 import { privateWorkspaceKeys } from './privateWorkspace'
@@ -15,7 +16,7 @@ export const leaderboardKeys = {
 }
 
 function contributionScore(contribution: TournamentContribution, metric: LeaderboardMetric): number {
-  return (metric === 'gross' ? contribution.gross_total : contribution.net_total) - contribution.par_total
+  return contributionEquivalent(contribution, metric)
 }
 
 function compareRoundOrder(left: Round, right: Round): number {
@@ -64,10 +65,14 @@ export function validateTournamentLeaderboardRounds(leaderboard: TournamentLeade
   if (leaderboard.current_round_id !== (expectedCurrent?.id ?? null)) {
     invalidData('resultatdata', 'leaderboard.current_round_id status')
   }
+  const usesEquivalents = rounds.some(round => round.scoring_format === 'individual_stableford')
   for (const entry of leaderboard.entries) {
+    if ((entry.value !== undefined) !== usesEquivalents) invalidData('resultatdata', 'leaderboard.overall value basis')
     for (const contribution of entry.contributions) {
       const round = roundsById.get(contribution.round_id)
-      if (round === undefined || contribution.number_of_holes !== round.number_of_holes) {
+      if (round === undefined || contribution.number_of_holes !== round.number_of_holes
+        || (contribution.value !== undefined) !== (round.scoring_format === 'individual_stableford')
+        || (contribution.value !== undefined && contribution.owner.type !== 'player')) {
         invalidData('resultatdata', 'leaderboard.contribution round identity')
       }
     }

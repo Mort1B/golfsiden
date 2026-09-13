@@ -2,6 +2,7 @@ import type { ScoringFormat } from './types'
 
 export const SCORING_FORMATS = [
   'individual_stroke_play',
+  'individual_stableford',
   'team_scramble',
   'two_player_foursomes',
   'four_ball_stroke_play',
@@ -9,6 +10,7 @@ export const SCORING_FORMATS = [
 
 const formatOwnership = {
   individual_stroke_play: 'player',
+  individual_stableford: 'player',
   team_scramble: 'team',
   two_player_foursomes: 'team',
   four_ball_stroke_play: 'team',
@@ -16,6 +18,7 @@ const formatOwnership = {
 
 const defaultHandicapAllowance = {
   individual_stroke_play: 100,
+  individual_stableford: 100,
   team_scramble: 100,
   two_player_foursomes: 50,
   four_ball_stroke_play: 85,

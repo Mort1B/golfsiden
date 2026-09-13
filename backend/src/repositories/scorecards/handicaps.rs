@@ -13,6 +13,11 @@ pub(super) async fn validate_owner(
     context: &RoundContext,
     owner: ScoreOwner,
 ) -> Result<i32, ScorecardError> {
+    if context.scoring_format == crate::domain::models::ScoringFormat::IndividualStableford {
+        return Err(ScorecardError::Conflict(
+            ScorecardConflict::OwnerFormatMismatch,
+        ));
+    }
     match (RoundFormatPolicy::for_format(context.scoring_format), owner) {
         (RoundFormatPolicy::PlayerOwned { .. }, ScoreOwner::Player { id }) => {
             let handicap = sqlx::query_scalar::<_, i16>(

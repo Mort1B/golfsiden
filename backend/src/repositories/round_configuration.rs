@@ -22,7 +22,7 @@ pub enum RoundConfigurationError {
     Authorization(#[from] AuthorizationError),
     #[error("round is not draft")]
     NotDraft,
-    #[error("four-ball requires 18 holes")]
+    #[error("this format requires 18 holes")]
     InvalidFourBallLayout,
     #[error("round configuration has changed")]
     Stale,
@@ -82,8 +82,11 @@ pub async fn configure(
     check_round(&round, expected_updated_at)?;
 
     let inserted = course_revisions::insert_in_transaction(&mut transaction, revision).await?;
-    if round.scoring_format == crate::domain::models::ScoringFormat::FourBallStrokePlay
-        && inserted.tee.holes.len() != 18
+    if matches!(
+        round.scoring_format,
+        crate::domain::models::ScoringFormat::FourBallStrokePlay
+            | crate::domain::models::ScoringFormat::IndividualStableford
+    ) && inserted.tee.holes.len() != 18
     {
         return Err(RoundConfigurationError::InvalidFourBallLayout);
     }

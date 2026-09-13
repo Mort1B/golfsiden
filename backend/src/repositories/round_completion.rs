@@ -152,7 +152,8 @@ async fn load_visible_holes(
          GROUP BY s.player_id, s.team_id
          UNION ALL SELECT NULL::uuid,tm.team_id,count(DISTINCT i.hole_id)
          FROM four_ball_inputs i JOIN team_memberships tm ON tm.round_id=i.round_id AND tm.player_id=i.player_id
-         JOIN holes h ON h.id=i.hole_id WHERE i.round_id=$1 AND i.gross_strokes IS NOT NULL AND h.hole_number<=9 GROUP BY tm.team_id",
+         JOIN holes h ON h.id=i.hole_id WHERE i.round_id=$1 AND i.gross_strokes IS NOT NULL AND h.hole_number<=9 GROUP BY tm.team_id
+         UNION ALL SELECT i.player_id,NULL::uuid,count(*) FROM stableford_inputs i JOIN holes h ON h.id=i.hole_id WHERE i.round_id=$1 AND h.hole_number<=9 GROUP BY i.player_id",
     )
     .bind(round_id)
     .fetch_all(connection)
@@ -299,7 +300,7 @@ async fn load_individual_owners(
     round_id: Uuid,
 ) -> Result<Vec<OwnerProgressFact>, sqlx::Error> {
     let rows = sqlx::query_as::<_, OwnerProgressRow>(
-        "SELECT rhs.player_id AS owner_id, p.display_name AS owner_name, count(s.id) AS holes_scored, EXISTS(SELECT 1 FROM scorecard_confirmations sc WHERE sc.round_id = rhs.round_id AND sc.player_id = rhs.player_id) AS confirmed FROM round_handicap_snapshots rhs JOIN players p ON p.id = rhs.player_id LEFT JOIN scores s ON s.round_id = rhs.round_id AND s.player_id = rhs.player_id WHERE rhs.round_id = $1 GROUP BY rhs.round_id, rhs.player_id, p.display_name ORDER BY p.display_name, rhs.player_id",
+        "SELECT rhs.player_id AS owner_id, p.display_name AS owner_name, count(s.id)+(SELECT count(*) FROM stableford_inputs i WHERE i.round_id=rhs.round_id AND i.player_id=rhs.player_id) AS holes_scored, EXISTS(SELECT 1 FROM scorecard_confirmations sc WHERE sc.round_id = rhs.round_id AND sc.player_id = rhs.player_id) AS confirmed FROM round_handicap_snapshots rhs JOIN players p ON p.id = rhs.player_id LEFT JOIN scores s ON s.round_id = rhs.round_id AND s.player_id = rhs.player_id WHERE rhs.round_id = $1 GROUP BY rhs.round_id, rhs.player_id, p.display_name ORDER BY p.display_name, rhs.player_id",
     )
     .bind(round_id)
     .fetch_all(connection)

@@ -18,12 +18,12 @@ export function decodeFourBallInput(value: unknown, path = 'input'): FourBallInp
   }
   return fail(path)
 }
-function readEntry(value: unknown, path: string): FourBallReadEntry {
+export function readEntry(value: unknown, path: string): FourBallReadEntry {
   const data = decodeObject(value, path)
   exact(data, ['id', 'input'], path)
   return { id: decodeUuid(data.id, path), input: decodeFourBallInput(data.input, path) }
 }
-function entry(value: unknown, path: string, round: string, hole: string, player: string): FourBallEntry {
+export function entry(value: unknown, path: string, round: string, hole: string, player: string): FourBallEntry {
   const data = decodeObject(value, path)
   exact(data, ['id', 'input', 'revision', 'round_id', 'hole_id', 'owner', 'submitted_by', 'submitted_at', 'updated_at'], path)
   const owner = decodeObject(data.owner, `${path}.owner`)

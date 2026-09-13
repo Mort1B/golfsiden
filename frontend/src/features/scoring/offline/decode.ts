@@ -36,9 +36,9 @@ export function decodePending(value: unknown): PendingScore {
   }
   const common = { request_id: uuid(head.request_id), hole_id: uuid(head.hole_id), owner: decodeScoreOwner(head.owner, 'lagring'), expected_score: decodeExpected(head.expected_score) }
   let item: PendingScore
-  if (data.protocol === 'four_ball_v1') {
+  if (data.protocol === 'four_ball_v1' || data.protocol === 'stableford_v1') {
     if (base.owner.type !== 'player' || common.owner.type !== 'player' || Object.keys(head).length !== 5) return invalid()
-    item = { ...base, phase: data.phase, protocol: 'four_ball_v1', sideId: uuid(data.sideId), owner: base.owner,
+    item = { ...base, phase: data.phase, ...(data.protocol === 'four_ball_v1' ? { protocol: 'four_ball_v1' as const, sideId: uuid(data.sideId) } : { protocol: 'stableford_v1' as const }), owner: base.owner,
       head: { request_id: common.request_id, hole_id: common.hole_id, owner: common.owner, input: decodeFourBallInput(head.input), expected_score: common.expected_score }, desired: decodeFourBallInput(data.desired) }
   } else {
     if (data.protocol !== undefined || Object.keys(head).length !== 5) return invalid()

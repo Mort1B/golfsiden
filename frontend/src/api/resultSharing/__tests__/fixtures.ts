@@ -10,11 +10,11 @@ export function publicFixture(metric: LeaderboardMetric = 'gross'): PublicResult
     grant_id: shareId, expires_at: shareGrant.expires_at, tournament_name: 'En lang turneringstittel for offentlig resultatdeling',
     metric, required_counted_rounds: board.required_counted_rounds, final_round_number: board.final_round_number,
     tie_break_policy: board.tie_break_policy, visibility: board.visibility,
-    entries: board.entries.map(entry => ({
+    entries: board.entries.map(entry => { if (entry.value) throw new Error('Expected stroke fixture'); return ({
       position: entry.position, tied: entry.tied, display_name: entry.display_name, completed_rounds: entry.completed_rounds,
       counted_contributions: entry.counted_contributions, eligible: entry.eligible, total: metric === 'gross' ? entry.gross_total : entry.net_total,
       par_total: entry.par_total, score_to_par: entry.score_to_par, provisional: false, provisional_holes_scored: 0,
       tie_break_score_to_par: entry.tie_break_score_to_par,
-    })),
+    }) }),
   }
 }

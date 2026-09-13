@@ -90,10 +90,12 @@ pub fn normalize(mut input: TournamentPlanInput) -> Result<ValidatedTournamentPl
         }
     }
 
-    let has_individual = input
-        .rounds
-        .iter()
-        .any(|round| round.scoring_format == ScoringFormat::IndividualStrokePlay);
+    let has_individual = input.rounds.iter().any(|round| {
+        matches!(
+            round.scoring_format,
+            ScoringFormat::IndividualStrokePlay | ScoringFormat::IndividualStableford
+        )
+    });
     let has_team = input.rounds.iter().any(|round| {
         crate::domain::round_formats::RoundFormatPolicy::for_format(round.scoring_format)
             .owner_kind()

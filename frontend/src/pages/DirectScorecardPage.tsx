@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { useEffect } from 'react'
+import { stablefordApi, type StablefordReadCard } from '../api/stableford'
+import { StablefordReadView } from '../features/scoring/stableford/StablefordReadView'
 import { fourBallApi, type FourBallReadCard } from '../api/fourBall'
 import { FourBallReadView } from '../features/scoring/fourBall/FourBallReadView'
 import { api } from '../api/client'
@@ -44,11 +46,11 @@ export function DirectScorecardPage() {
   const ownerEntry = targetOwner === null || leaderboardQuery.data === undefined
     ? null
     : projectedOwner(leaderboardQuery.data, tournamentId, roundId, targetOwner)
-  const cardQuery = useQuery<ReadScorecard | FourBallReadCard>({
+  const cardQuery = useQuery<ReadScorecard | FourBallReadCard | StablefordReadCard>({
     queryKey: scoringKeys.read(userId, roundId, targetOwner ?? { type: 'player', id: '' }),
     queryFn: () => {
       if (ownerEntry === null) throw new Error('Scorekortmålet er ikke synlig i runden.')
-      return round?.scoring_format === 'four_ball_stroke_play' ? fourBallApi.read(roundId, ownerEntry.owner.id) : api.scorecardRead(roundId, ownerEntry.owner)
+      return round?.scoring_format === 'individual_stableford' ? stablefordApi.read(roundId, ownerEntry.owner.id) : round?.scoring_format === 'four_ball_stroke_play' ? fourBallApi.read(roundId, ownerEntry.owner.id) : api.scorecardRead(roundId, ownerEntry.owner)
     },
     enabled: ownerEntry !== null,
     retry: false,
@@ -83,7 +85,7 @@ export function DirectScorecardPage() {
       {ownerEntry !== null && cardQuery.error && !cardQuery.data && <ErrorState error={cardQuery.error} onRetry={() => void cardQuery.refetch()} />}
       {cardQuery.data && cardQuery.data.holes.length === 0 && <EmptyState>Scorekortet har ingen synlige hull.</EmptyState>}
       {round && ownerEntry && cardQuery.data && hole && (
-        'format' in cardQuery.data ? <><h2>{cardQuery.data.owner_name}</h2><div className="four-ball-actions"><button type="button" aria-pressed={view === 'summary'} onClick={() => setSearchParams(scorecardSearch(metric, 'summary'))}>Oppsummering</button><button type="button" aria-pressed={view === 'hole'} onClick={() => setSearchParams(scorecardSearch(metric, 'hole', hole.hole_number))}>Ett hull</button></div><FourBallReadView card={cardQuery.data} view={view} holeNumber={hole.hole_number} onHole={number => setSearchParams(scorecardSearch(metric, 'hole', number))} /></> : 'players' in hole ? null : <DirectScorecardView round={round} projectedOwner={ownerEntry} card={cardQuery.data} metric={metric} view={view} hole={hole}
+        'format' in cardQuery.data ? <><h2>{cardQuery.data.owner_name}</h2><div className="four-ball-actions"><button type="button" aria-pressed={view === 'summary'} onClick={() => setSearchParams(scorecardSearch(metric, 'summary'))}>Oppsummering</button><button type="button" aria-pressed={view === 'hole'} onClick={() => setSearchParams(scorecardSearch(metric, 'hole', hole.hole_number))}>Ett hull</button></div>{cardQuery.data.format === 'individual_stableford' ? <StablefordReadView card={cardQuery.data} view={view} holeNumber={hole.hole_number} onHole={number => setSearchParams(scorecardSearch(metric, 'hole', number))} /> : <FourBallReadView card={cardQuery.data} view={view} holeNumber={hole.hole_number} onHole={number => setSearchParams(scorecardSearch(metric, 'hole', number))} />}</> : 'players' in hole || 'gross_points' in hole ? null : <DirectScorecardView round={round} projectedOwner={ownerEntry} card={cardQuery.data} metric={metric} view={view} hole={hole}
           onHole={(nextHole) => setSearchParams(scorecardSearch(metric, 'hole', nextHole))} />
       )}
     </section>

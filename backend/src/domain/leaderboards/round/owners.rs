@@ -26,7 +26,9 @@ impl LeaderboardFormatPolicy {
     fn for_format(format: ScoringFormat) -> Self {
         match format {
             ScoringFormat::FourBallStrokePlay => Self::DerivedSide,
-            ScoringFormat::IndividualStrokePlay => Self::IndividualSnapshots,
+            ScoringFormat::IndividualStrokePlay | ScoringFormat::IndividualStableford => {
+                Self::IndividualSnapshots
+            }
             ScoringFormat::TeamScramble => Self::TwoPlayerTeam {
                 exact_team_size: 2,
                 handicap: TeamHandicapPolicy::Scramble35And15,

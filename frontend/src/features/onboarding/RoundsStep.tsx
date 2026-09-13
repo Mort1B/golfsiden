@@ -86,6 +86,7 @@ export function RoundsStep(props: RoundsStepProps) {
                 <select value={round.scoringFormat} onChange={(event) => {
                   if (isScoringFormat(event.target.value)) props.onChange(round.key, { scoringFormat: event.target.value })
                 }}>
+                  <option value="individual_stableford">Stableford (individuelt, 18 hull)</option>
                   <option value="individual_stroke_play">Individuell slagkonkurranse</option>
                   <option value="team_scramble">Lagscramble (to spillere)</option>
                   <option value="two_player_foursomes">Foursomes (to spillere)</option>

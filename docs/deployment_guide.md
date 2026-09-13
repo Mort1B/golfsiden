@@ -479,3 +479,32 @@ cascade behavior. The legacy numeric queue and new four-ball queue protocol shar
 the browser's account-isolated storage. Server backups do not include unsent
 device edits. Confirmation requires an online authorized session, and locked
 rounds reject ordinary four-ball corrections.
+
+### Schema 29 individual Stableford
+
+Migration 0029 adds `individual_stableford`, dedicated player inputs, audits and
+immutable receipts, plus state-aware confirmation/completion guards. Apply it with
+the owner connection after a verified backup, refresh runtime grants and deploy
+matching API and web builds together. The API still requires exact schema
+compatibility; do not start older binaries against schema 29 or edit a published
+migration. Rollback uses the documented backup/restore procedure and matching
+binaries, not an in-place downgrade of retained input states.
+
+The populated schema-28 upgrade was tested with both legacy numeric and four-ball
+scores, snapshots, confirmations, audits and receipts. Rows and accepted-request
+replay remain unchanged. Fresh migration and repeat seeding also passed on
+PostgreSQL 17.11. New Stableford inputs retain UUID identity and positive revisions
+through numeric/pickup corrections. Keep receipts for the lifetime of their
+parents; pruning them could turn a delayed retry into a new operation.
+
+The browser adds `stableford_v1` in the existing account-isolated queue without
+rewriting legacy or four-ball request heads. Server backups do not contain unsent
+device edits. Confirmation remains online-only, and ordinary replay cannot bypass
+a locked round or revoked authority. Stableford settings are editable only before
+round opening; historical calculations use frozen snapshots.
+
+Stableford and mixed result responses use tagged version-1 point/equivalent
+values rather than reinterpreting actual-stroke fields. Deploy the corresponding
+strict decoders and UI at the same time. Existing stroke-only result and delivery
+contracts retain their meaning. Public sharing keeps its existing overall-only
+scope, with a non-private converted-value label; it does not expose player cards.

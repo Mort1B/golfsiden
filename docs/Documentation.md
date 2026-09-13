@@ -13,7 +13,7 @@ the overall tie-break policy, select or manually register one immutable course/t
 teams and flights, start the tournament, and open, complete, or lock individual
 rounds through separate controls in the management workspace's Rundestyring section.
 Opening calculates and freezes
-handicap snapshots from the selected tee. Individual stroke play, two-player
+handicap snapshots from the selected tee. Individual stroke play, Stableford, two-player
 scramble, two-player foursomes and four-ball have distinct preserved score ownership and
 handicap rules.
 
@@ -23,15 +23,15 @@ result independently on each hole, and the same team contribution is credited
 once to each frozen partner. The default allowance is 85%, configurable before
 opening. Numeric scores and explicit pickups are distinct, auditable inputs;
 offline edits, team confirmation, standings and private scorecards support both.
-[Individual Stableford](ARCHITECTURE.md#planned-individual-stableford-contract)
-also has a future 18-hole contract: native gross/net points, explicit zero-point
-pickups and user-selected overall contributions of 36 minus points. Its totals
-must be labelled as points or converted contributions rather than actual strokes.
-Its isolated backend foundation now calculates points, resolved progress and typed
-overall equivalents, with full stroke totals only for 18 numeric holes. Permitted-
-hole calculations retain full-round handicap allocation. Stableford remains
-unavailable until snapshot/opening, storage, score entry, confirmation, standings
-and UI integration are implemented. [Singles match play](ARCHITECTURE.md#planned-singles-match-play-contract)
+[Individual Stableford](ARCHITECTURE.md#individual-stableford-contract)
+is playable over 18 holes with native gross/net points, explicit zero-point
+pickups, offline edits and player-card confirmation. Completed cards contribute
+36 minus points to overall standings; these converted values are labelled
+separately from actual strokes. Default handicap allowance is 100%, editable by
+the exact administrator while draft and frozen at opening. Full actual stroke
+totals exist only for 18 numeric holes. Private history and existing public
+overall summaries preserve the same visibility rules as other formats.
+[Singles match play](ARCHITECTURE.md#planned-singles-match-play-contract)
 is defined for 18 holes, with draws and a separate 1/½/0 match-points table. It
 contributes nothing to gross/net overall totals. Its future first version uses
 admin-assigned opponents, a frozen gross/net mode and online match-result reports;
@@ -280,6 +280,96 @@ contribution is withheld from both partners' overall standings until complete
 again. It must be confirmed again before locking. Private history retains the
 original team and supports both hole and summary views. Public links retain their
 existing overall-summary scope and never expose partner inputs or winner details.
+
+## Stableford scorecards
+
+Choose **Individuell Stableford** during tournament creation. It requires a shared
+18-hole tee and player-owned cards, with no team assignment. Existing flight and
+scoring permissions apply. Administrators can enable/disable handicaps and set
+the integer allowance from 0–100% in the round's Stableford settings while draft.
+The default is 100%. A stale save reloads the current settings and explicitly
+replaces the local draft; opened rounds show frozen settings instead of an editor.
+
+The card shows received strokes, original numeric input or **Plukket opp**, and
+server-confirmed gross/net points. A pickup requires explicit confirmation and
+earns zero in both views. A holed-out numeric score may earn zero gross points but
+positive net points; the app does not recommend pickup from gross points alone.
+Blanks remain unentered. All 18 explicit pickups form a complete zero-point card;
+18 blanks cannot be confirmed. Actual full gross/net stroke totals require all
+18 holes to be numeric and are otherwise absent.
+
+The dedicated API uses `individual_stableford` as its format:
+
+- `PUT /api/rounds/{round_id}/stableford/settings` accepts
+  `expected_round_updated_at`, `handicap_enabled` and
+  `handicap_allowance_percent`, and returns the updated round. Exact-admin,
+  current-session, draft and expected-version checks run under the round lock.
+- `PUT /api/rounds/{round_id}/stableford/inputs/conditional` accepts `request_id`,
+  `hole_id`, player `owner`, `expected_score` and numeric/no-score `input`, with the
+  same explicit expected-version and acknowledgement shape as conditional delivery.
+  Retained input UUIDs and positive revisions distinguish pickup from absence and
+  detect numeric/pickup/numeric ABA. Audits, receipts and confirmation invalidation
+  commit atomically. Legacy numeric and four-ball endpoints remain separate.
+- `GET /api/rounds/{round_id}/stableford/scorecards/{player_id}` returns an
+  actor-free permitted card. The `/scoring` suffix requires score authority and
+  returns full input revision metadata. Cards contain the format discriminator,
+  player owner, preserved handicap, visible holes, per-hole gross/net points,
+  nullable `values`, resolved progress and permitted confirmation metadata.
+- `POST` to that card path plus `/confirm`, with `{}`, confirms all 18 currently
+  resolved server holes. Any actual correction clears confirmation, including
+  numeric 9→10 when both earn zero points. No-ops and accepted receipt replays
+  preserve it. Completed rounds remain correctable until locking; ordinary locked
+  mutations and scoring reads are rejected, while private read-only history remains.
+
+Device edits use `stableford_v1` and an account/player/round/hole identity. An
+immutable queued request is never overwritten by a later numeric or pickup edit;
+its successor expects the acknowledged revision. Conflicts display both actual
+states and require a deliberate local/server choice. Unknown delivery survives
+reload and two tabs. Confirmation reserves the player card across tabs and waits
+for an empty queue, completed verification and a fresh authorized read. Failed
+local storage retains retry/discard controls and blocks unsafe navigation and
+confirmation. Existing numeric and four-ball serialized requests are preserved.
+
+Native round standings rank points descending. Overall standings use the lowest
+comparison value: `36 - points` for a complete card, or `2 * resolved holes - points`
+for a permitted partial card. A resolved zero-point hole contributes +2; a blank
+contributes nothing. For example 40 points gives −4, while 18 pickups give +36.
+Other formats keep their uncapped score-to-par contributions. Best-N, mandatory
+slots and final-round comparisons apply independently to gross/net equivalents;
+raw points are never added to stroke totals. History explains the conversion and
+shows both the native result and its contribution.
+
+Stableford round entries/contributions replace legacy actual-stroke total fields
+with `value: {type: "stableford", version: 1, gross_points, net_points,
+gross_equivalent, net_equivalent, actual_gross_total, actual_net_total}`. Any
+tournament configured with Stableford uses overall entry
+`value: {type: "overall_equivalent", version: 1, gross, net, selected, tie_break}`
+instead of legacy aggregate stroke/par/score-to-par fields. Public entries expose
+only `type`, `version`, `selected` and `tie_break` in that value object. Stroke-only
+responses keep their existing shape. Runtime decoders reject hybrid values and
+verify private result types against configured round formats.
+
+Visibility filtering precedes all permitted point/progress/value derivation and
+retains the full 18-hole allocation. A hidden completed final remains excluded
+from overall standings. Hidden changes do not alter permitted private/public
+result JSON, including completion and confirmation metadata. Public links gain no
+scorecards, inputs, identifiers or handicap details.
+
+For the disposable API on port 3000 and Vite on 5173, run real Chrome from
+`frontend/` with:
+
+```bash
+GOLF_STABLEFORD_BROWSER=1 GOLF_FOUR_BALL_BROWSER=1 GOLF_OFFLINE_BROWSER=1 \
+  npx playwright test --config playwright.lifecycle.config.ts \
+  stableford.browser.ts stablefordOffline.browser.ts stablefordDraft.browser.ts \
+  fourBall.browser.ts fourBallVisibility.browser.ts \
+  offlineScoring.browser.ts offlineLifecycle.browser.ts
+```
+
+The suites cover 320x600, 390x844 and 1280x900 layouts, creation/settings,
+loading/error/empty/populated/long-content states, pickup keyboard behavior,
+label/value overlap, offline conflicts, storage failure, receipt recovery,
+confirmation leases, completed corrections, locked history and hidden results.
 
 ## Mobile score entry
 
@@ -1398,10 +1488,12 @@ with an even-par player who has registered scores.
 Round leaderboards are available at
 `GET /api/rounds/{round_id}/leaderboards/gross` and `/net`. They return all
 preserved player owners for individual play or frozen round teams for scramble,
-including unstarted cards. Live positions compare the selected partial total to
+including unstarted cards. Stroke-format live positions compare the selected partial total to
 par for the holes actually scored. Equal scores use competition positions and
 holes played affect display order, not the tie itself. Net totals allocate the
 preserved or calculated playing handicap by each scored hole's stroke index.
+Stableford instead ranks native points descending and counts explicit pickups as
+resolved zero-point holes; unstarted players remain unranked.
 
 Tournament leaderboards are available at
 `GET /api/tournaments/{tournament_id}/leaderboards/gross` and `/net`. They include
@@ -1415,7 +1507,8 @@ regardless of score; if it is missing, no extra optional result fills that slot
 for qualification. With N = 1, only the mandatory result can qualify.
 
 Completed-only counted progress is the first ranking key until N. Equal progress
-then compares the requested metric's displayed score-to-par, which may include a
+then compares the requested metric's displayed score-to-par or Stableford-derived
+overall equivalent, which may include a
 selected provisional result. Provisional hole progress stabilizes display order
 inside a sporting tie but does not break the tie. Names, UUIDs, and the other
 metric never enter the sporting tie identity.
@@ -1430,7 +1523,8 @@ cannot be compared, the whole group retains shared positions. The final is the
 configured `number_of_rounds`, never the latest loaded or completed round.
 
 The response also requires top-level `tie_break_policy` and `final_round_number`,
-plus nullable `tie_break_score_to_par` on every entry. A non-null value means the whole tied
+plus nullable `tie_break_score_to_par` on stroke-only entries, or `value.tie_break`
+when the tournament uses overall equivalents. A non-null value means the whole tied
 group was compared, including entries still tied after comparison. It is null
 for shared policy, singleton groups, unstarted entries and every incomparable
 group. The UI describes the selected rule and displays “Siste runde” with the
@@ -1440,11 +1534,12 @@ influence that comparison or its explanation. Round standings are unchanged.
 The response returns `required_counted_rounds`, nullable `mandatory_round_id`, and every player's complete
 round-ordered contribution history. Each contribution preserves its round ID,
 tagged player or team owner, owner name, provisional state, visible hole progress,
-gross/net/par totals, metric score-to-par, displayed-selection state, and
+gross/net/par totals and metric score-to-par (or the tagged Stableford values
+described above), displayed-selection state, and
 mandatory flag. Aggregate totals cover only the selected subset.
 `completed_rounds`, `counted_contributions`, and `eligible` remain completed-only
 qualification facts even when a provisional result is selected. Individual
-results stay with their snapshot owner; scramble and foursomes results are
+results stay with their snapshot owner; scramble, foursomes and four-ball results are
 attributed once to every frozen member of that exact round team. Current-team
 data and provisional contributions come only from the highest-numbered open
 round. `included_round_ids` remains completed/locked-only; provisional identities
@@ -1564,6 +1659,9 @@ Anyone holding `/results/shared/{grant_id}#token=...` can view the tournament na
 existing player display names and overall gross/net summaries without signing in.
 The standalone page includes positions and ties, counted-result qualification,
 selected totals, provisional progress and evaluated final-round tie explanations.
+Tournaments configured with Stableford show labelled converted overall values
+instead of actual stroke totals; the public value object contains only the
+selected equivalent and permitted tie-break value, with its type/version.
 It has no player/account identifiers, usernames, handicaps, membership details,
 team assignments, contribution history, hole scores, private drill-down links or
 mutation controls. Duplicate display names are allowed. Existing private routes
@@ -1609,10 +1707,13 @@ The API contract is:
 - `POST /api/public/results/{grant_id}` accepts `{token, metric}` with `gross` or
   `net`. It returns `grant_id`, `expires_at`, `tournament_name`, `metric`,
   `required_counted_rounds`, `final_round_number`, `tie_break_policy`, `visibility`
-  and `entries`. Each entry contains only `position`, `tied`, `display_name`,
-  `completed_rounds`, `counted_contributions`, `eligible`, `total`, `par_total`,
-  `score_to_par`, `provisional`, `provisional_holes_scored` and nullable
-  `tie_break_score_to_par`. Invalid/unknown/expired/revoked capabilities share
+  and `entries`. Each entry contains `position`, `tied`, `display_name`,
+  `completed_rounds`, `counted_contributions`, `eligible`, `provisional` and
+  `provisional_holes_scored`. Stroke-only entries additionally contain `total`,
+  `par_total`, `score_to_par` and nullable `tie_break_score_to_par`. For tournaments
+  configured with Stableford those four fields are replaced by
+  `value: {type: "overall_equivalent", version: 1, selected, tie_break}`.
+  Invalid/unknown/expired/revoked capabilities share
   `404 result_share_unavailable`. Malformed requests and rate limits retain
   deliberate validation/throttling responses.
 

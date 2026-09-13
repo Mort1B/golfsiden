@@ -1,3 +1,4 @@
+import { overallSelected, overallTieBreak } from '../leaderboards/values'
 import { decodeArray, decodeBoolean, decodeInteger, decodeObject, decodeString, decodeTimestamp, decodeUuid, invalidData } from '../decoder'
 import { decodeMetric, nullablePosition } from '../leaderboards/shared'
 import { decodeTieBreakPolicy } from '../tieBreakPolicy'
@@ -37,24 +38,33 @@ export function decodeShareReceipt(value: unknown, tournamentId: string): Result
   if (!status.grant || status.grant.revoked_at !== null || !/^[A-Za-z0-9_-]{43}$/.test(token)) invalidData('lenkedata', 'receipt')
   return { tournament_id: tournamentId, grant: status.grant, token }
 }
+function publicValue(value: unknown, path: string): NonNullable<PublicStanding['value']> {
+  const data = decodeObject(value, path)
+  exact(data, ['type', 'version', 'selected', 'tie_break'], path)
+  if (data.type !== 'overall_equivalent' || data.version !== 1) invalidData('delte resultater', path)
+  return { type: 'overall_equivalent', version: 1, selected: decodeInteger(data.selected, path), tie_break: data.tie_break === null ? null : decodeInteger(data.tie_break, path) }
+}
 function entry(value: unknown, path: string): PublicStanding {
   const data = decodeObject(value, path)
-  exact(data, ['position', 'tied', 'display_name', 'completed_rounds', 'counted_contributions', 'eligible', 'total', 'par_total', 'score_to_par', 'provisional', 'provisional_holes_scored', 'tie_break_score_to_par'], path)
+  exact(data, ['position', 'tied', 'display_name', 'completed_rounds', 'counted_contributions', 'eligible', ...(data.value === undefined ? ['total', 'par_total', 'score_to_par', 'tie_break_score_to_par'] : ['value']), 'provisional', 'provisional_holes_scored'], path)
   return {
     position: nullablePosition(data.position, `${path}.position`), tied: decodeBoolean(data.tied, `${path}.tied`),
     display_name: decodeString(data.display_name, `${path}.display_name`),
     completed_rounds: decodeInteger(data.completed_rounds, `${path}.completed_rounds`, 0, 30),
     counted_contributions: decodeInteger(data.counted_contributions, `${path}.counted_contributions`, 0, 30),
-    eligible: decodeBoolean(data.eligible, `${path}.eligible`), total: decodeInteger(data.total, `${path}.total`),
+    eligible: decodeBoolean(data.eligible, `${path}.eligible`),
+    ...(data.value === undefined ? { total: decodeInteger(data.total, `${path}.total`),
     par_total: decodeInteger(data.par_total, `${path}.par_total`, 0), score_to_par: decodeInteger(data.score_to_par, `${path}.score_to_par`),
+    tie_break_score_to_par: data.tie_break_score_to_par === null ? null : decodeInteger(data.tie_break_score_to_par, `${path}.tie_break_score_to_par`),
+    } : { value: publicValue(data.value, path) }),
     provisional: decodeBoolean(data.provisional, `${path}.provisional`),
     provisional_holes_scored: decodeInteger(data.provisional_holes_scored, `${path}.provisional_holes_scored`, 0, 18),
-    tie_break_score_to_par: data.tie_break_score_to_par === null ? null : decodeInteger(data.tie_break_score_to_par, `${path}.tie_break_score_to_par`),
+
   }
 }
 function primary(left: PublicStanding, right: PublicStanding): boolean {
   return left.position !== null && right.position !== null
-    && left.counted_contributions === right.counted_contributions && left.score_to_par === right.score_to_par
+    && left.counted_contributions === right.counted_contributions && overallSelected(left) === overallSelected(right)
 }
 function coherence(board: PublicResults): void {
   const fail = () => invalidData('delte resultater', 'standings coherence')
@@ -62,27 +72,27 @@ function coherence(board: PublicResults): void {
   board.entries.forEach((item, index, all) => {
     if (item.completed_rounds > board.final_round_number || item.counted_contributions > board.required_counted_rounds
       || item.counted_contributions > item.completed_rounds || item.eligible !== (item.counted_contributions === board.required_counted_rounds)
-      || item.total - item.par_total !== item.score_to_par || item.provisional !== (item.provisional_holes_scored > 0)) fail()
+      || (item.value === undefined && item.total - item.par_total !== overallSelected(item)) || item.provisional !== (item.provisional_holes_scored > 0)) fail()
     if (item.position === null) {
       unranked = true
-      if (item.tied || item.total !== 0 || item.par_total !== 0 || item.counted_contributions !== 0
-        || item.provisional || item.tie_break_score_to_par !== null) fail()
+      if (item.tied || (item.value ? item.value.selected !== 0 : item.total !== 0 || item.par_total !== 0) || item.counted_contributions !== 0
+        || item.provisional || overallTieBreak(item) !== null) fail()
       return
     }
     if (unranked) fail()
     const previous = all[index - 1]; const next = all[index + 1]
     const samePrevious = previous !== undefined && primary(previous, item)
     const sameNext = next !== undefined && primary(item, next)
-    if (item.tie_break_score_to_par !== null && (board.tie_break_policy !== 'final_round_score'
+    if (overallTieBreak(item) !== null && (board.tie_break_policy !== 'final_round_score'
       || board.visibility.mode !== 'full' || !item.eligible || item.provisional || (!samePrevious && !sameNext))) fail()
-    if (samePrevious && previous && (previous.tie_break_score_to_par === null) !== (item.tie_break_score_to_par === null)) fail()
-    const tiedPrevious = samePrevious && previous?.tie_break_score_to_par === item.tie_break_score_to_par
-    const tiedNext = sameNext && next?.tie_break_score_to_par === item.tie_break_score_to_par
+    if (samePrevious && previous && (overallTieBreak(previous) === null) !== (overallTieBreak(item) === null)) fail()
+    const tiedPrevious = samePrevious && (previous ? overallTieBreak(previous) : undefined) === overallTieBreak(item)
+    const tiedNext = sameNext && (next ? overallTieBreak(next) : undefined) === overallTieBreak(item)
     if (item.position !== (tiedPrevious ? previous?.position : index + 1) || item.tied !== (tiedPrevious || tiedNext)) fail()
     if (previous && (previous.counted_contributions < item.counted_contributions
-      || (previous.counted_contributions === item.counted_contributions && (previous.score_to_par > item.score_to_par
-        || (samePrevious && previous.tie_break_score_to_par !== null && item.tie_break_score_to_par !== null
-          && previous.tie_break_score_to_par > item.tie_break_score_to_par))))) fail()
+      || (previous.counted_contributions === item.counted_contributions && (overallSelected(previous) > overallSelected(item)
+        || (samePrevious && overallTieBreak(previous) !== null && overallTieBreak(item) !== null
+          && (overallTieBreak(previous) ?? 0) > (overallTieBreak(item) ?? 0)))))) fail()
   })
 }
 export function decodePublicResults(value: unknown, grantId: string, metric: LeaderboardMetric): PublicResults {
@@ -98,6 +108,7 @@ export function decodePublicResults(value: unknown, grantId: string, metric: Lea
   }
   exact(decodeObject(data.visibility, 'results.visibility'), ['mode'], 'results.visibility')
   if (board.grant_id !== grantId || board.metric !== metric) invalidData('delte resultater', 'identity')
+  if (new Set(board.entries.map(item => item.value?.type ?? 'stroke')).size > 1) invalidData('delte resultater', 'value basis')
   coherence(board)
   return board
 }

@@ -2,11 +2,13 @@ import { useRef, useState } from 'react'
 import { inputLabel, type FourBallPartner } from '../../../api/fourBall'
 import type { FourBallSync } from './useFourBallSync'
 import { StrokeBadge } from './FourBallSummary'
-export function PartnerInput({ partner, sync, par, hole, strokes, disabled }: {
-  partner: FourBallPartner; sync: FourBallSync; par: number; hole: number; strokes: number; disabled: boolean
+export function PartnerInput({ partner, sync, par, hole, strokes, disabled, stableford = false }: {
+  partner: FourBallPartner; sync: FourBallSync; par: number; hole: number; strokes: number; disabled: boolean; stableford?: boolean
 }) {
   const [pickup, setPickup] = useState(false)
   const pickupButton = useRef<HTMLButtonElement>(null)
+  const confirmPickup = useRef<HTMLButtonElement>(null)
+  const openPickup = () => { setPickup(true); requestAnimationFrame(() => confirmPickup.current?.focus()) }
   const closePickup = () => { setPickup(false); requestAnimationFrame(() => pickupButton.current?.focus()) }
   const value = sync.desired?.type === 'numeric' ? sync.desired.gross_strokes : par
   const state = sync.phase === 'queued' ? 'Lagret på denne enheten. Venter på levering.' : sync.phase === 'saving' ? 'Lagrer på enheten …'
@@ -23,11 +25,11 @@ export function PartnerInput({ partner, sync, par, hole, strokes, disabled }: {
     </div>
     <div className="four-ball-actions">
       <button type="button" className="four-ball-record-par" disabled={disabled} onClick={() => sync.setInput({ type: 'numeric', gross_strokes: par })}>Registrer par ({par})</button>
-      <button type="button" ref={pickupButton} disabled={disabled} onClick={() => setPickup(true)}>Plukket opp</button>
+      <button type="button" ref={pickupButton} disabled={disabled} onClick={openPickup}>Plukket opp</button>
     </div>
     {pickup && <div className="scoring-notice warning" role="group" aria-label={`Bekreft pickup for ${partner.display_name}`} onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); closePickup() } }}>
-      <p>Registrere at {partner.display_name} plukket opp? Dette gir ingen tellende score fra spilleren på hullet.</p>
-      <button type="button" disabled={disabled} onClick={() => { sync.setInput({ type: 'no_score' }); closePickup() }}>Ja, plukket opp</button>
+      <p>Registrere at {partner.display_name} plukket opp? {stableford ? 'Dette gir 0 brutto- og nettopoeng og løser hullet.' : 'Dette gir ingen tellende score fra spilleren på hullet.'}</p>
+      <button type="button" ref={confirmPickup} disabled={disabled} onClick={() => { sync.setInput({ type: 'no_score' }); closePickup() }}>Ja, plukket opp</button>
       <button type="button" onClick={closePickup}>Avbryt</button>
     </div>}
     {state && <p role="status">{sync.phase !== 'idle' ? `Lokalt: ${inputLabel(sync.desired)}. ` : ''}{state}</p>}

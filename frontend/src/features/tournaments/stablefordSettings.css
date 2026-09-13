@@ -1,0 +1,5 @@
+.stableford-settings { margin-block: 1rem; overflow-wrap: anywhere; }
+.stableford-settings form { display: grid; gap: .6rem; }
+.stableford-settings input[type="number"] { width: 100%; min-height: 44px; box-sizing: border-box; }
+.stableford-settings label:has(input) { display: flex; align-items: center; gap: .5rem; min-height: 44px; }
+.stableford-settings button { min-height: 44px; white-space: normal; }

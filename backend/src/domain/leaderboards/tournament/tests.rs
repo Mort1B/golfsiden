@@ -32,6 +32,7 @@ fn completed_round(round_number: i16, scores: &[(u128, i16)]) -> RoundLeaderboar
         },
     ];
     RoundLeaderboardFacts {
+        stableford_inputs: Vec::new(),
         round: RoundFact {
             round_id,
             tournament_id: id(1),
@@ -108,6 +109,7 @@ fn completed_foursomes_round(round_number: i16) -> RoundLeaderboardFacts {
         },
     ];
     RoundLeaderboardFacts {
+        stableford_inputs: Vec::new(),
         round: RoundFact {
             round_id,
             tournament_id: id(1),
@@ -235,6 +237,7 @@ fn final_open_round(player_id: u128) -> RoundLeaderboardFacts {
         })
         .collect::<Vec<_>>();
     RoundLeaderboardFacts {
+        stableford_inputs: Vec::new(),
         round: RoundFact {
             round_id,
             tournament_id: id(1),

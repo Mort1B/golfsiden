@@ -1,3 +1,4 @@
+import { StablefordSettings } from './StablefordSettings'
 import { ResultShareControl } from '../resultSharing/ResultShareControl'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -123,7 +124,7 @@ export function TournamentManagementSections({ tournament, roster, rounds, navig
       <section id="courses" className="management-section" aria-labelledby="courses-heading" tabIndex={-1}>
         <header><p className="eyebrow">Lagrede rundefakta</p><h2 id="courses-heading">Baner</h2></header>
         <RoundState state={rounds}>{(items) => (
-          <CourseConfigurationSection tournamentId={tournament.id} rounds={items} navigationKey={navigationKey} linkedRoundId={activeSection === 'courses' ? selectedRoundId : null} />
+          <>{items.filter(round => round.scoring_format === 'individual_stableford').map(round => <StablefordSettings key={round.id} round={round} />)}<CourseConfigurationSection tournamentId={tournament.id} rounds={items} navigationKey={navigationKey} linkedRoundId={activeSection === 'courses' ? selectedRoundId : null} /></>
         )}</RoundState>
       </section>
 

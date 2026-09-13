@@ -1,4 +1,4 @@
-use golf_api::repositories::{round_completion, round_lifecycle};
+use golf_api::repositories::round_lifecycle;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -40,6 +40,23 @@ pub async fn lock_player_round(
         .await
         .unwrap();
     transaction.commit().await.unwrap();
-    round_completion::complete(pool, round).await.unwrap();
-    round_completion::lock(pool, round).await.unwrap();
+    // Exercise the historical lifecycle guards without loading current-format input tables.
+    let mut transaction = pool.begin().await.unwrap();
+    sqlx::query("SELECT id FROM rounds WHERE id=$1 FOR UPDATE")
+        .bind(round)
+        .execute(&mut *transaction)
+        .await
+        .unwrap();
+    sqlx::query("SELECT set_config('app.round_completion_id',$1::text,true),set_config('app.round_lock_id',$1::text,true)").bind(round).execute(&mut *transaction).await.unwrap();
+    sqlx::query("UPDATE rounds SET status='completed' WHERE id=$1")
+        .bind(round)
+        .execute(&mut *transaction)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE rounds SET status='locked' WHERE id=$1")
+        .bind(round)
+        .execute(&mut *transaction)
+        .await
+        .unwrap();
+    transaction.commit().await.unwrap();
 }

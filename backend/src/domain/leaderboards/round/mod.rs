@@ -1,5 +1,6 @@
 mod four_ball;
 mod owners;
+mod stableford;
 
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
@@ -56,6 +57,9 @@ pub fn build_round_leaderboard_projected(
     let snapshots = validated_snapshots(facts)?;
     if facts.round.scoring_format == crate::domain::models::ScoringFormat::FourBallStrokePlay {
         return four_ball::build(facts, metric, visibility, &holes, &snapshots);
+    }
+    if facts.round.scoring_format == crate::domain::models::ScoringFormat::IndividualStableford {
+        return stableford::build(facts, metric, visibility, &holes, &snapshots);
     }
     let owners = build_owner_seeds(facts, &snapshots)?;
     let visible_hole_count = match visibility.mode {
@@ -205,6 +209,7 @@ fn assemble_entries(
             let holes_scored = owner_scores.len();
             let restricted = visibility == VisibilityMode::FrontNine;
             Ok(RoundLeaderboardEntry {
+                stableford: None,
                 position: None,
                 tied: false,
                 owner: owner_seed.owner,

@@ -1,3 +1,4 @@
+import { decodeNativeValue, decodeOverallValue, contributionEquivalent } from './values'
 import { decodeTieBreakPolicy } from '../tieBreakPolicy'
 import { validateTournamentRanks } from './tournamentRanks'
 import { decodeArray, decodeBoolean, decodeInteger, decodeObject, decodeString, decodeUuid } from '../decoder'
@@ -30,10 +31,11 @@ function contribution(value: unknown, path: string): TournamentContribution {
     provisional: decodeBoolean(data.provisional, `${path}.provisional`, 'resultatdata'),
     holes_scored: decodeInteger(data.holes_scored, `${path}.holes_scored`, 0, undefined, 'resultatdata'),
     number_of_holes: decodeInteger(data.number_of_holes, `${path}.number_of_holes`, 1, undefined, 'resultatdata'),
+    ...(data.value !== undefined ? { value: decodeNativeValue(data, path) } : {
     gross_total: decodeInteger(data.gross_total, `${path}.gross_total`, undefined, undefined, 'resultatdata'),
     net_total: decodeInteger(data.net_total, `${path}.net_total`, undefined, undefined, 'resultatdata'),
     par_total: decodeInteger(data.par_total, `${path}.par_total`, undefined, undefined, 'resultatdata'),
-    score_to_par: decodeInteger(data.score_to_par, `${path}.score_to_par`, undefined, undefined, 'resultatdata'),
+    score_to_par: decodeInteger(data.score_to_par, `${path}.score_to_par`, undefined, undefined, 'resultatdata'), }),
     counted: decodeBoolean(data.counted, `${path}.counted`, 'resultatdata'),
     mandatory: decodeBoolean(data.mandatory, `${path}.mandatory`, 'resultatdata'),
   }
@@ -42,7 +44,6 @@ function contribution(value: unknown, path: string): TournamentContribution {
 function tournamentEntry(value: unknown, path: string): TournamentLeaderboardEntry {
   const data = decodeObject(value, path, 'resultatdata')
   return {
-    tie_break_score_to_par: data.tie_break_score_to_par === null ? null : decodeInteger(data.tie_break_score_to_par, `${path}.tie_break_score_to_par`, undefined, undefined, 'resultatdata'),
     position: nullablePosition(data.position, `${path}.position`),
     tied: decodeBoolean(data.tied, `${path}.tied`, 'resultatdata'),
     player_id: decodeUuid(data.player_id, `${path}.player_id`, 'resultatdata'),
@@ -51,17 +52,20 @@ function tournamentEntry(value: unknown, path: string): TournamentLeaderboardEnt
     completed_rounds: decodeInteger(data.completed_rounds, `${path}.completed_rounds`, 0, undefined, 'resultatdata'),
     counted_contributions: decodeInteger(data.counted_contributions, `${path}.counted_contributions`, 0, undefined, 'resultatdata'),
     eligible: decodeBoolean(data.eligible, `${path}.eligible`, 'resultatdata'),
+    ...(data.value !== undefined ? { value: decodeOverallValue(data, path) } : {
+    tie_break_score_to_par: data.tie_break_score_to_par === null ? null : decodeInteger(data.tie_break_score_to_par, `${path}.tie_break_score_to_par`, undefined, undefined, 'resultatdata'),
+
     gross_total: decodeInteger(data.gross_total, `${path}.gross_total`, undefined, undefined, 'resultatdata'),
     net_total: decodeInteger(data.net_total, `${path}.net_total`, undefined, undefined, 'resultatdata'),
     par_total: decodeInteger(data.par_total, `${path}.par_total`, undefined, undefined, 'resultatdata'),
-    score_to_par: decodeInteger(data.score_to_par, `${path}.score_to_par`, undefined, undefined, 'resultatdata'),
+    score_to_par: decodeInteger(data.score_to_par, `${path}.score_to_par`, undefined, undefined, 'resultatdata'), }),
     contributions: decodeArray(data.contributions, `${path}.contributions`, contribution, 'resultatdata'),
     current_team: currentTeam(data.current_team, `${path}.current_team`),
   }
 }
 
 function metricScore(item: TournamentContribution, metric: LeaderboardMetric): number {
-  return (metric === 'gross' ? item.gross_total : item.net_total) - item.par_total
+  return contributionEquivalent(item, metric)
 }
 
 function validateContribution(
@@ -87,7 +91,7 @@ function validateContribution(
   if (item.owner.type === 'player' && item.owner.id !== entry.player_id) {
     invalidLeaderboard(`${path}.owner.id`)
   }
-  if (item.score_to_par !== metricScore(item, leaderboard.metric)) {
+  if (item.value === undefined && item.score_to_par !== metricScore(item, leaderboard.metric)) {
     invalidLeaderboard(`${path}.score_to_par`)
   }
 }
@@ -152,7 +156,15 @@ function validateEntry(
       || entry.current_team.team_id !== provisional.owner.id
       || entry.current_team.team_name !== provisional.owner_name)) invalidLeaderboard(`${path}.current_team`)
 
-  const totals = selected.reduce((sum, item) => ({
+  if (entry.value !== undefined) {
+    const gross = selected.reduce((sum, item) => sum + metricScore(item, 'gross'), 0)
+    const net = selected.reduce((sum, item) => sum + metricScore(item, 'net'), 0)
+    if (entry.value.gross !== gross || entry.value.net !== net || entry.value.selected !== (leaderboard.metric === 'gross' ? gross : net)) invalidLeaderboard(`${path}.value`)
+    return
+  }
+  if (entry.contributions.some(item => item.value !== undefined)) invalidLeaderboard(`${path}.value`)
+  const legacy = selected.filter(item => item.value === undefined)
+  const totals = legacy.reduce((sum, item) => ({
     gross: sum.gross + item.gross_total,
     net: sum.net + item.net_total,
     par: sum.par + item.par_total,
@@ -181,6 +193,7 @@ function validateCoherence(leaderboard: TournamentLeaderboard): void {
     }
     validateEntry(entry, path, leaderboard, included)
   })
+  if (new Set(leaderboard.entries.map(entry => entry.value?.type ?? 'stroke')).size > 1) invalidLeaderboard('leaderboard.value basis')
   validateTournamentRanks(leaderboard)
 }
 

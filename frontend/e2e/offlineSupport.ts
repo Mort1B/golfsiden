@@ -62,6 +62,11 @@ export async function offlineLayout(page: Page, name: string, selector = '.main-
       expect((await control.boundingBox())?.height).toBeGreaterThanOrEqual(44)
       if (await control.isEnabled()) { await control.scrollIntoViewIfNeeded(); await control.click({ trial: true }) }
     }
+    for (const row of await page.locator('.stableford-result > div').all()) {
+      const label = await row.locator('dt').boundingBox(), value = await row.locator('dd').boundingBox()
+      expect(label).not.toBeNull(); expect(value).not.toBeNull()
+      if (label && value) expect(label.x + label.width).toBeLessThanOrEqual(value.x)
+    }
     await page.evaluate(() => window.scrollTo(0, 0))
     await page.screenshot({ path: `/tmp/golf-offline-${name}-${width}.png`, fullPage: true })
   }

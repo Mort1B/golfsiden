@@ -87,6 +87,7 @@ pub(super) fn build(
         let [a, b] = partners;
         let partners = [a?, b?];
         let mut entry = RoundLeaderboardEntry {
+            stableford: None,
             position: None,
             tied: false,
             owner: LeaderboardOwner::Team { id: team.team_id },

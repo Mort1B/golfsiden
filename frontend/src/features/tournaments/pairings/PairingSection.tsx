@@ -7,6 +7,7 @@ import { PairingEditor } from './PairingEditor'
 interface Props { tournamentId: string; rounds: Round[]; linkedRoundId?: string | null; navigationKey?: string }
 
 const pairingFormatLabels = {
+  individual_stableford: 'Stableford · flighter',
   individual_stroke_play: 'Individuell · flighter',
   team_scramble: 'Scramble · lag og flighter',
   two_player_foursomes: 'Foursomes · lag og flighter',

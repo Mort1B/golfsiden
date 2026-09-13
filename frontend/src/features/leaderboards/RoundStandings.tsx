@@ -45,7 +45,7 @@ function RoundRowWithTarget({ entry, leaderboard }: { entry: RoundLeaderboardEnt
 }
 
 function RoundRowContent({ entry, metric, visibleHoleCount }: { entry: RoundLeaderboardEntry; metric: LeaderboardMetric; visibleHoleCount: number }) {
-  const total = metric === 'gross' ? entry.gross_total : entry.net_total
+  const total = entry.value ? metric === 'gross' ? entry.value.gross_points : entry.value.net_points : metric === 'gross' ? entry.gross_total : entry.net_total
   const hasScore = entry.holes_scored > 0
   return <>
     <div className="leaderboard-position" aria-label={entry.tied && entry.position !== null ? `Delt plass ${entry.position}` : undefined}>
@@ -62,8 +62,8 @@ function RoundRowContent({ entry, metric, visibleHoleCount }: { entry: RoundLead
       </p>
     </div>
     <div className="leaderboard-score">
-      <strong>{hasScore ? scoreToParLabel(entry.score_to_par) : '–'}</strong>
-      <span>{hasScore ? `${total} ${metricLabel(metric).toLowerCase()}` : 'Ingen score'}</span>
+      <strong>{hasScore ? entry.value ? `${total} poeng` : scoreToParLabel(entry.score_to_par) : '–'}</strong>
+      <span>{hasScore ? entry.value ? `${metricLabel(metric)} Stableford` : `${total} ${metricLabel(metric).toLowerCase()}` : 'Ingen score'}</span>
     </div>
   </>
 }

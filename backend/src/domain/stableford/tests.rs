@@ -370,11 +370,10 @@ fn native_points_and_overall_ordering_are_opposite_for_complete_cards() {
 }
 
 #[test]
-fn format_remains_unavailable_in_existing_transport() {
-    for name in ["stableford", "individual_stableford"] {
-        assert!(
-            serde_json::from_value::<ScoringFormat>(serde_json::Value::String(name.into()))
-                .is_err()
-        );
-    }
+fn format_uses_explicit_individual_transport_name() {
+    assert!(serde_json::from_str::<ScoringFormat>("\"stableford\"").is_err());
+    assert_eq!(
+        serde_json::from_str::<ScoringFormat>("\"individual_stableford\"").unwrap(),
+        ScoringFormat::IndividualStableford
+    );
 }

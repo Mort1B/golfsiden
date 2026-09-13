@@ -1,3 +1,4 @@
+import { StablefordExperience } from '../features/scoring/stableford/StablefordExperience'
 import { FourBallExperience } from '../features/scoring/fourBall/FourBallExperience'
 import { PendingScores } from '../features/scoring/offline/PendingScores'
 import { useScoreWorkspaceData } from '../features/scoring/useScoreWorkspaceData'
@@ -109,7 +110,7 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
           }}>Prøv oppdatering</button>
         </div>
       )}
-      {'format' in cardQuery.data ? <FourBallExperience tournaments={tournaments} rounds={eligibleRounds}
+      {'format' in cardQuery.data && cardQuery.data.format === 'individual_stableford' ? <StablefordExperience tournaments={tournaments} rounds={eligibleRounds}
         round={{ ...round, status: effectiveRoundStatus ?? round.status }} owners={progressOwners} card={cardQuery.data}
         holeNumber={hole.hole_number} view={view} canWrite={canWrite} recovering={retainingScorer || connectionLost || accessQuery.error !== null}
         onTournament={id => navigate({ tournamentId: id, view: 'hole' }, 'tournament')}
@@ -117,7 +118,15 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
         onOwner={id => { const next = progressOwners.find(item => item.owner.id === id); if (next) navigate({ ...base('hole'), owner: next.owner, holeNumber: 1 }, 'owner') }}
         onHole={number => navigate({ ...base('hole'), holeNumber: number }, 'hole')}
         onView={nextView => navigate(base(nextView), 'view')} />
-        : 'players' in hole ? null : cardQuery.data.projection === 'scoring' ? <ScoringExperience
+        : 'format' in cardQuery.data && cardQuery.data.format === 'four_ball_stroke_play' ? <FourBallExperience tournaments={tournaments} rounds={eligibleRounds}
+        round={{ ...round, status: effectiveRoundStatus ?? round.status }} owners={progressOwners} card={cardQuery.data}
+        holeNumber={hole.hole_number} view={view} canWrite={canWrite} recovering={retainingScorer || connectionLost || accessQuery.error !== null}
+        onTournament={id => navigate({ tournamentId: id, view: 'hole' }, 'tournament')}
+        onRound={id => navigate({ tournamentId: tournament.id, roundId: id, view: 'hole' }, 'round')}
+        onOwner={id => { const next = progressOwners.find(item => item.owner.id === id); if (next) navigate({ ...base('hole'), owner: next.owner, holeNumber: 1 }, 'owner') }}
+        onHole={number => navigate({ ...base('hole'), holeNumber: number }, 'hole')}
+        onView={nextView => navigate(base(nextView), 'view')} />
+        : 'players' in hole || 'gross_points' in hole ? null : cardQuery.data.projection === 'scoring' ? <ScoringExperience
         tournaments={tournaments}
         rounds={eligibleRounds}
         round={{ ...round, status: effectiveRoundStatus ?? round.status }}

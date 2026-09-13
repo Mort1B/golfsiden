@@ -68,7 +68,7 @@ function validateCreatedDefaults(tournament: Tournament, rounds: Round[], sessio
     if (round.course_id !== null || round.tee_id !== null || round.course_name !== '' || round.tee_name !== '') {
       invalidData('opprettingsdata', `${path}.course_configuration`)
     }
-    hasIndividual ||= round.scoring_format === 'individual_stroke_play'
+    hasIndividual ||= !isTeamScoringFormat(round.scoring_format)
     hasTeam ||= isTeamScoringFormat(round.scoring_format)
   })
   const derivedMode = hasIndividual && hasTeam ? 'combined' : hasTeam ? 'team' : 'individual'

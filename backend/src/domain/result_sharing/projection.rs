@@ -15,8 +15,8 @@ pub struct PublicResults {
     pub visibility: VisibilityMetadata,
     pub entries: Vec<PublicStanding>,
 }
-#[derive(Serialize)]
 pub struct PublicStanding {
+    pub equivalent_basis: bool,
     pub position: Option<usize>,
     pub tied: bool,
     pub display_name: String,
@@ -54,6 +54,7 @@ pub fn project(name: String, board: TournamentLeaderboard) -> PublicResults {
                     .map(|c| c.holes_scored)
                     .sum();
                 PublicStanding {
+                    equivalent_basis: entry.equivalents.is_some(),
                     position: entry.position,
                     tied: entry.tied,
                     display_name: entry.display_name,
@@ -72,5 +73,29 @@ pub fn project(name: String, board: TournamentLeaderboard) -> PublicResults {
                 }
             })
             .collect(),
+    }
+}
+
+impl Serialize for PublicStanding {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeMap;
+        let mut map = serializer.serialize_map(None)?;
+        macro_rules! fields {($($field:ident),+)=>{$(map.serialize_entry(stringify!($field),&self.$field)?;)+};}
+        fields!(
+            position,
+            tied,
+            display_name,
+            completed_rounds,
+            counted_contributions,
+            eligible,
+            provisional,
+            provisional_holes_scored
+        );
+        if self.equivalent_basis {
+            map.serialize_entry("value",&serde_json::json!({"type":"overall_equivalent","version":1,"selected":self.score_to_par,"tie_break":self.tie_break_score_to_par}))?;
+        } else {
+            fields!(total, par_total, score_to_par, tie_break_score_to_par);
+        }
+        map.end()
     }
 }

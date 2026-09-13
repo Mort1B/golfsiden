@@ -45,7 +45,7 @@ export function useCourseConfiguration({ tournamentId, round, providerCourseId, 
     mutationFn: (selection: CourseSelection) => {
       const csrfToken = auth.session?.csrf_token
       if (!csrfToken) throw new Error('Økten mangler. Logg inn på nytt.')
-      if (round.scoring_format === 'four_ball_stroke_play' && selection.source === 'manual' && selection.tee.holes.length !== 18) throw new ApiHttpError(400, 'four_ball_requires_18_holes', 'Four-ball krever 18 hull.')
+      if ((round.scoring_format === 'four_ball_stroke_play' || round.scoring_format === 'individual_stableford') && selection.source === 'manual' && selection.tee.holes.length !== 18) throw new ApiHttpError(400, 'format_requires_18_holes', 'Formatet krever 18 hull.')
       return courseApi.configure(round.id, tournamentId, round.updated_at, selection, csrfToken)
     },
   })

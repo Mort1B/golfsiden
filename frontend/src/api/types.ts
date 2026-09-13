@@ -3,7 +3,7 @@ import type { ScoreVisibility } from './visibility'
 export type TournamentStatus = 'draft' | 'active' | 'completed' | 'archived'
 export type ScoringMode = 'individual' | 'team' | 'combined'
 export type RoundStatus = 'draft' | 'open' | 'completed' | 'locked'
-export type ScoringFormat = 'individual_stroke_play' | 'team_scramble' | 'two_player_foursomes' | 'four_ball_stroke_play'
+export type ScoringFormat = 'individual_stroke_play' | 'team_scramble' | 'two_player_foursomes' | 'four_ball_stroke_play' | 'individual_stableford'
 export type ParticipantStatus = 'active' | 'withdrawn'
 export type LeaderboardMetric = 'gross' | 'net'
 export type TournamentTieBreakPolicy = 'shared_positions' | 'final_round_score'
@@ -106,7 +106,7 @@ export interface LeaderboardMember {
   display_order: number | null
 }
 
-export interface RoundLeaderboardEntry {
+interface RoundLeaderboardEntryBase {
   position: number | null
   tied: boolean
   owner: LeaderboardOwner
@@ -117,11 +117,13 @@ export interface RoundLeaderboardEntry {
   complete: boolean | null
   confirmed: boolean | null
   playing_handicap: number | null
+}
+export type RoundLeaderboardEntry = RoundLeaderboardEntryBase & ({ value?: undefined;
   gross_total: number
   net_total: number
   par_played: number
   score_to_par: number
-}
+} | { value: StablefordResult; gross_total?: never; net_total?: never; par_total?: never; par_played?: never; score_to_par?: never })
 
 export interface RoundLeaderboard {
   round_id: string
@@ -141,23 +143,24 @@ export interface CurrentTeam {
   team_name: string
 }
 
-export interface TournamentContribution {
+interface TournamentContributionBase {
   round_id: string
   owner: LeaderboardOwner
   owner_name: string
   provisional: boolean
   holes_scored: number
   number_of_holes: number
+  counted: boolean
+  mandatory: boolean
+}
+export type TournamentContribution = TournamentContributionBase & ({ value?: undefined;
   gross_total: number
   net_total: number
   par_total: number
   score_to_par: number
-  counted: boolean
-  mandatory: boolean
-}
+} | { value: StablefordResult; gross_total?: never; net_total?: never; par_total?: never; par_played?: never; score_to_par?: never })
 
-export interface TournamentLeaderboardEntry {
-  tie_break_score_to_par: number | null
+interface TournamentLeaderboardEntryBase {
   position: number | null
   tied: boolean
   player_id: string
@@ -166,13 +169,16 @@ export interface TournamentLeaderboardEntry {
   completed_rounds: number
   counted_contributions: number
   eligible: boolean
+  contributions: TournamentContribution[]
+  current_team: CurrentTeam | null
+}
+export type TournamentLeaderboardEntry = TournamentLeaderboardEntryBase & ({ value?: undefined;
+  tie_break_score_to_par: number | null
   gross_total: number
   net_total: number
   par_total: number
   score_to_par: number
-  contributions: TournamentContribution[]
-  current_team: CurrentTeam | null
-}
+} | { value: OverallResult; gross_total?: never; net_total?: never; par_total?: never; score_to_par?: never; tie_break_score_to_par?: never })
 
 export interface TournamentLeaderboard {
   tie_break_policy: TournamentTieBreakPolicy
@@ -185,4 +191,23 @@ export interface TournamentLeaderboard {
   included_round_ids: string[]
   visibility: ScoreVisibility
   entries: TournamentLeaderboardEntry[]
+}
+
+export interface StablefordResult {
+  type: 'stableford'
+  version: 1
+  gross_points: number
+  net_points: number
+  gross_equivalent: number
+  net_equivalent: number
+  actual_gross_total: number | null
+  actual_net_total: number | null
+}
+export interface OverallResult {
+  type: 'overall_equivalent'
+  version: 1
+  gross: number
+  net: number
+  selected: number
+  tie_break: number | null
 }

@@ -1,5 +1,5 @@
 import type { ExpectedScore, ScoreAcknowledgement } from '../../../api/scorecards/conditional'
-import { acknowledge, cardKey, enqueue, hasLease, LEASE_MS, resolveOperation, enqueueFourBall, type FourBallTarget, queueKey, type ConfirmationLease, type PendingScore, type QueuePhase, type QueueTarget } from './model'
+import { enqueueStableford, type StablefordTarget, acknowledge, cardKey, enqueue, hasLease, LEASE_MS, resolveOperation, enqueueFourBall, type FourBallTarget, queueKey, type ConfirmationLease, type PendingScore, type QueuePhase, type QueueTarget } from './model'
 import type { FourBallInput } from '../../../api/fourBall'
 import { decodeLease, decodePending } from './decode'
 
@@ -72,6 +72,12 @@ export const queueDatabase = {
     if (lock && lock.until > Date.now()) throw new Error('Scorekortet bekreftes i en annen fane. Prøv igjen om litt.')
     const key = queueKey(target)
     write(pending, key, enqueueFourBall(await get(pending, key), target, desired, expected))
+  }),
+  enqueueStableford: (target: StablefordTarget, desired: FourBallInput, expected: ExpectedScore): Promise<void> => transaction(async (pending, confirmations) => {
+    const lock = await confirmation(confirmations, cardKey(target))
+    if (lock && lock.until > Date.now()) throw new Error('Scorekortet bekreftes i en annen fane. Prøv igjen om litt.')
+    const key = queueKey(target)
+    write(pending, key, enqueueStableford(await get(pending, key), target, desired, expected))
   }),
   claim: (key: string, leaseId: string): Promise<PendingScore | null> => transaction(async pending => {
     const item = await get(pending, key)

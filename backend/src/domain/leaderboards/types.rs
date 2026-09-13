@@ -83,7 +83,16 @@ pub struct ConfirmationFact {
 }
 
 #[derive(Debug, Clone)]
+pub struct StablefordInputFact {
+    pub round_id: Uuid,
+    pub hole_id: Uuid,
+    pub player_id: Uuid,
+    pub input: crate::domain::player_score_input::PlayerHoleInput,
+}
+
+#[derive(Debug, Clone)]
 pub struct RoundLeaderboardFacts {
+    pub stableford_inputs: Vec<StablefordInputFact>,
     pub round: RoundFact,
     pub holes: Vec<HoleFact>,
     pub snapshots: Vec<SnapshotFact>,
@@ -116,8 +125,9 @@ pub struct LeaderboardMember {
     pub display_order: Option<i16>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RoundLeaderboardEntry {
+    pub stableford: Option<crate::domain::stableford::card::Values>,
     pub position: Option<usize>,
     pub tied: bool,
     pub owner: LeaderboardOwner,
@@ -172,8 +182,9 @@ pub struct CurrentTeam {
     pub team_name: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TournamentLeaderboardEntry {
+    pub equivalents: Option<super::values::EquivalentTotals>,
     pub tie_break_score_to_par: Option<i32>,
     pub position: Option<usize>,
     pub tied: bool,
@@ -191,8 +202,9 @@ pub struct TournamentLeaderboardEntry {
     pub current_team: Option<CurrentTeam>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TournamentContribution {
+    pub stableford: Option<crate::domain::stableford::card::Values>,
     pub round_id: Uuid,
     pub mandatory: bool,
     pub provisional: bool,

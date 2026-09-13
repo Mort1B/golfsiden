@@ -168,10 +168,7 @@ fn candidate_cmp(
 }
 
 fn selected_score(candidate: &CandidateContribution, metric: LeaderboardMetric) -> i32 {
-    match metric {
-        LeaderboardMetric::Gross => candidate.value.gross_total - candidate.value.par_total,
-        LeaderboardMetric::Net => candidate.value.net_total - candidate.value.par_total,
-    }
+    candidate.value.equivalent(metric)
 }
 
 fn has_selected(entry: &TournamentLeaderboardEntry) -> bool {

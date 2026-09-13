@@ -130,7 +130,7 @@ pub(super) fn validate(facts: &ReadinessFacts, issues: &mut Vec<ReadinessIssue>)
                     ReadinessIssueCode::InvalidFoursomesTeamSize,
                     "foursomes teams must contain exactly two players",
                 ),
-                ScoringFormat::IndividualStrokePlay => (
+                ScoringFormat::IndividualStrokePlay | ScoringFormat::IndividualStableford => (
                     ReadinessIssueCode::InvalidScrambleTeamSize,
                     "team-owned rounds must contain exact-size teams",
                 ),

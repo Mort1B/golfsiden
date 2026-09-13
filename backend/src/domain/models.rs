@@ -48,6 +48,7 @@ pub enum ScoringFormat {
     TeamScramble,
     TwoPlayerFoursomes,
     FourBallStrokePlay,
+    IndividualStableford,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]

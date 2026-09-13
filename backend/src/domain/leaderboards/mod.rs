@@ -1,6 +1,7 @@
 mod round;
 mod tournament;
 mod types;
+mod values;
 
 pub use round::{build_round_leaderboard, build_round_leaderboard_projected};
 pub use tournament::{build_tournament_leaderboard, build_tournament_leaderboard_projected};
@@ -14,5 +15,7 @@ pub enum LeaderboardError {
     Scoring(#[from] super::scoring::ScoringError),
 }
 
+#[cfg(test)]
+mod stableford_tests;
 #[cfg(test)]
 mod tests;

@@ -1,0 +1,88 @@
+import { expect, test } from '@playwright/test'
+import { stablefordFixture } from './stablefordSupport'
+import { offlineEvents, offlineLayout, queueRows } from './offlineSupport'
+import { decodePending } from '../src/features/scoring/offline/decode'
+test.skip(process.env.GOLF_STABLEFORD_BROWSER !== '1', 'Requires disposable local API and Chrome')
+test('Stableford storage failure blocks navigation and confirmation until deliberate discard', async ({ page }) => {
+  const fixture = await stablefordFixture(page); const events = offlineEvents(page)
+  await page.goto(fixture.url())
+  await expect(page.getByRole('button', { name: 'Registrer par (4)' })).toBeEnabled()
+  await page.evaluate(() => {
+    const put = IDBObjectStore.prototype.put
+    IDBObjectStore.prototype.put = function (value: unknown, key?: IDBValidKey) {
+      if (this.name === 'pending') throw new DOMException('Device storage full', 'QuotaExceededError')
+      return key === undefined ? put.call(this, value) : put.call(this, value, key)
+    }
+  })
+  await page.getByRole('button', { name: 'Plukket opp', exact: true }).click()
+  await page.getByRole('button', { name: 'Ja, plukket opp' }).click()
+  await expect(page.getByText(/Endringen er ikke trygt lagret/)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Neste hull' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Oppsummering', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Logg ut' })).toBeDisabled()
+  expect(await queueRows(page)).toHaveLength(0)
+  await offlineLayout(page, 'stableford-storage-failure')
+  await page.getByRole('button', { name: 'Prøv lagring igjen' }).click()
+  await expect(page.getByText(/Endringen er ikke trygt lagret/)).toBeVisible()
+  await page.getByRole('button', { name: 'Forkast ulagret endring' }).click()
+  await expect(page.getByRole('button', { name: 'Neste hull' })).toBeEnabled()
+  await page.getByRole('button', { name: 'Neste hull' }).click()
+  await expect(page.getByRole('heading', { name: 'Hull 2 · par 4 · indeks 2' })).toBeVisible()
+  expect(events.errors).toEqual([])
+})
+test('Stableford lost acknowledgement survives reload and two tabs replay one immutable head', async ({ page, context }) => {
+  const fixture = await stablefordFixture(page); const events = offlineEvents(page)
+  const requests: string[] = []
+  let delivered = false
+  await context.route('**/stableford/inputs/conditional', async route => {
+    requests.push(route.request().postData() ?? '')
+    if (!delivered) { delivered = true; await route.fetch(); await route.abort('failed') } else await route.continue()
+  })
+  await page.goto(fixture.url())
+  await page.getByRole('button', { name: 'Plukket opp', exact: true }).click()
+  await page.getByRole('button', { name: 'Ja, plukket opp' }).click()
+  await expect.poll(async () => (await fixture.read()).holes_scored).toBe(1)
+  const second = await context.newPage()
+  await Promise.all([page.reload(), second.goto(fixture.url())])
+  await expect.poll(async () => (await queueRows(page)).length, { timeout: 35000 }).toBe(0)
+  expect(requests.length).toBeGreaterThanOrEqual(2)
+  expect(new Set(requests).size).toBe(1)
+  expect((await fixture.read()).holes[0]?.score?.revision).toBe('1')
+  await expect(page.getByRole('button', { name: 'Registrer par (4)' })).toBeEnabled()
+  await second.close()
+  // Local pickup conflict choice uses the current numeric server revision.
+  await context.setOffline(true)
+  await page.getByRole('button', { name: 'Registrer par (4)' }).click()
+  await expect.poll(async () => (await queueRows(page)).length).toBe(1)
+  await fixture.save(1, { type: 'numeric', gross_strokes: 10 })
+  await context.setOffline(false)
+  await page.locator('#pending-scores summary').click()
+  await page.getByRole('button', { name: 'Sammenlign scorer' }).click()
+  await expect(page.getByText('Score på serveren:')).toContainText('10 slag')
+  await page.getByRole('button', { name: 'Bruk min lokale score' }).click()
+  await expect.poll(async () => (await queueRows(page)).length).toBe(0)
+  await expect.poll(async () => (await fixture.read()).holes[0]?.score?.input).toEqual({ type: 'numeric', gross_strokes: 4 })
+  expect(events.errors).toEqual([])
+})
+test('Stableford confirmation holds the player lease across tabs and releases on failed fresh read', async ({ page, context }) => {
+  const fixture = await stablefordFixture(page)
+  for (let number = 1; number <= 18; number++) await fixture.save(number, { type: 'no_score' })
+  await page.goto(fixture.url(1, 'summary'))
+  const second = await context.newPage(); await second.goto(fixture.url())
+  let release = () => undefined as void
+  const wait = new Promise<void>(resolve => { release = resolve })
+  await page.route(`**${fixture.cardPath}/scoring`, async route => { await wait; await route.fulfill({ status: 503, json: { error: { code: 'unavailable', message: 'unavailable' } } }) })
+  await page.getByRole('button', { name: 'Bekreft scorekort', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Bekrefter …' })).toBeDisabled()
+  await second.getByRole('button', { name: 'Registrer par (4)' }).click()
+  await expect(second.getByText(/bekreftes i en annen fane/)).toBeVisible()
+  expect(await queueRows(second)).toHaveLength(0)
+  release()
+  await expect(page.getByText(/Scorekortet kunne ikke bekreftes/)).toBeVisible()
+  await page.unroute(`**${fixture.cardPath}/scoring`)
+  await second.getByRole('button', { name: 'Prøv lagring igjen' }).click()
+  await expect.poll(async () => (await fixture.read()).holes[0]?.score?.input.type).toBe('numeric')
+  const rows = await queueRows(second)
+  if (rows[0]) expect(decodePending(rows[0]).protocol).toBe('stableford_v1')
+  await second.close()
+})

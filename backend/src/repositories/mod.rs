@@ -23,3 +23,4 @@ pub mod tournaments;
 
 pub mod four_ball;
 pub mod password_recovery;
+pub mod stableford;

@@ -39,8 +39,10 @@ pub(super) async fn assemble(
             TournamentProjection::Member(_) => return Err(LeaderboardError::InvalidStoredData),
         }
     };
+    // Draft formats determine overall value units; domain assembly separately
+    // restricts current and counted contributions to eligible round statuses.
     let round_rows = sqlx::query_as::<_, RoundRow>(
-        "SELECT r.id AS round_id, r.tournament_id, r.round_number, r.status, r.scoring_format, r.number_of_holes, r.handicap_enabled, r.handicap_allowance_percent, t.final_round_back_nine_hidden, t.number_of_rounds AS tournament_round_count FROM rounds r JOIN tournaments t ON t.id = r.tournament_id WHERE r.tournament_id = $1 AND r.status IN ('open', 'completed', 'locked') ORDER BY r.round_number, r.id",
+        "SELECT r.id AS round_id, r.tournament_id, r.round_number, r.status, r.scoring_format, r.number_of_holes, r.handicap_enabled, r.handicap_allowance_percent, t.final_round_back_nine_hidden, t.number_of_rounds AS tournament_round_count FROM rounds r JOIN tournaments t ON t.id = r.tournament_id WHERE r.tournament_id = $1 ORDER BY r.round_number, r.id",
     )
     .bind(tournament_id)
     .fetch_all(&mut **transaction)

@@ -28,6 +28,9 @@ pub fn build_tournament_leaderboard_projected(
     if facts.counted_rounds == 0 || facts.final_round_number < 1 {
         return Err(LeaderboardError::InvalidStoredData);
     }
+    let equivalent_basis = facts.rounds.iter().any(|r| {
+        r.round.scoring_format == crate::domain::models::ScoringFormat::IndividualStableford
+    });
     let participants = participant_map(&facts.participants)?;
     let current_round = facts
         .rounds
@@ -134,11 +137,24 @@ pub fn build_tournament_leaderboard_projected(
                         totals.2 + candidate.value.par_total,
                     )
                 });
+            let overall = super::super::values::EquivalentTotals {
+                gross: candidates
+                    .iter()
+                    .filter(|c| c.value.counted)
+                    .map(|c| c.value.equivalent(LeaderboardMetric::Gross))
+                    .sum(),
+                net: candidates
+                    .iter()
+                    .filter(|c| c.value.counted)
+                    .map(|c| c.value.equivalent(LeaderboardMetric::Net))
+                    .sum(),
+            };
             let score_to_par = match metric {
-                LeaderboardMetric::Gross => gross_total - par_total,
-                LeaderboardMetric::Net => net_total - par_total,
+                LeaderboardMetric::Gross => overall.gross,
+                LeaderboardMetric::Net => overall.net,
             };
             Ok(TournamentLeaderboardEntry {
+                equivalents: equivalent_basis.then_some(overall),
                 tie_break_score_to_par: None,
                 position: None,
                 tied: false,

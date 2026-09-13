@@ -1,5 +1,6 @@
-//! Pure foundation for future individual Stableford; not a selectable format.
+//! Pure Stableford calculations and typed player-card projections.
 
+pub mod card;
 mod values;
 
 pub use super::player_score_input::{GrossScore, PlayerHoleInput};

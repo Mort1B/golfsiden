@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { stablefordApi, type StablefordScoringCard } from '../../../api/stableford'
 import { fourBallApi, expectedFourBall, inputLabel, type FourBallScoringCard } from '../../../api/fourBall'
 import type { ScoringScorecard } from '../../../api/scorecards'
 import { api } from '../../../api/client'
@@ -11,16 +12,18 @@ import { hasLease, pendingOwner, pendingLabel, type PendingScore } from './model
 
 export function ConflictReview({ item, onClose }: { item: PendingScore; onClose: () => void }) {
   const { runtime, online } = useScoreQueue()
-  const query = useQuery<ScoringScorecard | FourBallScoringCard>({ queryKey: scoringKeys.scoring(item.accountId, item.roundId, pendingOwner(item)),
-    queryFn: ({ signal }) => scoreRequest<ScoringScorecard | FourBallScoringCard>(child => item.protocol === 'four_ball_v1' ? fourBallApi.scoring(item.roundId, item.sideId, child) : api.scorecardScoring(item.roundId, item.owner, child), signal),
+  const query = useQuery<ScoringScorecard | FourBallScoringCard | StablefordScoringCard>({ queryKey: scoringKeys.scoring(item.accountId, item.roundId, pendingOwner(item)),
+    queryFn: ({ signal }) => scoreRequest<ScoringScorecard | FourBallScoringCard | StablefordScoringCard>(child => item.protocol === 'four_ball_v1' ? fourBallApi.scoring(item.roundId, item.sideId, child) : item.protocol === 'stableford_v1' ? stablefordApi.scoring(item.roundId, item.owner.id, child) : api.scorecardScoring(item.roundId, item.owner, child), signal),
     staleTime: 0, refetchOnMount: 'always', retry: false,
   })
   const card = query.data
-  const fourHole = card && 'format' in card ? card.holes.find(value => value.hole_id === item.holeId)?.players.find(player => player.player_id === item.owner.id) : undefined
+  const fourHole = card && 'format' in card && card.format === 'four_ball_stroke_play' ? card.holes.find(value => value.hole_id === item.holeId)?.players.find(player => player.player_id === item.owner.id) : undefined
   const legacyHole = card && !('format' in card) ? card.holes.find(value => value.hole_id === item.holeId) : undefined
-  const hole = fourHole ?? legacyHole
-  const expected = fourHole ? expectedFourBall(fourHole.score) : legacyHole ? expectedScore(legacyHole.score) : null
-  const serverLabel = fourHole ? inputLabel(fourHole.score?.input ?? null) : legacyHole?.score ? `${legacyHole.score.gross_strokes} slag` : 'Ikke registrert'
+  const stablefordHole = card && 'format' in card && card.format === 'individual_stableford' ? card.holes.find(value => value.hole_id === item.holeId) : undefined
+  const inputHole = stablefordHole ?? fourHole
+  const hole = inputHole ?? legacyHole
+  const expected = inputHole ? expectedFourBall(inputHole.score) : legacyHole ? expectedScore(legacyHole.score) : null
+  const serverLabel = inputHole ? inputLabel(inputHole.score?.input ?? null) : legacyHole?.score ? `${legacyHole.score.gross_strokes} slag` : 'Ikke registrert'
   const ready = online && query.isFetchedAfterMount && !query.isFetching && !query.error && hole !== undefined && !hasLease(item)
   const mutation = useMutation({ gcTime: 0, retry: false, networkMode: 'always',
     mutationFn: async (choice: 'local' | 'server') => {

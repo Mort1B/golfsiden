@@ -1,3 +1,4 @@
+import { overallSelected, overallTieBreak, contributionEquivalent } from './values'
 import type { Round, TournamentLeaderboard, TournamentLeaderboardEntry } from '../types'
 import { invalidLeaderboard } from './shared'
 
@@ -8,11 +9,11 @@ function hasSelected(entry: TournamentLeaderboardEntry): boolean {
 function samePrimary(left: TournamentLeaderboardEntry, right: TournamentLeaderboardEntry): boolean {
   return hasSelected(left) === hasSelected(right)
     && left.counted_contributions === right.counted_contributions
-    && left.score_to_par === right.score_to_par
+    && overallSelected(left) === overallSelected(right)
 }
 
 function sameRank(left: TournamentLeaderboardEntry, right: TournamentLeaderboardEntry): boolean {
-  return samePrimary(left, right) && left.tie_break_score_to_par === right.tie_break_score_to_par
+  return samePrimary(left, right) && overallTieBreak(left) === overallTieBreak(right)
 }
 
 function groups(entries: TournamentLeaderboardEntry[]): TournamentLeaderboardEntry[][] {
@@ -39,7 +40,7 @@ export function validateTournamentRanks(leaderboard: TournamentLeaderboard): voi
     invalidLeaderboard('leaderboard.entries.position')
   }
   for (const group of groups(entries)) {
-    const compared = group.filter((entry) => entry.tie_break_score_to_par !== null)
+    const compared = group.filter((entry) => overallTieBreak(entry) !== null)
     if (compared.length > 0 && (leaderboard.tie_break_policy !== 'final_round_score'
       || group.length < 2 || compared.length !== group.length
       || group.some((entry) => !entry.eligible || !hasSelected(entry)
@@ -58,10 +59,10 @@ export function validateTournamentRanks(leaderboard: TournamentLeaderboard): voi
       || entry.tied !== (samePrevious || sameNext)) invalidLeaderboard(`leaderboard.entries[${index}].position`)
     if (previous && (previous.counted_contributions < entry.counted_contributions
       || (previous.counted_contributions === entry.counted_contributions
-        && (previous.score_to_par > entry.score_to_par
-          || (previous.score_to_par === entry.score_to_par
-            && ((previous.tie_break_score_to_par !== null && entry.tie_break_score_to_par !== null
-              && previous.tie_break_score_to_par > entry.tie_break_score_to_par)
+        && (overallSelected(previous) > overallSelected(entry)
+          || (overallSelected(previous) === overallSelected(entry)
+            && ((overallTieBreak(previous) !== null && overallTieBreak(entry) !== null
+              && (overallTieBreak(previous) ?? 0) > (overallTieBreak(entry) ?? 0))
               || (samePrevious && selectedProgress(previous) < selectedProgress(entry)))))))) {
       invalidLeaderboard(`leaderboard.entries[${index}].position`)
     }
@@ -82,9 +83,9 @@ export function validateTournamentTieBreakRounds(leaderboard: TournamentLeaderbo
           && item.holes_scored === item.number_of_holes))
     for (const entry of group) {
       const expected = comparable
-        ? entry.contributions.find((item) => item.round_id === final?.id)?.score_to_par
+        ? contributionEquivalent(entry.contributions.find((item) => item.round_id === final?.id) ?? invalidLeaderboard('final contribution'), leaderboard.metric)
         : null
-      if (entry.tie_break_score_to_par !== expected) invalidLeaderboard('leaderboard.entries.tie_break_score_to_par final round')
+      if (overallTieBreak(entry) !== expected) invalidLeaderboard('leaderboard.entries.tie_break_score_to_par final round')
     }
   }
 }

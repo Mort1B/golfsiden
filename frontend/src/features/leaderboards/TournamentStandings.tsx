@@ -1,3 +1,4 @@
+import { overallSelected, overallTieBreak } from '../../api/leaderboards/values'
 import { tieBreakExplanation, tieBreakLabel } from './tieBreakExplanation'
 import { Flag, Radio, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -39,7 +40,8 @@ function TournamentRow({
   visibility: TournamentLeaderboard['visibility']['mode']
   tournamentId: string
 }) {
-  const total = metric === 'gross' ? entry.gross_total : entry.net_total
+  const total = entry.value ? null : metric === 'gross' ? entry.gross_total : entry.net_total
+  const tieBreak = overallTieBreak(entry)
   const hasSelectedScore = entry.contributions.some((contribution) => contribution.counted)
   const provisional = selectedProvisional(entry)
   const mandatory = entry.contributions.find((contribution) => contribution.mandatory)
@@ -66,8 +68,8 @@ function TournamentRow({
             {provisionalProgressLabel(provisional)}
           </p>
         )}
-        {entry.tie_break_score_to_par !== null && (
-          <p className="leaderboard-tie-break">Siste runde: {scoreToParLabel(entry.tie_break_score_to_par)} {metricLabel(metric).toLowerCase()} · sammenlignet ved lik totalscore</p>
+        {tieBreak !== null && (
+          <p className="leaderboard-tie-break">Siste runde{entry.value ? ' (ekvivalent)' : ''}: {scoreToParLabel(tieBreak)} {metricLabel(metric).toLowerCase()} · sammenlignet ved lik totalscore</p>
         )}
         {mandatoryRound !== null && mandatoryState !== null && (
           <p className="leaderboard-mandatory">
@@ -83,9 +85,9 @@ function TournamentRow({
         )}
       </div>
       <div className={`leaderboard-score${provisional === null ? '' : ' provisional'}`}>
-        <strong>{hasSelectedScore ? scoreToParLabel(entry.score_to_par) : '–'}</strong>
+        <strong>{hasSelectedScore ? scoreToParLabel(overallSelected(entry)) : '–'}</strong>
         <span>{hasSelectedScore
-          ? `${provisional === null ? '' : 'Foreløpig · '}${total} ${metricLabel(metric).toLowerCase()}`
+          ? `${provisional === null ? '' : 'Foreløpig · '}${entry.value ? 'Omregnet' : total} ${metricLabel(metric).toLowerCase()}`
           : hasCurrentRound ? 'Ingen score ennå' : 'Ingen score'}</span>
       </div>
       </Link>
@@ -102,6 +104,7 @@ export function TournamentStandings({ leaderboard, rounds }: { leaderboard: Tour
   )
   return (
     <div className="standings-section">
+      {leaderboard.entries.some(entry => entry.value) && <p>Sammenlagtekvivalent: Stableford omregnes til 36 minus poeng på fullt kort, ellers 2 per løste hull minus poeng. Slagspill bidrar med score mot par. Lavest resultat vinner.</p>}
       <div className="standings-heading">
         <div><p>Sammenlagt</p><h2>{metricLabel(leaderboard.metric)} resultat</h2></div>
         <span>Beste {leaderboard.required_counted_rounds} av {rounds.length}</span>
