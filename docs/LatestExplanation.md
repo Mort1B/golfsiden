@@ -1,75 +1,72 @@
-# Correct provisional tournament ties and reduce live refresh work
+# Automatic recovery when returning to Score
 
-A real two-session browser test reproduced the reported class of failure. On the
-fresh seed, scramble updates worked, but the first individual even-par score
-produced an invalid tournament result. The score was persisted and round results
-updated. Tournament ranking incorrectly set `tied: true` by comparing the last
-ranked player with the next unstarted player: both had zero completed qualification
-count and zero score-to-par. The frontend correctly rejected this inconsistent
-response, so the page could retain old totals alongside an error.
+A native Chrome EventSource regression reproduced the reported class of loading
+failure. The test opened a scorecard, ended its live stream, and returned HTTP
+204 on the next connection attempt. Chrome stopped retrying. The app had cleared
+protected completion/read data on disconnect, leaving Score waiting for an
+`open` event that never arrived. Dispatching a persisted page-return event did
+not recover the original implementation; the regression failed after five
+seconds without finding the score input. This establishes a concrete defect,
+not the exact cause on the user's unspecified original device/browser.
 
-The backend now checks that the next player has a selected contribution before
-using that player to declare a tie. Unstarted players remain unranked. Genuine
-sporting ties, gross/net selection, qualification, best-N rules, and preserved
-team ownership are unchanged. A new domain regression failed on the original
-code; the fix passes that regression, a genuine-tie control, and a PostgreSQL/API
-regression for both gross and net even-par boundaries. The browser regression
-also failed on the original server response and passes with the fix. This is a
-confirmed defect, although it cannot prove the user's original device observation
-had exactly this cause.
+The shared subscription now handles visible-page return, persisted `pageshow`,
+and `online`. It restarts stopped/retrying streams, retains healthy streams,
+ignores superseded-source events, and cleans up return listeners. A deduplicated
+return check refreshes the session before private HTTP reads and rechecks the
+resulting user identity. Ordinary score events still target only score-dependent
+queries and never refresh authentication. No polling or request-timeout rewrite
+was needed for the reproduced cause.
 
-Two correctly unchanged totals were also reproduced: a score in an older open
-round does not enter tournament standings while a higher-numbered round is open;
-and an excluded best-N contribution can change while the selected total stays
-the same. The latter response and contribution refreshed successfully. Mandatory
-round slots and administrator-controlled final visibility remain intact.
+Reconnection also exposed a related lifetime problem: clearing completion could
+unmount the writable score input, losing failed intent and navigation protection.
+The exact already-loaded, authorized writable card now keeps that component
+mounted during temporary progress clearing and transient completion/access errors.
+Its coordinator and confirmation observer survive. Cleared owner names and
+progress are replaced with a generic label and recovery notice; writes, retries,
+confirmation, and card navigation are disabled until recovery. Failed input stays
+discardable. Protected read projections still clear synchronously, and terminal
+authorization errors or authoritative lock/access changes retain existing guards.
 
-The measured optimization narrows ordinary `score` invalidations to the current
-user's leaderboard, round completion-validation, and read/scoring-card query
-families. Saves and confirmations do not change tournament setup, roster, teams,
-or score-access metadata. A settled score event previously triggered three GETs
-in the receiving tournament-results session: tournament list, rounds, and
-leaderboard. It now triggers two (rounds and leaderboard), a 33% reduction in that
-scenario, measured for scramble, individual, and foursomes rounds. The rounds read
-is retained for runtime lifecycle validation. The active-observer regression
-failed before the optimization and passes afterward. Structural events retain
-broad refreshes; visibility, disconnect, and reconnect still clear projected data.
-No SSE payload, authorization contract, database schema, or scoring policy changed.
+For example, after a failed attempt to register 4 on hole 8, disconnecting and
+returning keeps that failed 4 visible and guarded. Refreshing completion and access
+does not issue another score write. Once connected, the player can deliberately
+retry or discard it. A read-only card that previously showed hole 18 instead
+hides during disconnect and returns to hole 9 if the refreshed response hides the
+final nine.
 
-Validation completed:
+Read-only review identified two additional recovery gaps, both resolved: transient
+score-access errors must retain disabled unresolved input, and confirmation retry
+must respect the same recovery/read-only/pending gates as the primary confirm
+button. The final source review found no remaining material issues.
 
-- Backend: formatting, 116 regular tests, strict Clippy across all targets/features.
-  The first sandboxed run could not bind provider-test sockets; rerunning with
-  local socket access passed without changing those tests.
-- PostgreSQL: full database-enabled workspace ladder, 358 tests passed. Migration
-  and seed commands passed on disposable databases; no migration was added.
-- Frontend: 389 tests across 65 files, strict type checking, ESLint, production
-  build, browser TypeScript, and diff whitespace checks passed.
-- Chrome: separate same-account desktop and mobile sessions exercised real UI
-  saves in scramble, individual, and foursomes; gross/net REST and rendered totals;
-  same-session results navigation; failed saves; older-open and best-N exclusions;
-  completed corrections; locked rejection; actual API crash/native reconnect;
-  and a separate member's mandatory final hide/release/re-hide. Layout checks ran
-  at 320px, 390px, and 1280px, including failed-save and disconnected states.
-  Unexpected console/network failures are checked and the settled two-GET budget
-  is asserted. Measurements: `/tmp/golf-leaderboard-baseline.json` and
-  `/tmp/golf-leaderboard-optimized.json`; screenshots:
-  `/tmp/golf-leaderboard-live-*.png`.
-- Both existing lifecycle browser regressions passed, covering organizer readiness,
-  confirmations/corrections, permissions, final visibility, loading, retry, empty,
-  and long-content states at mobile and desktop widths.
-- Read-only review found no remaining issues in the ranking fix, regression tests,
-  or concrete invalidation dependency set.
+## Validation
 
-The phone tests use Chrome mobile emulation, not physical iPhone/Safari. Native
-SSE was connected directly to the disposable API for the crash test because Vite's
-development proxy retained its downstream stream after the upstream process died.
-Production Caddy restart behavior was not re-tested in this step. The existing
-approximately 611 kB minified bundle warning remains. Backend loading already uses
-bulk reads; a possible duplicate current-round calculation was identified but not
-changed without profiling evidence that would justify further backend scope.
+- Frontend: `npm run test` passed all 397 tests in 66 files. Regressions cover
+  shared stream lifecycle, return-event cleanup/coalescing, identity-first refresh,
+  failed/queued edits, pending/failed confirmation, access denial, and existing
+  resume/Back/Forward/first-gap behavior.
+- `npm run typecheck`, `npm run lint`, `npm run build`, and strict browser-suite
+  TypeScript compilation passed. Lint has no new warnings. The production build
+  retains the existing greater-than-500-kB bundle advisory (613.72 kB main chunk).
+- All 8 native Chrome browser tests passed using `npx playwright test --config
+  playwright.lifecycle.config.ts returnLoading.browser.ts` from `frontend/`.
+  The suite uses a real local HTTP event stream and controlled, runtime-decoded
+  API fixtures; it needs the local Vite app but no seeded database. Mobile/desktop
+  checks cover 320, 390, and 1280 pixels, screenshots, horizontal overflow,
+  44px controls, click reachability, and console/network errors.
+- Browser scenarios cover all three return events, repeated return with a healthy
+  stream, delayed/error/empty/populated/long-content states, failed-save guards
+  without duplicate writes, expired login, restricted read recovery, denied access,
+  internal navigation, Back/Forward, and reload. Offline/frozen-page and lock-on-
+  return checks are included in the same suite.
+- Backend and PostgreSQL ladders were not applicable: no backend, persistence,
+  migration, scoring formula, or API contract changed. This run did not exercise
+  production Caddy, a real deployed API/database, or physical iPhone/Safari
+  backgrounding/screen lock; those environments were not available in this harness.
+  Persisted-page and visibility events are dispatched in Chrome, rather than
+  claiming physical-device or native back-forward-cache restoration evidence.
 
-Release verdict: **READY WITH KNOWN LIMITATIONS** for the tested runtime and
-browser matrix. The live-update defect and measured request optimization are
-complete; this does not imply a general throughput benchmark or physical iOS
-certification.
+**Verdict: READY WITH KNOWN LIMITATIONS.** The concrete stopped-stream regression
+is fixed and input preservation is covered. The user's original device-specific
+cause remains unconfirmed. Per-hole handicap badges and password recovery remain
+separate queued work.

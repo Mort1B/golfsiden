@@ -18,7 +18,7 @@ interface ScoringExperienceProps {
   round: Round
   owners: OwnerCompletionProgress[]
   writableOwners: ScoreOwner[]
-  selectedOwner: OwnerCompletionProgress
+  selectedOwner: Pick<OwnerCompletionProgress, 'owner' | 'owner_name'>
   card: ScoringScorecard
   hole: ScorecardHole
   view: ScoreView
@@ -30,6 +30,7 @@ interface ScoringExperienceProps {
   onHole: (number: number, adjacent?: boolean) => void
   onView: (view: ScoreView) => void
   canWrite: boolean
+  recovering?: boolean
 }
 
 export function ScoringExperience(props: ScoringExperienceProps) {
@@ -68,6 +69,7 @@ export function ScoringExperience(props: ScoringExperienceProps) {
   const canEdit = editableRound
     && csrfToken !== null
     && props.canWrite
+    && !props.recovering
     && (!props.card.confirmed || correctionMode)
   const writableCards = writableOwnerProgress(props.owners, props.writableOwners)
 
@@ -102,13 +104,14 @@ export function ScoringExperience(props: ScoringExperienceProps) {
 
       {!csrfToken && <div className="scoring-notice error" role="alert">Økten er utløpt. Logg inn på nytt for å lagre.</div>}
       {!props.canWrite && <div className="scoring-notice">Du kan se dette scorekortet, men ikke føre score for det.</div>}
+      {props.recovering && <div className="scoring-notice" role="status">Oppdaterer scoretilgang og rundestatus. Pågående scoreendring beholdes.</div>}
       {navigationWarning && <div className="scoring-notice warning" role="alert">Fullfør eller forkast den pågående scoreendringen før du går videre.</div>}
       {props.round.status === 'locked' && <div className="scoring-notice">Runden er låst. Scorekortet er skrivebeskyttet.</div>}
       {props.round.status === 'completed' && <div className="scoring-notice">Runden er fullført. Korrigering er mulig frem til låsing.</div>}
       {props.card.confirmed && editableRound && !correctionMode && (
         <div className="correction-gate">
           <p>Scorekortet er bekreftet og skrivebeskyttet.</p>
-          <button type="button" disabled={navigationLocked || !csrfToken || !props.canWrite} onClick={() => setCorrectionKey(ownerKey)}>Korriger score</button>
+          <button type="button" disabled={navigationLocked || !csrfToken || !props.canWrite || props.recovering} onClick={() => setCorrectionKey(ownerKey)}>Korriger score</button>
         </div>
       )}
       {correctionMode && props.card.confirmed && <div className="scoring-notice warning">Korrigeringsmodus er aktiv. Første endring fjerner bekreftelsen.</div>}
@@ -119,7 +122,8 @@ export function ScoringExperience(props: ScoringExperienceProps) {
           hole={props.hole}
           sync={sync.snapshot}
           canEdit={canEdit}
-          navigationLocked={navigationLocked}
+          navigationLocked={navigationLocked || props.recovering === true}
+          retryDisabled={props.recovering}
           onScore={sync.setScore}
           onRetry={sync.retry}
           onDiscard={sync.discard}
@@ -129,7 +133,7 @@ export function ScoringExperience(props: ScoringExperienceProps) {
       ) : (
         <ScorecardSummaryView
           card={props.card}
-          disabled={navigationLocked}
+          disabled={navigationLocked || props.recovering === true}
           readOnly={!editableRound || !csrfToken || !props.canWrite}
           confirming={confirmation.confirming}
           confirmationError={confirmation.errorMessage}
@@ -139,7 +143,7 @@ export function ScoringExperience(props: ScoringExperienceProps) {
         />
       )}
 
-      <ScoreSelectors
+      {!props.recovering && <ScoreSelectors
         tournaments={props.tournaments}
         rounds={props.rounds}
         owners={props.owners}
@@ -155,15 +159,15 @@ export function ScoringExperience(props: ScoringExperienceProps) {
         onOwner={props.onOwner}
         onHole={(number) => props.onHole(number)}
         onView={props.onView}
-      />
+      />}
 
-      <WritableCardSwitcher
+      {!props.recovering && <WritableCardSwitcher
         owners={writableCards}
         selectedOwner={props.selectedOwner.owner}
         disabled={navigationLocked}
         onSelect={props.onQuickOwner}
         onPrefetch={props.onPrefetchOwner}
-      />
+      />}
 
       <dl className="scorecard-strip">
         <div><dt>Brutto</dt><dd>{props.card.holes_scored > 0 ? props.card.gross_total : '–'}</dd></div>

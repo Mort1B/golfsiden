@@ -23,11 +23,18 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const { tournamentsQuery, tournaments, tournament, roundsQuery, eligibleRounds, round,
     completionQuery, accessQuery, progressOwners, writableOwners, owner, effectiveRoundStatus,
-    canWrite, cardQuery, terminalScoringError, view, hole, prefetchOwner } = useScoreWorkspaceData(searchParams, resume)
+    canWrite, cardQuery, terminalScoringError, view, hole, prefetchOwner, retainingScorer,
+    connectionLost, retryLive, deniedError } = useScoreWorkspaceData(searchParams, resume)
+
+  const loading = connectionLost
+    ? <ErrorState error={new Error('Forbindelsen er brutt. Prøver å koble til igjen.')} onRetry={retryLive} />
+    : <LoadingState />
 
   const navigate = (selection: ScoreSelection, action: ScoreHistoryAction) => {
     setSearchParams(scoringSearch(selection), { replace: replaceScoreHistory(action) })
   }
+
+  if (deniedError) return <ScoreState><ErrorState error={deniedError} onRetry={retryLive} /></ScoreState>
 
   if (resume) {
     const required = [tournamentsQuery, ...(tournament ? [roundsQuery] : []),
@@ -35,29 +42,29 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
     const failed = required.find((query) => query.isError)
     if (failed) return <ScoreState><ErrorState error={failed.error} onRetry={() => void failed.refetch()} /></ScoreState>
     if (required.some((query) => !query.isFetchedAfterMount || query.isFetching)) {
-      return <ScoreState><LoadingState /></ScoreState>
+      return <ScoreState>{loading}</ScoreState>
     }
   }
 
-  if (tournamentsQuery.isPending) return <ScoreState><LoadingState /></ScoreState>
+  if (tournamentsQuery.isPending) return <ScoreState>{loading}</ScoreState>
   if (tournamentsQuery.error && tournaments.length === 0) {
     return <ScoreState><ErrorState error={tournamentsQuery.error} onRetry={() => void tournamentsQuery.refetch()} /></ScoreState>
   }
   if (!tournament) return <ScoreState><EmptyState>Ingen turneringer er opprettet</EmptyState></ScoreState>
-  if (roundsQuery.isPending) return <ScoreState><LoadingState /></ScoreState>
+  if (roundsQuery.isPending) return <ScoreState>{loading}</ScoreState>
   if (roundsQuery.error && !roundsQuery.data) {
     return <ScoreState><ErrorState error={roundsQuery.error} onRetry={() => void roundsQuery.refetch()} /></ScoreState>
   }
   if (!round) return <ScoreState><EmptyState>Turneringen har ingen åpne, fullførte eller låste runder</EmptyState></ScoreState>
-  if (completionQuery.isPending || accessQuery.isPending) return <ScoreState><LoadingState /></ScoreState>
-  if (completionQuery.error && !completionQuery.data) {
+  if ((completionQuery.isPending && !retainingScorer) || accessQuery.isPending) return <ScoreState>{loading}</ScoreState>
+  if (completionQuery.error && !completionQuery.data && !retainingScorer) {
     return <ScoreState><ErrorState error={completionQuery.error} onRetry={() => void completionQuery.refetch()} /></ScoreState>
   }
   if (accessQuery.error && !accessQuery.data) {
     return <ScoreState><ErrorState error={accessQuery.error} onRetry={() => void accessQuery.refetch()} /></ScoreState>
   }
   if (!owner) return <ScoreState><EmptyState>Runden har ingen kvalifiserte scorekort</EmptyState></ScoreState>
-  if (cardQuery.isPending) return <ScoreState><LoadingState /></ScoreState>
+  if (cardQuery.isPending) return <ScoreState>{loading}</ScoreState>
   if (terminalScoringError || (cardQuery.error && !cardQuery.data)) {
     return <ScoreState><ErrorState error={cardQuery.error ?? new Error('Scorekortet kunne ikke lastes.')} onRetry={() => void cardQuery.refetch()} /></ScoreState>
   }
@@ -85,6 +92,10 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
   return (
     <section className="page score-page">
       <header className="page-header"><p className="brand">Guttas Golf</p><h1>Score</h1></header>
+      {connectionLost && <div className="background-query-error" role="status">
+        <p>Forbindelsen er brutt. Prøver å koble til igjen.</p>
+        <button type="button" onClick={retryLive}>Koble til igjen</button>
+      </div>}
       {(roundsQuery.error || completionQuery.error || accessQuery.error || cardQuery.error) && (
         <div className="background-query-error" role="alert">
           <p>Noe kunne ikke oppdateres. Viste data beholdes.</p>
@@ -107,6 +118,7 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
         hole={hole}
         view={view}
         canWrite={canWrite}
+        recovering={retainingScorer || connectionLost || accessQuery.error !== null}
         onTournament={(id) => navigate({ tournamentId: id, view: 'hole' }, 'tournament')}
         onRound={(id) => navigate({ tournamentId: tournament.id, roundId: id, view: 'hole' }, 'round')}
         onOwner={(id) => {

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { api } from '../../api/client'
 import { ownerEquals, scoringKeys, type ScorecardSummary } from '../../api/scorecards'
 import { ApiHttpError } from '../../api/http'
@@ -8,6 +8,7 @@ import { privateWorkspaceKeys } from '../../api/privateWorkspace'
 import { useAuth } from '../auth/authContext'
 import { useTournamentLive } from '../live/useTournamentLive'
 import { useScoreResume } from './scoreResumeContext'
+import { resumeTournamentLive } from '../../api/tournamentLive'
 import { parseHoleNumber, parseScoreView, preferredScoreRound, scoreableRounds,
   selectedOwner, adjacentWritableOwners, writableOwnerProgress, canonicalVisibleHole } from './selection'
 
@@ -22,7 +23,7 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
   const tournament = tournaments.find((item) => item.id === (searchParams.get('tournament') ?? (resume ? selection?.tournamentId : null)))
     ?? tournaments.find((item) => item.status === 'active')
     ?? tournaments[0]
-  useTournamentLive(tournament?.id ?? '')
+  const connectionLost = useTournamentLive(tournament?.id ?? '')
   const roundsQuery = useQuery({
     ...fresh,
     queryKey: tournamentKeys.rounds(userId, tournament?.id ?? ''),
@@ -47,12 +48,27 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
   })
   const progressOwners = completionQuery.data?.owners ?? []
   const writableOwners = accessQuery.data?.writable_owners ?? []
-  const owner = selectedOwner(
+  const completionDenied = completionQuery.error instanceof ApiHttpError
+    && [401, 403, 404].includes(completionQuery.error.status)
+  const accessDenied = accessQuery.error instanceof ApiHttpError
+    && [401, 403, 404].includes(accessQuery.error.status)
+  // Completion is visibility-projected and cleared on disconnect. The exact
+  // authorized writable card is not: keep its mounted input/intent, not a copy
+  // of the cleared names or progress, until fresh completion metadata arrives.
+  const recoveringOwner = !resume && completionQuery.data === undefined && !completionDenied
+    && !accessDenied && searchParams.get('tournament') === tournament?.id
+    && searchParams.get('round') === round?.id && (round?.status === 'open' || round?.status === 'completed')
+    ? writableOwners.find(item => item.type === searchParams.get('owner_type') && item.id === searchParams.get('owner'))
+    : undefined
+  const requestedOwner = selectedOwner(
     progressOwners,
     searchParams.get('owner_type') ?? (resume && round?.id === selection?.roundId ? selection?.owner.type ?? null : null),
     searchParams.get('owner') ?? (resume && round?.id === selection?.roundId ? selection?.owner.id ?? null : null),
     writableOwners,
   )
+  const owner = useMemo(() => requestedOwner
+    ?? (recoveringOwner ? { owner: recoveringOwner, owner_name: 'Valgt scorekort' } : undefined),
+  [requestedOwner, recoveringOwner])
   const effectiveRoundStatus = completionQuery.data?.status ?? round?.status
   const canWrite = owner !== undefined
     && (effectiveRoundStatus === 'open' || effectiveRoundStatus === 'completed')
@@ -72,6 +88,8 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
   const terminalScoringError = canWrite && cardQuery.error instanceof ApiHttpError
     && (cardQuery.error.status === 401 || cardQuery.error.status === 403
       || cardQuery.error.code === 'round_not_editable')
+  const retainingScorer = recoveringOwner !== undefined && cardQuery.data?.projection === 'scoring'
+    && !terminalScoringError && cardQuery.data.holes.some(item => item.hole_number === parseHoleNumber(searchParams.get('hole')))
   const refetchAccess = accessQuery.refetch
   const refetchCompletion = completionQuery.refetch
   const refetchRounds = roundsQuery.refetch
@@ -115,5 +133,7 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
 
   return { tournamentsQuery, tournaments, tournament, roundsQuery, eligibleRounds, round,
     completionQuery, accessQuery, progressOwners, writableOwners, owner, effectiveRoundStatus,
-    canWrite, cardQuery, terminalScoringError, view, hole, prefetchOwner }
+    canWrite, cardQuery, terminalScoringError, view, hole, prefetchOwner, retainingScorer,
+    deniedError: completionDenied ? completionQuery.error : accessDenied ? accessQuery.error : null,
+    connectionLost, retryLive: () => resumeTournamentLive(userId, tournament?.id ?? '') }
 }

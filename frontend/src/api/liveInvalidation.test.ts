@@ -4,8 +4,32 @@ import { leaderboardKeys } from './leaderboards'
 import { handleTournamentLiveSignal } from './liveInvalidation'
 import { privateWorkspaceKeys } from './privateWorkspace'
 import { scoringKeys } from './scorecards'
+import { authKeys } from './auth'
+import { session } from '../features/tournaments/lifecycle/__tests__/fixtures'
 
 const owner = { type: 'player' as const, id: 'player-one' }
+
+it('deduplicates return checks and revalidates identity before refetching private data', async () => {
+  const client = new QueryClient()
+  let finish: (value: typeof session | null) => void = () => undefined
+  const sessionRead = vi.fn(() => new Promise<typeof session | null>(resolve => { finish = resolve }))
+  const auth = new QueryObserver(client, { queryKey: authKeys.session, queryFn: sessionRead, initialData: session, staleTime: Infinity })
+  const privateRead = vi.fn(async () => 'fresh')
+  const card = new QueryObserver(client, { queryKey: scoringKeys.scoring(session.user_id, 'round', owner),
+    queryFn: privateRead, initialData: 'cached', staleTime: Infinity })
+  const stopAuth = auth.subscribe(() => undefined); const stopCard = card.subscribe(() => undefined)
+  try {
+    const first = handleTournamentLiveSignal(client, session.user_id, 'resume')
+    expect(handleTournamentLiveSignal(client, session.user_id, 'resume')).toBe(first)
+    expect(privateRead).not.toHaveBeenCalled()
+    finish(session); await first
+    expect(sessionRead).toHaveBeenCalledOnce()
+    expect(privateRead).toHaveBeenCalledOnce()
+    const next = handleTournamentLiveSignal(client, session.user_id, 'resume')
+    finish(null); await next
+    expect(privateRead).toHaveBeenCalledOnce()
+  } finally { stopAuth(); stopCard(); client.clear() }
+})
 
 function seededClient() {
   const queryClient = new QueryClient()

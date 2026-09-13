@@ -8,6 +8,7 @@ interface HoleEntryProps {
   sync: ScoreSyncSnapshot
   canEdit: boolean
   navigationLocked: boolean
+  retryDisabled?: boolean
   onScore: (value: number) => void
   onRetry: () => void
   onDiscard: () => void
@@ -59,7 +60,7 @@ export function HoleEntry(props: HoleEntryProps) {
         <div className="score-save-error" role="alert">
           <p>{props.sync.error.message}</p>
           <div>
-            {props.sync.error.retryable && <button type="button" onClick={props.onRetry}><RefreshCw aria-hidden="true" />Prøv igjen</button>}
+            {props.sync.error.retryable && <button type="button" disabled={props.retryDisabled} onClick={props.onRetry}><RefreshCw aria-hidden="true" />Prøv igjen</button>}
             <button type="button" onClick={props.onDiscard}><RotateCcw aria-hidden="true" />Forkast</button>
           </div>
         </div>

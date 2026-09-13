@@ -6,61 +6,8 @@ belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-Planning only: the user requested a plan for the three items below. No
-implementation is authorized by this planning request. Proposed order is to fix
-return loading first, add handicap indicators second, then implement recovery.
-Activate exactly one bounded step when implementation is requested.
-
-### Proposed first step: reliable loading when returning to the app
-
-**Goal:** Returning to Score or another affected page loads its information
-automatically, without clicking an unrelated navigation button.
-
-**Evidence and scope:** The reported symptom is not yet reproduced and its cause
-is unconfirmed. Inspect `ScorePage.tsx`, `useScoreWorkspaceData.ts`, authentication
-and private-query transitions, and tournament-live subscriptions. Bare `/score`
-currently requires post-mount fetches of dependent queries before redirecting to
-the selected card; live reconnect also invalidates private state. These are
-investigation points, not a confirmed diagnosis. Repair the demonstrated route,
-query, request, or lifecycle cause and cover other pages only where that same
-cause applies. No general cache rewrite, polling feature, or offline scoring.
-
-**Behavior:**
-
-- Reproduce internal navigation away/back, browser Back/Forward, background-tab
-  return, mobile app switching/screen lock, and a fresh reopen/direct URL. Record
-  device/browser and which action reproduces the issue; request missing device
-  details if local reproduction cannot establish the user's case.
-- Trace pending versus disabled/paused queries, dependent-query enablement,
-  route canonicalization, session refresh, interrupted HTTP requests, and SSE
-  disconnect/reconnect. Capture console/network evidence without private payloads.
-- With a live session and working connection, return automatically to the
-  authorized card. Preserve the existing remembered selection, first-unscored-
-  hole behavior, complete-card summary, and explicit URL selection semantics.
-- Distinguish initial loading from background refresh. Handle unavailable network,
-  failed requests, expired login, and removed access with deliberate recovery or
-  sign-in states instead of an indefinite spinner. Add request cancellation or
-  time bounds only if the reproduction demonstrates that need.
-
-**Invariants:** Preserve user-owned private caches, same-user refresh continuity,
-final-nine visibility restrictions, current server authorization, and the scoring
-coordinator's save/conflict behavior. Do not replay uncertain score writes or
-discard unsaved input during return handling. Never show a former user's card.
-
-**Validation:** Add a regression test that fails for the reproduced cause. Run
-the full frontend ladder and real-browser checks at 320-390px and desktop widths,
-including warm/cold cache, slow/failed/offline requests and reconnect, expired
-session/account switch, access removal/round lock, repeated returns, ongoing score
-saves, and live reconnect. Include relevant empty/populated/long-name states and
-console/network inspection. If backend repair is necessary, explicitly bound
-that repair and run the affected backend/PostgreSQL ladders. Obtain read-only
-synchronization/authorization review.
-
-**Stop condition:** The reproduced return path recovers without a navigation
-click, regression and applicable checks pass or exact blockers are recorded, and
-behavior/evidence documentation is updated and published. If the user's failure
-cannot be reproduced, record that limit rather than claiming a fix. Do not start
-the handicap indicator or recovery work in this step.
+No active implementation step. The next candidate requires a new implementation
+request; account recovery remains queued after it.
 
 ## Next candidate: per-hole handicap strokes in Score → Oppsummering
 

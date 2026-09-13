@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   subscribeTournamentLive,
+  resumeTournamentLive,
   tournamentLiveEventTypes,
   type TournamentLiveSource,
 } from './tournamentLive'
 
 class FakeSource implements TournamentLiveSource {
+  readyState = 0
   readonly listeners = new Map<string, EventListener>()
   readonly close = vi.fn()
 
@@ -20,6 +22,28 @@ class FakeSource implements TournamentLiveSource {
 
 afterEach(async () => {
   await Promise.resolve()
+})
+
+it('restarts stopped sources once on return, retains healthy streams, and ignores superseded events', async () => {
+  const first = new FakeSource(); first.readyState = 2
+  const next = new FakeSource()
+  const create = vi.fn().mockReturnValueOnce(first).mockReturnValue(next)
+  const listener = vi.fn()
+  const stop = subscribeTournamentLive('return-user', 'return-trip', listener, create)
+  resumeTournamentLive('return-user', 'return-trip')
+  resumeTournamentLive('return-user', 'return-trip')
+  expect(create).toHaveBeenCalledTimes(2)
+  expect(first.close).toHaveBeenCalledOnce()
+  listener.mockClear()
+  first.emit('error'); first.emit('open'); first.emit('score')
+  expect(listener).not.toHaveBeenCalled()
+  next.readyState = 1; next.emit('open')
+  resumeTournamentLive('return-user', 'return-trip')
+  expect(create).toHaveBeenCalledTimes(2)
+  expect(listener.mock.calls.map(([signal]) => signal)).toEqual(['open', 'resume'])
+  stop(); await Promise.resolve()
+  resumeTournamentLive('return-user', 'return-trip')
+  expect(next.close).toHaveBeenCalledOnce()
 })
 
 describe('tournament live subscription', () => {

@@ -410,6 +410,15 @@ and reapplies runtime grants before the API is started.
   broad reconciliation; disconnect, reconnect, and visibility handling retain
   synchronous projection clearing. Tournament leaderboard loading still fetches
   rounds before validating the response, including after score-only invalidation.
+- Shared tournament subscriptions listen for visible-page return, persisted
+  `pageshow`, and browser `online` events. Return restarts a stopped/retrying native
+  EventSource while retaining a healthy stream; concurrent return events do not
+  interrupt a replacement already connecting. Superseded sources cannot dispatch
+  invalidations, and the final unsubscribe removes lifecycle listeners.
+  A client-only `resume` signal deduplicates session revalidation per user/client
+  before private-query refresh, and checks the resulting identity again. Ordinary
+  SSE events still do not invalidate authentication. No timer or polling loop is
+  introduced, and a return never itself grants score access.
 - Target-bearing frontend DTOs are decoded against the requested tournament,
   round, player, owner, metric, invitation predecessor, and course-configuration
   identities before cache insertion. Roster, round, team, pairing, invitation,
@@ -511,10 +520,21 @@ and reapplies runtime grants before the API is started.
 - Visibility events synchronously clear role-projected leaderboard, completion,
   history, drilldown, and actor-free scorecard query state before authoritative
   refetch. An EventSource error performs the same transition without refetching
-  while disconnected; `open` repeats it and refreshes after reconnection.
+  by itself; `open` repeats it and refreshes after reconnection. Browser return or
+  explicit reconnect can separately revalidate the session and refresh HTTP reads.
   Writable `/scoring` queries are deliberately excluded. Browser time never
   changes authorization or locally reveals cached facts, and restricted hole
   URLs are canonicalized to the visible prefix.
+- Temporary completion clearing retains the mounted scorer only for the exact
+  explicit tournament/round/owner/hole, matching cached score access, and a decoded
+  writable card in an editable round. This preserves its existing score coordinator
+  and confirmation observer; it stores no extra server state. Cleared completion
+  names/progress are not reused: a generic owner label and recovery notice replace
+  them, and new writes, retries, confirmation, and card navigation are disabled.
+  In-flight operations retain their existing serialization; failed input remains
+  discardable. Transient completion/access failures retain this disabled state.
+  Terminal authorization errors, authoritative owner removal, and locked-round
+  reconciliation retain the ordinary fail-closed/read-only paths.
 - Hole mutation intent stays outside TanStack Query in one round/owner/hole
   coordinator. It serializes writes, coalesces rapid input, and requires an
   authoritative refetch match before reporting synchronization. Route and unload

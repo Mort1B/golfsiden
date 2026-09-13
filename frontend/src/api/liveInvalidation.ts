@@ -1,6 +1,24 @@
 import type { QueryClient } from '@tanstack/react-query'
+import { authKeys, type AuthSession } from './auth'
 import { privateWorkspaceKeys } from './privateWorkspace'
 import type { TournamentLiveSignal } from './tournamentLive'
+
+const resumes = new WeakMap<QueryClient, Map<string, Promise<void>>>()
+
+function refreshOnReturn(client: QueryClient, userId: string): Promise<void> {
+  let pending = resumes.get(client)
+  if (!pending) { pending = new Map(); resumes.set(client, pending) }
+  const existing = pending.get(userId)
+  if (existing) return existing
+  const refresh = client.invalidateQueries({ queryKey: authKeys.session, exact: true }).then(async () => {
+    // A return may discover expiry or another signed-in account. Never revive its predecessor.
+    if (client.getQueryState(authKeys.session)?.status !== 'success'
+      || client.getQueryData<AuthSession | null>(authKeys.session)?.user_id !== userId) return
+    await invalidateLiveQueries(client, userId)
+  }).finally(() => pending.delete(userId))
+  pending.set(userId, refresh)
+  return refresh
+}
 
 export function isLiveInvalidationTarget(queryKey: readonly unknown[], userId: string): boolean {
   if (queryKey[0] !== privateWorkspaceKeys.root[0] || queryKey[1] !== userId) return false
@@ -53,6 +71,7 @@ export function handleTournamentLiveSignal(
   userId: string,
   signal: TournamentLiveSignal,
 ): Promise<void> {
+  if (signal === 'resume') return refreshOnReturn(queryClient, userId)
   // Score saves/confirmations do not change tournament setup or score access.
   // Structural events and reconnection still reconcile the full private workspace.
   if (signal === 'score') {

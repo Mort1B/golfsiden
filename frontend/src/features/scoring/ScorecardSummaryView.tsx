@@ -41,7 +41,7 @@ export function ScorecardSummaryView(props: ScorecardSummaryViewProps) {
           {props.confirming ? 'Bekrefter …' : 'Bekreft fullført scorekort'}
         </button>
       )}
-      {props.confirmationError && <div className="confirmation-error" role="alert"><p>{props.confirmationError}</p>{props.confirmationRetryable && props.card.complete && !props.card.confirmed && <button type="button" onClick={props.onConfirm}>Prøv bekreftelse igjen</button>}</div>}
+      {props.confirmationError && <div className="confirmation-error" role="alert"><p>{props.confirmationError}</p>{props.confirmationRetryable && props.card.complete && !props.card.confirmed && !props.readOnly && <button type="button" disabled={props.disabled || props.confirming} onClick={props.onConfirm}>Prøv bekreftelse igjen</button>}</div>}
     </section>
   )
 }

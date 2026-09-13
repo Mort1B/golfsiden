@@ -9,7 +9,7 @@ interface ReadScorecardExperienceProps {
   rounds: Round[]
   round: Round
   owners: OwnerCompletionProgress[]
-  selectedOwner: OwnerCompletionProgress
+  selectedOwner: Pick<OwnerCompletionProgress, 'owner' | 'owner_name'>
   card: ReadScorecard
   hole: ScorecardHole
   view: ScoreView

@@ -179,6 +179,23 @@ Explicit hole/summary URLs and browser Back/Forward keep their intended selectio
 Saving or background refresh does not automatically advance the current hole.
 Read-only and restricted cards continue to select only returned visible holes.
 
+Returning to a visible tab, a restored page, or a recovered network connection
+revalidates the session and refreshes the current workspace. A stopped live
+connection is restarted automatically; healthy live connections stay open. If
+the session has expired, the page returns to sign-in. A disconnected Score page
+explains the connection loss and provides a reconnect action instead of waiting
+silently for an unrelated navigation click.
+
+While live progress is being recovered, an already loaded writable score input
+stays mounted for the same explicit player/team and hole. Pending saves,
+confirmation, and failed-score decisions retain their existing state and guards.
+The owner temporarily reads **Valgt scorekort**, completion-dependent selectors
+are hidden, and scoring/confirmation controls wait for recovery. Failed input can
+still be discarded. Transient refresh failures show a retry action. This does
+not enable offline scoring or replay writes on return. Read-only scorecards and
+protected progress remain hidden until authoritative reads succeed; access denial
+and round locking continue to remove write access.
+
 The owner, tournament, and round identity precede the active hole or summary.
 Hole selection and the view toggle stay visible below it. The labeled tournament,
 round, and player/team selectors expand under **Bytt turnering, runde eller
