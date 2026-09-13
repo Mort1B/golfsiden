@@ -13,7 +13,11 @@ pub(super) async fn validate_owner(
     context: &RoundContext,
     owner: ScoreOwner,
 ) -> Result<i32, ScorecardError> {
-    if context.scoring_format == crate::domain::models::ScoringFormat::IndividualStableford {
+    if matches!(
+        context.scoring_format,
+        crate::domain::models::ScoringFormat::IndividualStableford
+            | crate::domain::models::ScoringFormat::SinglesMatchPlay
+    ) {
         return Err(ScorecardError::Conflict(
             ScorecardConflict::OwnerFormatMismatch,
         ));

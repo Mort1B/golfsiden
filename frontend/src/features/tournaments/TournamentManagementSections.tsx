@@ -95,7 +95,7 @@ export function TournamentManagementSections({ tournament, roster, rounds, navig
           roundsError={rounds.error}
           onRetryRounds={rounds.retry}
         />
-        <ResultShareControl tournamentId={tournament.id} authorityRefreshing={authorityRefreshing} />
+        {tournament.counted_rounds === null ? <p>Offentlig resultatlenke er ikke tilgjengelig for en turnering med bare matchspill. Matchresultater er private.</p> : <ResultShareControl tournamentId={tournament.id} authorityRefreshing={authorityRefreshing} />}
         {tournament.description && <p className="management-description">{tournament.description}</p>}
       </section>
 

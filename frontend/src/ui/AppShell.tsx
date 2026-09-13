@@ -1,8 +1,10 @@
+import { MatchPendingLink } from '../features/matchPlay/MatchPending'
+import { MatchQueueProvider } from '../features/matchPlay/offline/MatchQueueProvider'
 import { ScoreQueueProvider } from '../features/scoring/offline/ScoreQueueProvider'
 import { PendingScoreLink } from '../features/scoring/offline/PendingScores'
 import { useState } from 'react'
 import { BarChart3, ClipboardPen, LogIn, LogOut, Trophy, UserRound } from 'lucide-react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../features/auth/authContext'
 import { useScoringGuard } from '../features/scoring/scoringGuardContext'
 
@@ -14,13 +16,16 @@ const baseNavItems = [
 ]
 
 export function AppShell() {
-  return <ScoreQueueProvider><PrivateShell /></ScoreQueueProvider>
+  return <ScoreQueueProvider><MatchQueueProvider><PrivateShell /></MatchQueueProvider></ScoreQueueProvider>
 }
 
 function PrivateShell() {
   const auth = useAuth()
   const scoringGuard = useScoringGuard()
   const [signOutError, setSignOutError] = useState<string | null>(null)
+  const path = useLocation().pathname
+  const matchScoring = /\/matches(?:\/[^/]+\/score)?$/.test(path)
+  const matchResults = path.includes('/match-results') || /\/matches\/[^/]+$/.test(path)
   const navItems = baseNavItems
 
   return (
@@ -39,12 +44,12 @@ function PrivateShell() {
       </aside>
       {signOutError && <p className="session-error" role="alert">{signOutError}</p>}
       <main className="main-content">
-        <PendingScoreLink />
+        <PendingScoreLink /><MatchPendingLink />
         <Outlet />
       </main>
       <nav className={`bottom-nav nav-count-${navItems.length}`} aria-label="Hovedmeny">
         {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+          <NavLink key={to} to={to} aria-current={to === '/score' && matchScoring || to === '/leaderboard' && matchResults ? 'page' : undefined} className={({ isActive }) => isActive || to === '/score' && matchScoring || to === '/leaderboard' && matchResults ? 'nav-link active' : 'nav-link'}>
             <Icon aria-hidden="true" size={21} strokeWidth={2} />
             <span>{label}</span>
           </NavLink>

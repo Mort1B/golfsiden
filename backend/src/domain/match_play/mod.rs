@@ -1,7 +1,9 @@
-//! Pure 18-hole singles foundation, not a selectable format or reporting API.
+//! Pure 18-hole singles rules and typed reporting provenance.
 
+pub mod commands;
 mod handicap;
 mod points;
+pub mod table;
 
 pub use handicap::{HandicapAllocation, MatchMode};
 pub use points::{ConfirmationStatus, MatchPoints, PointAward};
@@ -23,7 +25,8 @@ pub enum MatchPlayError {
 }
 
 /// Slots refer to the two preserved opponents; they do not create player/team IDs.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum Opponent {
     First,
     Second,
@@ -54,7 +57,8 @@ pub enum MatchReport {
     Awarded { winner: Opponent },
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum MatchFinish {
     OnHoles {
         winner: Opponent,

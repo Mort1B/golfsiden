@@ -8,6 +8,7 @@ import type {
 import type { ScoreVisibilityMode } from '../../api/visibility'
 
 const scoringFormatLabels = {
+  singles_match_play: 'Matchspill (singel)',
   individual_stableford: 'Stableford (individuelt)',
   individual_stroke_play: 'Individuelt slagspill',
   team_scramble: 'Lag-scramble',

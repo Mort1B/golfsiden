@@ -38,11 +38,12 @@ export function validateTournament(tournament: TournamentDraft, today: string): 
 export function validateRounds(
   rounds: RoundDraft[],
   tournament: TournamentDraft,
-  countedRounds: number,
+  countedRounds: number | null,
 ): FieldErrors {
   const errors: FieldErrors = {}
   if (rounds.length < 1 || rounds.length > 30) errors.rounds = 'Turneringen må ha mellom 1 og 30 runder.'
-  if (!Number.isInteger(countedRounds) || countedRounds < 1 || countedRounds > rounds.length) {
+  const eligible = rounds.filter(r => r.scoringFormat !== 'singles_match_play').length
+  if (eligible === 0 ? countedRounds !== null : countedRounds === null || !Number.isInteger(countedRounds) || countedRounds < 1 || countedRounds > eligible) {
     errors['rounds.countedRounds'] = 'Velg hvor mange av de planlagte rundene som skal telle.'
   }
   for (const round of rounds) {

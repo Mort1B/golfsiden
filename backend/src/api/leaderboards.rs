@@ -116,9 +116,14 @@ async fn tournament(
     Ok((
         [(CACHE_CONTROL, "private, no-store")],
         Json(
-            leaderboards::tournament_for_member(&state.pool, user_id, tournament_id, metric)
-                .await
-                .map_err(map_error)?,
+            leaderboards::tournament_response_for_member(
+                &state.pool,
+                user_id,
+                tournament_id,
+                metric,
+            )
+            .await
+            .map_err(map_error)?,
         ),
     )
         .into_response())
@@ -127,6 +132,10 @@ async fn tournament(
 fn map_error(error: LeaderboardError) -> ApiError {
     match error {
         LeaderboardError::NotFound => ApiError::NotFound,
+        LeaderboardError::OverallUnavailable => ApiError::DomainConflict {
+            code: "overall_not_applicable",
+            message: "match play has separate match results",
+        },
         LeaderboardError::InvalidStoredData => ApiError::Internal,
         LeaderboardError::Authorization(error) => map_authorization_error(error),
         LeaderboardError::Database(error) => ApiError::Database(error),

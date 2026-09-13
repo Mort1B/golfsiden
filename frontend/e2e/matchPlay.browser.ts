@@ -1,0 +1,132 @@
+import { test,expect, type Page } from '@playwright/test'
+import { decodeObject, decodeString } from '../src/api/decoder'
+import { matchFixture,noOverflow } from './matchSupport'
+const observed = new Set<Page>()
+let consoleErrors: string[] = [], statuses: number[] = [], failures: string[] = []
+function observe(page: Page) {
+  if (observed.has(page)) return; observed.add(page)
+  page.on('pageerror', error => consoleErrors.push(error.message))
+  page.on('console', message => { if (message.type() === 'error' && !message.text().startsWith('Failed to load resource:')) consoleErrors.push(message.text()) })
+  page.on('response', response => { if (response.status() >= 400) statuses.push(response.status()) })
+  page.on('requestfailed', request => failures.push(request.failure()?.errorText ?? 'failed'))
+}
+test.beforeEach(async ({page}) => { consoleErrors=[]; statuses=[]; failures=[]; observed.clear(); observe(page); page.context().on('page',observe) })
+test.afterEach(async ({ page }, info) => {
+  void page
+  expect(consoleErrors).toEqual([])
+  const expected = info.title.includes('metadata failure') ? [500, 403] : info.title.includes('two tabs') ? [500] : info.title.includes('non-admin') ? [403] : []
+  expect(statuses.filter(status => !expected.includes(status))).toEqual([])
+  expect(failures.filter(error => !['net::ERR_ABORTED', 'net::ERR_INTERNET_DISCONNECTED', 'net::ERR_FAILED'].includes(error))).toEqual([])
+})
+test.skip(process.env.GOLF_MATCH_BROWSER!=='1','Requires disposable match API')
+test('manual setup and match-only discovery at320px',async({page,browser})=>{
+  await page.setViewportSize({width:320,height:600});const f=await matchFixture(page,browser,true),errors:string[]=[];page.on('pageerror',e=>errors.push(e.message))
+  await page.goto(f.manage);await expect(page.getByRole('heading',{name:'Matchoppsett · Matchspill med lange navn'})).toBeVisible()
+  await page.getByRole('button',{name:'Legg til match',exact:true}).click();await page.getByLabel('Første spiller',{exact:true}).selectOption(f.firstId);await page.getByLabel('Motstander',{exact:true}).selectOption(f.secondId)
+  await page.getByLabel('Offisiell spilleform').selectOption('gross');await expect(page.getByLabel('Motstander',{exact:true})).toHaveValue(f.secondId)
+  await page.getByRole('button',{name:'Lagre motstandere',exact:true}).click();await expect(page.getByText('Matchoppsettet er lagret.',{exact:true})).toBeVisible()
+  await noOverflow(page);await page.screenshot({path:'/tmp/match-setup-320.png',fullPage:true});await f.start()
+  await page.goto(`/score?tournament=${f.tournament.id}&round=${f.round.id}`);await page.getByRole('link',{name:'Før match',exact:true}).click();await expect(page.getByRole('heading',{name:'Numeriske notater · ikke rapporterte resultater'})).toBeVisible()
+  await page.goto(`/tournaments/${f.tournament.id}/match-results`);await expect(page.getByText('Ingen bekreftede matcher',{exact:true})).toHaveCount(2);await noOverflow(page)
+  await page.goto(`/manage/tournaments/${f.tournament.id}#settings`);await expect(page.getByText('Offentlig resultatlenke er ikke tilgjengelig',{exact:false})).toBeVisible();expect(errors).toEqual([])
+})
+test('offline numeric notes across opponents, reports, early finish and correction at1280px',async({page,browser})=>{
+  await page.setViewportSize({width:1280,height:900});const f=await matchFixture(page,browser),errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(f.url)
+  const a=page.getByLabel(`Notat · ${f.firstName}`,{exact:true});await expect(a).toBeVisible();await page.context().setOffline(true)
+  await a.fill('4');await page.getByRole('button',{name:'Lagre notat',exact:true}).nth(0).click();await expect(page.getByRole('region',{name:'Lokale matchendringer'})).toContainText('4 slag på hull 1')
+  await page.getByLabel(`Notat · ${f.secondName}`,{exact:true}).fill('5');await page.getByRole('button',{name:'Lagre notat',exact:true}).nth(1).click();await expect(page.getByRole('region',{name:'Lokale matchendringer'})).toContainText('5 slag på hull 1')
+  await expect(page.getByRole('button',{name:'Rapporter avtalt resultat',exact:true})).toBeDisabled();await page.context().setOffline(false)
+  await expect.poll(async()=>(await f.read()).notes.length,{timeout:20000}).toBe(2);await expect(page.getByRole('region',{name:'Lokale matchendringer'})).toHaveCount(0,{timeout:15000})
+  await page.getByLabel(`Avtalt bruttoscore · ${f.firstName}`,{exact:true}).fill('4');await page.getByLabel(`Avtalt bruttoscore · ${f.secondName}`,{exact:true}).fill('5');await page.getByLabel('Begge motstanderne har avtalt dette hullresultatet.').check();await page.getByRole('button',{name:'Rapporter avtalt resultat',exact:true}).click();await expect.poll(async()=>(await f.read()).resolved_holes).toBe(1)
+  for(let h=2;h<=10;h++) await f.command({type:'report',event:{type:'hole',hole_number:h,outcome:'first',basis:{type:'hole_concession',conceding_player_id:f.secondId,communicated:true}}})
+  await expect(page.getByRole('heading',{name:/vant 10&8/})).toBeVisible();await page.getByLabel('Jeg bekrefter at resultatet er avtalt av motstanderne eller avgjort av arrangøren.').check();await page.getByRole('button',{name:'Bekreft matchresultat',exact:true}).click();await expect.poll(async()=>(await f.read()).confirmed).toBe(true)
+  await page.getByRole('button',{name:'Korriger aksepterte rapporter'}).click();await page.getByLabel('Begrunnelse',{exact:true}).first().fill('Retter feilregistrert avslutning');await page.getByLabel('Behold rapporter frem til').selectOption('0');await page.getByRole('button',{name:'Lagre korrigert rapportrekke',exact:true}).click();await expect.poll(async()=>(await f.read()).finish).toBeNull();await noOverflow(page);await page.screenshot({path:'/tmp/match-scoring-1280.png',fullPage:true});expect(errors).toEqual([])
+})
+test('pre-hole concession, revision attestation, locked correction and scoped mixed history at390px',async({page,browser})=>{
+  await page.setViewportSize({width:390,height:844});const f=await matchFixture(page,browser,false,true);await page.goto(f.url)
+  await page.getByLabel('Type rapport').selectOption('concession');await page.getByLabel('Spilleren som faktisk ga slaget, hullet eller matchen').selectOption(f.secondId);await page.getByLabel('Jeg bekrefter at den navngitte spilleren kommuniserte dette.').check();await page.getByRole('button',{name:'Rapporter avtalt resultat',exact:true}).click();await expect.poll(async()=>(await f.read()).finish?.type).toBe('conceded')
+  const check=page.getByLabel('Jeg bekrefter at resultatet er avtalt av motstanderne eller avgjort av arrangøren.');await check.check();const c=await f.read();await f.command({type:'correct',kind:'recording_error',reason:'Feil spiller registrert',superseded_event_ids:c.accepted_events.map(e=>e.id),replacement:[{type:'concession',conceding_player_id:f.firstId,communicated:true,after_hole:0}]})
+  await expect(check).not.toBeChecked();await expect(page.getByRole('button',{name:'Bekreft matchresultat',exact:true})).toBeDisabled();await check.check();await page.getByRole('button',{name:'Bekreft matchresultat',exact:true}).click();await expect.poll(async()=>(await f.read()).confirmed).toBe(true)
+  await f.mutate(`/api/rounds/${f.round.id}/complete`);await f.mutate(`/api/rounds/${f.round.id}/lock`);await page.getByRole('button',{name:'Korriger aksepterte rapporter'}).click();await page.getByLabel('Begrunnelse',{exact:true}).first().fill('Tillatt korrigering av låst match');await page.getByRole('button',{name:'Lagre korrigert rapportrekke',exact:true}).click();await expect.poll(async()=>(await f.read()).confirmed).toBe(false);await check.check();await page.getByRole('button',{name:'Bekreft matchresultat',exact:true}).click();await expect.poll(async()=>(await f.read()).confirmed).toBe(true)
+  await page.goto(`/tournaments/${f.tournament.id}/match-results?player=${f.firstId}`);await expect(page.getByRole('link',{name:'Matchhistorikk',exact:true})).toHaveCount(1);await noOverflow(page);await page.screenshot({path:'/tmp/match-results-390.png',fullPage:true})
+})
+test('draw awards halves, hidden member reads, final release and lifecycle keyboard focus',async({page,browser})=>{
+  const f=await matchFixture(page,browser)
+  for(let h=1;h<=18;h++) await f.command({type:'report',event:{type:'hole',hole_number:h,outcome:'halved',basis:{type:'agreed_halve',play_begun:true,mutual_agreement:true}}})
+  await page.goto(f.url);await expect(page.getByRole('heading',{name:'Delt match',exact:true})).toBeVisible();await page.getByLabel('Jeg bekrefter at resultatet er avtalt av motstanderne eller avgjort av arrangøren.').check();await page.getByRole('button',{name:'Bekreft matchresultat',exact:true}).click();await expect.poll(async()=>(await f.read()).half_points).toEqual([1,1])
+  await page.goto(`/manage/tournaments/${f.tournament.id}?round=${f.round.id}#lifecycle`)
+  const opener=page.getByRole('button',{name:'Fullfør runden',exact:true});await opener.click();await expect(page.getByRole('button',{name:'Avbryt',exact:true})).toBeFocused();await page.keyboard.press('Escape');await expect(opener).toBeFocused()
+  const context=await browser.newContext({viewport:{width:320,height:600}})
+  try {
+    const member=await context.newPage();observe(member);expect((await member.request.post('http://127.0.0.1:5173/api/auth/login',{data:{username:f.secondUsername,password:f.password}})).ok()).toBe(true)
+    await member.goto(`http://127.0.0.1:5173/rounds/${f.round.id}/matches/${f.matchId}`);await expect(member.getByText('Bare hull 1–9 vises.',{exact:false})).toBeVisible();await expect(member.getByRole('heading',{name:'Delt match',exact:true})).toHaveCount(0)
+    await member.goto(`http://127.0.0.1:5173/tournaments/${f.tournament.id}/match-results`);await expect(member.getByText('Ingen bekreftede matcher',{exact:true})).toHaveCount(2)
+    const visibility=decodeObject(await (await page.request.get(`/api/tournaments/${f.tournament.id}/final-round-visibility`)).json(),'visibility')
+    await f.mutate(`/api/tournaments/${f.tournament.id}/final-round-visibility`,{back_nine_hidden:false,expected_visibility_updated_at:decodeString(visibility.visibility_updated_at,'version')},'PATCH')
+    await expect(member.getByText('½ poeng · 1 spilt · 0 vunnet / 1 delt / 0 tapt',{exact:true})).toHaveCount(2);await noOverflow(member);await member.screenshot({path:'/tmp/match-draw-member-320.png',fullPage:true})
+    await member.goto(`http://127.0.0.1:5173/tournaments/${f.tournament.id}/results/players/${f.secondId}?metric=net`);await expect(member.getByRole('link',{name:'Matchhistorikk',exact:true})).toHaveCount(1)
+    await member.goto(`http://127.0.0.1:5173/tournaments/${f.tournament.id}/results/players/00000000-0000-0000-0000-000000000099?metric=net`);await expect(member.getByText('Spilleren finnes ikke i turneringen.')).toBeVisible()
+  } finally { await context.close() }
+})
+test('non-admin failed device write remains recoverable when external lock denies scoring',async({page,browser})=>{
+  const f=await matchFixture(page,browser),context=await browser.newContext({viewport:{width:390,height:844}})
+  try {
+    const member=await context.newPage();observe(member);expect((await member.request.post('http://127.0.0.1:5173/api/auth/login',{data:{username:f.secondUsername,password:f.password}})).ok()).toBe(true)
+    await member.goto(`http://127.0.0.1:5173${f.url}`);await member.getByLabel(`Notat · ${f.secondName}`,{exact:true}).fill('7')
+    await member.evaluate(()=>Object.defineProperty(window,'indexedDB',{configurable:true,get(){throw new Error('Device storage unavailable')}}))
+    await member.getByRole('button',{name:'Lagre notat',exact:true}).nth(1).click();await expect(member.getByRole('button',{name:'Forkast ulagrede notater',exact:true})).toBeVisible()
+    await f.command({type:'report',event:{type:'concession',conceding_player_id:f.firstId,communicated:true,after_hole:0}});await f.command({type:'confirm',result_agreed_or_awarded:true});await f.mutate(`/api/rounds/${f.round.id}/complete`);await f.mutate(`/api/rounds/${f.round.id}/lock`)
+    await expect(member.getByRole('heading',{name:'Ulagrede lokale notater',exact:true})).toBeVisible();await expect(member.getByText('Lokalt notat 1: 7',{exact:true})).toBeVisible();await expect(member.getByRole('heading',{name:/vant ved gitt match/})).toHaveCount(0)
+    await member.getByRole('button',{name:'Forkast ulagrede notater',exact:true}).click();await member.getByRole('link',{name:'Alle matcher',exact:true}).click();await expect(member.getByRole('link',{name:'Før match',exact:true})).toHaveCount(0);await noOverflow(member)
+  } finally {await context.close()}
+})
+test('two tabs share one durable sequence and loading/error/empty recovery stays explicit',async({page,browser})=>{
+  const f=await matchFixture(page,browser),other=await page.context().newPage();await page.goto(f.url);await other.goto(f.url)
+  await expect(other.getByLabel(`Notat · ${f.secondName}`,{exact:true})).toBeVisible();await page.context().setOffline(true)
+  await page.getByLabel(`Notat · ${f.firstName}`,{exact:true}).fill('3');await page.getByRole('button',{name:'Lagre notat',exact:true}).nth(0).click();await expect(other.getByRole('region',{name:'Lokale matchendringer'})).toContainText('3 slag på hull 1')
+  await other.getByLabel(`Notat · ${f.secondName}`,{exact:true}).fill('4');await other.getByRole('button',{name:'Lagre notat',exact:true}).nth(1).click();await expect(page.getByRole('region',{name:'Lokale matchendringer'})).toContainText('4 slag på hull 1');await page.context().setOffline(false)
+  await expect.poll(async()=>(await f.read()).revision,{timeout:20000}).toBe('3');await expect(page.getByRole('region',{name:'Lokale matchendringer'})).toHaveCount(0,{timeout:10000});await other.close()
+  const path=`**/api/rounds/${f.round.id}/match-play/matches`
+  await page.route(path,async route=>{await new Promise(resolve=>setTimeout(resolve,600));await route.fulfill({status:500,json:{error:{code:'test_error',message:'Matchlisten kunne ikke lastes'}}})})
+  await page.goto(`/rounds/${f.round.id}/matches`);await expect(page.getByRole('status').filter({hasText:'Laster …'}).first()).toBeVisible();await expect(page.getByText('Matchlisten kunne ikke lastes',{exact:true})).toBeVisible();await page.unroute(path);await page.getByRole('button',{name:'Prøv igjen',exact:true}).click();await expect(page.getByRole('link',{name:'Før match',exact:true})).toBeVisible()
+  await page.context().clearCookies();const draft=await matchFixture(page,browser,true);await page.goto(`/rounds/${draft.round.id}/matches`);await expect(page.getByText('Ingen matcher er satt opp for dette valget.',{exact:true})).toBeVisible()
+})
+test('creation wizard reconciles match-only and mixed N/mandatory selection before publishing',async({page,browser})=>{
+  await matchFixture(page,browser)
+  await page.setViewportSize({width:320,height:600});await page.goto('/create');await page.getByLabel('Turneringsnavn',{exact:true}).fill(`Match fra veiviser ${Date.now()}`);await page.getByRole('button',{name:'Neste',exact:true}).click()
+  await page.getByRole('combobox',{name:'Spilleform',exact:true}).selectOption('singles_match_play')
+  await expect(page.locator('#counted-rounds')).toBeDisabled();await expect(page.getByText('Matchspill har en egen poengtabell.',{exact:false})).toBeVisible()
+  await page.getByRole('button',{name:'Legg til runde',exact:true}).click();await page.getByRole('combobox',{name:'Spilleform',exact:true}).nth(1).selectOption('individual_stroke_play');await expect(page.locator('#counted-rounds')).toHaveValue('1')
+  await page.locator('#mandatory-round').selectOption('round-2');await page.getByRole('combobox',{name:'Spilleform',exact:true}).nth(1).selectOption('singles_match_play');await expect(page.locator('#mandatory-round')).toHaveValue('');await expect(page.locator('#mandatory-round')).toBeDisabled()
+  await page.getByRole('button',{name:'Fjern runde 2',exact:true}).click();await page.getByRole('button',{name:'Neste',exact:true}).click();await expect(page.getByText('Egen matchpoengtabell',{exact:true})).toBeVisible()
+  const posted=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/tournaments' && r.request().method()==='POST')
+  await page.getByRole('button',{name:'Opprett turnering',exact:true}).click();const response=await posted;expect(response.status()).toBe(201)
+  const payload=decodeObject(response.request().postDataJSON(),'request'),tournament=decodeObject(payload.tournament,'tournament');expect(tournament.counted_rounds).toBeNull();expect(tournament.mandatory_round_number).toBeNull()
+  await expect(page).toHaveURL(/\/manage\/tournaments\//);await expect(page.getByText('Offentlig resultatlenke er ikke tilgjengelig',{exact:false})).toBeVisible();await noOverflow(page)
+})
+test('background metadata failure preserves dirty notes and authorization recovery', async ({ page, browser }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  const f = await matchFixture(page, browser)
+  await page.goto(f.url)
+  const note = page.getByLabel(`Notat · ${f.firstName}`, { exact: true })
+  await note.fill('8')
+  const path = `**/api/rounds/${f.round.id}`
+  let status = 500
+  await page.route(path, route => route.fulfill({ status, json: { error: { code: 'metadata_test', message: 'Rundekontroll mislyktes' } } }))
+  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })))
+  await expect(page.getByText('Rundekontroll mislyktes', { exact: true })).toBeVisible()
+  await expect(note).toHaveValue('8')
+  await expect(page.getByRole('button', { name: 'Rapporter avtalt resultat', exact: true })).toBeDisabled()
+  status = 403
+  await page.getByRole('button', { name: 'Prøv igjen', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Ulagrede lokale notater', exact: true })).toBeVisible()
+  await expect(page.getByText('Lokalt notat 1: 8', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Rapporter avtalt resultat', exact: true })).toHaveCount(0)
+  await expect(note).toHaveCount(0)
+  await page.unroute(path)
+  await page.getByRole('button', { name: 'Prøv igjen', exact: true }).click()
+  await expect(note).toHaveValue('8')
+  await page.getByRole('button', { name: 'Forkast ulagrede notater', exact: true }).click()
+  await expect(note).toHaveValue('')
+  await noOverflow(page)
+})

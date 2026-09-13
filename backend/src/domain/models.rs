@@ -49,6 +49,13 @@ pub enum ScoringFormat {
     TwoPlayerFoursomes,
     FourBallStrokePlay,
     IndividualStableford,
+    SinglesMatchPlay,
+}
+
+impl ScoringFormat {
+    pub const fn contributes_to_overall(self) -> bool {
+        !matches!(self, Self::SinglesMatchPlay)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
@@ -77,7 +84,7 @@ pub struct Tournament {
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
     pub number_of_rounds: i16,
-    pub counted_rounds: i16,
+    pub counted_rounds: Option<i16>,
     pub mandatory_round_id: Option<Uuid>,
     pub tie_break_policy: TournamentTieBreakPolicy,
     pub status: TournamentStatus,
@@ -209,6 +216,7 @@ pub enum ReadinessIssueCode {
     InvalidFoursomesTeamSize,
     InvalidFourBallTeamSize,
     MissingFlightAssignment,
+    InvalidMatchAssignments,
     IneligibleFlightAssignment,
     EmptyFlight,
     LegacyIndividualGroupsPresent,

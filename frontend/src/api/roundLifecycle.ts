@@ -15,6 +15,7 @@ import { decodeRound } from './tournaments'
 import type { Round } from './types'
 
 export type ReadinessIssueCode =
+  | 'invalid_match_assignments'
   | 'round_not_draft'
   | 'tournament_not_openable'
   | 'no_active_entrants'
@@ -38,7 +39,7 @@ export type ReadinessIssueCode =
   | 'invalid_stroke_indexes'
 
 const readinessIssueCodes = [
-  'round_not_draft', 'tournament_not_openable', 'no_active_entrants',
+  'invalid_match_assignments', 'round_not_draft', 'tournament_not_openable', 'no_active_entrants',
   'missing_team_assignment', 'ineligible_team_assignment', 'empty_team',
   'invalid_scramble_team_size', 'invalid_foursomes_team_size', 'invalid_four_ball_team_size',
   'missing_flight_assignment', 'ineligible_flight_assignment', 'empty_flight',

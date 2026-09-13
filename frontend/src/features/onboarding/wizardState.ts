@@ -27,7 +27,7 @@ export interface CreatorDraft {
 export interface WizardDraft {
   tournament: TournamentDraft
   rounds: RoundDraft[]
-  countedRounds: number
+  countedRounds: number | null
   countedRoundsMode: 'all' | 'custom'
   mandatoryRoundKey: string | null
   creator: CreatorDraft
@@ -60,7 +60,7 @@ export function addRound(draft: WizardDraft): WizardDraft {
   const countedRounds = draft.countedRoundsMode === 'all'
     ? number
     : draft.countedRounds
-  return {
+  return reconcileOverall({
     ...draft,
     countedRounds,
     nextRoundKey: draft.nextRoundKey + 1,
@@ -70,31 +70,31 @@ export function addRound(draft: WizardDraft): WizardDraft {
       date: previous?.date ?? draft.tournament.startDate,
       scoringFormat: previous?.scoringFormat ?? 'individual_stroke_play',
     }],
-  }
+  })
 }
 
 export function removeRound(draft: WizardDraft, key: string): WizardDraft {
   if (draft.rounds.length === 1) return draft
   const rounds = draft.rounds.filter((round) => round.key !== key)
-  return {
+  return reconcileOverall({
     ...draft,
     rounds,
-    countedRounds: Math.min(draft.countedRounds, rounds.length),
+    countedRounds: draft.countedRounds,
     mandatoryRoundKey: draft.mandatoryRoundKey === key ? null : draft.mandatoryRoundKey,
-  }
+  })
 }
 
 export function updateMandatoryRound(draft: WizardDraft, key: string | null): WizardDraft {
-  if (key !== null && !draft.rounds.some((round) => round.key === key)) return draft
+  if (key !== null && !draft.rounds.some((round) => round.key === key && round.scoringFormat !== 'singles_match_play')) return draft
   return { ...draft, mandatoryRoundKey: key }
 }
 
 export function updateCountedRounds(draft: WizardDraft, countedRounds: number): WizardDraft {
-  if (!Number.isInteger(countedRounds) || countedRounds < 1 || countedRounds > draft.rounds.length) return draft
+  if (!Number.isInteger(countedRounds) || countedRounds < 1 || countedRounds > eligibleCount(draft.rounds)) return draft
   return {
     ...draft,
     countedRounds,
-    countedRoundsMode: countedRounds === draft.rounds.length ? 'all' : 'custom',
+    countedRoundsMode: countedRounds === eligibleCount(draft.rounds) ? 'all' : 'custom',
   }
 }
 
@@ -103,10 +103,10 @@ export function updateRound(
   key: string,
   update: Partial<Omit<RoundDraft, 'key'>>,
 ): WizardDraft {
-  return {
+  return reconcileOverall({
     ...draft,
     rounds: draft.rounds.map((round) => round.key === key ? { ...round, ...update } : round),
-  }
+  })
 }
 
 export function toOnboardingRequest(draft: WizardDraft): OnboardingRequest {
@@ -147,4 +147,11 @@ function parseHandicapOrThrow(value: string): number {
   const result = parseHandicap(value)
   if (!result.ok) throw new Error(result.message)
   return result.value
+}
+
+export function eligibleCount(rounds: RoundDraft[]): number { return rounds.filter(r => r.scoringFormat !== 'singles_match_play').length }
+function reconcileOverall(draft: WizardDraft): WizardDraft {
+  const count = eligibleCount(draft.rounds)
+  return { ...draft, countedRounds: count === 0 ? null : draft.countedRoundsMode === 'all' ? count : Math.min(draft.countedRounds ?? count, count),
+    mandatoryRoundKey: draft.rounds.some(r => r.key === draft.mandatoryRoundKey && r.scoringFormat !== 'singles_match_play') ? draft.mandatoryRoundKey : null }
 }

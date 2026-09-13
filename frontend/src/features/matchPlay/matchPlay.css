@@ -1,0 +1,21 @@
+.match-page, .match-panel, .match-list, .match-pending { min-width: 0; overflow-wrap: anywhere; }
+.match-panel { margin-block: 1.25rem; padding-block: .75rem; border-block-start: 1px solid var(--border-color, #d8dfda); }
+.match-panel h2, .match-panel h3, .match-page h1 { overflow-wrap: anywhere; }
+.match-page label, .match-panel label { display: grid; gap: .35rem; margin-block: .75rem; }
+.match-page input, .match-page select, .match-page textarea, .match-panel input, .match-panel select, .match-panel textarea { max-width: 100%; width: 100%; box-sizing: border-box; min-height: 44px; font: inherit; padding: .5rem; border: 1px solid #69776f; border-radius: .35rem; background: #fff; color: #152a1c; }
+.match-panel textarea { min-height: 88px; }
+.match-panel fieldset { min-width: 0; padding: .6rem; margin-block: 1rem; border: 1px solid #a6b4ab; }
+.match-panel button, .match-page button, .match-actions a, .match-table a, .match-pending a { min-height: 44px; padding: .6rem .8rem; display: inline-flex; align-items: center; justify-content: center; font: inherit; border-radius: .35rem; white-space: normal; }
+.match-panel button, .match-page button { border: 1px solid #4c6455; color: #163d24; background: #f4f8f4; cursor: pointer; margin: .25rem; }
+.match-panel button:disabled, .match-page button:disabled { cursor: default; opacity: .55; }
+.match-panel .match-check { display: flex; align-items: center; gap: .6rem; min-height: 44px; }
+.match-panel .match-check input { flex: 0 0 24px; width: 24px; height: 24px; min-height: 24px; }
+.match-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: .75rem; }
+.match-actions a, .match-table a, .match-pending a { color: #174c2d; text-underline-offset: .2em; }
+.match-panel :focus-visible, .match-page :focus-visible { outline: 3px solid #13653d; outline-offset: 3px; }
+.match-holes, .match-table { list-style: none; padding: 0; }
+.match-holes li, .match-table li { display: grid; gap: .5rem; border-bottom: 1px solid #d8dfda; padding-block: .75rem; }
+.match-table li div, .match-holes li { display: grid; gap: .3rem; }
+.match-panel summary { min-height: 44px; padding-block: .6rem; cursor: pointer; }
+.match-pending { padding: .75rem; background: #f9f1d5; color: #443807; }
+@media (min-width: 700px) { .match-table li { grid-template-columns: 1fr auto; align-items: center; } .match-page { max-width: 1000px; } }

@@ -1,3 +1,4 @@
+import { MatchSetup } from '../../matchPlay/MatchSetup'
 import { useEffect, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import type { Round, ScoringFormat } from '../../../api/types'
@@ -7,6 +8,7 @@ import { PairingEditor } from './PairingEditor'
 interface Props { tournamentId: string; rounds: Round[]; linkedRoundId?: string | null; navigationKey?: string }
 
 const pairingFormatLabels = {
+  singles_match_play: 'Matchspill · flighter og motstandere',
   individual_stableford: 'Stableford · flighter',
   individual_stroke_play: 'Individuell · flighter',
   team_scramble: 'Scramble · lag og flighter',
@@ -20,7 +22,7 @@ export function PairingSection({ tournamentId, rounds, linkedRoundId, navigation
   return <div className="round-pairings">
     {rounds.map((round) => {
       const expanded = round.id === expandedRoundId
-      return <article className="round-pairing-card" key={round.id}><header><div><strong>Runde {round.round_number}: {round.name}</strong><span>{pairingFormatLabels[round.scoring_format]}</span></div><StatusBadge status={round.status} /><button type="button" aria-expanded={expanded} aria-controls={`pairing-editor-${round.id}`} onClick={() => setExpandedRoundId((current) => current === round.id ? null : round.id)}>{expanded ? 'Lukk' : round.status === 'draft' ? 'Rediger' : 'Vis'}<ChevronDown aria-hidden="true" /></button></header><div id={`pairing-editor-${round.id}`} hidden={!expanded}><PairingEditor tournamentId={tournamentId} round={round} expanded={expanded} /></div></article>
+      return <article className="round-pairing-card" key={round.id}><header><div><strong>Runde {round.round_number}: {round.name}</strong><span>{pairingFormatLabels[round.scoring_format]}</span></div><StatusBadge status={round.status} /><button type="button" aria-expanded={expanded} aria-controls={`pairing-editor-${round.id}`} onClick={() => setExpandedRoundId((current) => current === round.id ? null : round.id)}>{expanded ? 'Lukk' : round.status === 'draft' ? 'Rediger' : 'Vis'}<ChevronDown aria-hidden="true" /></button></header><div id={`pairing-editor-${round.id}`} hidden={!expanded}><PairingEditor tournamentId={tournamentId} round={round} expanded={expanded} />{expanded && round.scoring_format === 'singles_match_play' && <MatchSetup round={round} />}</div></article>
     })}
   </div>
 }

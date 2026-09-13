@@ -57,7 +57,7 @@ export const tournamentApi = {
   players: (id: string) => requestDecoded(`/api/tournaments/${id}/players`, (value) => decodeTournamentPlayerRoster(value, id)),
   updateCountedRounds: (
     tournamentId: string,
-    input: { counted_rounds: number; mandatory_round_id: string | null; tie_break_policy?: TournamentTieBreakPolicy; expected_tournament_updated_at: string },
+    input: { counted_rounds: number | null; mandatory_round_id: string | null; tie_break_policy?: TournamentTieBreakPolicy; expected_tournament_updated_at: string },
     csrfToken: string,
   ) => requestDecoded(
     `/api/tournaments/${tournamentId}/counted-rounds`,

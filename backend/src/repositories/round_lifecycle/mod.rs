@@ -33,9 +33,13 @@ pub async fn pairing_validation(
     round_id: Uuid,
 ) -> Result<Option<PairingValidation>, sqlx::Error> {
     let mut connection = pool.acquire().await?;
-    Ok(load::round(&mut connection, round_id, false)
+    let mut result = load::round(&mut connection, round_id, false)
         .await?
-        .map(|loaded| validate(&loaded.facts)))
+        .map(|loaded| validate(&loaded.facts));
+    if let Some(validation) = &mut result {
+        crate::repositories::match_play::setup::add_readiness(&mut connection, validation).await?;
+    }
+    Ok(result)
 }
 
 pub async fn pairing_validation_for_member(
@@ -49,10 +53,12 @@ pub async fn pairing_validation_for_member(
         .await?;
     tournament_authorization::require_round_member_read(&mut transaction, user_id, round_id)
         .await?;
-    let validation = load::round(&mut transaction, round_id, false)
+    let mut validation = load::round(&mut transaction, round_id, false)
         .await?
         .map(|loaded| validate(&loaded.facts))
         .ok_or(AuthorizationError::NotFound)?;
+    crate::repositories::match_play::setup::add_readiness(&mut transaction, &mut validation)
+        .await?;
     transaction.commit().await?;
     Ok(validation)
 }

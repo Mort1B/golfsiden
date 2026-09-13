@@ -1,102 +1,130 @@
-# Playable individual Stableford
+# Playable singles match play
 
-Stableford is now available from tournament creation through scoring, offline
-synchronization, confirmation, round completion, standings and private history.
-It uses individual player cards on a shared 18-hole tee. Administrators can edit
-handicap use and the 0–100% allowance while draft; the default is 100%. Opening
-freezes the tee, tournament handicap and correctly rounded playing handicap.
-Teams remain administrator-managed and are not required for this format.
+Singles match play is now available from tournament creation and manual opponent
+assignment through numeric notes, online reporting, confirmation, completion,
+audited correction and private match history. It uses a shared 18-hole tee and
+flights starting at hole 1. Every active entrant needs exactly one same-flight
+opponent. Administrators retain control of all assignments.
 
-Native round standings rank gross/net points descending. Overall standings use
-36 minus points for a complete card, or twice the resolved visible holes minus
-points for a partial card. For example, 40 points contributes −4. A numeric 10
-and a pickup may both earn zero points, but only the numeric entry preserves
-actual strokes. Eighteen pickups form a complete zero-point card with +36 overall
-contribution; eighteen blanks have no result and cannot be confirmed.
+The official mode defaults to net with fixed 100% allowance and can be changed
+to gross while draft. Opening freezes mode, opponents, tee and individual Playing
+Handicaps. Net play allocates the full relative difference: handicaps 10 and 18
+become 0 and 8 received strokes. Gross play allocates zero. A lead greater than
+holes remaining ends the match; a tie after 18 is a draw. A 3&2 finish requires
+no invented scores on holes 17–18. A win, draw and loss give 1½ points across three
+played matches, in the separate private table.
 
-## Preserved input and result contracts
+## Notes, accepted reports and corrections
 
-Migration 0029 adds dedicated player inputs, audits and immutable delivery
-receipts. Numeric/pickup/numeric corrections retain the input UUID and advance
-its positive revision. Writes, audits, receipts and confirmation invalidation
-commit atomically under the round lock with current authority and session checks.
-An actual change clears confirmation even when points stay unchanged; no-ops
-and receipt replay preserve it. Completed cards remain correctable until locking.
+Numeric notes belong to the individual opponents and may be queued offline.
+They never accept an outcome automatically. Online reports preserve the agreed
+next-hole result and its numeric, concession, agreed-halve or organizer-ruling
+basis. Whole-match concessions and awards have explicit provenance and can end
+play before hole 1 without fabricating scores. The actual conceder must be named
+and communication attested; recorder authority does not invent sporting consent.
 
-Native points, actual strokes and overall equivalents have explicit versioned
-value representations. Stableford entries do not put equivalents into legacy
-stroke-total fields. Mixed overall entries expose labelled comparison totals;
-stroke-only responses retain their prior shape. Private runtime decoders verify
-both arithmetic and the result type against configured rounds. A hidden or draft
-Stableford round still establishes the configured overall value basis.
+Confirmation is bound to the current match revision and awards exact 2/1/0
+half-point units. Every assigned match must be terminal and confirmed before
+round completion or locking. Numeric note edits never rewrite accepted evidence.
+An exact administrator can correct a recording error or record an organizer ruling
+with a reason and an explicit replacement ledger. Superseded facts remain audited;
+correction clears confirmation and points atomically. The corrected result must be
+confirmed again, including when corrected through the dedicated locked-round path.
+Ordinary locked writes remain forbidden.
 
-The server projects permitted holes before deriving visible points, progress and
-metadata, retaining the full 18-hole handicap allocation. Hidden completed finals
-remain excluded from overall standings. Public links keep the existing summary
-scope and expose only the selected converted value and permitted tie-break, never
-player cards, input revisions or handicap details.
+## Contracts, privacy and offline recovery
 
-## Scoring and offline behavior
+Migrations 0030–0031 add matches, unique round-local opponents, player notes,
+audit and immutable account-scoped receipts. Commands serialize through round then
+match locks, recheck session and scope after waits, and atomically update ledger,
+revision, confirmation, audit and receipt. Exact authorized replay returns the
+original acknowledgement even after finish; a fresh stale command conflicts.
 
-The mobile card shows numeric/pickup states, received strokes and server-confirmed
-points. Pickup has explicit confirmation and keyboard focus restoration. Setup
-and history explain the conversion rule. Stale draft settings reload current
-values with an explicit replacement notice.
+Migration 0032 makes overall configuration explicitly absent for match-only trips:
+`counted_rounds` and mandatory round are null. Mixed trips count only non-match
+formats and cannot make a match mandatory. Deferred cross-table validation permits
+tournament-before-round creation. An internal generation row prevents concurrent
+format changes from invalidating N under READ COMMITTED or REPEATABLE READ while
+preserving public configuration timestamps and no-op behavior. Legacy non-match
+configuration and scoring data remain intact.
 
-The device queue adds `stableford_v1` with player ownership, immutable heads and
-acknowledged-revision successors. Existing numeric and four-ball serialized heads
-are preserved. Conflicts show local and current numeric, pickup or blank states.
-Unknown delivery survives reload and two tabs. Pending delivery, verification or
-failed local storage blocks confirmation; retry/discard and navigation protection
-remain available. Confirmation uses an atomic player-card lease and fresh online
-read. Visual review found and corrected overlapping point labels on small screens;
-rectangle checks now cover that failure as well as page overflow.
+Match-only private overall requests return a typed not-applicable result after
+membership authorization. Mixed responses retain their existing shapes and
+Stableford value basis, including configured draft rounds. Matches never enter
+best-N or displace an eligible open provisional round. Final-round identity remains
+the actual scheduled final; a final match cannot supply a stroke tie-break.
+
+Private match projections derive only from permitted events before calculating
+lead or finish. Read cards omit revision, event IDs and audit metadata. Hidden
+facts are null; the whole hidden final is excluded from the non-admin match table
+until release, including front-nine finishes. Public links retain their existing
+overall-only scope and are unavailable for match-only trips.
+
+A separate `golf-match-notes-v1` IndexedDB database uses `match_notes_v1` and one
+generation-checked immutable chain across both opponents. The existing numeric,
+four-ball and Stableford queues remain compatible. Match-wide leases and persisted
+online-action markers protect concurrent tabs and unknown acknowledgements.
+Original receipt identities survive uncertain 401/403 responses; known accepted
+heads are verified before removal. Terminal/locked states block unsent successors.
+Explicit review shows old, local and permitted server values without silently
+rebasing; hidden values are distinguished from blanks. Failed storage, background
+metadata failures and scoring denial preserve unsaved notes and navigation guards.
+Authorization loss exposes only local recovery while authoritative actions stop.
 
 ## Validation
 
-- Backend: **196 standard tests**, formatting and all-feature Clippy with warnings
-  denied passed. Changed backend production files remain below 400 substantive lines.
-- PostgreSQL: the full database-feature ladder passed **528 tests across 54 suites**,
-  including **19** focused Stableford cases. Fresh migration, populated schema-28
-  upgrades preserving both older scoring protocols and receipt replay, and seeding
-  twice passed on disposable PostgreSQL 17.11. Tests cover retained identity/ABA,
-  direct SQL guards, current authority, receipt contention/late expiry, rollback,
-  zero-point completion, same-points correction invalidation and hidden full-JSON
-  noninterference. Mixed domain cases cover independent best-N, mandatory slots,
-  once-per-partner four-ball attribution and final Stableford outside best-N.
-- Frontend: **553 tests across 96 files**, strict typecheck, lint and production
-  build passed. A final focused decoder run passed **49 tests**, including independent
-  contribution-format mismatch and configured-value-basis regressions. Legacy
-  arithmetic and immutable queue compatibility checks remain intact.
-- Real Chrome: **22 distinct scenarios passed** across combined and focused runs:
-  nine Stableford, six four-ball and seven legacy offline cases. Checks used
-  320x600, 390x844 and 1280x900, covering creation/settings, loading/error/empty/
-  populated/long-content states, pickups, both conflict choices, lost acknowledgements,
-  two tabs, failed local storage, confirmation leases, completed corrections,
-  locked history and hidden private/public results. All-draft tournaments and
-  completed stroke rounds alongside draft Stableford also passed actual API
-  decoding and overall rendering at all three widths. Keyboard focus, 44px controls,
-  label/value non-overlap, overflow and console/network assertions passed with
-  deliberate test failures accounted for.
-- Read-only backend, queue/API and result/UI reviews have no open material findings.
-  Review corrected two misdirected concurrency assertions and strengthened decoder
-  rejection tests so they exercise the intended guards independently. Final review
-  also caught draft rounds missing from the repository value-basis decision;
-  loading all configured facts fixed it while existing status filters preserve
-  contribution eligibility. Private API/public and Chrome regressions cover it.
+- Backend: **204 standard tests**, formatting, all-feature Clippy with warnings
+  denied and binary build passed. Production source remains below 400 substantive
+  lines. The initial sandboxed unit run could not bind mock HTTP servers; the
+  authorized rerun passed.
+- PostgreSQL: **558 tests across 55 targets**, including **22 match integration
+  tests**, passed on disposable PostgreSQL 17.11. Fresh migration through all
+  **32 versions**, populated schema-29 preservation, schema-31 normalization,
+  migration command and seed twice passed. Coverage includes session/membership
+  changes after waits, atomic rollback, direct-SQL integrity, receipt contention,
+  terminal/confirmation/correction races, nullable overall and hidden-result
+  noninterference. Both isolation levels exercise the configuration guard.
+- Frontend: **572 tests across 102 files**, strict typecheck, lint and production
+  build passed. Tests cover runtime contract rejection, wizard transitions,
+  final-match tie explanation and durable queue/receipt behavior.
+- Real Chrome: **30 distinct scenarios passed**: eight match scenarios plus nine
+  Stableford, six four-ball and seven legacy offline scenarios. Match checks at
+  320x600, 390x844 and 1280x900 cover manual setup and mode changes, real wizard
+  creation with nullable N, numeric reporting, pre-hole concession, early finish,
+  draw points, confirmation revision changes, locked correction, private player
+  scope, hidden results/release, two tabs, storage failure, non-admin external lock
+  and scoring denial. A separate regression verifies a dirty note survives
+  background round-metadata 500, then 403 local-only recovery and successful retry.
+  Loading/error/empty/populated/long-content states, keyboard focus, 44px controls,
+  overflow, scroll/trial-click navigation clearance and console/network checks pass.
+  Screenshots at all three widths were visually inspected.
+- Read-only backend, API/queue and UI reviews have no remaining material findings.
+  Review drove repairs to snapshot-isolation eligibility guards, unknown receipt
+  handling, revision-bound confirmation, player scope, focus restoration and
+  recovery/privacy after authorization changes.
 
-Backend logs use `/tmp/stableford-{unit,full-db-final,db-final,clippy}.log`.
-Frontend evidence uses `/tmp/sf-tests-final`, `/tmp/sf-final-decoder`,
-`/tmp/sf-browser-all`, `/tmp/sf-browser-final`, `/tmp/sf-browser-last`,
-`/tmp/sf-browser-draft`, `/tmp/sf-draft-db` and
-`/tmp/sf-{typecheck,lint,build}`. Focused reruns resolved earlier harness failures;
-these temporary artifacts are not published. Screenshots use
-`/tmp/golf-offline-stableford-*-{320,390,1280}.png`.
+Backend logs use `/tmp/match-final-{build,fmt,unit-unsandboxed,clippy,full-db,
+cargo-migrate,cargo-seed}.log`. Frontend logs include
+`/tmp/match-frontend-final-tests2.log`, `/tmp/match-frontend-build.log`,
+`/tmp/match-browser-final3.log`, `/tmp/match-browser-metadata.log` and
+`/tmp/match-legacy-browser.log`. Screenshots use `/tmp/match-setup-320.png`,
+`/tmp/match-results-390.png`, `/tmp/match-scoring-1280.png` and
+`/tmp/match-draw-member-320.png`. Temporary evidence is not published.
 
 ## Scope and readiness
 
-**READY:** individual Stableford is implemented, reviewed and validated. The build
-retains the existing chunk-size warning: main JavaScript 710.55 kB, 203.10 kB gzip.
-Performance work remains queued. This format is 18-hole only; cold offline launch,
-background sync, queued confirmation and handicap-system submission remain outside
-scope. Match play has its calculation foundation but is not yet playable.
+**READY:** the coherent singles format is implemented, reviewed and validated.
+The existing build warning remains: main JavaScript **772.97 kB**, **220.43 kB gzip**.
+Match card listing intentionally uses bounded per-match reads, capped at 500 manual
+assignments per round; performance work remains a separate queued step.
+
+Individual next-stroke concession and organizer-award controls were not each
+clicked separately in Chrome; their typed contracts and backend variants are
+covered by automated tests. No Docker deployment or new production restore
+exercise was run in this step; native PostgreSQL migration/seed and Chrome/API
+integration provide the recorded runtime evidence.
+
+Nine-hole/extra-hole play, byes/brackets, team match play, public match sharing,
+rules adjudication, handicap-system submission, cold offline launch, background
+sync and offline authoritative reporting remain outside this release. The next
+application code review, performance work and security review remain queued.

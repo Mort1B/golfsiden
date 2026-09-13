@@ -78,7 +78,8 @@ struct TournamentRequest {
     description: String,
     start_date: NaiveDate,
     end_date: NaiveDate,
-    counted_rounds: i16,
+    #[serde(deserialize_with = "crate::api::tournaments::deserialize_nullable_count")]
+    counted_rounds: Option<i16>,
     mandatory_round_number: Option<i16>,
 }
 

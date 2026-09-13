@@ -508,3 +508,45 @@ values rather than reinterpreting actual-stroke fields. Deploy the corresponding
 strict decoders and UI at the same time. Existing stroke-only result and delivery
 contracts retain their meaning. Public sharing keeps its existing overall-only
 scope, with a non-private converted-value label; it does not expose player cards.
+
+### Schemas 30–32 singles match play
+
+Migrations 0030–0031 add the singles format, round-local matches/opponents,
+player-owned numeric notes, immutable command receipts, append-only audit and
+ledger/confirmation integrity guards. Migration 0032 makes `counted_rounds`
+explicitly nullable for match-only plans and adds deferred eligibility validation
+with an internal `tournament_overall_configuration_guards` generation row. This
+row serializes cross-table changes under snapshot isolation without advancing
+public configuration timestamps.
+
+Take and verify a backup, apply all forward migrations with the owner connection,
+refresh runtime grants using the documented permissions command, and deploy matching
+API and web builds together. New tables/functions require the normal runtime DML
+and execution grants. Exact schema readiness rejects old binaries against schema
+32. Do not edit applied migrations or attempt an in-place downgrade. Rollback uses
+a pre-upgrade backup restored into a fresh volume and its matching binaries.
+
+Schema 0032 deterministically normalizes only plans containing the new match format
+that could exist at schema 30/31: all-match N/mandatory becomes null, mixed N is
+capped to eligible rounds, and a mandatory match is cleared. Existing non-match
+configuration and score/snapshot/audit/receipt rows are preserved. The old
+configuration guard is disabled only inside the migration's transaction for this
+normalization and re-enabled before completion. Populated schema-29 preservation,
+schema-31 normalization, fresh migration through all 32 versions and seeding twice
+passed on disposable PostgreSQL 17.11. This step did not run a Docker deployment
+or a new production restore exercise.
+
+Retain match receipts for the lifetime of their parent records; a delayed original
+request must not become a new write. Corrections retain superseded audit facts and
+clear confirmation/points atomically. Locked corrections require the dedicated
+exact-admin command path; operator SQL must not bypass lifecycle integrity.
+
+The frontend adds the separate `golf-match-notes-v1` IndexedDB database and
+`match_notes_v1` protocol without rewriting the existing `golf-pending-scores-v1`
+queues. Server backups omit unsent browser drafts. Clearing site data removes
+those copies; unknown delivery must be reconciled using its original identity.
+Only numeric notes can wait offline. Accepted reports, concessions, awards,
+corrections and confirmation require connectivity and current authorization.
+Deploy strict nullable overall and match decoders with the API: match-only private
+overall reads are explicitly not applicable and public overall sharing unavailable.
+Mixed public summaries keep their existing allowlist and exclude match facts.

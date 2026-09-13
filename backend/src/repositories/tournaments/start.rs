@@ -47,8 +47,16 @@ pub async fn start_authorized(
     }
 
     let mut transaction = pool.begin().await?;
-    let round_rows = sqlx::query_as::<_, (i16, crate::domain::models::RoundStatus)>(
-        "SELECT round_number, status
+    let round_rows = sqlx::query_as::<
+        _,
+        (
+            i16,
+            crate::domain::models::RoundStatus,
+            crate::domain::models::ScoringFormat,
+            Uuid,
+        ),
+    >(
+        "SELECT round_number, status, scoring_format, id
          FROM rounds
          WHERE tournament_id = $1
          ORDER BY id
@@ -98,6 +106,19 @@ pub async fn start_authorized(
             .iter()
             .enumerate()
             .all(|(index, number)| usize::try_from(*number).ok() == Some(index + 1));
+    let eligible = round_rows
+        .iter()
+        .filter(|r| r.2.contributes_to_overall())
+        .collect::<Vec<_>>();
+    if !crate::domain::tournament_plan::counted_rounds_valid(
+        tournament.counted_rounds,
+        eligible.len(),
+    ) || tournament
+        .mandatory_round_id
+        .is_some_and(|id| !eligible.iter().any(|r| r.3 == id))
+    {
+        return Err(TournamentMutationError::StartNotReady);
+    }
     if !round_plan_ready {
         return Err(TournamentMutationError::StartNotReady);
     }

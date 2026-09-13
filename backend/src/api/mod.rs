@@ -6,6 +6,7 @@ mod four_ball;
 mod invitations;
 mod leaderboards;
 mod live;
+mod match_play;
 mod onboarding;
 mod password_recovery;
 mod profile;
@@ -51,6 +52,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .merge(scorecards::routes())
         .merge(four_ball::routes())
         .merge(stableford::routes())
+        .merge(match_play::routes())
         .merge(teams::routes())
         .merge(tournament_visibility::routes())
         .route("/api/tournaments/{tournament_id}/live", get(live::events))

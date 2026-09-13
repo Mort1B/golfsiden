@@ -27,7 +27,9 @@ fn base_facts(format: ScoringFormat) -> ReadinessFacts {
             },
         ],
         teams: match format {
-            ScoringFormat::IndividualStrokePlay | ScoringFormat::IndividualStableford => Vec::new(),
+            ScoringFormat::IndividualStrokePlay
+            | ScoringFormat::IndividualStableford
+            | ScoringFormat::SinglesMatchPlay => Vec::new(),
             ScoringFormat::TeamScramble
             | ScoringFormat::TwoPlayerFoursomes
             | ScoringFormat::FourBallStrokePlay => vec![TeamFact {

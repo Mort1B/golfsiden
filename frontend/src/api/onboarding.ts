@@ -1,3 +1,4 @@
+import { validateOverallConfiguration } from './overallConfiguration'
 import { decodeArray, decodeObject, decodeString, decodeTimestamp, decodeUuid, invalidData } from './decoder'
 import { decodeAuthSession, type AuthSession } from './auth'
 import { jsonRequest, requestDecoded } from './http'
@@ -16,7 +17,7 @@ export interface OnboardingRequest {
     description: string
     start_date: string
     end_date: string
-    counted_rounds: number
+    counted_rounds: number | null
     mandatory_round_number: number | null
   }
   rounds: Array<{
@@ -101,6 +102,7 @@ export function decodeOnboardingResponse(value: unknown): OnboardingResponse {
     'opprettingsdata',
     'onboarding.tournament.mandatory_round_id',
   )
+  validateOverallConfiguration(tournament, rounds)
   return {
     tournament,
     rounds,

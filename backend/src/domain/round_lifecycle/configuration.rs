@@ -8,6 +8,7 @@ pub(super) fn validate(facts: &ReadinessFacts, issues: &mut Vec<ReadinessIssue>)
         facts.scoring_format,
         crate::domain::models::ScoringFormat::FourBallStrokePlay
             | crate::domain::models::ScoringFormat::IndividualStableford
+            | crate::domain::models::ScoringFormat::SinglesMatchPlay
     ) && facts.number_of_holes != 18
     {
         push_if(

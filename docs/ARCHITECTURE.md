@@ -69,8 +69,16 @@ and reapplies runtime grants before the API is started.
   The general repository creation boundary is draft-only as defense in depth.
   Round opening requires an active parent, but course and pairing configuration
   remain independently editable while their individual rounds are draft.
-- `tournaments.counted_rounds` is a required cross-column bounded configuration
-  fact. Nullable `mandatory_round_id` has a deferred composite foreign key to a
+- `tournaments.counted_rounds` is an explicit nullable configuration fact: null
+  for match-only plans, otherwise 1 through the number of configured overall-eligible
+  rounds. A singles match is never mandatory or counted in overall results.
+  Migration 0032 defers cross-table eligibility checks until commit so creation
+  can insert the tournament before its rounds. An internal per-tournament
+  generation row forces concurrent eligibility changes to conflict under both
+  READ COMMITTED and REPEATABLE READ without changing public timestamps. Legacy
+  partial stroke-only draft assembly retains its scheduled-count constraint;
+  application creation and start validate the complete eligible round set.
+  Nullable `mandatory_round_id` has a deferred composite foreign key to a
   round in that same tournament. Creator onboarding preallocates round UUIDs so
   both facts persist atomically; the admin mutation uses optimistic tournament
   time and the same round-before-tournament lock order as opening. One database
@@ -79,8 +87,8 @@ and reapplies runtime grants before the API is started.
   when its result is missing; gross and net independently select the remaining
   completed contributions. Migration 0025 defaults both existing and newly created
   tournaments to `shared_positions`; `final_round_score` is selected through the
-  pre-start configuration API. Creation inputs and serialized validated-plan retry
-  fingerprints are unchanged. Omitted PATCH policy preserves the saved value;
+  pre-start configuration API. Existing non-match creation inputs and serialized validated-plan retry
+  fingerprints keep their numeric N; match-only inputs require explicit null. Omitted PATCH policy preserves the saved value;
   explicit null is rejected.
 - Course handicap uses exact tenths and rational arithmetic for `index * slope / 113 + rating - par`. Individual allowance is applied to the unrounded result before final rounding. Scramble caps each registered index at `36.0` before tee conversion; its member snapshots retain that effective index and rounded course handicap for the later team formula.
 - One closed round-format policy is the application source of truth for score-
@@ -377,7 +385,10 @@ and reapplies runtime grants before the API is started.
   team, score authority, card, gross/net leaderboard, mutation, and identifier-free
   event isolation without introducing a permanent tournament team.
 - Team results can be attributed back to every round member when tournament standings are calculated. There is no permanent tournament team.
-- Locked-round score protection lives in PostgreSQL as well as the domain service. A future correction transaction must explicitly set `app.admin_correction = 'true'`.
+- Locked-round score protection lives in PostgreSQL as well as the domain service.
+  Legacy score correction reserves `app.admin_correction = 'true'` without a UI
+  workflow. Singles match play has its own exact-admin audited ledger correction
+  command and can be reconfirmed while locked; ordinary mutations remain forbidden.
 - Score changes are audited by a database trigger.
 - Score writes and confirmation serialize on the round row. Repository writes set
   a transaction-local context, while database triggers acquire the same lock with
@@ -418,6 +429,11 @@ and reapplies runtime grants before the API is started.
   The closed format policy treats it as individual, with uncapped 100%-default
   allowance applied before signed rounding once. Draft-only settings serialize
   through the round lock with exact-admin/session and expected-version checks.
+- Singles match completion requires every assigned match to be terminal and
+  confirmed, including early finishes and pre-hole concessions. It never requires
+  fictitious scores on unplayed holes. Explicit admin corrections invalidate the
+  confirmation and points, including while locked; reconfirmation uses the revised
+  ledger without unlocking ordinary scoring.
 - `tournaments.final_round_back_nine_hidden` is the database-owned visibility
   state for the configured final. It defaults to hidden and has an independent
   `visibility_updated_at` concurrency token. Migration 0018 preserves finals
@@ -457,7 +473,7 @@ and reapplies runtime grants before the API is started.
 - Round leaderboards calculate live gross/net score-to-par from the holes actually
   scored. Tournament leaderboards independently select each player's displayed
   best N from completed/locked history plus the visible scored portion of the
-  deterministic highest-numbered open round. Contributions retain tagged owner,
+  deterministic highest-numbered open overall-eligible round. Contributions retain tagged owner,
   provisional state, and hole progress and are attributed through frozen
   membership for that exact round. Completed-only qualification count ranks
   before selected score-to-par and alone controls eligibility; separate gross
@@ -486,7 +502,7 @@ and reapplies runtime grants before the API is started.
   transaction. Pure domain assembly validates stored facts, calculates handicap
   results, attributes players, selects deterministic metric-specific best-N
   contributions, and applies competition ranking. Open-round facts are validated
-  fail-closed; only the deterministic highest-numbered open round may enter the
+  fail-closed; only the deterministic highest-numbered open overall-eligible round may enter the
   displayed selection provisionally, while completed-only qualification remains
   unchanged.
 - Public result sharing is an explicit capability boundary, separate from member
@@ -734,9 +750,17 @@ Implemented resources:
 | `GET` | `/api/rounds/{round_id}/stableford/scorecards/{player_id}` | Read an actor-free, visibility-projected Stableford card |
 | `GET` | `/api/rounds/{round_id}/stableford/scorecards/{player_id}/scoring` | Read a full Stableford card with current scoring authority and revisions |
 | `POST` | `/api/rounds/{round_id}/stableford/scorecards/{player_id}/confirm` | Confirm 18 explicitly resolved player holes |
+| `PUT` | `/api/rounds/{round_id}/match-play/settings` | Set draft official gross/net mode with expected round version; fixed 100% allowance |
+| `GET` | `/api/rounds/{round_id}/match-play/matches` | Read permitted match cards and currently writable match IDs |
+| `PUT` | `/api/rounds/{round_id}/match-play/matches` | Atomically replace manual same-flight opponents while draft |
+| `GET` | `/api/rounds/{round_id}/match-play/matches/{match_id}` | Read a private visibility-projected match |
+| `GET` | `/api/rounds/{round_id}/match-play/matches/{match_id}/scoring` | Read current match revision and accepted event IDs after scoring authorization |
+| `POST` | `/api/rounds/{round_id}/match-play/matches/{match_id}/commands` | Conditionally accept a typed note, report, concession, award, confirmation or correction |
+| `GET` | `/api/rounds/{round_id}/match-play/completion` | Read permitted terminal/confirmation and lifecycle readiness |
+| `GET` | `/api/tournaments/{tournament_id}/match-table` | Read the separate private 1/½/0 match table |
 | `GET` | `/api/rounds/{round_id}/teams` | Compatibility read for round teams |
-| `GET` | `/api/tournaments/{tournament_id}/leaderboards/gross` | Retrieve individual tournament gross standings |
-| `GET` | `/api/tournaments/{tournament_id}/leaderboards/net` | Retrieve individual tournament net standings |
+| `GET` | `/api/tournaments/{tournament_id}/leaderboards/gross` | Retrieve individual tournament gross standings or typed match-only not-applicable state |
+| `GET` | `/api/tournaments/{tournament_id}/leaderboards/net` | Retrieve individual tournament net standings or typed match-only not-applicable state |
 | `GET` | `/api/tournaments/{tournament_id}/live` | Receive identifier-free invalidations for one exact tournament membership |
 | `GET` | `/api/health` | Liveness response |
 | `POST` | `/api/auth/login` | Verify credentials and create a session |
@@ -786,7 +810,7 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 The user chose to credit the side's round result to both partners in overall
 standings. The contract below governs setup, preserved player inputs, independent
 side results, confirmation, offline delivery and private scorecards. Stableford
-has its own individual contract below; match-play integration remains planned. Rule references were checked
+and singles match play have their own implemented contracts below. Rule references were checked
 on 2026-09-13.
 
 `backend/src/domain/four_ball/` owns the implemented pure boundary. Its allowance
@@ -1088,7 +1112,7 @@ The implemented boundaries and their validation cover:
 The pure foundation, persistence, lifecycle, results and frontend form one supported
 format. The latest iteration's concrete validation evidence belongs in
 `LatestExplanation.md`. Stableford is also playable under its separate contract
-below; match-play remains unavailable until its playable integration is complete.
+below, alongside the separate playable singles match contract.
 
 ## Individual Stableford contract
 
@@ -1435,21 +1459,22 @@ and long-content states. Follow the complete affected validation ladders and
 read-only review for each implementation slice. Passing the domain foundation
 checks is not a playable-format release verdict.
 
-## Planned singles match-play contract
+## Singles match-play contract
 
-**Status: pure domain foundation implemented; playable support remains planned.**
-The user approved a separate match-points table (win 1, draw ½, loss 0), no
-contribution to gross/net overall totals, and a draw when tied after 18 holes.
-The isolated foundation does not make match play selectable. Runtime integration
-remains separately scoped.
+**Status: playable integration implemented.** Singles is available from creation
+and manual opponent setup through notes, online reporting, confirmation,
+completion, correction and private history. It uses a separate match-points table
+(win 1, draw ½, loss 0), no contribution to gross/net overall totals, and a draw
+when tied after 18 holes.
 
 `backend/src/domain/match_play/` owns the implemented pure boundary. A gross/net
 mode defaults to net; `HandicapAllocation` takes already-preserved signed i16
 Playing Handicaps and widens before subtraction, supporting the full 65,535
 relative difference. Gross mode allocates zero; net mode allocates the full
 difference across 18 stroke indexes. Numeric proposals consume two shared
-validated gross scores and never modify accepted outcomes. No new allowance,
-tee conversion or snapshot-opening entry point is introduced here.
+validated gross scores and never modify accepted outcomes. The closed format
+policy applies fixed 100% allowance and the new-format signed rounding policy
+at opening, preserving historical Playing Handicap snapshots.
 
 `derive_match` consumes typed, already-accepted reports with contiguous hole
 numbers 1–18. It derives signed lead, resolved reports and terminal results,
@@ -1465,12 +1490,61 @@ confirmation of an unfinished match. A confirmed terminal result yields exact
 are not overall stroke contributions. The caller-supplied confirmation status is
 an arithmetic input, not a persisted confirmation action or authority grant.
 
-These types have no serialization, player/team assignment, report provenance,
-correction, delivery-receipt, privacy-policy or storage integration. Future
-adapters must establish agreement/concession/ruling provenance, the effective point
-needed for visibility, exact authority and confirmation before calling the domain.
-Restricted reads must derive from permitted reports/events instead of redacting
-a full result afterward. Existing format and result pipelines remain unchanged.
+Typed domain commands establish agreement/concession/ruling provenance and
+validate correction ledgers. `repositories/match_play` owns assignment, command,
+completion and private-read transactions; the thin API owns transport extraction
+and error mapping. Restricted reads derive from permitted events before result
+calculation. Match rounds are excluded from ordinary scorecard and overall paths;
+existing formats retain their result and receipt meanings.
+
+### Persistence, transport and delivery
+
+Migrations 0030–0031 add `singles_matches`, `singles_match_opponents`, player-owned
+`singles_match_notes`, append-only `singles_match_audits` and immutable account-scoped
+`singles_match_receipts`. Composite identity constraints, assignment uniqueness,
+parent-round locking and deferred ledger/audit/receipt correspondence protect
+structural integrity. Repository commands recheck session and both opponents'
+write scope after waits and before commit. Locked scoring reads and corrections
+require exact tournament-admin authority.
+
+Commands carry `request_id`, `expected_revision` and a tagged `command`.
+Positive bigint revisions are decimal strings in JSON. Note/clear-note, report,
+confirm and correct are separate variants; reports contain typed hole,
+concession or award events. Every accepted command advances the aggregate exactly
+once, including repeated-value notes. An exact authorized replay returns the
+original `{request_id, match_id, applied_revision}` without further effects.
+A reused identity with a different payload or a fresh stale revision conflicts.
+Corrections identify superseded event IDs, a recording-error or organizer-ruling
+kind, reason and replacement events; numeric notes never rewrite accepted evidence.
+
+Read cards contain opponents, frozen mode and relative handicaps, permitted holes,
+notes/events, derived lead/finish and nullable confirmation/correction/point facts.
+They omit revision, accepted event IDs, actor, audit and timestamps. Scoring cards
+add `revision` and `accepted_events` only after writable authorization. Hidden
+metadata is null, not a fabricated false or zero. Match listing intentionally
+loads cards per match within the 500 manual assignments per round bound; revisit
+this N+1 boundary before increasing that limit.
+
+Match-only private overall reads return
+`{type: "not_applicable", reason: "match_only", tournament_id, metric}` after the
+normal membership check in the same repeatable-read transaction. Eligible overall
+responses retain their prior shape. All configured formats still establish the
+Stableford value basis and actual final-round identity, even while draft. New
+public overall grants are rejected for match-only plans and existing grants fail
+closed if overall configuration is absent.
+
+The frontend uses separate strict match decoders, private account-scoped query
+keys, `match` SSE invalidation and match routes. Numeric drafts live in a separate
+IndexedDB database, `golf-match-notes-v1`, with protocol `match_notes_v1`; the legacy
+`golf-pending-scores-v1` database is untouched. One generation-checked chain and
+lease cover both opponents. Persisted online-action markers preserve unknown
+receipts. Acknowledgements are checked against request, match and expected next
+revision, then verified against fresh canonical state before clearing. Unknown
+401/403 responses retain the original receipt; known acknowledgements followed by
+locked scoring denial can use permitted reads and block unsent successors.
+Local-only recovery preserves unsaved notes after storage failure, terminal state,
+lock or authorization loss. Conflict review suppresses stale server values on
+errors and distinguishes a hidden value from a blank.
 
 ### First variant and rules basis
 
@@ -1667,23 +1741,12 @@ same overall contribution exclusions and final-result protection.
 | Equal overall totals and final scheduled match | `final_round_score` leaves a shared place, regardless of match winner. |
 | Same visible first nine, different hidden finish | Same permitted lead/progress and table; no hidden winner, margin or points. |
 
-The pure domain foundation is implemented and tested for relative allocation,
-numeric proposals, ordered accepted outcomes, terminal/draw derivation and exact
-match-point arithmetic. Match play remains unavailable and existing result
-pipelines are unchanged by the match foundation. Four-ball and Stableford have
-their own completed playable integrations; match-play integration remains planned.
-
-Playable release requires separately scoped persistence/migrations, opponent
-readiness, snapshots, match authority and audit/correction paths, idempotency and
-terminal races, confirmation/completion, typed API decoding, match-only/mixed
-configuration, separate private standings/history, privacy projections, offline
-notes and mobile UI. Do not expose a format enum until all paths are coherent.
+The complete format is covered by domain, PostgreSQL/API, strict decoder,
+durable queue and real Chrome tests. Validation includes populated schema-29
+preservation, schema-31 normalization, fresh schema-32 migration and repeated
+seed, configuration races under two isolation levels, atomic receipts, revoked
+sessions after waits, hidden-result noninterference and legacy scoring regression.
+Current evidence and limits are recorded in [LatestExplanation.md](LatestExplanation.md).
 Nine-hole/shotgun/extra-hole play, partner match variants, automatic brackets/byes,
 public match sharing, offline authoritative reports and handicap-system submission
-are excluded initially. Run the complete affected backend/PostgreSQL/frontend
-ladders, legacy compatibility tests, hidden-result noninterference and real Chrome
-at 320/390/1280px with loading, error, empty, populated, long-content and offline
-states. In particular test score/report/correction/confirmation races, replay after
-terminal, two concurrent matches where one finishes, and correction of an early
-finish without fabricating scores. Passing foundation checks is not a playable
-match-format release verdict.
+remain outside this variant.

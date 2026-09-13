@@ -16,6 +16,7 @@ pub(super) struct OwnerSeed<'a> {
 enum LeaderboardFormatPolicy {
     IndividualSnapshots,
     DerivedSide,
+    MatchAggregate,
     TwoPlayerTeam {
         exact_team_size: usize,
         handicap: TeamHandicapPolicy,
@@ -25,6 +26,7 @@ enum LeaderboardFormatPolicy {
 impl LeaderboardFormatPolicy {
     fn for_format(format: ScoringFormat) -> Self {
         match format {
+            ScoringFormat::SinglesMatchPlay => Self::MatchAggregate,
             ScoringFormat::FourBallStrokePlay => Self::DerivedSide,
             ScoringFormat::IndividualStrokePlay | ScoringFormat::IndividualStableford => {
                 Self::IndividualSnapshots
@@ -66,7 +68,9 @@ pub(super) fn build_owner_seeds<'a>(
     snapshots: &HashMap<uuid::Uuid, &'a SnapshotFact>,
 ) -> Result<Vec<OwnerSeed<'a>>, LeaderboardError> {
     match LeaderboardFormatPolicy::for_format(facts.round.scoring_format) {
-        LeaderboardFormatPolicy::DerivedSide => Err(LeaderboardError::InvalidStoredData),
+        LeaderboardFormatPolicy::DerivedSide | LeaderboardFormatPolicy::MatchAggregate => {
+            Err(LeaderboardError::InvalidStoredData)
+        }
         LeaderboardFormatPolicy::IndividualSnapshots => {
             Ok(individual_owner_seeds(facts, snapshots))
         }

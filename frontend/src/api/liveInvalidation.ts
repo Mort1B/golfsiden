@@ -33,16 +33,16 @@ export function invalidateLiveQueries(queryClient: QueryClient, userId: string):
 
 function isScoreInvalidationTarget(queryKey: readonly unknown[], userId: string): boolean {
   if (!isLiveInvalidationTarget(queryKey, userId)) return false
-  if (queryKey[2] === 'leaderboards') return true
+  if (queryKey[2] === 'leaderboards' || queryKey[2] === 'tournaments' && queryKey[4] === 'match-table') return true
   return queryKey[2] === 'rounds'
-    && (queryKey[4] === 'completion-validation' || queryKey[4] === 'scorecards')
+    && (queryKey[4] === 'completion-validation' || queryKey[4] === 'scorecards' || queryKey[4] === 'match-play')
 }
 
 export function isVisibilityProjectionTarget(queryKey: readonly unknown[], userId: string): boolean {
   if (queryKey[0] !== privateWorkspaceKeys.root[0] || queryKey[1] !== userId) return false
-  if (queryKey[2] === 'leaderboards') return true
+  if (queryKey[2] === 'leaderboards' || queryKey[2] === 'tournaments' && queryKey[4] === 'match-table') return true
   if (queryKey[2] !== 'rounds') return false
-  return queryKey[4] === 'completion-validation'
+  return queryKey[4] === 'match-play' && queryKey[5] !== 'scoring' || queryKey[4] === 'completion-validation'
     || (queryKey[4] === 'scorecards' && queryKey[5] === 'read')
 }
 
@@ -74,7 +74,7 @@ export function handleTournamentLiveSignal(
   if (signal === 'resume') return refreshOnReturn(queryClient, userId)
   // Score saves/confirmations do not change tournament setup or score access.
   // Structural events and reconnection still reconcile the full private workspace.
-  if (signal === 'score') {
+  if (signal === 'score' || signal === 'match') {
     return queryClient.invalidateQueries({
       predicate: (query) => isScoreInvalidationTarget(query.queryKey, userId),
     })

@@ -1,3 +1,4 @@
+import { finalMatchExplanation } from '../matchPlay/finalRoundExplanation'
 import { useAuth } from '../auth/authContext'
 import { CheckCircle2, LockKeyhole, RefreshCw, Save } from 'lucide-react'
 import { isTieBreakPolicy } from '../../api/tieBreakPolicy'
@@ -19,7 +20,8 @@ function CountedRoundsForm(props: CountedRoundsEditorProps) {
     <form className="counted-rounds-editor" aria-busy={busy} onSubmit={(event) => { event.preventDefault(); void editor.save() }}>
       <div>
         <h3>Tellende runder og lik totalscore</h3>
-        <p>Lagret valg: Beste {props.tournament.counted_rounds} av {props.tournament.number_of_rounds} runder. Obligatorisk: {savedMandatoryLabel}.</p>
+        {props.tournament.counted_rounds === null ? <p>Matchspill bruker egen poengtabell. Sammenlagt brutto/netto og obligatorisk runde er ikke tilgjengelig.</p> : <p>Lagret valg: Beste {props.tournament.counted_rounds} av {props.tournament.number_of_rounds} runder. Obligatorisk: {savedMandatoryLabel}.</p>}
+        {finalMatchExplanation(props.rounds ?? [], props.tournament.number_of_rounds, policy) && <p>{finalMatchExplanation(props.rounds ?? [], props.tournament.number_of_rounds, policy)}</p>}
         <p>Lik totalscore: {tieBreakLabel(props.tournament.tie_break_policy)}.</p>
         <p>En obligatorisk runde reserverer én av de tellende plassene, selv om den ikke er blant de beste resultatene.</p>
       </div>
@@ -42,19 +44,19 @@ function CountedRoundsForm(props: CountedRoundsEditorProps) {
             : 'Valget er permanent låst fordi minst én runde ikke lenger er et utkast.'}
         </p>
       )}
-      {editable && (
+      {editable && props.tournament.counted_rounds !== null && (
         <>
           <div className="counted-rounds-fields">
             <label htmlFor="management-counted-rounds"><span>Antall som teller</span>
               <select
                 id="management-counted-rounds"
-                value={value}
+                value={value ?? ''}
                 disabled={disabled}
                 onChange={(event) => {
                   editor.changeCount(Number(event.target.value))
                 }}
               >
-                {Array.from({ length: props.tournament.number_of_rounds }, (_, index) => (
+                {Array.from({ length: props.rounds?.filter(r => r.scoring_format !== 'singles_match_play').length ?? 0 }, (_, index) => (
                   <option key={index + 1} value={index + 1}>{index + 1}</option>
                 ))}
               </select>
@@ -69,7 +71,7 @@ function CountedRoundsForm(props: CountedRoundsEditorProps) {
                 }}
               >
                 <option value="">Ingen</option>
-                {props.rounds?.map((round) => (
+                {props.rounds?.filter(r => r.scoring_format !== 'singles_match_play').map((round) => (
                   <option key={round.id} value={round.id}>Runde {round.round_number}: {round.name}</option>
                 ))}
               </select>

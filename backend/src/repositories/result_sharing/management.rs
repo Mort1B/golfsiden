@@ -55,6 +55,15 @@ pub async fn issue(
 ) -> Result<GrantMetadata, ShareError> {
     let mut tx = pool.begin().await?;
     management_lock(&mut tx, session, tournament).await?;
+    let eligible = sqlx::query_scalar::<_, bool>(
+        "SELECT counted_rounds IS NOT NULL FROM tournaments WHERE id=$1",
+    )
+    .bind(tournament)
+    .fetch_one(&mut *tx)
+    .await?;
+    if !eligible {
+        return Err(ShareError::OverallUnavailable);
+    }
     let previous = latest(&mut tx, tournament, true).await?;
     let actor = authorize(&mut tx, session, tournament).await?;
     if previous.as_ref().map(|p| p.id) != expected {

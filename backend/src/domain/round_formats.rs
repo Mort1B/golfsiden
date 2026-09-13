@@ -17,6 +17,7 @@ pub enum SnapshotHandicapPolicy {
     UncappedCourseHandicap,
     FourBallRoundAllowance,
     StablefordRoundAllowance,
+    SinglesMatchAllowance,
     IndexCappedCourseHandicap { maximum_index_tenths: i32 },
 }
 
@@ -64,6 +65,9 @@ impl RoundFormatPolicy {
             ScoringFormat::FourBallStrokePlay => Self::FourBall,
             ScoringFormat::IndividualStableford => Self::PlayerOwned {
                 snapshot_handicap: SnapshotHandicapPolicy::StablefordRoundAllowance,
+            },
+            ScoringFormat::SinglesMatchPlay => Self::PlayerOwned {
+                snapshot_handicap: SnapshotHandicapPolicy::SinglesMatchAllowance,
             },
             ScoringFormat::IndividualStrokePlay => Self::PlayerOwned {
                 snapshot_handicap: SnapshotHandicapPolicy::UncappedIndividualRoundAllowance,
@@ -132,7 +136,8 @@ impl RoundFormatPolicy {
             SnapshotHandicapPolicy::UncappedIndividualRoundAllowance
             | SnapshotHandicapPolicy::UncappedCourseHandicap
             | SnapshotHandicapPolicy::FourBallRoundAllowance
-            | SnapshotHandicapPolicy::StablefordRoundAllowance => registered_tenths,
+            | SnapshotHandicapPolicy::StablefordRoundAllowance
+            | SnapshotHandicapPolicy::SinglesMatchAllowance => registered_tenths,
             SnapshotHandicapPolicy::IndexCappedCourseHandicap {
                 maximum_index_tenths,
             } => registered_tenths.min(maximum_index_tenths),
@@ -155,6 +160,9 @@ impl RoundFormatPolicy {
 
     pub const fn required_allowance_percent(self) -> Option<i16> {
         match self {
+            Self::PlayerOwned {
+                snapshot_handicap: SnapshotHandicapPolicy::SinglesMatchAllowance,
+            } => Some(100),
             Self::TeamOwned {
                 team_playing_handicap: TeamPlayingHandicap::FoursomesCombinedUnrounded50Percent,
                 ..

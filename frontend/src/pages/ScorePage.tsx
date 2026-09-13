@@ -1,3 +1,4 @@
+import { MatchRound } from '../features/matchPlay/MatchRound'
 import { StablefordExperience } from '../features/scoring/stableford/StablefordExperience'
 import { FourBallExperience } from '../features/scoring/fourBall/FourBallExperience'
 import { PendingScores } from '../features/scoring/offline/PendingScores'
@@ -36,6 +37,8 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
   const navigate = (selection: ScoreSelection, action: ScoreHistoryAction) => {
     setSearchParams(scoringSearch(selection), { replace: replaceScoreHistory(action) })
   }
+
+  if (round?.scoring_format === 'singles_match_play') return <section className="page match-page"><h1>Score · matchspill</h1><label>Velg turnering<select value={tournament?.id ?? ''} onChange={e => setSearchParams({ tournament: e.target.value })}>{tournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label><label>Velg runde<select value={round.id} onChange={e => setSearchParams({ tournament: round.tournament_id, round: e.target.value })}>{eligibleRounds.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></label><MatchRound roundId={round.id} /></section>
 
   if (deniedError) return <ScoreState><ErrorState error={deniedError} onRetry={retryLive} /></ScoreState>
 

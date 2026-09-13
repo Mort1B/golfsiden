@@ -55,6 +55,7 @@ struct OwnerProgressRow {
 #[derive(Debug, FromRow)]
 struct ReadVisibilityRow {
     tournament_id: Uuid,
+    scoring_format: ScoringFormat,
     round_number: i16,
     status: RoundStatus,
     number_of_holes: i16,
@@ -93,7 +94,7 @@ pub async fn validation_for_member(
         .execute(&mut *transaction)
         .await?;
     let context = sqlx::query_as::<_, ReadVisibilityRow>(
-        "SELECT r.tournament_id, r.round_number, r.status, r.number_of_holes,
+        "SELECT r.tournament_id, r.scoring_format, r.round_number, r.status, r.number_of_holes,
                 t.final_round_back_nine_hidden, t.number_of_rounds AS tournament_round_count
          FROM rounds r JOIN tournaments t ON t.id = r.tournament_id WHERE r.id = $1",
     )
@@ -115,6 +116,9 @@ pub async fn validation_for_member(
     .fetch_optional(&mut *transaction)
     .await?
     .ok_or(AuthorizationError::Forbidden)?;
+    if context.scoring_format == ScoringFormat::SinglesMatchPlay {
+        return Err(AuthorizationError::NotFound);
+    }
     let validation = load_facts(&mut transaction, round_id, false)
         .await?
         .map(validate)
@@ -221,6 +225,21 @@ async fn transition_in_transaction(
     round_id: Uuid,
     action: TransitionAction,
 ) -> Result<Round, RoundCompletionError> {
+    let format = sqlx::query_scalar::<_, ScoringFormat>(
+        "SELECT scoring_format FROM rounds WHERE id=$1 FOR UPDATE",
+    )
+    .bind(round_id)
+    .fetch_optional(&mut **transaction)
+    .await?
+    .ok_or(RoundCompletionError::NotFound)?;
+    if format == ScoringFormat::SinglesMatchPlay {
+        return crate::repositories::match_play::completion::transition(
+            transaction,
+            round_id,
+            action,
+        )
+        .await;
+    }
     let facts = load_facts(transaction, round_id, true)
         .await?
         .ok_or(RoundCompletionError::NotFound)?;
@@ -283,6 +302,11 @@ async fn load_facts(
     else {
         return Ok(None);
     };
+    if round.scoring_format == ScoringFormat::SinglesMatchPlay {
+        return Err(sqlx::Error::Protocol(
+            "match play uses dedicated completion".into(),
+        ));
+    }
     let owners = match RoundFormatPolicy::for_format(round.scoring_format).owner_kind() {
         ScoreOwnerKind::Player => load_individual_owners(connection, round.id).await?,
         ScoreOwnerKind::Team => load_team_owners(connection, round.id).await?,
@@ -353,6 +377,7 @@ mod tests {
     fn completion_read_wiring_uses_the_persisted_toggle() {
         let mut context = ReadVisibilityRow {
             tournament_id: Uuid::from_u128(1),
+            scoring_format: ScoringFormat::IndividualStrokePlay,
             round_number: 4,
             status: RoundStatus::Completed,
             number_of_holes: 18,

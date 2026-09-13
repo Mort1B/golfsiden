@@ -452,11 +452,19 @@ fn permitted_prefix_is_independent_of_different_hidden_finishes() {
 }
 
 #[test]
-fn format_remains_unavailable_in_existing_transport() {
-    for name in ["match_play", "singles_match_play"] {
+fn only_supported_singles_format_is_available_in_transport() {
+    for name in ["match_play", "partner_match_play"] {
         assert!(
             serde_json::from_value::<ScoringFormat>(serde_json::Value::String(name.into()))
                 .is_err()
         );
     }
+}
+
+#[test]
+fn singles_transport_format_is_explicit() {
+    assert_eq!(
+        serde_json::from_value::<ScoringFormat>(serde_json::json!("singles_match_play")).unwrap(),
+        ScoringFormat::SinglesMatchPlay
+    );
 }

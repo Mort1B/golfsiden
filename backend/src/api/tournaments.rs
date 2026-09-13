@@ -63,7 +63,8 @@ struct ChangeTournamentHandicap {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct UpdateCountedRounds {
-    counted_rounds: i16,
+    #[serde(deserialize_with = "crate::api::tournaments::deserialize_nullable_count")]
+    counted_rounds: Option<i16>,
     #[serde(deserialize_with = "deserialize_nullable_uuid")]
     mandatory_round_id: Option<Uuid>,
     #[serde(default, deserialize_with = "deserialize_policy")]
@@ -181,7 +182,7 @@ async fn update_counted_rounds(
                 .to_owned(),
         )
     })?;
-    if !(1..=30).contains(&input.counted_rounds) {
+    if input.counted_rounds.is_some_and(|n| !(1..=30).contains(&n)) {
         return Err(ApiError::BadRequest(
             "counted_rounds must be between 1 and the tournament round count".to_owned(),
         ));
@@ -344,4 +345,11 @@ fn map_mutation_error(error: TournamentMutationError) -> ApiError {
             message: "tournament changed; refresh and try again",
         },
     }
+}
+
+pub(super) fn deserialize_nullable_count<'de, D>(deserializer: D) -> Result<Option<i16>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<i16>::deserialize(deserializer)
 }

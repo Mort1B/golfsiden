@@ -25,7 +25,7 @@ export function PlayerHistory({ leaderboard, player, rounds }: PlayerHistoryProp
     <div className="player-history">
       <div className="history-summary">
         <div><p>{metricLabel(leaderboard.metric)} resultat</p><h2>{player.display_name}</h2></div>
-        <span>Beste {leaderboard.required_counted_rounds} av {rounds.length}</span>
+        <span>Beste {leaderboard.required_counted_rounds} av {rounds.filter(r => r.scoring_format !== 'singles_match_play').length}</span>
       </div>
       <p className="history-qualification">
         Kvalifisering: {player.counted_contributions} av {leaderboard.required_counted_rounds} nødvendige fullførte runder ·{' '}

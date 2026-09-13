@@ -53,6 +53,10 @@ fn input_error(error: JsonRejection) -> ApiError {
 }
 fn map_error(error: ShareError) -> ApiError {
     match error {
+        ShareError::OverallUnavailable => ApiError::DomainConflict {
+            code: "overall_not_applicable",
+            message: "match-only tournaments have no public overall results",
+        },
         ShareError::Unavailable => ApiError::DomainNotFound {
             code: "result_share_unavailable",
             message: "result link is unavailable",

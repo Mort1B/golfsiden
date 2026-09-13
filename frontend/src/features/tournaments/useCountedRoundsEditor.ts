@@ -1,3 +1,4 @@
+import { validateOverallConfiguration } from '../../api/overallConfiguration'
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { tournamentApi } from '../../api/tournaments'
@@ -67,6 +68,7 @@ export function useCountedRoundsEditor(props: CountedRoundsEditorProps) {
       clearMessage()
       try {
         const result = await mutation.mutateAsync()
+        validateOverallConfiguration(result, props.rounds ?? [])
         const mandatory = validateMandatoryRound(result.mandatory_round_id, props.rounds ?? [], 'turneringsdata', 'tournament.mandatory_round_id round identity')
         savedReceipt = `Lagret: Beste ${result.counted_rounds} av ${result.number_of_rounds} runder. Obligatorisk: ${mandatory?.name ?? 'ingen'}. Lik totalscore: ${tieBreakLabel(result.tie_break_policy)}.`
         saved = true

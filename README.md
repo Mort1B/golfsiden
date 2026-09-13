@@ -198,15 +198,18 @@ See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documenta
 ## Current limitations
 
 - Supported formats are individual stroke play, two-player scramble,
-  two-player foursomes and 18-hole four-ball. Stableford and match play have
-  tested calculation foundations but are not yet playable.
+  two-player foursomes, 18-hole four-ball, 18-hole individual Stableford and
+  18-hole singles match play. Singles uses manually assigned opponents and a
+  separate 1/½/0 match-points table; it contributes nothing to overall gross/net.
+  Only numeric match notes support offline drafts; result reports are online-only.
 - Offline scoring continues in an already-open authorized card. Pending edits
   survive reload for later online delivery; cold offline launch and background
   sync are not supported. Confirmation requires a connection.
 - Tournament workspaces and scorecards require membership. Revocable public
   links expose only the limited live overall standings.
-- Locked rounds reject ordinary score changes. An administrator interface for
-  audited corrections to locked-round scores is not yet available.
+- Locked rounds reject ordinary score changes. Singles match play has an audited
+  administrator correction and reconfirmation flow while locked; legacy locked
+  stroke-score corrections do not yet have an administrator interface.
 - Production deployment targets a single API instance. Rate limits and course
   provider quotas need shared state before horizontal scaling.
 

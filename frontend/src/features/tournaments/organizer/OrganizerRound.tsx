@@ -9,7 +9,11 @@ import { completionAttention, openingAttention } from './roundAttention'
 
 interface Props { tournament: Tournament; round: Round; blocked: boolean; onRefresh: () => void }
 
-export function OrganizerRound({ tournament, round, blocked, onRefresh }: Props) {
+export function OrganizerRound(props: Props) {
+  if (props.round.scoring_format === 'singles_match_play' && props.round.status !== 'draft') return <li><h3>Runde {props.round.round_number}: {props.round.name}</h3><Link to={`/manage/tournaments/${props.tournament.id}?round=${props.round.id}#lifecycle`}>Kontroller matcher og bekreftelser</Link></li>
+  return <OrdinaryOrganizerRound {...props} />
+}
+function OrdinaryOrganizerRound({ tournament, round, blocked, onRefresh }: Props) {
   const userId = useAuth().session?.user_id ?? ''
   const opening = useQuery({
     queryKey: roundLifecycleKeys.validation(userId, round.id),

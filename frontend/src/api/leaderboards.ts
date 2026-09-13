@@ -54,12 +54,12 @@ export function validateTournamentLeaderboardRounds(leaderboard: TournamentLeade
   const roundsById = new Map(rounds.map((round) => [round.id, round]))
   for (const roundId of leaderboard.included_round_ids) {
     const round = roundsById.get(roundId)
-    if (round === undefined || (round.status !== 'completed' && round.status !== 'locked')) {
+    if (round === undefined || round.scoring_format === 'singles_match_play' || (round.status !== 'completed' && round.status !== 'locked')) {
       invalidData('resultatdata', 'leaderboard.included_round_ids status')
     }
   }
   const expectedCurrent = rounds
-    .filter((round) => round.status === 'open')
+    .filter((round) => round.status === 'open' && round.scoring_format !== 'singles_match_play')
     .reduce<Round | null>((highest, round) =>
       highest === null || compareRoundOrder(highest, round) < 0 ? round : highest, null)
   if (leaderboard.current_round_id !== (expectedCurrent?.id ?? null)) {
@@ -70,7 +70,7 @@ export function validateTournamentLeaderboardRounds(leaderboard: TournamentLeade
     if ((entry.value !== undefined) !== usesEquivalents) invalidData('resultatdata', 'leaderboard.overall value basis')
     for (const contribution of entry.contributions) {
       const round = roundsById.get(contribution.round_id)
-      if (round === undefined || contribution.number_of_holes !== round.number_of_holes
+      if (round === undefined || round.scoring_format === 'singles_match_play' || contribution.number_of_holes !== round.number_of_holes
         || (contribution.value !== undefined) !== (round.scoring_format === 'individual_stableford')
         || (contribution.value !== undefined && contribution.owner.type !== 'player')) {
         invalidData('resultatdata', 'leaderboard.contribution round identity')

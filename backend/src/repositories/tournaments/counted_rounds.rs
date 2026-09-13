@@ -17,11 +17,12 @@ pub async fn update_counted_rounds_authorized(
     pool: &PgPool,
     session_id: Uuid,
     tournament_id: Uuid,
-    counted_rounds: i16,
+    counted_rounds: impl Into<Option<i16>>,
     mandatory_round_id: Option<Uuid>,
     tie_break_policy: Option<TournamentTieBreakPolicy>,
     expected_updated_at: DateTime<Utc>,
 ) -> Result<UpdateCountedRoundsResult, TournamentMutationError> {
+    let counted_rounds = counted_rounds.into();
     let likely_admin = sqlx::query_scalar::<_, bool>(
         "SELECT EXISTS (
            SELECT 1
@@ -51,8 +52,8 @@ pub async fn update_counted_rounds_authorized(
 
     let mut transaction = pool.begin().await?;
 
-    let round_ids = sqlx::query_scalar::<_, Uuid>(
-        "SELECT id FROM rounds
+    let round_rows = sqlx::query_as::<_, (Uuid, crate::domain::models::ScoringFormat)>(
+        "SELECT id, scoring_format FROM rounds
          WHERE tournament_id = $1
          ORDER BY id
          FOR UPDATE",
@@ -76,12 +77,6 @@ pub async fn update_counted_rounds_authorized(
     .await?
     .ok_or(TournamentMutationError::NotFound)?;
 
-    if counted_rounds < 1 || counted_rounds > tournament.number_of_rounds {
-        return Err(TournamentMutationError::CountedRoundsInvalid);
-    }
-    if mandatory_round_id.is_some_and(|id| !round_ids.contains(&id)) {
-        return Err(TournamentMutationError::MandatoryRoundInvalid);
-    }
     let locked = tournament.status != TournamentStatus::Draft
         || sqlx::query_scalar::<_, bool>(
             "SELECT EXISTS (
@@ -99,6 +94,17 @@ pub async fn update_counted_rounds_authorized(
         .await?;
     if locked {
         return Err(TournamentMutationError::ConfigurationLocked);
+    }
+    let round_ids = round_rows
+        .iter()
+        .filter(|(_, format)| format.contributes_to_overall())
+        .map(|(id, _)| *id)
+        .collect::<Vec<_>>();
+    if mandatory_round_id.is_some_and(|id| !round_ids.contains(&id)) {
+        return Err(TournamentMutationError::MandatoryRoundInvalid);
+    }
+    if !crate::domain::tournament_plan::counted_rounds_valid(counted_rounds, round_ids.len()) {
+        return Err(TournamentMutationError::CountedRoundsInvalid);
     }
     if tournament.updated_at != expected_updated_at {
         return Err(TournamentMutationError::ConfigurationStale);

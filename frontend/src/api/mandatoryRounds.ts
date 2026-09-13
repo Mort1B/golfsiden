@@ -10,7 +10,7 @@ export type MandatoryRoundMatch =
 
 export function matchMandatoryRound(mandatoryRoundId: string | null, rounds: Round[]): MandatoryRoundMatch {
   if (mandatoryRoundId === null) return { state: 'none', round: null }
-  const round = rounds.find((candidate) => candidate.id === mandatoryRoundId)
+  const round = rounds.find((candidate) => candidate.id === mandatoryRoundId && candidate.scoring_format !== 'singles_match_play')
   return round === undefined ? { state: 'missing', round: null } : { state: 'matched', round }
 }
 

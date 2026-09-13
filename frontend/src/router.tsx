@@ -1,3 +1,5 @@
+import { MatchPage } from './pages/MatchPage'
+import { MatchResultsPage } from './pages/MatchResultsPage'
 import { SharedResultsPage } from './pages/SharedResultsPage'
 import { createBrowserRouter } from 'react-router-dom'
 import { AppShell } from './ui/AppShell'
@@ -34,6 +36,10 @@ export const router = createBrowserRouter([
       { path: '/tournaments/:tournamentId/invitations', element: <RequireSession><InvitationAdminPage /></RequireSession> },
       { path: '/manage/tournaments/:tournamentId', element: <RequireSession><TournamentManagementPage /></RequireSession> },
       { path: '/rounds/:roundId', element: <RequireSession><RoundPage /></RequireSession> },
+      { path: '/rounds/:roundId/matches', element: <RequireSession><MatchPage /></RequireSession> },
+      { path: '/rounds/:roundId/matches/:matchId', element: <RequireSession><MatchPage /></RequireSession> },
+      { path: '/rounds/:roundId/matches/:matchId/score', element: <RequireSession><MatchPage scoring /></RequireSession> },
+      { path: '/tournaments/:tournamentId/match-results', element: <RequireSession><MatchResultsPage /></RequireSession> },
       { path: '/score', element: <RequireSession><ScorePage /></RequireSession> },
       { path: '/leaderboard', element: <RequireSession><LeaderboardPage /></RequireSession> },
       { path: '/tournaments/:tournamentId/results/players/:playerId', element: <RequireSession><PlayerHistoryPage /></RequireSession> },

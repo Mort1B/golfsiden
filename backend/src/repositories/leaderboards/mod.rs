@@ -1,6 +1,8 @@
 mod load;
+mod response;
 mod rows;
 mod tournament;
+pub use response::{TournamentResponse, tournament_response_for_member};
 
 use sqlx::PgPool;
 use thiserror::Error;
@@ -26,6 +28,8 @@ use rows::{ParticipantRow, RoundRow};
 pub enum LeaderboardError {
     #[error("resource not found")]
     NotFound,
+    #[error("overall standings are not applicable")]
+    OverallUnavailable,
     #[error("stored leaderboard data is inconsistent")]
     InvalidStoredData,
     #[error(transparent)]
@@ -90,6 +94,9 @@ async fn round_read(
     } else {
         None
     };
+    if !row.scoring_format.contributes_to_overall() {
+        return Err(LeaderboardError::OverallUnavailable);
+    }
     let projection = projection_for_round(&row, role);
     let round = round_from_row(row);
     let facts = load::related(&mut transaction, vec![round])

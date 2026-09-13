@@ -39,13 +39,13 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
     ...fresh,
     queryKey: privateWorkspaceKeys.completion(userId, round?.id ?? ''),
     queryFn: () => api.completionValidation(round?.id ?? '', round?.scoring_format ?? 'individual_stroke_play'),
-    enabled: round !== undefined,
+    enabled: round !== undefined && round.scoring_format !== 'singles_match_play',
   })
   const accessQuery = useQuery({
     ...fresh,
     queryKey: privateWorkspaceKeys.scoreAccess(userId, round?.id ?? ''),
     queryFn: () => api.scoreAccess(round?.id ?? ''),
-    enabled: round !== undefined,
+    enabled: round !== undefined && round.scoring_format !== 'singles_match_play',
     retry: false,
   })
   const progressOwners = completionQuery.data?.owners ?? []

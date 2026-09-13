@@ -30,6 +30,9 @@ pub fn build_round_leaderboard_projected(
     visibility: VisibilityMetadata,
 ) -> Result<RoundLeaderboard, LeaderboardError> {
     let round = &facts.round;
+    if round.scoring_format == crate::domain::models::ScoringFormat::SinglesMatchPlay {
+        return Err(LeaderboardError::InvalidStoredData);
+    }
     if round.number_of_holes < 1 {
         return Err(LeaderboardError::InvalidStoredData);
     }

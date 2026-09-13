@@ -148,6 +148,7 @@ pub async fn get_scoring_authenticated(
         .execute(&mut *transaction)
         .await?;
     let context = load_round(&mut transaction, round_id, false).await?;
+    reject_match_for_member(&mut transaction, session_id, &context).await?;
     if !matches!(context.status, RoundStatus::Open | RoundStatus::Completed) {
         return Err(ScorecardError::Forbidden);
     }
@@ -283,4 +284,23 @@ async fn build_summary(
         confirmation,
     )
     .map_err(ScorecardError::from)
+}
+
+async fn reject_match_for_member(
+    tx: &mut Transaction<'_, Postgres>,
+    session_id: Uuid,
+    context: &RoundContext,
+) -> Result<(), ScorecardError> {
+    if context.scoring_format != crate::domain::models::ScoringFormat::SinglesMatchPlay {
+        return Ok(());
+    }
+    let principal = auth::lock_active_session(tx, session_id)
+        .await?
+        .ok_or(ScorecardError::Unauthenticated)?;
+    membership_role(tx, context.tournament_id, principal.user_id)
+        .await?
+        .ok_or(ScorecardError::Forbidden)?;
+    Err(ScorecardError::Conflict(
+        ScorecardConflict::OwnerFormatMismatch,
+    ))
 }

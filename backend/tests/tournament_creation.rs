@@ -112,7 +112,7 @@ fn plan() -> golf_api::domain::tournament_plan::ValidatedTournamentPlan {
             description: "Test first".into(),
             start_date: date,
             end_date: date,
-            counted_rounds: 1,
+            counted_rounds: Some(1),
             mandatory_round_number: None,
             rounds: vec![RoundInput {
                 round_number: 1,

@@ -28,7 +28,7 @@ pub async fn draft_rounds(pool: &PgPool, format: &str, count: i16) -> Uuid {
     .execute(pool)
     .await
     .unwrap();
-    sqlx::query("INSERT INTO tournaments(id,name,start_date,end_date,number_of_rounds) VALUES($1,'Four-ball cup','2026-09-13','2026-09-13',$2)").bind(id(2)).bind(count).execute(pool).await.unwrap();
+    sqlx::query("INSERT INTO tournaments(id,name,start_date,end_date,number_of_rounds,counted_rounds) VALUES($1,'Four-ball cup','2026-09-13','2026-09-13',$2,$3)").bind(id(2)).bind(count).bind(if format == "singles_match_play" { None } else { Some(1i16) }).execute(pool).await.unwrap();
     sqlx::query(
         "INSERT INTO tournament_memberships(tournament_id,user_id,role) VALUES($1,$2,'admin')",
     )
@@ -55,9 +55,12 @@ pub async fn draft_rounds(pool: &PgPool, format: &str, count: i16) -> Uuid {
         .unwrap();
     }
     sqlx::query("INSERT INTO rounds(id,tournament_id,round_number,name,round_date,course_id,course_name,tee_id,tee_name,number_of_holes,scoring_format,handicap_allowance_percent) VALUES($1,$2,1,'Individual','2026-09-13',$3,'Links',$4,'White',18,$5::text::scoring_format,100)").bind(id(5)).bind(id(2)).bind(id(3)).bind(id(4)).bind(format).execute(pool).await.unwrap();
-    if count == 2 {
+    if count >= 2 {
         sqlx::query("INSERT INTO rounds(id,tournament_id,round_number,name,round_date,course_name,tee_name,number_of_holes,scoring_format,handicap_allowance_percent) VALUES($1,$2,2,'Draft Stableford','2026-09-13','Unconfigured','Unconfigured',18,'individual_stableford',100)")
             .bind(id(6)).bind(id(2)).execute(pool).await.unwrap();
+    }
+    if count == 3 {
+        sqlx::query("INSERT INTO rounds(id,tournament_id,round_number,name,round_date,course_id,course_name,tee_id,tee_name,number_of_holes,scoring_format,handicap_allowance_percent) VALUES($1,$2,3,'Final Match','2026-09-13',$3,'Links',$4,'White',18,'singles_match_play',100)").bind(id(7)).bind(id(2)).bind(id(3)).bind(id(4)).execute(pool).await.unwrap();
     }
     for (p, hcp) in [(11, 0), (12, 40), (13, -10), (14, 10)] {
         sqlx::query("INSERT INTO players(id,display_name,current_handicap_index) VALUES($1,$2,$3)")
@@ -95,6 +98,23 @@ pub async fn draft_rounds(pool: &PgPool, format: &str, count: i16) -> Uuid {
         .fetch_one(pool)
         .await
         .unwrap();
+    let updated = if count == 3 {
+        tournaments::update_counted_rounds_authorized(
+            pool,
+            session.session_id,
+            id(2),
+            1,
+            None,
+            Some(golf_api::domain::models::TournamentTieBreakPolicy::FinalRoundScore),
+            updated,
+        )
+        .await
+        .unwrap()
+        .tournament
+        .updated_at
+    } else {
+        updated
+    };
     tournaments::start_authorized(pool, session.session_id, id(2), updated)
         .await
         .unwrap();

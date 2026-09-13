@@ -13,17 +13,13 @@ pub(super) async fn assemble(
     metric: LeaderboardMetric,
     projection: TournamentProjection,
 ) -> Result<TournamentLeaderboard, LeaderboardError> {
-    let (counted_rounds, mandatory_round_id, final_round_number, tie_break_policy) = sqlx::query_as::<_, (i16, Option<Uuid>, i16, TournamentTieBreakPolicy)>(
+    let (counted_rounds, mandatory_round_id, final_round_number, tie_break_policy) = sqlx::query_as::<_, (Option<i16>, Option<Uuid>, i16, TournamentTieBreakPolicy)>(
         "SELECT counted_rounds, mandatory_round_id, number_of_rounds, tie_break_policy FROM tournaments WHERE id = $1",
     )
     .bind(tournament_id)
     .fetch_optional(&mut **transaction)
     .await?
     .ok_or(LeaderboardError::NotFound)?;
-    let counted_rounds = usize::try_from(counted_rounds)
-        .ok()
-        .filter(|count| *count > 0)
-        .ok_or(LeaderboardError::InvalidStoredData)?;
     let role = if let TournamentProjection::Member(user_id) = projection {
         tournament_authorization::require_tournament_member_read(
             transaction,
@@ -39,6 +35,11 @@ pub(super) async fn assemble(
             TournamentProjection::Member(_) => return Err(LeaderboardError::InvalidStoredData),
         }
     };
+    let counted_rounds =
+        usize::try_from(counted_rounds.ok_or(LeaderboardError::OverallUnavailable)?)
+            .ok()
+            .filter(|count| *count > 0)
+            .ok_or(LeaderboardError::InvalidStoredData)?;
     // Draft formats determine overall value units; domain assembly separately
     // restricts current and counted contributions to eligible round statuses.
     let round_rows = sqlx::query_as::<_, RoundRow>(
@@ -66,7 +67,10 @@ pub(super) async fn assemble(
         .map(|row| row.round_id);
     let current_projection = round_rows
         .iter()
-        .filter(|row| row.status == crate::domain::models::RoundStatus::Open)
+        .filter(|row| {
+            row.status == crate::domain::models::RoundStatus::Open
+                && row.scoring_format.contributes_to_overall()
+        })
         .max_by_key(|row| (row.round_number, row.round_id))
         .map(|row| projection_for_round(row, role))
         .unwrap_or_else(unrestricted);

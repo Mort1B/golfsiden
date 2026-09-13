@@ -31,14 +31,13 @@ separately from actual strokes. Default handicap allowance is 100%, editable by
 the exact administrator while draft and frozen at opening. Full actual stroke
 totals exist only for 18 numeric holes. Private history and existing public
 overall summaries preserve the same visibility rules as other formats.
-[Singles match play](ARCHITECTURE.md#planned-singles-match-play-contract)
-is defined for 18 holes, with draws and a separate 1/½/0 match-points table. It
-contributes nothing to gross/net overall totals. Its future first version uses
-admin-assigned opponents, a frozen gross/net mode and online match-result reports;
-only numeric notes support offline drafts. Its isolated backend foundation now
-calculates relative handicaps, ordered hole results, early finishes/draws and exact
-match points. Match play remains unavailable until opponent setup, reporting,
-confirmation, storage, separate standings and UI integration are implemented.
+[Singles match play](ARCHITECTURE.md#singles-match-play-contract)
+is playable over 18 holes, with draws and a separate 1/½/0 match-points table.
+Administrators assign opponents manually and choose the official gross/net mode
+before opening. Numeric notes support offline drafts; accepted reports,
+concessions, confirmation and audited corrections require connectivity. Early
+finishes need no invented scores. Match points contribute nothing to gross/net
+overall totals; match-only tournaments show the separate table and private history.
 
 Members can enter authorized flight scorecards, confirm cards, and browse live
 gross/net round and best-N tournament standings, player contribution histories,
@@ -104,8 +103,9 @@ monitoring, backup, credential rotation, and disaster recovery commands.
   round has opened or snapshot has existed.
 - Team membership is unique per player and round.
 - Scores have exclusive player/team ownership.
-- PostgreSQL reserves an explicit audited administrator context for any future
-  locked-round correction; no operator flow currently exposes that path.
+- Ordinary writes to locked rounds are rejected. Singles match play exposes
+  exact-admin, reason-required audited corrections and reconfirmation while locked.
+  The legacy stroke-score correction context has no operator UI flow.
 - Score mutations are auditable in PostgreSQL.
 - The initial two-player scramble formula is isolated in the domain layer and
   uses 35% of the lower plus 15% of the higher course handicap. Each registered
@@ -370,6 +370,90 @@ The suites cover 320x600, 390x844 and 1280x900 layouts, creation/settings,
 loading/error/empty/populated/long-content states, pickup keyboard behavior,
 label/value overlap, offline conflicts, storage failure, receipt recovery,
 confirmation leases, completed corrections, locked history and hidden results.
+
+## Singles match play
+
+Choose **Matchspill (singel)** in creation. In the round's management workspace,
+select the shared 18-hole tee, create flights starting at hole 1 and manually
+assign two distinct active entrants from the same flight to each match. Every
+active entrant needs exactly one opponent before opening. Odd counts, duplicates,
+missing opponents and cross-flight matches block opening. Team setup remains
+separate and administrator-managed for other formats.
+
+The official mode defaults to net with fixed 100% allowance. The administrator
+can choose gross while draft. Opening freezes mode, opponents, tee and individual
+Playing Handicaps. Net play uses the full relative difference: Playing Handicaps
+10 and 18 become 0 and 8 received strokes, allocated on stroke indexes 1–8.
+Gross play allocates none. The mode is part of the result, not a viewing toggle.
+
+**Score** opens the dedicated match workspace. **Numeriske notater** holds optional
+1–20 stroke notes for either opponent and an explicit clear action. A blank has
+no sporting meaning. A numeric comparison proposes an outcome, but an authorized
+recorder must explicitly report the agreed next hole. Supported bases distinguish
+completed scores, a communicated next-stroke concession, a communicated hole
+concession, an agreed halve after play began, and an administrator ruling with a
+reason. Recording authority does not let a scorer invent a concession: record the
+actual conceder and attest communication. A whole-match concession or organizer
+award ends the match without fictitious hole scores, even before hole 1.
+
+Accepted reports form one contiguous ledger. A lead greater than the remaining
+holes ends the match; an equal result after hole 18 is a draw. Early unplayed holes
+need no notes. Confirmation requires a fresh online view, an explicit agreement
+or award attestation, and no unresolved local edits or delivery. If another scorer
+changes the revision, the attestation resets. Only confirmed results award points.
+Each match must be terminal and confirmed before round completion/locking.
+
+Changing a numeric note never rewrites an accepted report. An exact administrator
+uses **Korriger aksepterte rapporter**, distinguishes a recording error from an
+organizer ruling, gives a reason and explicitly replaces the affected ledger.
+Superseded facts remain in audit history. Correction clears confirmation and points;
+resolve any newly required holes and confirm the corrected result. This explicit
+path works while locked without opening ordinary writes. A real concession cannot
+be withdrawn; the organizer determines the permitted sporting decision before
+recording it. The application does not adjudicate disputes or late rulings.
+
+**Matchpoeng** ranks the separate table by exact points: 1 for a win, ½ for a draw,
+0 for a loss. A win, draw and loss give 1½ points across three played matches.
+Shared points share places; no confirmed result means no position. Private history
+preserves the selected player and links to permitted round matches. In mixed
+trips, links connect overall contribution history and match history. Match-only
+trips have no overall N or mandatory round. Mixed trips count only eligible
+non-match rounds; no match can be mandatory or provisionally displace an open
+stroke/Stableford round. Private gross/net overall GETs for match-only trips return
+`{type: "not_applicable", reason: "match_only", tournament_id, metric}` after normal
+membership authorization. The UI explains the separate table without fetching
+unavailable overall standings. Existing eligible responses retain their shape.
+
+Private read cards and completion facts obey final-round visibility. Hidden final
+results derive only from permitted holes/events, with unavailable metadata null.
+Until release, the whole final is excluded from the non-admin match-points table,
+even if a match ended before the back nine. Admin views retain authorized full
+results. Public links do not expose match data.
+
+Offline numeric notes are available on an already-open authorized match. Device
+storage uses a separate account-isolated `golf-match-notes-v1` database and a single
+sequence across both opponents; existing stroke/four-ball/Stableford queues remain
+compatible. Pending or unknown delivery stays visible through reload and two tabs.
+Original request identities are retained until reconciled, including lost responses.
+After delivery, fresh server state is checked before removing the pending item.
+Conflicts show old, local and permitted server values for an explicit choice;
+a hidden server note is labelled hidden, not blank. No silent rebase occurs.
+Terminal or locked matches block unsent successors. Failed local storage and later
+authorization loss preserve unsaved notes in a minimal local-only recovery view
+while preventing authoritative actions. Navigation protection offers explicit
+review or discard for unsaved edits. Cold offline launch and background sync are
+not supported; server backups do not include unsent device notes.
+
+Dedicated routes are `/rounds/:roundId/matches`, the match's read and `/score`
+paths, and `/tournaments/:tournamentId/match-results` with optional player scope.
+The API uses `/api/rounds/{round}/match-play` for settings, assignments, cards,
+commands and completion, plus `/api/tournaments/{id}/match-table`. All are private
+and non-cacheable. Commands require an immutable request UUID and expected match
+revision as a positive decimal string. Exact authorized retries return the original
+acknowledgement; a different stale command conflicts. Read projections omit command
+revisions, event IDs and audit details. Only authorized scoring reads expose the
+revision and accepted IDs needed for reporting/correction. Committed `match` SSE
+events invalidate private match, lifecycle and result queries for fresh reads.
 
 ## Mobile score entry
 
@@ -734,9 +818,12 @@ initial handicap histories, draft tournament, tournament-admin membership,
 entrant, all draft rounds, hashed invitation, and hashed session. The server
 derives round count and the individual/team/combined tournament scoring mode.
 The creator chooses how many rounds count and may select one optional mandatory
-round. The wizard defaults to all configured rounds, preserves a smaller
-explicit best-N choice while rounds are edited, clears a mandatory selection if
-that draft round is removed, and submits `counted_rounds` plus the selected
+round. The wizard defaults to all overall-eligible rounds, preserves a smaller
+explicit best-N choice while rounds are edited, and clears a mandatory selection
+if that draft round is removed or changed to match play. Match-only plans submit
+explicit `counted_rounds: null` and `mandatory_round_number: null`; mixed plans
+require N from 1 through the eligible non-match count. The wizard submits
+`counted_rounds` plus the selected
 `mandatory_round_number`. The backend maps that number to a preallocated round
 UUID inside the creation transaction.
 Individual and scramble rounds retain their existing default allowance. A
@@ -1479,7 +1566,7 @@ refetching the focused resource.
 ## Leaderboards
 
 Tournament totals can remain unchanged after a successful update: only the
-highest-numbered open round contributes provisionally, and best-N selection can
+highest-numbered open overall-eligible round contributes provisionally, and best-N selection can
 exclude a changed optional round. The mandatory round reserves its own slot.
 Inspect the contribution and selected metric before treating an unchanged total
 as stale. An unstarted player has no position and cannot cause a sporting tie
@@ -1499,7 +1586,7 @@ Tournament leaderboards are available at
 `GET /api/tournaments/{tournament_id}/leaderboards/gross` and `/net`. They include
 all registered players, including withdrawn and zero-result entries. Each metric
 independently selects the displayed best N from completed or locked history plus
-the visible scored portion of the deterministic highest-numbered open round. An
+the visible scored portion of the deterministic highest-numbered open overall-eligible round. An
 unstarted open card contributes nothing; partial and full-but-open cards remain
 explicitly provisional. When configured, the mandatory round always uses one of
 N slots once it has a visible result. A completed mandatory result counts
@@ -1521,6 +1608,8 @@ member of the group must be eligible, have no selected provisional contribution,
 and have a complete, visible, non-provisional final contribution. If any member
 cannot be compared, the whole group retains shared positions. The final is the
 configured `number_of_rounds`, never the latest loaded or completed round.
+A final scheduled match has no comparable stroke contribution, so a tied group
+keeps shared positions under `final_round_score`; an earlier round is not substituted.
 
 The response also requires top-level `tie_break_policy` and `final_round_number`,
 plus nullable `tie_break_score_to_par` on stroke-only entries, or `value.tie_break`
@@ -1542,14 +1631,14 @@ qualification facts even when a provisional result is selected. Individual
 results stay with their snapshot owner; scramble, foursomes and four-ball results are
 attributed once to every frozen member of that exact round team. Current-team
 data and provisional contributions come only from the highest-numbered open
-round. `included_round_ids` remains completed/locked-only; provisional identities
+overall-eligible round. `included_round_ids` remains completed/locked-only; provisional identities
 match the separate `current_round_id`.
 
 Completed status remains authoritative for qualification. A completed-round
 score correction updates its contribution immediately even though the changed
 card must be reconfirmed before locking; the selected open contribution remains
 provisional until lifecycle completion. Current player handicaps are never read
-for historical net totals. All leaderboard reads use one repeatable-read snapshot
+for historical net totals. Ordinary leaderboard reads use one repeatable-read snapshot
 and bounded bulk queries; inconsistent completed or open-round owner data fails
 closed instead of producing plausible partial standings.
 UI wording distinguishes these states without changing calculations: visible
@@ -1648,6 +1737,11 @@ are written to `/tmp/golf-leaderboard-live-*.png`.
 
 ## Public live result-sharing
 
+Match-only tournaments show that public overall sharing is unavailable; creation
+returns 409 and existing grants fail closed when overall configuration is absent.
+Mixed tournaments retain the same limited gross/net summary scope. Public links
+never include the separate match table, opponents or match reports.
+
 Under **Turneringsstyring → Innstillinger → Del resultater offentlig**, an exact
 tournament admin can deliberately create a result link, copy it, replace it or
 revoke it. The controls explain the audience and 30-day lifetime before issuance.
@@ -1739,6 +1833,11 @@ restore, and rollback procedures are maintained in `docs/deployment_guide.md`.
 
 ## Known limitations
 
+- Singles match play supports 18-hole singles from hole 1 with manual same-flight
+  opponents. Nine-hole/extra-hole play, byes, brackets, team match play, rules
+  adjudication and handicap-system submission are outside this version.
+  Only numeric match notes can be queued offline; accepted reports, concessions,
+  awards, corrections and confirmation require online verification.
 - The legacy global player/profile/handicap directory is retired. Tournament
   creation grants authority only over the new trip, not other users' trips.
   Scorecards and target-tournament SSE are

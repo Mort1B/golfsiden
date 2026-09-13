@@ -11,6 +11,7 @@ export interface DraftValidation {
 
 const teamReadinessLabels = {
   individual_stroke_play: null,
+  singles_match_play: null,
   individual_stableford: null,
   team_scramble: { assignment: 'lag', size: 'lag' },
   two_player_foursomes: { assignment: 'foursomes-lag', size: 'foursomes-lag' },

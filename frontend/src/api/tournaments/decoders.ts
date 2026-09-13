@@ -134,6 +134,7 @@ export function decodeTournamentHandicapCorrection(
 
 export function decodeTournament(value: unknown, path = 'tournament'): Tournament {
   const data = decodeObject(value, path, 'turneringsdata')
+  if (data.counted_rounds === null && data.mandatory_round_id !== null) invalidData('turneringsdata', `${path}.mandatory_round_id`)
   const numberOfRounds = decodeInteger(data.number_of_rounds, `${path}.number_of_rounds`, 1, 30, 'turneringsdata')
   return {
     id: decodeUuid(data.id, `${path}.id`, 'turneringsdata'),
@@ -143,7 +144,7 @@ export function decodeTournament(value: unknown, path = 'tournament'): Tournamen
     end_date: decodeDate(data.end_date, `${path}.end_date`, 'turneringsdata'),
     number_of_rounds: numberOfRounds,
     tie_break_policy: decodeTieBreakPolicy(data.tie_break_policy, `${path}.tie_break_policy`, 'turneringsdata'),
-    counted_rounds: decodeInteger(data.counted_rounds, `${path}.counted_rounds`, 1, numberOfRounds, 'turneringsdata'),
+    counted_rounds: data.counted_rounds === null ? null : decodeInteger(data.counted_rounds, `${path}.counted_rounds`, 1, numberOfRounds, 'turneringsdata'),
     mandatory_round_id: data.mandatory_round_id === null
       ? null
       : decodeUuid(data.mandatory_round_id, `${path}.mandatory_round_id`, 'turneringsdata'),

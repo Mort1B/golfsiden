@@ -10,7 +10,7 @@ pub struct TournamentPlanInput {
     pub description: String,
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
-    pub counted_rounds: i16,
+    pub counted_rounds: Option<i16>,
     pub mandatory_round_number: Option<i16>,
     pub rounds: Vec<RoundInput>,
 }
@@ -29,7 +29,7 @@ pub struct ValidatedTournamentPlan {
     pub description: String,
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
-    pub counted_rounds: i16,
+    pub counted_rounds: Option<i16>,
     pub mandatory_round_number: Option<i16>,
     pub scoring_mode: ScoringMode,
     pub invitation_expires_at: DateTime<Utc>,
@@ -68,14 +68,29 @@ pub fn normalize(mut input: TournamentPlanInput) -> Result<ValidatedTournamentPl
         return Err("rounds must contain between 1 and 30 entries");
     }
     let round_count = i16::try_from(input.rounds.len()).map_err(|_| "too many rounds")?;
-    if input.counted_rounds < 1 || input.counted_rounds > round_count {
-        return Err("tournament.counted_rounds must be between 1 and the round count");
+    let eligible = input
+        .rounds
+        .iter()
+        .filter(|round| round.scoring_format.contributes_to_overall())
+        .count();
+    if !counted_rounds_valid(input.counted_rounds, eligible) {
+        return Err(
+            "counted_rounds must be null for match-only tournaments, otherwise between 1 and the eligible round count",
+        );
     }
     if input
         .mandatory_round_number
         .is_some_and(|round_number| !(1..=round_count).contains(&round_number))
     {
         return Err("tournament.mandatory_round_number must identify a configured round");
+    }
+    if input.mandatory_round_number.is_some_and(|number| {
+        !input
+            .rounds
+            .iter()
+            .any(|r| r.round_number == number && r.scoring_format.contributes_to_overall())
+    }) {
+        return Err("mandatory round must contribute to overall standings");
     }
 
     input.rounds.sort_by_key(|round| round.round_number);
@@ -93,7 +108,9 @@ pub fn normalize(mut input: TournamentPlanInput) -> Result<ValidatedTournamentPl
     let has_individual = input.rounds.iter().any(|round| {
         matches!(
             round.scoring_format,
-            ScoringFormat::IndividualStrokePlay | ScoringFormat::IndividualStableford
+            ScoringFormat::IndividualStrokePlay
+                | ScoringFormat::IndividualStableford
+                | ScoringFormat::SinglesMatchPlay
         )
     });
     let has_team = input.rounds.iter().any(|round| {
@@ -143,4 +160,63 @@ pub(crate) fn validate_name(value: &str, message: &'static str) -> Result<(), &'
         return Err(message);
     }
     Ok(())
+}
+
+/// Scheduled rounds remain distinct from the formats eligible for overall results.
+pub fn counted_rounds_valid(counted: Option<i16>, eligible: usize) -> bool {
+    match counted {
+        None => eligible == 0,
+        Some(n) => n > 0 && usize::try_from(n).is_ok_and(|n| n <= eligible),
+    }
+}
+
+#[cfg(test)]
+mod match_configuration_tests {
+    use super::*;
+    fn input(
+        formats: &[ScoringFormat],
+        count: Option<i16>,
+        mandatory: Option<i16>,
+    ) -> TournamentPlanInput {
+        let date = NaiveDate::from_ymd_opt(2026, 9, 13).unwrap();
+        TournamentPlanInput {
+            tournament_name: "Singles".into(),
+            description: String::new(),
+            start_date: date,
+            end_date: date,
+            counted_rounds: count,
+            mandatory_round_number: mandatory,
+            rounds: formats
+                .iter()
+                .enumerate()
+                .map(|(i, format)| RoundInput {
+                    round_number: (i + 1) as i16,
+                    name: "Round".into(),
+                    round_date: date,
+                    scoring_format: *format,
+                })
+                .collect(),
+        }
+    }
+    #[test]
+    fn match_only_requires_absent_overall_and_retains_individual_mode() {
+        let formats = [ScoringFormat::SinglesMatchPlay];
+        let plan = normalize(input(&formats, None, None)).unwrap();
+        assert_eq!(plan.scoring_mode, ScoringMode::Individual);
+        assert!(plan.counted_rounds.is_none());
+        assert!(normalize(input(&formats, Some(0), None)).is_err());
+        assert!(normalize(input(&formats, Some(1), None)).is_err());
+        assert!(normalize(input(&formats, None, Some(1))).is_err());
+    }
+    #[test]
+    fn mixed_plan_counts_only_eligible_formats_and_rejects_mandatory_match() {
+        let formats = [
+            ScoringFormat::IndividualStableford,
+            ScoringFormat::SinglesMatchPlay,
+        ];
+        assert!(normalize(input(&formats, Some(1), Some(1))).is_ok());
+        assert!(normalize(input(&formats, Some(2), None)).is_err());
+        assert!(normalize(input(&formats, Some(1), Some(2))).is_err());
+        assert!(normalize(input(&formats, None, None)).is_err());
+    }
 }

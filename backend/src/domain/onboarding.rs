@@ -15,7 +15,7 @@ pub struct OnboardingInput {
     pub description: String,
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
-    pub counted_rounds: i16,
+    pub counted_rounds: Option<i16>,
     pub mandatory_round_number: Option<i16>,
     pub rounds: Vec<RoundInput>,
 }
@@ -80,7 +80,7 @@ mod tests {
             description: " Annual trip ".to_owned(),
             start_date: NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
             end_date: NaiveDate::from_ymd_opt(2026, 9, 3).unwrap(),
-            counted_rounds: 2,
+            counted_rounds: Some(2),
             mandatory_round_number: None,
             rounds: vec![
                 RoundInput {
@@ -105,7 +105,7 @@ mod tests {
             validate(valid_input(), NaiveDate::from_ymd_opt(2026, 8, 16).unwrap()).unwrap();
         assert_eq!(validated.username, "creator_1");
         assert_eq!(validated.plan.scoring_mode, ScoringMode::Combined);
-        assert_eq!(validated.plan.counted_rounds, 2);
+        assert_eq!(validated.plan.counted_rounds, Some(2));
         assert_eq!(validated.plan.mandatory_round_number, None);
         assert_eq!(validated.plan.rounds[0].round_number, 1);
         assert_eq!(
@@ -121,7 +121,7 @@ mod tests {
         assert!(validate(input, NaiveDate::from_ymd_opt(2026, 8, 16).unwrap()).is_err());
 
         let mut input = valid_input();
-        input.counted_rounds = 3;
+        input.counted_rounds = Some(3);
         assert!(validate(input, NaiveDate::from_ymd_opt(2026, 8, 16).unwrap()).is_err());
 
         let mut input = valid_input();

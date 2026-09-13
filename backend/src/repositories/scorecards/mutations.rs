@@ -59,6 +59,7 @@ pub async fn save_authenticated(
 ) -> Result<MutationResult<ScoreEntry>, ScorecardError> {
     let mut transaction = pool.begin().await?;
     let context = load_round(&mut transaction, input.round_id, true).await?;
+    super::reject_match_for_member(&mut transaction, input.session_id, &context).await?;
     require_editable(&context)?;
     validate_owner(&mut transaction, &context, input.owner).await?;
     validate_hole(&mut transaction, &context, input.hole_id).await?;
@@ -161,6 +162,7 @@ pub async fn confirm_authenticated(
 ) -> Result<MutationResult<ScorecardSummary>, ScorecardError> {
     let mut transaction = pool.begin().await?;
     let context = load_round(&mut transaction, round_id, true).await?;
+    super::reject_match_for_member(&mut transaction, session_id, &context).await?;
     require_editable(&context)?;
     validate_owner(&mut transaction, &context, owner).await?;
     let confirmed_by = score_authorization::authorize_mutation(

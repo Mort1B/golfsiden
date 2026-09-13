@@ -35,7 +35,10 @@ pub fn build_tournament_leaderboard_projected(
     let current_round = facts
         .rounds
         .iter()
-        .filter(|round| round.round.status == RoundStatus::Open)
+        .filter(|round| {
+            round.round.status == RoundStatus::Open
+                && round.round.scoring_format.contributes_to_overall()
+        })
         .max_by_key(|round| (round.round.round_number, round.round.round_id));
     let current_teams = current_round
         .map(|round| current_teams(round, &participants))
@@ -49,7 +52,8 @@ pub fn build_tournament_leaderboard_projected(
             matches!(
                 round.round.status,
                 RoundStatus::Completed | RoundStatus::Locked
-            ) && hidden_completed_round_id != Some(round.round.round_id)
+            ) && round.round.scoring_format.contributes_to_overall()
+                && hidden_completed_round_id != Some(round.round.round_id)
         })
         .collect::<Vec<_>>();
     included.sort_by_key(|round| (round.round.round_number, round.round.round_id));
@@ -61,6 +65,9 @@ pub fn build_tournament_leaderboard_projected(
             || !round_ids.insert(round.round.round_id)
         {
             return Err(LeaderboardError::InvalidStoredData);
+        }
+        if !round.round.scoring_format.contributes_to_overall() {
+            continue;
         }
         validated_rounds.insert(
             round.round.round_id,

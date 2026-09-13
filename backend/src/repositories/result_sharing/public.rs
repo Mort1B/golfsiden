@@ -47,6 +47,7 @@ pub async fn read(
     let board = leaderboards::public_in_transaction(&mut tx, grant.tournament_id, metric)
         .await
         .map_err(|e| match e {
+            leaderboards::LeaderboardError::OverallUnavailable => ShareError::Unavailable,
             leaderboards::LeaderboardError::Database(error) => ShareError::Database(error),
             _ => ShareError::InvalidResults,
         })?;

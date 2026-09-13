@@ -45,7 +45,8 @@ pub fn calculate(
             )
         }
         SnapshotHandicapPolicy::FourBallRoundAllowance
-        | SnapshotHandicapPolicy::StablefordRoundAllowance => {
+        | SnapshotHandicapPolicy::StablefordRoundAllowance
+        | SnapshotHandicapPolicy::SinglesMatchAllowance => {
             let n = numerator * i64::from(allowance_percent);
             let d = denominator * 100;
             n.div_euclid(d) + i64::from(n.rem_euclid(d) * 2 >= d)

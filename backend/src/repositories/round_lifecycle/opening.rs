@@ -23,7 +23,8 @@ pub(super) async fn in_transaction(
     let loaded = load::round(transaction, round_id, true)
         .await?
         .ok_or(OpenRoundError::NotFound)?;
-    let validation = validate(&loaded.facts);
+    let mut validation = validate(&loaded.facts);
+    crate::repositories::match_play::setup::add_readiness(transaction, &mut validation).await?;
     if !validation.ready {
         return Err(OpenRoundError::NotReady(Box::new(validation)));
     }
@@ -56,6 +57,7 @@ pub(super) async fn in_transaction(
             loaded.facts.scoring_format,
             crate::domain::models::ScoringFormat::FourBallStrokePlay
                 | crate::domain::models::ScoringFormat::IndividualStableford
+                | crate::domain::models::ScoringFormat::SinglesMatchPlay
         ) {
             handicap = crate::domain::four_ball::calculate_handicap(
                 course_handicap_numerator(

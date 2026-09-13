@@ -7,6 +7,7 @@ import { scoringSearch } from '../../scoring/selection'
 import { readinessDestination, roundManagementUrl } from './lifecycleState'
 
 const issueLabels: Record<ReadinessIssueCode, string> = {
+  invalid_match_assignments: 'Alle aktive deltakere må ha én motstander i samme flight, med start på hull 1.',
   round_not_draft: 'Runden er ikke lenger i kladd. Oppdater status.',
   tournament_not_openable: 'Start turneringen før runden åpnes.',
   no_active_entrants: 'Minst én aktiv deltaker må være påmeldt.',

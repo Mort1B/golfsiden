@@ -19,6 +19,8 @@ pub struct GrantMetadata {
 pub enum ShareError {
     #[error("result link unavailable")]
     Unavailable,
+    #[error("overall results are not applicable")]
+    OverallUnavailable,
     #[error("result link changed")]
     Stale,
     #[error(transparent)]

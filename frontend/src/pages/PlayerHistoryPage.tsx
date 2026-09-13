@@ -1,5 +1,6 @@
+import { MatchResults } from './MatchResultsPage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Navigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { useEffect } from 'react'
 import { api } from '../api/client'
 import { leaderboardKeys } from '../api/leaderboards'
@@ -32,11 +33,13 @@ export function PlayerHistoryPage() {
       loadRounds: () => api.rounds(tournamentId),
       loadLeaderboard: () => api.tournamentLeaderboard(tournamentId, metric),
     }),
-    enabled: tournamentId !== '' && playerId !== '' && roundsQuery.data !== undefined && !roundsQuery.error,
+    enabled: tournamentId !== '' && playerId !== '' && roundsQuery.data?.some(r => r.scoring_format !== 'singles_match_play') === true && !roundsQuery.error,
   })
+  const matchOnly = roundsQuery.data !== undefined && roundsQuery.data.every(r => r.scoring_format === 'singles_match_play')
   const player = leaderboardQuery.data?.entries.find((entry) => entry.player_id === playerId)
   const canonical = new URLSearchParams({ metric })
 
+  if (matchOnly) return <MatchResults tournamentId={tournamentId} selectedPlayerId={playerId} />
   if (searchParams.toString() !== canonical.toString()) {
     return <Navigate replace to={`/tournaments/${tournamentId}/results/players/${playerId}?${canonical}`} />
   }
@@ -55,6 +58,7 @@ export function PlayerHistoryPage() {
       {roundsQuery.error && !roundsQuery.data && <ErrorState error={roundsQuery.error} onRetry={() => void roundsQuery.refetch()} />}
       {leaderboardQuery.error && !leaderboardQuery.data && <ErrorState error={leaderboardQuery.error} onRetry={() => void leaderboardQuery.refetch()} />}
       {leaderboardQuery.data && !player && <EmptyState>Spilleren finnes ikke blant de synlige resultatene i denne turneringen.</EmptyState>}
+      {roundsQuery.data?.some(r => r.scoring_format === 'singles_match_play') && <Link to={`/tournaments/${tournamentId}/match-results?player=${playerId}`}>Spillerens matchhistorikk</Link>}
       {leaderboardQuery.data && player && roundsQuery.data && <PlayerHistory leaderboard={leaderboardQuery.data} player={player} rounds={roundsQuery.data} />}
     </section>
   )

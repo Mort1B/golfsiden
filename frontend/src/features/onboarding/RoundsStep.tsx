@@ -10,7 +10,7 @@ interface RoundsStepProps {
   totalSteps?: number
   tournament: TournamentDraft
   rounds: RoundDraft[]
-  countedRounds: number
+  countedRounds: number | null
   mandatoryRoundKey: string | null
   errors: FieldErrors
   onAdd: () => void
@@ -32,15 +32,16 @@ export function RoundsStep(props: RoundsStepProps) {
           <span>Tellende runder</span>
           <select
             id="counted-rounds"
-            value={props.countedRounds}
+            value={props.countedRounds ?? ''} disabled={props.countedRounds === null}
             aria-invalid={Boolean(props.errors['rounds.countedRounds'])}
             aria-describedby="counted-rounds-help counted-rounds-error"
             onChange={(event) => props.onCountedRounds(Number(event.target.value))}
           >
-            {props.rounds.map((_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}
+            {props.countedRounds === null && <option value="">Egen matchpoengtabell</option>}
+            {props.rounds.filter(r => r.scoringFormat !== 'singles_match_play').map((_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}
           </select>
         </label>
-        <p id="counted-rounds-help">Beste {props.countedRounds} av {props.rounds.length} runder teller i turneringen.</p>
+        <p id="counted-rounds-help">{props.countedRounds === null ? 'Matchspill har en egen poengtabell. Sammenlagt brutto/netto er ikke tilgjengelig.' : `Beste ${props.countedRounds} av ${props.rounds.filter(r => r.scoringFormat !== 'singles_match_play').length} tellende formater. Matchspill inngår ikke.`}</p>
         <FieldError id="counted-rounds-error">{props.errors['rounds.countedRounds']}</FieldError>
       </div>
       <div className="counted-rounds-choice mandatory-round-choice">
@@ -48,13 +49,14 @@ export function RoundsStep(props: RoundsStepProps) {
           <span>Obligatorisk runde (valgfritt)</span>
           <select
             id="mandatory-round"
+            disabled={props.countedRounds === null}
             value={props.mandatoryRoundKey ?? ''}
             aria-describedby="mandatory-round-help"
             onChange={(event) => props.onMandatoryRound(event.target.value || null)}
           >
             <option value="">Ingen obligatorisk runde</option>
-            {props.rounds.map((round, index) => (
-              <option key={round.key} value={round.key}>Runde {index + 1}: {round.name || 'Uten navn'}</option>
+            {props.rounds.filter(r => r.scoringFormat !== 'singles_match_play').map((round) => (
+              <option key={round.key} value={round.key}>Runde {props.rounds.indexOf(round) + 1}: {round.name || 'Uten navn'}</option>
             ))}
           </select>
         </label>
@@ -86,6 +88,7 @@ export function RoundsStep(props: RoundsStepProps) {
                 <select value={round.scoringFormat} onChange={(event) => {
                   if (isScoringFormat(event.target.value)) props.onChange(round.key, { scoringFormat: event.target.value })
                 }}>
+                  <option value="singles_match_play">Matchspill (singel, 18 hull)</option>
                   <option value="individual_stableford">Stableford (individuelt, 18 hull)</option>
                   <option value="individual_stroke_play">Individuell slagkonkurranse</option>
                   <option value="team_scramble">Lagscramble (to spillere)</option>

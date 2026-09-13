@@ -84,7 +84,7 @@ fn repository_input(username: &str, tournament_name: &str) -> ValidatedOnboardin
             description: "Repository rollback test".to_owned(),
             start_date,
             end_date,
-            counted_rounds: 1,
+            counted_rounds: Some(1),
             mandatory_round_number: None,
             rounds: vec![RoundInput {
                 round_number: 1,

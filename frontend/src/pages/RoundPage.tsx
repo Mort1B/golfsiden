@@ -1,3 +1,4 @@
+import { MatchRound } from '../features/matchPlay/MatchRound'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, Flag, MapPin } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
@@ -53,12 +54,12 @@ function RoundWorkspace({ roundId }: { roundId: string }) {
       <div className="round-meta"><span><MapPin aria-hidden="true" />{round.data.course_id ? round.data.course_name : 'Bane ikke satt opp'}</span><span><Flag aria-hidden="true" />{round.data.tee_id ? round.data.tee_name : 'Utslagssted ikke satt opp'} · {round.data.number_of_holes} hull</span></div>
       <nav className="round-detail-links" aria-label="Rundevalg">
         {round.data.status !== 'draft' && <Link to={`/score?${scoringSearch({ tournamentId: round.data.tournament_id, roundId, view: 'summary' })}`}>Åpne scorekort</Link>}
-        <Link to={`/leaderboard?${leaderboardSearch(round.data.tournament_id, 'round', roundId, 'net')}`}>Se rundens resultater</Link>
+        <Link to={round.data.scoring_format === 'singles_match_play' ? `/rounds/${roundId}/matches` : `/leaderboard?${leaderboardSearch(round.data.tournament_id, 'round', roundId, 'net')}`}>Se rundens resultater</Link>
       </nav>
       {round.data.status === 'draft' && <p>Scorekort blir tilgjengelig når runden åpnes.</p>}
       {pairings.isFetching && <LoadingState />}
       {pairings.data && <RoundGroups pairings={pairings.data} />}
-      {pairings.data && <FlightProgressPanel pairings={pairings.data} onRefreshRound={retry} />}
+      {round.data.scoring_format === 'singles_match_play' ? <MatchRound roundId={roundId} /> : pairings.data && <FlightProgressPanel pairings={pairings.data} onRefreshRound={retry} />}
     </section>
   )
 }

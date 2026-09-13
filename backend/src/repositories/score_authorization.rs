@@ -40,6 +40,10 @@ pub async fn writable_owners(
     let role = membership_role(&mut transaction, context.0, principal.user_id)
         .await?
         .ok_or(ScoreAuthorizationError::Forbidden)?;
+    if context.1 == ScoringFormat::SinglesMatchPlay {
+        transaction.commit().await?;
+        return Ok(Vec::new());
+    }
     let mut owners = resolve_owners(
         &mut transaction,
         &principal,

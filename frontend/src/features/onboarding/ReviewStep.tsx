@@ -8,6 +8,7 @@ import type { AuthSession } from '../../api/auth'
 import { MANDATORY_ROUND_EXPLANATION } from '../leaderboards/resultExplanations'
 
 const formatLabel = {
+  singles_match_play: 'Matchspill (singel, 18 hull)',
   individual_stableford: 'Stableford (individuelt, 18 hull)',
   individual_stroke_play: 'Individuell slagkonkurranse',
   team_scramble: 'Lagscramble',
@@ -24,7 +25,7 @@ export function ReviewStep({ draft, onBack, submitting, headingRef, existingSess
       <dl className="review-summary">
         <div><dt><Flag aria-hidden="true" /> Turnering</dt><dd><strong>{draft.tournament.name.trim()}</strong><span>{draft.tournament.startDate} – {draft.tournament.endDate}</span></dd></div>
         <div><dt><UserRound aria-hidden="true" /> Administrator</dt><dd><strong>{existingSession?.display_name ?? draft.creator.displayName.trim()}</strong><span>@{existingSession?.username ?? draft.creator.username.trim().toLowerCase()}{!existingSession && ` · HCP ${handicap.ok ? formatHandicap(handicap.value) : draft.creator.handicap}`}</span></dd></div>
-        <div><dt><CalendarDays aria-hidden="true" /> Runder</dt><dd><strong>{draft.rounds.length} planlagt</strong><span>Beste {draft.countedRounds} av {draft.rounds.length}</span><span>Obligatorisk: {mandatoryRound?.name.trim() || 'Ingen'}</span></dd></div>
+        <div><dt><CalendarDays aria-hidden="true" /> Runder</dt><dd><strong>{draft.rounds.length} planlagt</strong><span>{draft.countedRounds === null ? 'Egen matchpoengtabell' : `Beste ${draft.countedRounds} av ${draft.rounds.filter(r => r.scoringFormat !== 'singles_match_play').length}`}</span><span>Obligatorisk: {mandatoryRound?.name.trim() || 'Ingen'}</span></dd></div>
       </dl>
       {mandatoryRound && <p>{MANDATORY_ROUND_EXPLANATION}</p>}
       {existingSession && <p>Du blir administrator med den eksisterende kontoen din. Har kontoen en aktiv tilknyttet spiller, meldes spilleren på med gjeldende handicap som fast turneringshandicap. Ellers opprettes turneringen uten deg som deltaker. Bane, spillegrupper og invitasjoner ordnes i administrasjonen etterpå.</p>}

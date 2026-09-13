@@ -1,3 +1,4 @@
+import { MatchLifecycle } from '../../matchPlay/MatchLifecycle'
 import { useEffect, useRef, useState } from 'react'
 import { CheckCircle2, LockKeyhole, RefreshCw } from 'lucide-react'
 import type { Round, Tournament } from '../../../api/types'
@@ -26,7 +27,7 @@ export function RoundLifecyclePanel({ tournament, rounds, selectedRoundId, onSel
       </select>
     </label>
     {!selected ? <p role="alert">Den valgte runden finnes ikke i denne turneringen.</p>
-      : <SelectedRoundLifecycle key={selected.id} tournament={tournament} selectedRound={selected} authorityRefreshing={authorityRefreshing} />}
+      : selected.scoring_format === 'singles_match_play' ? <MatchLifecycle key={selected.id} tournament={tournament} round={selected} authorityRefreshing={authorityRefreshing} /> : <SelectedRoundLifecycle key={selected.id} tournament={tournament} selectedRound={selected} authorityRefreshing={authorityRefreshing} />}
   </div>
 }
 

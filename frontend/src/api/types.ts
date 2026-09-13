@@ -3,7 +3,7 @@ import type { ScoreVisibility } from './visibility'
 export type TournamentStatus = 'draft' | 'active' | 'completed' | 'archived'
 export type ScoringMode = 'individual' | 'team' | 'combined'
 export type RoundStatus = 'draft' | 'open' | 'completed' | 'locked'
-export type ScoringFormat = 'individual_stroke_play' | 'team_scramble' | 'two_player_foursomes' | 'four_ball_stroke_play' | 'individual_stableford'
+export type ScoringFormat = 'individual_stroke_play' | 'team_scramble' | 'two_player_foursomes' | 'four_ball_stroke_play' | 'individual_stableford' | 'singles_match_play'
 export type ParticipantStatus = 'active' | 'withdrawn'
 export type LeaderboardMetric = 'gross' | 'net'
 export type TournamentTieBreakPolicy = 'shared_positions' | 'final_round_score'
@@ -16,7 +16,7 @@ export interface Tournament {
   start_date: string
   end_date: string
   number_of_rounds: number
-  counted_rounds: number
+  counted_rounds: number | null
   mandatory_round_id: string | null
   status: TournamentStatus
   scoring_mode: ScoringMode

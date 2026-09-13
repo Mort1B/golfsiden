@@ -42,6 +42,7 @@ pub async fn save_conditional(
     // Keep the existing round -> current authority -> score lock order. Every
     // receipt replay crosses the same authorization and lifecycle boundary.
     let context = load_round(&mut tx, input.round_id, true).await?;
+    super::reject_match_for_member(&mut tx, input.session_id, &context).await?;
     mutations::require_editable(&context)?;
     validate_owner(&mut tx, &context, input.owner).await?;
     validate_hole(&mut tx, &context, input.hole_id).await?;

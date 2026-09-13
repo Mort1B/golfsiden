@@ -68,7 +68,7 @@ struct MyTournamentRow {
     start_date: NaiveDate,
     end_date: NaiveDate,
     number_of_rounds: i16,
-    counted_rounds: i16,
+    counted_rounds: Option<i16>,
     mandatory_round_id: Option<Uuid>,
     tie_break_policy: crate::domain::models::TournamentTieBreakPolicy,
     status: TournamentStatus,

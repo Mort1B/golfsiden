@@ -1,3 +1,4 @@
+import { finalMatchExplanation } from '../matchPlay/finalRoundExplanation'
 import { overallSelected, overallTieBreak } from '../../api/leaderboards/values'
 import { tieBreakExplanation, tieBreakLabel } from './tieBreakExplanation'
 import { Flag, Radio, Users } from 'lucide-react'
@@ -107,8 +108,9 @@ export function TournamentStandings({ leaderboard, rounds }: { leaderboard: Tour
       {leaderboard.entries.some(entry => entry.value) && <p>Sammenlagtekvivalent: Stableford omregnes til 36 minus poeng på fullt kort, ellers 2 per løste hull minus poeng. Slagspill bidrar med score mot par. Lavest resultat vinner.</p>}
       <div className="standings-heading">
         <div><p>Sammenlagt</p><h2>{metricLabel(leaderboard.metric)} resultat</h2></div>
-        <span>Beste {leaderboard.required_counted_rounds} av {rounds.length}</span>
+        <span>Beste {leaderboard.required_counted_rounds} av {rounds.filter(r => r.scoring_format !== 'singles_match_play').length}</span>
       </div>
+      {finalMatchExplanation(rounds, leaderboard.final_round_number, leaderboard.tie_break_policy) && <p>{finalMatchExplanation(rounds, leaderboard.final_round_number, leaderboard.tie_break_policy)}</p>}
       <p className="leaderboard-tie-policy"><strong>Lik totalscore: {tieBreakLabel(leaderboard.tie_break_policy)}.</strong> {tieBreakExplanation(leaderboard.tie_break_policy)}</p>
       <ol className="leaderboard-list" aria-label={`${metricLabel(leaderboard.metric)} resultat for turneringen`}>
         {leaderboard.entries.map((entry) => (

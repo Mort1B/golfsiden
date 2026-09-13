@@ -6,6 +6,7 @@ export const tournamentLiveEventTypes = [
   'round',
   'team',
   'score',
+  'match',
   'invitation',
   'visibility',
 ] as const

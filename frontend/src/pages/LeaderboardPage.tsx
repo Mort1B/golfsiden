@@ -1,3 +1,6 @@
+import { MatchResults } from './MatchResultsPage'
+import { MatchRound } from '../features/matchPlay/MatchRound'
+import { Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
@@ -47,7 +50,7 @@ export function LeaderboardPage() {
   const roundLeaderboardQuery = useQuery({
     queryKey: leaderboardKeys.round(userId, selectedRound?.id ?? '', metric),
     queryFn: () => api.roundLeaderboard(selectedRound?.id ?? '', tournamentId, metric),
-    enabled: scope === 'round' && selectedRound !== undefined,
+    enabled: scope === 'round' && selectedRound !== undefined && selectedRound.scoring_format !== 'singles_match_play',
   })
   const tournamentLeaderboardQuery = useQuery({
     queryKey: leaderboardKeys.tournament(userId, tournamentId, metric),
@@ -57,7 +60,7 @@ export function LeaderboardPage() {
       loadRounds: () => api.rounds(tournamentId),
       loadLeaderboard: () => api.tournamentLeaderboard(tournamentId, metric),
     }),
-    enabled: scope === 'tournament'
+    enabled: scope === 'tournament' && selectedTournament?.counted_rounds !== null
       && tournamentId.length > 0
       && roundsQuery.data !== undefined
       && !roundsQuery.error,
@@ -81,6 +84,8 @@ export function LeaderboardPage() {
     )
   }
 
+  if (selectedTournament.counted_rounds === null) return <MatchResults tournamentId={tournamentId} />
+
   if (roundsQuery.data) {
     const canonical = leaderboardSearch(tournamentId, scope, selectedRound?.id, metric)
     if (searchParams.toString() !== canonical.toString()) {
@@ -95,6 +100,7 @@ export function LeaderboardPage() {
     nextMetric: typeof metric,
   ) => setSearchParams(leaderboardSearch(nextTournamentId, nextScope, nextRoundId, nextMetric))
 
+  const isMatch = scope === 'round' && selectedRound?.scoring_format === 'singles_match_play'
   const activeQuery = scope === 'round' ? roundLeaderboardQuery : tournamentLeaderboardQuery
 
   return (
@@ -118,6 +124,8 @@ export function LeaderboardPage() {
         onMetricChange={(nextMetric) => setSelection(tournamentId, scope, selectedRound?.id, nextMetric)}
       />
 
+      {rounds.some(r => r.scoring_format === 'singles_match_play') && <Link to={`/tournaments/${tournamentId}/match-results`}>Matchpoeng og historikk</Link>}
+      {isMatch && selectedRound && <MatchRound roundId={selectedRound.id} />}
       {tournamentsQuery.error && tournaments.length > 0 && (
         <ErrorState error={tournamentsQuery.error} onRetry={() => void tournamentsQuery.refetch()} />
       )}
@@ -132,7 +140,7 @@ export function LeaderboardPage() {
         <EmptyState>Turneringen har ingen runder ennå</EmptyState>
       )}
 
-      {activeQuery.isPending
+      {!isMatch && activeQuery.isPending
         && !(scope === 'round' && (roundsQuery.isPending || rounds.length === 0))
         && !(scope === 'tournament' && roundsQuery.error)
         && <LoadingState />}
