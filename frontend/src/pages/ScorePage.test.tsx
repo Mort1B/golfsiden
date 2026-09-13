@@ -24,7 +24,7 @@ function card(scored: number[] = []): ScoringScorecard {
   return { projection: 'scoring', round_id: round.id, owner, number_of_holes: 18,
     gross_total: scored.length * 4, net_total: scored.length * 4, playing_handicap: 0,
     holes_scored: scored.length, complete: scored.length === 18, confirmed: false, confirmed_at: null, confirmed_by: null,
-    holes: Array.from({ length: 18 }, (_, index) => ({ hole_id: `hole-${index + 1}`, hole_number: index + 1, par: 4, stroke_index: index + 1,
+    holes: Array.from({ length: 18 }, (_, index) => ({ hole_id: `hole-${index + 1}`, hole_number: index + 1, par: 4, stroke_index: index + 1, handicap_strokes: 0,
       net_strokes: scored.includes(index + 1) ? 4 : null, score: scored.includes(index + 1) ? {
         id: `score-${index}`, round_id: round.id, hole_id: `hole-${index + 1}`, owner, gross_strokes: 4,
         submitted_by: session.user_id, submitted_at: tournament.created_at, updated_at: tournament.updated_at,

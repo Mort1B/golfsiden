@@ -55,7 +55,7 @@ test('resume fresh gaps, explicit history, quick cards, guarded saves, async sta
     if (fail) { await route.fulfill({ status: 503, json: { error: { code: 'unavailable', message: 'Midlertidig utilgjengelig' } } }); return }
     const requestedOwner = progress.owners.find(item => route.request().url().includes(item.owner.id))?.owner
     if (!requestedOwner) throw new Error('Unexpected card owner')
-    const holes = source.holes.map(hole => ({ ...hole, net_strokes: scored.includes(hole.hole_number) ? hole.par : null,
+    const holes = source.holes.map(hole => ({ ...hole, handicap_strokes: 0, net_strokes: scored.includes(hole.hole_number) ? hole.par : null,
       score: scored.includes(hole.hole_number) ? { id: hole.hole_id, round_id: round.id, hole_id: hole.hole_id, owner: requestedOwner,
         gross_strokes: hole.par, submitted_by: auth.user_id, submitted_at: trip.created_at, updated_at: trip.updated_at } : null }))
     const total = holes.reduce((sum, hole) => sum + (hole.score?.gross_strokes ?? 0), 0)

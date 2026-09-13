@@ -44,6 +44,7 @@ function holeFields(data: Record<string, unknown>, path: string) {
     hole_number: decodeInteger(data.hole_number, `${path}.hole_number`, 1, undefined, 'scorekortdata'),
     par: decodeInteger(data.par, `${path}.par`, 1, undefined, 'scorekortdata'),
     stroke_index: decodeInteger(data.stroke_index, `${path}.stroke_index`, 1, undefined, 'scorekortdata'),
+    handicap_strokes: decodeInteger(data.handicap_strokes, `${path}.handicap_strokes`, -2_147_483_648, 2_147_483_647, 'scorekortdata'),
   }
 }
 

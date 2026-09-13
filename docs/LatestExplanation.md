@@ -1,72 +1,60 @@
-# Automatic recovery when returning to Score
+# Per-hole handicap strokes in Oppsummering
 
-A native Chrome EventSource regression reproduced the reported class of loading
-failure. The test opened a scorecard, ended its live stream, and returned HTTP
-204 on the next connection attempt. Chrome stopped retrying. The app had cleared
-protected completion/read data on disconnect, leaving Score waiting for an
-`open` event that never arrived. Dispatching a persisted page-return event did
-not recover the original implementation; the regression failed after five
-seconds without finding the score input. This establishes a concrete defect,
-not the exact cause on the user's unspecified original device/browser.
+Score → Oppsummering now shows a compact handicap badge beside each hole's
+Par/Index. Positive allocations display `+1`, `+2`, or more; negative allocations
+use `−1`, `−2`, and wording explaining strokes given back. Zero allocations have
+no badge. The indicators appear before scoring and remain separate from the
+recorded gross/net score. Accessible labels include the hole and allocation.
+The shared summary covers player and team cards, including read-only history.
 
-The shared subscription now handles visible-page return, persisted `pageshow`,
-and `online`. It restarts stopped/retrying streams, retains healthy streams,
-ignores superseded-source events, and cleans up return listeners. A deduplicated
-return check refreshes the session before private HTTP reads and rechecks the
-resulting user identity. Ordinary score events still target only score-dependent
-queries and never refresh authentication. No polling or request-timeout rewrite
-was needed for the reproduced cause.
+The backend exposes required signed `handicap_strokes` on every scoring/read
+hole, including confirmation responses. Domain assembly calls the existing
+stroke-index allocator with the same preserved owner playing handicap used for
+net scoring and the full round length. Net is gross minus this exact allocation.
+Read projection copies the field only for visible holes; it never redistributes
+an 18-hole handicap across a nine-hole visible prefix. Individual and foursomes
+snapshots and scramble's preserved member-handicap calculation remain unchanged.
 
-Reconnection also exposed a related lifetime problem: clearing completion could
-unmount the writable score input, losing failed intent and navigation protection.
-The exact already-loaded, authorized writable card now keeps that component
-mounted during temporary progress clearing and transient completion/access errors.
-Its coordinator and confirmation observer survive. Cleared owner names and
-progress are replaced with a generic label and recovery notice; writes, retries,
-confirmation, and card navigation are disabled until recovery. Failed input stays
-discardable. Protected read projections still clear synchronously, and terminal
-authorization errors or authoritative lock/access changes retain existing guards.
+For example, playing handicap 20 over 18 holes displays `+2` at stroke indexes
+1–2 and `+1` elsewhere. A gross 5 on index 1 remains net 3. With playing handicap
+−2, the two strokes given back appear at indexes 17–18. Changing today's profile
+handicap does not change historical allocations.
 
-For example, after a failed attempt to register 4 on hole 8, disconnecting and
-returning keeps that failed 4 visible and guarded. Refreshing completion and access
-does not issue another score write. Once connected, the player can deliberately
-retry or discard it. A read-only card that previously showed hole 18 instead
-hides during disconnect and returns to hole 9 if the refreshed response hides the
-final nine.
-
-Read-only review identified two additional recovery gaps, both resolved: transient
-score-access errors must retain disabled unresolved input, and confirmation retry
-must respect the same recovery/read-only/pending gates as the primary confirm
-button. The final source review found no remaining material issues.
+No migration or scoring-policy change is required. Deploy this backend before
+or alongside the frontend: the new runtime decoder rejects older responses that
+omit the required field. Existing frontend versions ignore the additional field.
 
 ## Validation
 
-- Frontend: `npm run test` passed all 397 tests in 66 files. Regressions cover
-  shared stream lifecycle, return-event cleanup/coalescing, identity-first refresh,
-  failed/queued edits, pending/failed confirmation, access denial, and existing
-  resume/Back/Forward/first-gap behavior.
-- `npm run typecheck`, `npm run lint`, `npm run build`, and strict browser-suite
-  TypeScript compilation passed. Lint has no new warnings. The production build
-  retains the existing greater-than-500-kB bundle advisory (613.72 kB main chunk).
-- All 8 native Chrome browser tests passed using `npx playwright test --config
-  playwright.lifecycle.config.ts returnLoading.browser.ts` from `frontend/`.
-  The suite uses a real local HTTP event stream and controlled, runtime-decoded
-  API fixtures; it needs the local Vite app but no seeded database. Mobile/desktop
-  checks cover 320, 390, and 1280 pixels, screenshots, horizontal overflow,
-  44px controls, click reachability, and console/network errors.
-- Browser scenarios cover all three return events, repeated return with a healthy
-  stream, delayed/error/empty/populated/long-content states, failed-save guards
-  without duplicate writes, expired login, restricted read recovery, denied access,
-  internal navigation, Back/Forward, and reload. Offline/frozen-page and lock-on-
-  return checks are included in the same suite.
-- Backend and PostgreSQL ladders were not applicable: no backend, persistence,
-  migration, scoring formula, or API contract changed. This run did not exercise
-  production Caddy, a real deployed API/database, or physical iPhone/Safari
-  backgrounding/screen lock; those environments were not available in this harness.
-  Persisted-page and visibility events are dispatched in Chrome, rather than
-  claiming physical-device or native back-forward-cache restoration evidence.
+- Backend: formatting passed; the ordinary workspace/all-targets test run passed
+  117 tests; Clippy with all targets/features and warnings denied passed.
+- PostgreSQL 17: the workspace/all-targets database-feature run passed 359 tests
+  (including the 117 unit tests). Forward migrations and seed both succeeded on
+  a disposable local Podman database. API regressions cover individual,
+  scramble, foursomes, profile-handicap changes, confirmation responses, and
+  restricted final-nine projections. Domain cases cover 9/18 holes, reversed
+  indexes, zero/negative/multiple allocations, and scored/unscored owners.
+- Frontend: all 400 tests in 67 files passed. Strict application and browser-suite
+  TypeScript compilation, ESLint, and production build passed. The existing
+  greater-than-500-kB bundle advisory remains (614.41 kB main chunk).
+- All 10 affected Chrome browser scenarios passed: the 2 new summary scenarios
+  and all 8 existing return-to-app scenarios. Run them from `frontend/` with
+  `npx playwright test --config playwright.lifecycle.config.ts
+  handicapSummary.browser.ts returnLoading.browser.ts`. Checks cover 320, 390,
+  and 1280px widths, overflow, accessible labels, 44px hole controls, reachability,
+  long names, scored/unscored and zero/negative allocations, team switching, and
+  restricted views. Screenshots were inspected on mobile and desktop. Existing
+  recovery scenarios cover delayed/error/empty/offline and locked states.
+  Browser console/network assertions passed. Initial new-fixture failures were
+  resolved by supplying valid completion/round contracts and an exact heading
+  locator; no production-code repair was needed.
+- Read-only scoring/contract review found no production-code issues and noted
+  the backend-first deployment requirement recorded above.
 
-**Verdict: READY WITH KNOWN LIMITATIONS.** The concrete stopped-stream regression
-is fixed and input preservation is covered. The user's original device-specific
-cause remains unconfirmed. Per-hole handicap badges and password recovery remain
-separate queued work.
+Browser scenarios use runtime-decoded API fixtures and a real local event stream;
+PostgreSQL tests separately exercise real API handlers and persisted snapshots.
+Production Caddy and physical iPhone/Safari testing are outside this local harness.
+Administrator-assisted password recovery remains queued as a separate step.
+
+**Verdict: READY WITH KNOWN LIMITATIONS.** Local validation and review are complete;
+production/browser environment limits and the existing bundle advisory are recorded above.

@@ -24,12 +24,23 @@ export function ScorecardSummaryView(props: ScorecardSummaryViewProps) {
         <div><dt>Netto</dt><dd>{props.card.holes_scored > 0 ? props.card.net_total : '–'}</dd></div>
         <div><dt>Spille-HCP</dt><dd>{props.card.playing_handicap}</dd></div>
       </dl>
+      {props.card.holes.some(hole => hole.handicap_strokes !== 0) && <p className="handicap-strokes-explanation">
+        {props.card.playing_handicap < 0 ? 'Slag som gis tilbake fra spillehandicap' : 'Ekstra slag fra spillehandicap'}
+      </p>}
       <ol className="scorecard-holes">
         {props.card.holes.map((hole) => (
           <li key={hole.hole_id}>
             <button type="button" disabled={props.disabled} onClick={() => props.onHole(hole.hole_number)}>
               {hole.score ? <CheckCircle2 aria-hidden="true" /> : <Circle aria-hidden="true" />}
-              <span><strong>Hull {hole.hole_number}</strong><small>Par {hole.par} · Index {hole.stroke_index}</small></span>
+              <span><strong>Hull {hole.hole_number}</strong><small className="scorecard-hole-details">
+                Par {hole.par} · Index {hole.stroke_index}
+                {hole.handicap_strokes !== 0 && <span className="hole-handicap" role="img"
+                  aria-label={hole.handicap_strokes > 0
+                    ? `${hole.handicap_strokes} ekstra slag på hull ${hole.hole_number}`
+                    : `${Math.abs(hole.handicap_strokes)} slag gis tilbake på hull ${hole.hole_number}`}>
+                  {hole.handicap_strokes > 0 ? `+${hole.handicap_strokes}` : `−${Math.abs(hole.handicap_strokes)}`}
+                </span>}
+              </small></span>
               <span><strong>{hole.score?.gross_strokes ?? '–'}</strong><small>Netto {hole.net_strokes ?? '–'}</small></span>
             </button>
           </li>

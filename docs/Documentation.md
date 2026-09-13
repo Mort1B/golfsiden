@@ -147,6 +147,14 @@ tournament. Round lookup, session revalidation, membership `FOR SHARE`, and card
 assembly share one repeatable-read transaction; successful responses are
 `private, no-store`.
 
+Every hole in read, scoring, and confirmation responses includes the required
+signed integer `handicap_strokes`. Positive values are strokes received; negative
+values are strokes given back. Allocation is available before a score exists and
+uses the same preserved player/team playing handicap and stroke index as net
+scoring. A restricted nine-hole view still uses the full 18-hole round allocation.
+Deploy the updated backend before or alongside this frontend: the runtime decoder
+rejects older scorecard responses that omit the field. No migration is required.
+
 When the final back nine is hidden, non-admin member reads contain only
 holes 1–9 and totals derived from those holes; authoritative completeness,
 confirmation, and confirmation time are null. The full card is available at the
@@ -167,6 +175,13 @@ hole/summary view in canonical URL parameters. It excludes draft rounds and uses
 completion validation as the stable authority for eligible players or teams.
 Gross and net values always come from decoded backend scorecards; the browser
 does not duplicate handicap calculations.
+
+Under **Oppsummering**, each hole with a nonzero handicap allocation shows a small
+`+1`, `+2`, or larger badge beside Par/Index. Negative allocations show `−1`, `−2`,
+and wording explaining strokes given back. Zero allocations have no badge.
+Indicators appear on unscored holes as well as recorded scores, for both players
+and teams, and remain separate from gross/net score values. Accessible labels
+include the hole and number of strokes received or given back.
 
 The main **Score** navigation resumes the last successfully loaded tournament,
 round, and player/team in the current mounted application session. It waits for

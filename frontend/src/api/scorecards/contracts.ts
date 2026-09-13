@@ -22,6 +22,7 @@ interface ScorecardHoleBase {
   hole_number: number
   par: number
   stroke_index: number
+  handicap_strokes: number
   net_strokes: number | null
 }
 

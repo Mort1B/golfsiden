@@ -18,6 +18,7 @@ pub struct ScorecardReadHole {
     pub hole_number: i16,
     pub par: i16,
     pub stroke_index: i16,
+    pub handicap_strokes: i32,
     pub score: Option<ScorecardReadScore>,
     pub net_strokes: Option<i32>,
 }
@@ -53,6 +54,7 @@ pub fn read_projection(
             hole_number: hole.hole_number,
             par: hole.par,
             stroke_index: hole.stroke_index,
+            handicap_strokes: hole.handicap_strokes,
             score: hole.score.as_ref().map(|score| ScorecardReadScore {
                 id: score.id,
                 gross_strokes: score.gross_strokes,

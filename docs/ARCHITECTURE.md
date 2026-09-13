@@ -358,6 +358,12 @@ and reapplies runtime grants before the API is started.
   repeats exact writable-owner authorization and returns the full mutation DTO;
   it is non-locking and unavailable once the round is locked. Read and scoring
   projections have separate session-owned frontend cache keys.
+- Both scorecard hole contracts expose required signed `handicap_strokes`, even
+  before score entry. Domain assembly uses the existing stroke-index allocator
+  with the preserved owner playing handicap and full configured round length;
+  the same value is subtracted from gross for net. Read redaction copies this
+  allocation only for visible holes, without reallocating over the visible prefix.
+  The shared React summary renders the decoded value without a client formula.
 - Transaction-local lifecycle settings route application writes through the
   expected integrity paths; they are not an authorization boundary. The
   least-privilege runtime role prevents ordinary API connections from using

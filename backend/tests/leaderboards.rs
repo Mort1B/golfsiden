@@ -273,6 +273,12 @@ async fn foursomes_round_and_tournament_leaderboards_use_preserved_team_snapshot
     }
     round_completion::complete(&pool, ROUND_TWO).await.unwrap();
 
+    sqlx::query("UPDATE players SET current_handicap_index = 50 WHERE id = ANY($1)")
+        .bind(vec![PLAYER_A, PLAYER_B, PLAYER_PLUS, PLAYER_D])
+        .execute(&pool)
+        .await
+        .unwrap();
+
     let app = api::router(AppState::new(pool));
     let (status, response) = get(&app, format!("/api/rounds/{ROUND_TWO}/leaderboards/net")).await;
     assert_eq!(status, StatusCode::OK);
@@ -287,6 +293,24 @@ async fn foursomes_round_and_tournament_leaderboards_use_preserved_team_snapshot
         .unwrap();
     assert_eq!(low_pair["playing_handicap"], 14);
     assert_eq!(mixed_pair["playing_handicap"], 2);
+
+    for (team, allocation) in [(TEAM_TWO_A, 7), (TEAM_TWO_B, 1)] {
+        for suffix in ["", "/scoring"] {
+            let (status, card) = get(
+                &app,
+                format!("/api/rounds/{ROUND_TWO}/scorecards/team/{team}{suffix}"),
+            )
+            .await;
+            assert_eq!(status, StatusCode::OK);
+            assert!(
+                card["holes"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|hole| hole["handicap_strokes"] == allocation)
+            );
+        }
+    }
 
     let (status, tournament) = get(
         &app,

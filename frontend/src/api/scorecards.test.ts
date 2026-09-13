@@ -30,6 +30,7 @@ describe('scorecard boundaries', () => {
         hole_number: 1,
         par: 4,
         stroke_index: 1,
+        handicap_strokes: 1,
         score: {
           id: '00000000-0000-0000-0000-000000009001',
           round_id: roundId,
@@ -54,6 +55,11 @@ describe('scorecard boundaries', () => {
     }
     const card = decodeScoringScorecard(response, roundId, owner)
     expect(card.holes[0]?.score?.gross_strokes).toBe(5)
+    expect(card.holes[0]?.handicap_strokes).toBe(1)
+    for (const handicap_strokes of [undefined, null, '1', 1.5, Infinity, 2_147_483_648]) {
+      expect(() => decodeScoringScorecard({ ...response,
+        holes: [{ ...response.holes[0], handicap_strokes }] }, roundId, owner)).toThrow('handicap_strokes')
+    }
     expect(() => decodeScoringScorecard({ ...response, round_id: secondPlayerId }, roundId, owner)).toThrow('identity')
     expect(() => decodeScoringScorecard({
       ...response,
@@ -67,6 +73,7 @@ describe('scorecard boundaries', () => {
       hole_number: index + 1,
       par: 4,
       stroke_index: index + 10,
+      handicap_strokes: 1,
       score: index === 0 ? { id: '00000000-0000-0000-0000-000000009001', gross_strokes: 5 } : null,
       net_strokes: index === 0 ? 4 : null,
     }))
@@ -76,7 +83,7 @@ describe('scorecard boundaries', () => {
       holes,
       gross_total: 5,
       net_total: 4,
-      playing_handicap: 9,
+      playing_handicap: 18,
       holes_scored: 1,
       number_of_holes: 18,
       visible_hole_count: 9,
@@ -86,6 +93,13 @@ describe('scorecard boundaries', () => {
       visibility: { mode: 'front_nine' },
     }
     expect(decodeReadScorecard(response, roundId, owner).holes).toHaveLength(9)
+    expect(decodeReadScorecard(response, roundId, owner).holes[8]?.handicap_strokes).toBe(1)
+    for (const handicap_strokes of [undefined, null, '1', -0.5]) {
+      expect(() => decodeReadScorecard({ ...response, holes: response.holes.map(hole => ({ ...hole, handicap_strokes })) }, roundId, owner))
+        .toThrow('handicap_strokes')
+    }
+    expect(decodeReadScorecard({ ...response, holes: holes.map(hole => ({ ...hole, handicap_strokes: -1 })) }, roundId, owner)
+      .holes[0]?.handicap_strokes).toBe(-1)
     expect(() => decodeReadScorecard({ ...response, confirmed: false }, roundId, owner)).toThrow('visibility')
     expect(() => decodeReadScorecard({ ...response, confirmed_by: userId }, roundId, owner)).toThrow('confirmed_by')
     expect(() => decodeReadScorecard({

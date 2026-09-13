@@ -6,53 +6,9 @@ belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-No active implementation step. The next candidate requires a new implementation
-request; account recovery remains queued after it.
+None. The next candidate requires its account-recovery authority decision before activation.
 
-## Next candidate: per-hole handicap strokes in Score → Oppsummering
-
-**Goal and scope:** Show each selected player's or team's allocated strokes beside
-the hole metadata in the existing summary, for individual stroke play, scramble,
-and foursomes. Keep the first UI change within the shared summary component;
-expanding the individual hole-entry screen is separate work.
-
-**Behavior:**
-
-- Place a compact `+1`, `+2`, or higher badge beside `Par … · Index …`, separate
-  from gross/net scores so it cannot be mistaken for strokes over par. Include
-  a short explanation, “Ekstra slag fra spillehandicap,” and an accessible label
-  such as “2 ekstra slag på hull 1.” Show allocations before any score is entered.
-- Omit zero badges. For a negative playing handicap, show a signed `−1` (or lower)
-  with wording explaining strokes given back, rather than calling them extra.
-- Extend scoring and read scorecard hole contracts with a required signed integer
-  `handicap_strokes`, calculated in the backend from the existing
-  `handicap_strokes_for_hole` domain function. Use the same owner playing handicap
-  used for net scoring and the full configured hole count; do not derive the
-  value from gross minus net or duplicate the formula in React.
-- Preserve the field through the read projection only for visible holes. Update
-  TypeScript contracts, runtime decoders, response fixtures, and API coverage
-  together. No schema change is expected.
-
-**Invariants:** Use the preserved round/player or team handicap treatment already
-used by the scorecard. Never use today's profile handicap or allocate team strokes
-to members separately. Do not change scoring, snapshots, totals, team membership,
-locked-round behavior, or reveal embargoed holes. Allocation uses the actual
-round length even when a read projection displays only nine holes.
-
-**Validation:** Cover zero, negative, and multiple strokes per hole; 9/18-hole
-rounds; reordered stroke indexes; individual and both team formats; unscored and
-completed cards; owner switching; historical profile-handicap changes; and
-restricted read projections. Example: playing handicap 20 over 18 holes gives
-`+2` on indexes 1-2 and `+1` elsewhere. Run the backend/PostgreSQL and frontend
-ladders applicable to the scorecard contract, read-only scoring/handicap review,
-and mobile/desktop browser checks for readability, long names, accessibility,
-and relevant async states.
-
-**Stop condition:** Summary badges agree with net-score allocation for all covered
-owners and visibility states; review, validation, documentation, and publication
-are resolved. Do not begin recovery work.
-
-## Queued candidate: administrator-assisted password recovery without email
+## Next candidate: administrator-assisted password recovery without email
 
 **Goal and scope:** Let an authorized organizer create a reset link for a specific
 existing player account and share it privately using their own SMS/chat channel.

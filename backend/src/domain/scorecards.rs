@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use uuid::Uuid;
 
-use super::scoring::{ScoringError, hole_net_score};
+use super::scoring::{ScoringError, handicap_strokes_for_hole};
 
 mod projection;
 pub use projection::{ScorecardReadProjection, read_projection};
@@ -58,6 +58,7 @@ pub struct ScorecardHole {
     pub hole_number: i16,
     pub par: i16,
     pub stroke_index: i16,
+    pub handicap_strokes: i32,
     pub score: Option<ScoreEntry>,
     pub net_strokes: Option<i32>,
 }
@@ -102,18 +103,15 @@ pub fn summarize(
     let mut holes_scored = 0;
     let mut holes = Vec::with_capacity(number_of_holes);
     for source in sources {
+        let handicap_strokes = handicap_strokes_for_hole(
+            playing_handicap,
+            i32::from(source.stroke_index),
+            i32::from(expected_number_of_holes),
+        )?;
         let net_strokes = source
             .score
             .as_ref()
-            .map(|score| {
-                hole_net_score(
-                    i32::from(score.gross_strokes),
-                    playing_handicap,
-                    i32::from(source.stroke_index),
-                    number_of_holes as i32,
-                )
-            })
-            .transpose()?;
+            .map(|score| i32::from(score.gross_strokes) - handicap_strokes);
         if let Some(score) = &source.score {
             holes_scored += 1;
             gross_total += i32::from(score.gross_strokes);
@@ -126,6 +124,7 @@ pub fn summarize(
             hole_number: source.hole_number,
             par: source.par,
             stroke_index: source.stroke_index,
+            handicap_strokes,
             score: source.score,
             net_strokes,
         });
@@ -203,6 +202,80 @@ mod tests {
                 submitted_at: Utc::now(),
                 updated_at: Utc::now(),
             }),
+        }
+    }
+
+    #[test]
+    fn hole_allocations_are_present_before_scoring_and_preserved_in_read_projections() {
+        let cases = [
+            (
+                18,
+                20,
+                vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2],
+            ),
+            (9, 11, vec![1, 1, 1, 1, 1, 1, 1, 2, 2]),
+            (18, 0, vec![0; 18]),
+            (
+                18,
+                -2,
+                vec![-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ),
+            (9, -11, vec![-2, -2, -1, -1, -1, -1, -1, -1, -1]),
+            (9, 28, vec![3, 3, 3, 3, 3, 3, 3, 3, 4]),
+        ];
+        for (count, handicap, expected) in cases {
+            for owner in [
+                ScoreOwner::Player {
+                    id: Uuid::from_u128(2),
+                },
+                ScoreOwner::Team {
+                    id: Uuid::from_u128(3),
+                },
+            ] {
+                for gross in [None, Some(5)] {
+                    let sources = (1..=count)
+                        .map(|number| {
+                            let mut hole = source(number, count + 1 - number, gross);
+                            if let Some(score) = &mut hole.score {
+                                score.owner = owner;
+                            }
+                            hole
+                        })
+                        .collect();
+                    let summary =
+                        summarize(Uuid::from_u128(1), owner, handicap, count, sources, None)
+                            .unwrap();
+                    assert_eq!(
+                        summary
+                            .holes
+                            .iter()
+                            .map(|hole| hole.handicap_strokes)
+                            .collect::<Vec<_>>(),
+                        expected
+                    );
+                    assert_eq!(expected.iter().sum::<i32>(), handicap);
+                    for (hole, allocation) in summary.holes.iter().zip(&expected) {
+                        assert_eq!(
+                            hole.net_strokes,
+                            gross.map(|value| i32::from(value) - allocation)
+                        );
+                    }
+                    let visible = if count == 18 {
+                        VisibilityMode::FrontNine
+                    } else {
+                        VisibilityMode::Full
+                    };
+                    let read = read_projection(summary, VisibilityMetadata { mode: visible });
+                    assert_eq!(read.number_of_holes, count as usize);
+                    assert_eq!(
+                        read.holes
+                            .iter()
+                            .map(|hole| hole.handicap_strokes)
+                            .collect::<Vec<_>>(),
+                        expected[..9]
+                    );
+                }
+            }
         }
     }
 

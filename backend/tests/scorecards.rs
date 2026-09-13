@@ -405,6 +405,13 @@ async fn individual_api_saves_corrects_confirms_and_preserves_true_noops(pool: P
     let confirmed_body = response_json(confirmed).await;
     assert_eq!(confirmed_body["gross_total"], 10);
     assert_eq!(confirmed_body["net_total"], 8);
+    assert!(
+        confirmed_body["holes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|hole| hole["handicap_strokes"] == 1)
+    );
     assert_eq!(confirmed_body["confirmed"], true);
     assert_eq!(confirmed_body["confirmed_by"], USER_B.to_string());
 
@@ -423,7 +430,15 @@ async fn individual_api_saves_corrects_confirms_and_preserves_true_noops(pool: P
         ))
         .await
         .unwrap();
-    assert_eq!(response_json(preserved).await["net_total"], 8);
+    let preserved = response_json(preserved).await;
+    assert_eq!(preserved["net_total"], 8);
+    assert!(
+        preserved["holes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|hole| hole["handicap_strokes"] == 1)
+    );
 
     let mut noop_events = state.live_events.subscribe();
     let reconfirmed = app
@@ -488,6 +503,19 @@ async fn team_summary_and_api_conflicts_are_format_and_round_specific(pool: PgPo
     let body = response_json(summary).await;
     assert_eq!(body["playing_handicap"], 2);
     assert_eq!(body["net_total"], 3);
+    assert!(
+        body["holes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|hole| hole["handicap_strokes"] == 1)
+    );
+    assert!(body["holes"][1]["score"].is_null());
+    sqlx::query("UPDATE players SET current_handicap_index = 50 WHERE id = $1")
+        .bind(PLAYER_B)
+        .execute(&pool)
+        .await
+        .unwrap();
 
     for user in [USER_B, PLAYER_USER_A, PLAYER_USER_B] {
         let scoring = app
@@ -502,11 +530,14 @@ async fn team_summary_and_api_conflicts_are_format_and_round_specific(pool: PgPo
             .unwrap();
         assert_eq!(scoring.status(), StatusCode::OK, "user {user}");
         assert_eq!(scoring.headers()["cache-control"], "private, no-store");
+        let scoring = response_json(scoring).await;
+        assert!(scoring.to_string().contains("submitted_by"));
         assert!(
-            response_json(scoring)
-                .await
-                .to_string()
-                .contains("submitted_by")
+            scoring["holes"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|hole| hole["handicap_strokes"] == 1)
         );
     }
     for user in [PLAYER_USER_C, VIEWER_USER] {

@@ -12,7 +12,7 @@ export function scorecard(): ScoringScorecard {
     complete: false, confirmed: false, confirmed_at: null, confirmed_by: null,
     holes: Array.from({ length: 18 }, (_, i) => ({
       hole_id: `00000000-0000-0000-0001-${String(i + 1).padStart(12, '0')}`,
-      hole_number: i + 1, par: 4, stroke_index: i + 1, net_strokes: null, score: null,
+      hole_number: i + 1, par: 4, stroke_index: i + 1, handicap_strokes: 0, net_strokes: null, score: null,
     })) }
 }
 

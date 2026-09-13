@@ -217,6 +217,14 @@ async fn open_final_round_redacts_reads_but_exact_scoring_projection_stays_full(
         assert_eq!(cache, "private, no-store");
         assert_eq!(body["visibility"]["mode"], "front_nine");
         assert_eq!(body["visible_hole_count"], 9);
+        assert_eq!(body["number_of_holes"], 18);
+        assert!(
+            body["holes"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|hole| hole["handicap_strokes"] == 1)
+        );
         assert_eq!(body["gross_total"], 5);
         assert!(body["complete"].is_null() && body["confirmed"].is_null());
         assert!(!body.to_string().contains("submitted_by"));
