@@ -1,0 +1,18 @@
+.player-recovery { padding: 0 12px 12px; }
+.player-recovery, .recovery-form, .recovery-link { min-width: 0; }
+.player-recovery button, .recovery-page a, .forgot-password summary { min-height: 44px; padding: 10px 12px; }
+.player-recovery button { border: 1px solid #b8c8be; border-radius: 6px; background: #fff; color: #176640; font-weight: 700; }
+.player-recovery button:disabled { opacity: .6; }
+.player-recovery button:focus-visible, .player-recovery input:focus-visible, .recovery-page a:focus-visible, .forgot-password summary:focus-visible { outline: 3px solid #63a984; outline-offset: 2px; }
+.recovery-form, .recovery-link { display: grid; gap: 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #d8ded8; font-size: .86rem; line-height: 1.5; overflow-wrap: anywhere; }
+.recovery-form form, .recovery-form label { display: grid; gap: 8px; }
+.recovery-form input { min-width: 0; width: 100%; min-height: 48px; padding: 10px; border: 1px solid #aeb8b1; border-radius: 6px; }
+.recovery-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.recovery-actions button { flex: 1 1 150px; }
+.recovery-form [role="alert"] { color: #7d241d; }
+.recovery-page .sign-in-panel { display: grid; gap: 18px; overflow-wrap: anywhere; }
+.recovery-page .sign-in-panel h1 { margin-bottom: 0; }
+.recovery-page a { display: flex; align-items: center; text-decoration: underline; color: #176640; }
+.forgot-password { margin-top: 22px; font-size: .88rem; line-height: 1.5; }
+.forgot-password summary { cursor: pointer; color: #176640; font-weight: 700; }
+.forgot-password p { margin-top: 10px; }

@@ -1,3 +1,6 @@
+mod recovery;
+pub use recovery::RecoveryOrigin;
+
 use std::env;
 
 use axum::http::{HeaderValue, Uri};
@@ -60,6 +63,7 @@ struct RawConfig {
     session_cookie_secure: Option<String>,
     session_ttl_hours: Option<String>,
     cors_allowed_origin: Option<String>,
+    reset_password_origin: Option<String>,
     course_provider_api_key: Option<String>,
     course_provider_daily_limit: Option<String>,
     proxy_shared_secret: Option<String>,
@@ -77,6 +81,7 @@ impl Config {
             session_cookie_secure: env::var("SESSION_COOKIE_SECURE").ok(),
             session_ttl_hours: env::var("SESSION_TTL_HOURS").ok(),
             cors_allowed_origin: env::var("CORS_ALLOWED_ORIGIN").ok(),
+            reset_password_origin: env::var("RESET_PASSWORD_ORIGIN").ok(),
             course_provider_api_key: env::var("GOLF_COURSE_API_KEY").ok(),
             course_provider_daily_limit: env::var("GOLF_COURSE_API_DAILY_LIMIT").ok(),
             proxy_shared_secret: env::var("PROXY_SHARED_SECRET").ok(),
@@ -143,6 +148,13 @@ impl Config {
                 cookie_secure,
                 session_ttl_hours,
                 cors_allowed_origin,
+                recovery_origin: raw
+                    .reset_password_origin
+                    .map(|value| {
+                        RecoveryOrigin::parse(&value, environment == AppEnvironment::Development)
+                            .map_err(|_| invalid("RESET_PASSWORD_ORIGIN", "invalid origin"))
+                    })
+                    .transpose()?,
             },
             course_provider: CourseProviderConfig {
                 api_key: optional_secret(raw.course_provider_api_key),

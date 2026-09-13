@@ -19,3 +19,5 @@ pub mod tournament_creation;
 pub mod tournament_plan;
 pub mod tournament_visibility;
 pub mod tournaments;
+
+pub mod password_recovery;

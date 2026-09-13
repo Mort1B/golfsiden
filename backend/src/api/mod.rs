@@ -6,6 +6,7 @@ mod invitations;
 mod leaderboards;
 mod live;
 mod onboarding;
+mod password_recovery;
 mod profile;
 mod rounds;
 mod scorecards;
@@ -34,6 +35,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/api/ready", get(ready))
         .merge(auth::routes())
         .merge(profile::routes())
+        .merge(password_recovery::routes())
         .merge(course_catalog::routes())
         .merge(course_provider::routes())
         .merge(invitations::routes())

@@ -47,6 +47,10 @@ Set every placeholder in that file. In particular:
 openssl rand -base64 32 | tr '+/' '-_' | tr -d '='
 ```
 
+- set `RESET_PASSWORD_ORIGIN` to the exact public HTTPS origin, for example
+  `https://golf.example.com`, without a trailing slash, path, query or fragment;
+  use the same trusted hostname as `SITE_ADDRESS`; recovery links never use a
+  request's Host header;
 - choose an immutable `GOLFSIDEN_IMAGE_TAG`, normally the release Git SHA;
 - leave `GOLF_COURSE_API_KEY` empty unless provider detail is required; the key
   is backend-only and must never be put in Vite variables or browser code.
@@ -74,7 +78,8 @@ curl --fail https://YOUR_HOST/api/ready
 
 Run `migrate` a second time if an idempotence check is wanted; it must report the
 schema current. Never run the development `seed` binary in production. The
-production API image deliberately contains only `golf-api` and `migrate`.
+production API image contains `golf-api`, `migrate`, and the operator-only
+`password-recovery` command; it excludes `seed`.
 
 The PostgreSQL initialization image creates the runtime login only on a new
 volume. The owner performs migrations. The `permissions` action must run after
@@ -184,6 +189,35 @@ a designated test account, never by changing an operator's real password as an
 implicit deployment check. This implementation was validated on disposable
 PostgreSQL only and does not itself deploy or migrate production.
 
+### Schema 24 password recovery
+
+Migration 0024 adds recovery grants, append-only outcomes and authority history.
+It preserves existing accounts, passwords, valid sessions and all tournament
+facts. Recovery becomes available through the matching API/frontend; existing
+administrator accounts require the site operator's packaged CLI below.
+
+Before using any commands with the updated Compose file, add
+`RESET_PASSWORD_ORIGIN=https://YOUR_HOST` to the private runtime file: Compose
+requires it even when starting only a tools service. Back up, migrate with owner
+authority, refresh runtime permissions and deploy matching API/frontend. Keep
+`RUN_MIGRATIONS=false`. The runtime role must neither own the recovery tables nor
+inherit their owner role; startup rejects that authority. Broad runtime DML grants
+do not permit operator provenance or rewriting recovery/audit history.
+
+Recreate PostgreSQL during this upgrade to apply the Compose logging settings:
+`log_parameter_max_length=0`, `log_parameter_max_length_on_error=0` and
+`log_error_verbosity=terse`. These retain slow-query timings and basic errors
+without bind values or row details that could reveal password/token hashes. This
+reduces diagnostic detail deliberately; do not re-enable detailed logging around
+real credentials. A plain container restart does not adopt changed Compose
+command arguments; the normal `up -d postgres` action recreates when needed.
+
+Schema-23 binaries cannot serve schema 24. Use the pre-upgrade backup and
+fresh-volume restoration for rollback. Validate `/api/ready`, existing login and
+a representative tournament read. Exercise reset only with a designated test
+account, never an operator's real password as an implicit deployment check.
+This implementation does not deploy or recover production accounts itself.
+
 ### Upgrade sequence
 
 Before every upgrade:
@@ -276,6 +310,74 @@ After restore, verify at least:
 
 Loss or replacement of API/web containers does not affect tournament data. Loss
 of the PostgreSQL volume requires this off-host restore procedure.
+
+## Administrator and unlinked account recovery
+
+Use this flow for administrator accounts, a sole organizer, unlinked accounts or
+players without an eligible tournament organizer. First verify the person's
+identity using a known channel and establish the exact account UUID. Use owner
+access for a narrowly targeted lookup, for example this psql query with a supplied
+`account_username` variable, and verify the returned identity before proceeding:
+
+```sql
+SELECT id, username, player_id FROM users WHERE username = :'account_username';
+```
+
+The CLI does not choose or accept a new password and does not assign web roles.
+It requires the actual migration/table-owner database connection (or database
+superuser), an exact account UUID and a 1–500-character audit reason. Runtime API
+credentials are intentionally insufficient. Reasons should describe the
+verification/action without contact details, passwords or tokens.
+
+The production API image contains the command. Reuse the tools service's owner
+connection and private network, overriding its entrypoint. Replace `ACCOUNT_UUID`
+and `https://YOUR_HOST` below; the origin must equal the configured public origin.
+The private output directory is temporary and readable only by the current host
+operator. Running with that operator's UID/GID lets the container create a private
+file that the operator can read without making it public:
+
+```bash
+recovery_output_dir="$(mktemp -d "${TMPDIR:-/tmp}/golfsiden-recovery.XXXXXX")"
+chmod 700 "$recovery_output_dir"
+docker compose --env-file .env.production -f compose.production.yml --profile tools run --rm \
+  --user "$(id -u):$(id -g)" \
+  --entrypoint /usr/local/bin/password-recovery \
+  --env RESET_PASSWORD_ORIGIN=https://YOUR_HOST \
+  --volume "${recovery_output_dir}:/recovery-output:Z" \
+  migrate issue ACCOUNT_UUID "Identity verified through known contact channel" /recovery-output/link.txt
+```
+
+The command creates a new mode-0600 file and never overwrites an existing file.
+It prints only success/failure guidance, never the link, to command output. Open
+`$recovery_output_dir/link.txt` privately and share its contents only with the
+verified account holder through your existing contact channel. Do not paste it
+into a shared terminal transcript or issue. Remove the local file and empty
+directory after delivery:
+
+```bash
+rm -- "$recovery_output_dir/link.txt"
+rmdir -- "$recovery_output_dir"
+```
+
+The link lasts 30 minutes, previews without consumption and uses the normal public
+reset page. Issuing another link replaces earlier grants for the account. If a
+private-output write fails after issuance, the command revokes that exact new
+grant; a reported revocation failure requires the explicit revoke command below.
+An empty output file from an earlier failure must be removed or replaced with a
+new path before retrying. Revocation needs no saved link:
+
+```bash
+docker compose --env-file .env.production -f compose.production.yml --profile tools run --rm \
+  --entrypoint /usr/local/bin/password-recovery \
+  migrate revoke ACCOUNT_UUID "Recovery cancelled after contact verification"
+```
+
+Operator grants record explicit operator provenance and database actor in retained
+issue/replace/revoke/redeem audit events. Grant identity and terminal outcomes are
+immutable. Redemption invalidates all target sessions through credential
+generation without touching unrelated sessions, tournament membership, historical
+scores or handicap snapshots. Never edit password hashes, disable guards or
+invent a web administrator account as a recovery shortcut.
 
 ## Secret and credential changes
 

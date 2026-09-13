@@ -275,6 +275,9 @@ account and 40 per client per minute; creator onboarding allows 3/6 per hour;
 invitation preview allows 30/100 per minute; registration allows 5/20 per ten
 minutes; authenticated invitation acceptance allows 10/40 per minute; profile
 credential changes share a 5-per-client/account and 20-per-client minute limit.
+Recovery issue/revoke share a separate 5-per-client/issuer and 20-per-client
+minute limit; public preview allows 30-per-client/grant and 60-per-client per
+minute, while redemption allows 5/20 per ten minutes.
 Rejected requests return the stable `rate_limited` JSON error, `429`,
 `Retry-After`, and `Cache-Control: no-store`. A narrow-key rejection does not
 charge the broad bucket, stale buckets are evicted, storage is capped, and the
@@ -374,7 +377,7 @@ when a section is collapsed.
   occupied usernames are rejected. Use the new username at the next login.
   Existing sessions remain active.
 - **Password:** the current password and repeated new password are required in
-  the UI. Normal guidance suggests a long password or phrase. Profile, creator
+  the UI. Normal guidance suggests a long password or phrase. Profile, password recovery, creator
   onboarding, and invitation registration use the same validator: the account
   contract remains 12–128 UTF-8 bytes, with spaces preserved. Too-short/too-long
   messages explain the applicable byte limit and how to adjust the password;
@@ -404,6 +407,87 @@ Refresh/retry reads authoritative state and may replace unsaved form fields.
 After an uncertain response, refresh before retrying; if a password change may
 have committed, try signing in with the new password. Email, avatars, account
 deletion, recovery and editing someone else's account are outside this page.
+
+## Forgotten passwords without email
+
+On sign-in, **Glemt passord?** explains how to contact a known tournament
+organizer. The organizer verifies the player's identity through an existing
+contact channel, opens the tournament's **Spillere** list, and chooses **Hjelp
+med glemt passord** for that player. They enter their own current password and
+choose **Lag lenke for nytt passord**. The app displays a link once, with expiry,
+**Kopier lenke**, manual copying if clipboard permission is denied, and **Skjul
+lenken**. The organizer shares it privately using their own SMS/chat channel;
+there is no email or messaging integration.
+
+Tournament administrators may recover ordinary players only in their own
+tournament, with an active linked player, active enrollment and membership.
+An account with a global admin role or admin membership in any tournament needs
+the site operator, including sole organizers and self-recovery. Ineligible
+requests receive a generic refusal; other tournament memberships are not shown.
+Unlinked accounts and players without an eligible organizer also use the
+[operator procedure](deployment_guide.md#administrator-and-unlinked-account-recovery).
+A reset changes the shared account password across every tournament.
+
+Links last 30 minutes and can be used once. Creating one does not change the
+password or end sessions; issuing a replacement invalidates older links for the
+account. **Tilbakekall lenker**, confirmed with the organizer's password, revokes
+outstanding grants in that tournament context even after the displayed receipt
+was closed or lost. Refreshing permissions/roster, navigating away, or changing
+identity clears the displayed receipt; a late response cannot restore it.
+
+The recipient opens the link, enters and repeats a new password, then uses normal
+sign-in. Previewing the link does not consume it. Passwords follow the shared
+12–128 UTF-8-byte policy with spaces preserved. Successful reset invalidates the
+target account's existing sessions on every device. An unrelated account already
+signed in in the same browser stays signed in; the success page still offers
+**Gå til innlogging**. An expired, used, replaced, revoked or otherwise ineligible
+link displays the same request-a-new-link message. If submission has an uncertain
+network outcome, try normal sign-in with the new password before requesting a new
+link. The token is removed from browser history after capture; reloading that
+clean URL requires reopening the original private link.
+
+Administrator grants become invalid when relevant authority, membership,
+enrollment or account/player links change, even when later restored. A password
+change also invalidates them; username-only changes do not. Existing account IDs,
+players, memberships, teams, scores and handicap snapshots are preserved.
+
+Recovery requires schema 24 and `RESET_PASSWORD_ORIGIN`, the exact HTTPS site
+origin without a trailing slash or path, e.g. `https://golf.example.com`.
+Development may use `http://127.0.0.1:5173` with `APP_ENV=development`. Missing
+origin disables issuance with 503; invalid configured origins fail startup.
+Production Compose requires this value. See the deployment guide before upgrade.
+
+All endpoints below use POST, reject unknown fields, enforce a 4 KiB body limit,
+and return `Cache-Control: private, no-store` and `Referrer-Policy: no-referrer`.
+Administrator requests require the existing session cookie and CSRF header.
+
+| Endpoint | Body | Success |
+| --- | --- | --- |
+| `/api/tournaments/{tournament_id}/players/{player_id}/password-recovery` | `current_password` | 201 with `id`, `expires_at`, `reset_url` |
+| Same path plus `/revoke` | `current_password` | 204 |
+| `/api/auth/password-recovery/{grant_id}/preview` | `token` | 200 with `id`, `expires_at`; no account information |
+| `/api/auth/password-recovery/{grant_id}/redeem` | `token`, `new_password`, `confirm_password` | 204; no session creation or cookie changes |
+
+Invalid capabilities return `409 password_recovery_invalid`; incorrect issuer
+password returns `409 current_password_incorrect`. Other errors retain the
+established JSON shape: malformed input 400, unauthenticated admin 401,
+CSRF/authority failure 403, oversized body 413, throttling 429 and unavailable
+configuration 503. Tokens belong in POST bodies and the private link fragment,
+never API paths, query strings, logs or public messages.
+
+For repeatable Chrome validation, start a disposable migrated/seeded backend
+with the development origin above, start Vite on port 5173, then run from
+`frontend/`:
+
+```bash
+GOLF_RECOVERY_BROWSER=1 npx playwright test --config playwright.lifecycle.config.ts passwordRecovery.browser.ts
+```
+
+The suite creates disposable organizer/player accounts and performs real issue,
+copy, reset, session rejection, login and revocation. It also checks controlled
+loading/error/expired states, clipboard denial and 320/390/1280px layouts. Reset
+URLs are masked in screenshots and traces are disabled. Never point it at a
+retained or production database.
 
 ## Creator onboarding
 

@@ -20,6 +20,7 @@ pub struct AuthConfig {
     pub cookie_secure: bool,
     pub session_ttl_hours: i64,
     pub cors_allowed_origin: Option<axum::http::HeaderValue>,
+    pub recovery_origin: Option<crate::config::RecoveryOrigin>,
 }
 
 impl AuthConfig {
@@ -28,6 +29,7 @@ impl AuthConfig {
             cookie_secure: false,
             session_ttl_hours: 24,
             cors_allowed_origin: None,
+            recovery_origin: None,
         }
     }
 }

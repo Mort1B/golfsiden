@@ -10,7 +10,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const sessionQuery = useQuery({
     queryKey: authKeys.session,
-    queryFn: () => resolveSessionTransition(queryClient, api.session),
+    queryFn: ({ signal }) => resolveSessionTransition(queryClient, api.session, signal),
     retry: false,
     staleTime: 30_000,
   })

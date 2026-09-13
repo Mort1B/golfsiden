@@ -7,6 +7,7 @@ import { tournamentKeys } from '../../api/tournaments'
 import type { TournamentPlayer, TournamentPlayerRoster } from '../../api/types'
 import { EmptyState, ErrorState, LoadingState } from '../../ui/AsyncState'
 import { useAuth } from '../auth/authContext'
+import { PlayerRecovery } from '../recovery/PlayerRecovery'
 import { formatHandicap, parseHandicap } from '../handicap/format'
 
 interface TournamentPlayerSectionProps {
@@ -16,6 +17,7 @@ interface TournamentPlayerSectionProps {
   pending: boolean
   error: Error | null
   onRetry: () => void
+  recoveryAccessPending: boolean
   adminAccessPending: boolean
   adminAccessError: Error | null
 }
@@ -153,6 +155,9 @@ export function TournamentPlayerSection(props: TournamentPlayerSectionProps) {
                     <button type="submit" disabled={correction.isPending}><CheckCircle2 aria-hidden="true" /> {correction.isPending ? 'Lagrer …' : 'Lagre korrigering'}</button>
                   </div>
                 </form>
+              )}
+              {props.isAdmin && !props.recoveryAccessPending && !props.adminAccessPending && !props.adminAccessError && !props.pending && !props.error && auth.session && player.player_id !== auth.session.player_id && (
+                <PlayerRecovery key={`${auth.session.user_id}:${auth.session.csrf_token}:${props.tournamentId}:${player.player_id}`} tournamentId={props.tournamentId} playerId={player.player_id} playerName={player.display_name} session={auth.session} />
               )}
             </article>
           ))}

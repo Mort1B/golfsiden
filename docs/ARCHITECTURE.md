@@ -164,6 +164,56 @@ and reapplies runtime grants before the API is started.
   Login rechecks its verified hash, username and generation under a user share
   lock through session insertion, preventing an old verification from minting a
   newly valid session after password or username changes.
+- Schema 24 introduces password-recovery grants, append-only outcome audits, and
+  an authority-change ledger. Recovery tokens are independent 256-bit capabilities
+  stored only as SHA-256 hashes, valid for 30 minutes and one redemption. One
+  unterminated grant per account is enforced by a partial unique index; replacement,
+  revocation and redemption are terminal. Grant identity is immutable and audit
+  foreign keys intentionally retain referenced accounts, players and tournaments.
+- Recovery HTTP mapping lives in `api/password_recovery`, locking and persistence
+  in `repositories/password_recovery`, token generation/comparison in the domain,
+  and trusted-origin parsing in configuration. Administrator requests resolve the
+  target account from the exact tournament player; no caller-supplied account ID
+  or inferred email identity is accepted. The issuer needs exact admin membership
+  and current-password confirmation. Targets must be linked active ordinary
+  participants with membership and no global or any-tournament admin role; self
+  recovery is excluded. Administrator accounts use the deployment operator CLI.
+- Admin operations lock the issuer session before account rows in UUID order,
+  then the player, memberships and entrant. Public preview/redemption use the
+  same account/eligibility lock order. Account `FOR UPDATE` blocks new or moved
+  membership foreign keys; existing membership rows are share-locked. Authority
+  and wall-clock expiry are rechecked after waits. The append-only authority
+  ledger invalidates administrator grants after relevant role, link, membership
+  or entrant changes even if eligibility is restored. Ledger subject UUIDs are
+  retained snapshots without account foreign keys, avoiding inverse account-lock
+  acquisition from authorization triggers.
+- Successful recovery changes only the password hash and atomically consumes the
+  grant. Schema 23's credential generation invalidates all previous sessions and
+  other grants; username-only edits retain grants. Password hashing stays outside
+  transactions. Recovery never creates a session or changes cookies, preserving
+  an unrelated account already signed in on the recipient's browser.
+- Operator provenance is an explicit grant kind, permitted only to the actual
+  recovery-table owner or database superuser by an invoker trigger. It cannot be
+  forged through a caller setting or broad runtime DML/function grants. Runtime
+  startup also rejects membership in the recovery-table owner role. The packaged
+  `password-recovery` CLI requires an exact account UUID and audit reason and
+  writes a link exclusively to a new mode-0600 file; it never accepts a new
+  password. Operator grants support administrator and unlinked accounts without
+  assigning a web role or bypassing the same token/credential-generation checks.
+- `RESET_PASSWORD_ORIGIN` is explicit HTTPS configuration (loopback HTTP only in
+  development), never derived from request Host headers. Links carry the secret
+  in a fragment; the public page captures it in memory and removes it from browser
+  history. Preview/redeem send it only in POST bodies. Recovery responses use
+  `private, no-store` and `no-referrer`; recovery requests suppress referrers.
+  Tokens/passwords are excluded from query keys, persisted browser state and
+  ordinary logs. PostgreSQL production settings suppress bind values and error
+  details while retaining query timings and basic error messages.
+- Recovery UI is a focused roster disclosure and an independent public route.
+  Permission/roster refresh or errors unmount the disclosure and discard receipts.
+  Inactive secret-bearing mutations are removed immediately; late receipts check
+  mount and user/CSRF identity. Reset completion refreshes session state without
+  signing out an unrelated account. Auth reads reject canceled responses and
+  preserve a newer user/CSRF identity published while the HTTP read was pending.
 - Profile caches remain user-rooted. Their reads reject responses after session
   replacement; mutation reconciliation compares both user ID and CSRF token.
   Successful mutations reconcile even after page departure, while local feedback
@@ -587,6 +637,10 @@ Implemented resources:
 | `POST` | `/api/auth/login` | Verify credentials and create a session |
 | `GET` | `/api/auth/session` | Retrieve the current session and CSRF value |
 | `POST` | `/api/auth/logout` | Revoke and clear the current session |
+| `POST` | `/api/auth/password-recovery/{grant_id}/preview` | Non-consuming, private reset capability validation |
+| `POST` | `/api/auth/password-recovery/{grant_id}/redeem` | Consume capability and replace password; invalidate target sessions without cookie changes |
+| `POST` | `/api/tournaments/{tournament_id}/players/{player_id}/password-recovery` | Current-password-confirmed admin issue/replacement for an eligible ordinary player |
+| `POST` | `/api/tournaments/{tournament_id}/players/{player_id}/password-recovery/revoke` | Revoke outstanding grants for the player in this tournament context |
 | `GET` | `/api/me/tournaments` | List the session user's tournament memberships and player links |
 | `GET` | `/api/me/profile` | Private self-only account and linked player details with optimistic versions |
 | `PUT` | `/api/me/profile` | CSRF-protected own name/current handicap update; server-owned audit description and no tournament rewrites |

@@ -5,6 +5,7 @@ import { TournamentPage } from './pages/TournamentPage'
 import { TournamentsPage } from './pages/TournamentsPage'
 import { LeaderboardPage } from './pages/LeaderboardPage'
 import { ScorePage } from './pages/ScorePage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { SignInPage } from './pages/SignInPage'
 import { RequireSession } from './features/auth/RequireSession'
 import { HomePage } from './pages/HomePage'
@@ -19,6 +20,7 @@ import { ProfilePage } from './pages/ProfilePage'
 export const router = createBrowserRouter([
   { path: '/', element: <HomePage /> },
   { path: '/create', element: <TournamentOnboardingPage /> },
+  { path: '/reset-password/:grantId', element: <ResetPasswordPage /> },
   { path: '/login', element: <SignInPage /> },
   { path: '/join/:invitationId', element: <JoinPage /> },
   {

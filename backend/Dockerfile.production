@@ -15,6 +15,7 @@ RUN apt-get update \
     && useradd --create-home --uid 10001 golf
 COPY --from=builder /source/target/release/golf-api /usr/local/bin/golf-api
 COPY --from=builder /source/target/release/migrate /usr/local/bin/migrate
+COPY --from=builder /source/target/release/password-recovery /usr/local/bin/password-recovery
 
 USER golf
 EXPOSE 3000

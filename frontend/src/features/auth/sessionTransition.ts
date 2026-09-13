@@ -5,8 +5,15 @@ import { clearPrivateWorkspace } from '../../api/privateWorkspace'
 export async function resolveSessionTransition(
   queryClient: QueryClient,
   requestSession: () => Promise<AuthSession | null>,
+  signal?: AbortSignal,
 ): Promise<AuthSession | null> {
+  const initial = queryClient.getQueryData<AuthSession | null>(authKeys.session)
   const session = await requestSession()
+  signal?.throwIfAborted()
+  const current = queryClient.getQueryData<AuthSession | null>(authKeys.session)
+  if (current?.user_id !== initial?.user_id || current?.csrf_token !== initial?.csrf_token) {
+    return current ?? null
+  }
   clearForIdentityTransition(queryClient, session)
   return session
 }

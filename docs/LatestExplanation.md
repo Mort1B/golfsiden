@@ -1,60 +1,97 @@
-# Per-hole handicap strokes in Oppsummering
+# Password recovery without email
 
-Score → Oppsummering now shows a compact handicap badge beside each hole's
-Par/Index. Positive allocations display `+1`, `+2`, or more; negative allocations
-use `−1`, `−2`, and wording explaining strokes given back. Zero allocations have
-no badge. The indicators appear before scoring and remain separate from the
-recorded gross/net score. Accessible labels include the hole and allocation.
-The shared summary covers player and team cards, including read-only history.
+Tournament administrators can now help ordinary players recover their shared
+account. In the tournament's player list, open **Hjelp med glemt passord**, confirm
+your own password and create a private link. Copy it to your existing contact
+channel after verifying the player's identity. The receipt includes manual-copy
+fallback and expiry; outstanding links can be revoked even after the receipt is
+closed. Sign-in explains how to contact an organizer or the site operator.
 
-The backend exposes required signed `handicap_strokes` on every scoring/read
-hole, including confirmation responses. Domain assembly calls the existing
-stroke-index allocator with the same preserved owner playing handicap used for
-net scoring and the full round length. Net is gross minus this exact allocation.
-Read projection copies the field only for visible holes; it never redistributes
-an 18-hole handicap across a nine-hole visible prefix. Individual and foursomes
-snapshots and scramble's preserved member-handicap calculation remain unchanged.
+The approved authority boundary applies across all tournaments: an administrator
+may recover a linked active ordinary participant in their own tournament. An
+account with any tournament administrator membership or global admin role needs
+the site operator. Self-recovery and unlinked accounts use that same operator
+fallback. The packaged CLI requires exact account identity, an audit reason and
+owner database access; it writes the link to a new owner-readable file, without
+printing it or accepting a replacement password.
 
-For example, playing handicap 20 over 18 holes displays `+2` at stroke indexes
-1–2 and `+1` elsewhere. A gross 5 on index 1 remains net 3. With playing handicap
-−2, the two strokes given back appear at indexes 17–18. Changing today's profile
-handicap does not change historical allocations.
+For example, an ordinary player contacts their organizer, receives a link and
+chooses a new password. The link expires after 30 minutes and works once. Merely
+opening it does not consume it. A replacement link invalidates previous ones;
+successful reset invalidates all of that player's old sessions and returns them
+to normal sign-in. If the organizer happens to open the player's reset link in
+an already signed-in browser, the organizer's unrelated session remains intact.
 
-No migration or scoring-policy change is required. Deploy this backend before
-or alongside the frontend: the new runtime decoder rejects older responses that
-omit the required field. Existing frontend versions ignore the additional field.
+Recovery preserves account/player IDs, memberships, teams, scores and handicap
+snapshots. Tokens are independent 256-bit capabilities stored as hashes. Account,
+session, membership and grant locks serialize recovery with password changes,
+login and authority changes. An append-only authority ledger prevents a grant
+from becoming valid again after removal/readdition, promotion/demotion or
+unlinking/relinking. Audit and terminal grant identity are retained. Operator
+provenance requires actual database owner authority, not a caller-controlled flag.
+
+The reset page captures the fragment token in memory and removes it from browser
+history, then sends it only in POST bodies. Recovery responses are private and
+non-cacheable. Secret-bearing UI state is discarded on departure, permission
+refresh or identity change. Auth response guards prevent a late read from
+replacing a newly signed-in account. Production PostgreSQL suppresses bind
+values and error details while retaining query timings and basic error events.
+
+## Deployment
+
+Apply forward migration 0024 with owner authority, refresh runtime permissions,
+and deploy the matching API/frontend. Add `RESET_PASSWORD_ORIGIN` to the private
+production configuration before using the updated Compose file; it must be the
+exact public HTTPS origin without a trailing slash. Recreate PostgreSQL to adopt
+the new logging command settings. The API runtime role must not own or inherit
+the recovery-table owner. See `deployment_guide.md` for upgrade, rollback and the
+private operator command procedure. No production deployment or real account
+recovery was performed during this step.
 
 ## Validation
 
-- Backend: formatting passed; the ordinary workspace/all-targets test run passed
-  117 tests; Clippy with all targets/features and warnings denied passed.
-- PostgreSQL 17: the workspace/all-targets database-feature run passed 359 tests
-  (including the 117 unit tests). Forward migrations and seed both succeeded on
-  a disposable local Podman database. API regressions cover individual,
-  scramble, foursomes, profile-handicap changes, confirmation responses, and
-  restricted final-nine projections. Domain cases cover 9/18 holes, reversed
-  indexes, zero/negative/multiple allocations, and scored/unscored owners.
-- Frontend: all 400 tests in 67 files passed. Strict application and browser-suite
-  TypeScript compilation, ESLint, and production build passed. The existing
-  greater-than-500-kB bundle advisory remains (614.41 kB main chunk).
-- All 10 affected Chrome browser scenarios passed: the 2 new summary scenarios
-  and all 8 existing return-to-app scenarios. Run them from `frontend/` with
-  `npx playwright test --config playwright.lifecycle.config.ts
-  handicapSummary.browser.ts returnLoading.browser.ts`. Checks cover 320, 390,
-  and 1280px widths, overflow, accessible labels, 44px hole controls, reachability,
-  long names, scored/unscored and zero/negative allocations, team switching, and
-  restricted views. Screenshots were inspected on mobile and desktop. Existing
-  recovery scenarios cover delayed/error/empty/offline and locked states.
-  Browser console/network assertions passed. Initial new-fixture failures were
-  resolved by supplying valid completion/round contracts and an exact heading
-  locator; no production-code repair was needed.
-- Read-only scoring/contract review found no production-code issues and noted
-  the backend-first deployment requirement recorded above.
+- Backend formatting, all-targets Clippy with warnings denied, and the ordinary
+  workspace/all-targets test run passed: **121 tests**.
+- The complete PostgreSQL 17 workspace/all-targets database-feature ladder passed
+  **383 tests**, including those 121. All **20 focused recovery tests** also passed
+  after the final changes. Migrate and development seed succeeded on disposable
+  PostgreSQL; an explicit schema-23 upgrade case preserved accounts/sessions and
+  checked seed idempotence.
+- Recovery coverage includes exact-tournament authorization, privileged/unlinked/
+  inactive/self targets, CSRF, malformed/oversized requests, throttling, expiry,
+  replacement/revocation, authority changes away and back, parallel redemption,
+  old-session/stale-login rejection, and restricted-runtime provenance/audit guards.
+  Additional contention cases exercise expiry during a lock wait, a real profile
+  password update, queued relinking and an administrator membership moving into
+  the target account. Order-sensitive cases observe actual PostgreSQL lock waits.
+- Frontend: **418 tests in 72 files**, application and browser-suite TypeScript,
+  lint and production build passed. The existing 500-kB bundle advisory remains;
+  the main chunk is 625.30 kB minified (180.71 kB gzip).
+- **13 Chrome scenarios passed**: recovery (2), profile (3) and return-to-app (8).
+  Recovery's two scenarios passed again after final spacing changes. Checks cover
+  320×600, 390×844 and 1280×900, long names, overflow, 44px controls, reachable
+  actions, clipboard success/denial, loading/retry/missing/expired states and
+  signed-out forms. The real API flow verifies issue/copy/reset, target-session
+  rejection, preservation of an unrelated session, new-password login and
+  revocation without a retained receipt. Console/network assertions passed and
+  masked mobile/desktop screenshots were inspected.
+- The actual production backend Dockerfile built successfully with Podman and
+  Rust 1.88. Its packaged operator command issued to a mode-0600 private file,
+  kept the secret out of stdout/stderr, passed public preview and revoked the
+  grant on disposable PostgreSQL. Compose configuration validation passed.
+- A synthetic PostgreSQL extended-bind probe reproduced sensitive-value logging
+  with default settings and verified that the three new settings remove those
+  values while retaining query/error events. No real secrets were used.
+- Read-only authorization, concurrency and frontend review is resolved. Review
+  corrections include fresh permission gating, late auth identity protection,
+  logging configuration and deterministic contention ordering. Browser validation
+  also caught and fixed reopening the same fragment after history removal.
 
-Browser scenarios use runtime-decoded API fixtures and a real local event stream;
-PostgreSQL tests separately exercise real API handlers and persisted snapshots.
-Production Caddy and physical iPhone/Safari testing are outside this local harness.
-Administrator-assisted password recovery remains queued as a separate step.
+The full production Caddy/Docker Compose deployment was not launched: the local
+container validation used Podman, while browser flows used Vite and the local
+API. Physical-device Safari/iOS testing was not available in this Chrome harness.
+These environment checks remain operator acceptance work; the existing bundle
+advisory remains recorded. No queued feature was started.
 
-**Verdict: READY WITH KNOWN LIMITATIONS.** Local validation and review are complete;
-production/browser environment limits and the existing bundle advisory are recorded above.
+**Verdict: READY WITH KNOWN LIMITATIONS.** Implementation, affected local checks,
+review and documentation are complete with the environment limits above.

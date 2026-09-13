@@ -57,6 +57,7 @@ function TournamentWorkspace({ tournamentId }: { tournamentId: string }) {
         pending={players.isPending}
         error={players.error}
         onRetry={() => void players.refetch()}
+        recoveryAccessPending={memberships.isFetching || memberships.fetchStatus === 'paused' || players.isFetching || players.fetchStatus === 'paused'}
         adminAccessPending={userId.length > 0 && memberships.isPending}
         adminAccessError={userId.length > 0 ? memberships.error : null}
       />

@@ -107,6 +107,11 @@ pub async fn check_runtime_authority(
     if superuser || create_db || create_role || schema_create {
         return Err(RuntimeAuthorityError::ExcessPrivileges);
     }
+    let recovery_owner: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM pg_class WHERE oid=to_regclass('public.password_recovery_grants') AND pg_has_role(current_user,relowner,'MEMBER'))")
+        .fetch_one(pool).await.map_err(RuntimeAuthorityError::Database)?;
+    if recovery_owner {
+        return Err(RuntimeAuthorityError::ExcessPrivileges);
+    }
     if history_write {
         return Err(RuntimeAuthorityError::MigrationHistoryWritable);
     }
