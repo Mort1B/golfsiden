@@ -1,118 +1,82 @@
-# Durable offline scoring
+# Four-ball contract definition
 
-An already-open authorized scorecard can now keep accepting hole scores after
-connectivity drops. Each edit is saved on this device before delivery, so the
-scorer can move between holes while offline. **Lokale scoreendringer** shows
-pending edits, delivery failures, blocked edits and conflicts, with a link back
-from other private workspace pages. Device-storage failure remains visibly
-unsaved and keeps a short navigation guard.
+The next format is defined as 18-hole, two-player four-ball stroke play. Players
+keep their own hole scores; the server derives the team's best gross and best net
+result on each hole independently. The user chose to credit the team's round
+result to both preserved partners in individual overall standings, just like
+existing team rounds. Best-N and the tournament's mandatory/final-round policies
+continue to apply.
 
-When somebody else changes the same hole, **Sammenlign scorer** shows the local
-and current server values. The scorer explicitly chooses **Behold serverscoren**
-or **Bruk min lokale score**. Choosing local makes a new conditional request;
-another intervening change requires another comparison. Discarding an edit
-removes only its device copy and cannot undo a request that already reached the
-server.
+The full future contract, sources, examples and implementation boundaries are in
+[Architecture](ARCHITECTURE.md#planned-four-ball-stroke-play-contract). It is
+explicitly **not implemented or selectable**. This iteration changes documentation
+only; Stableford is the next separate definition, then match play. Implementation
+of agreed formats precedes the later broad code, performance and security work.
 
-## Safe delivery and current server state
+## Defined behavior
 
-Migration 0027 adds server-controlled score revisions and immutable delivery
-receipts. Conditional requests bind an account-scoped request ID to an immutable
-target, expected absence or exact score ID/revision, and strokes. The repository
-reauthorizes the session, membership, owner and editable round before every
-attempt, including receipt hits. Score writes and receipts commit atomically.
-Locked rounds and revoked access cannot be bypassed through replay.
+- Teams remain administrator-managed and specific to one round. Each team has
+  exactly two players in the same flight, using one shared course/tee layout.
+- Each entered score belongs to its player. Team results and confirmation belong
+  to the side. A team handicap must not be invented to fit today's result DTOs.
+- The draft allowance defaults to 85% per player and remains configurable within
+  the existing 0–100% range. Apply it to the unrounded Course Handicap, round once
+  with signed halves toward positive infinity, and preserve the opening snapshot.
+- One valid numeric partner entry makes a side-hole scorable. An unentered or
+  picked-up partner does not need a fabricated score. Explicitly changing a
+  recorded numeric score to no-score requires an audited, versioned operation;
+  retained identity and receipts preserve offline conflict and replay guarantees.
+- Team confirmation requires a valid result on every hole and fresh server data.
+  On this account/device, pending edits on either partner block confirmation, and
+  the local lease must cover both cards. Changes to either input invalidate the
+  side confirmation, including previously nonwinning entries.
+- Team history retains the correct round's partners. Hidden-final projections
+  and public-sharing restrictions remain intact.
 
-For example, one request saves 5 but loses its response. Another scorer then saves
-6. Retrying the original request acknowledges its earlier application without
-restoring 5. If the first scorer entered a successor while waiting, that successor
-expects the revision that actually saved 5 and conflicts with the later 6. It
-never silently adopts the unrelated revision returned by a fresh read.
+The key architectural extension is separating entered-score ownership from
+competition-team and confirmation ownership. Today those are coupled in the
+format policy, opening/pairing guards, result assembly, confirmation and SQL
+triggers. Four-ball needs a coherent end-to-end extension; adding only an enum
+would not supply playable support.
 
-Existing legacy score writes retain their last-write-wins contract, while all
-actual stroke changes advance revisions. True no-ops and matching retries add no
-duplicate score audit, SSE event or confirmation invalidation. Member and public
-result projections remain unchanged; only authorized scoring DTOs expose
-revisions. Receipt retention is tied to parent data, with no timed pruning that
-could turn an old retry into a new write.
+The first bounded implementation candidate is a pure domain foundation with
+per-player allowance and side-hole aggregation types plus acceptance tests. It
+must preserve all existing behavior and keep four-ball unavailable until the
+subsequent persistence, lifecycle, projection and UI paths are complete. This is
+queued after all three format definitions.
 
-The browser queue lives separately from authoritative TanStack Query data.
-IndexedDB transactions coordinate tabs, immutable requests, delivery leases and
-exact-generation conflict/discard decisions. Account and session fences prevent
-old callbacks or another signed-in account from displaying or replaying the
-queue. Logout retains unresolved edits for the original account's later login.
-No credentials or full private scorecards are persisted.
+## Validation and limits
 
-A delivery acknowledgment is not treated as current server state. The browser
-refreshes the authorized card before showing server-confirmed scores and net
-values or allowing another edit on that hole. Bounded refresh failures retain
-that verification state while other queued holes continue. Cached authorized
-input remains usable during connection recovery without restoring cleared
-private progress or hidden results.
+- Checked the scoring basis against
+  [R&A Rule 23](https://www.randa.org/rog/the-rules-of-golf/rule-23), and the handicap
+  default, rounding and nine-hole distinction against
+  [NGF Handicapreglene 2024](https://www.golfforbundet.no/files/documents/handicapreglene-whs-2024.pdf)
+  and [R&A Appendix C](https://www.randa.org/en/roh/appendices/appendix-c).
+- Inspected the current format policy, snapshots, score authority, team
+  attribution, confirmation and database boundaries without changing source.
+- Independently checked the documented examples with exact-fraction arithmetic:
+  different gross/net winners, equal winners, one/both missing partner scores,
+  plus and disabled handicaps, allowance rounding and boundaries, mixed-format
+  best-N and a final round outside best-N. The three-hole illustration totals
+  gross 14 (+2) and net 11 (−1); separate complete-round examples cover qualification
+  and changing partners.
+- Read-only contract review found no material rule, ownership, authority,
+  visibility or compatibility issues. Documentation diff checks passed.
+- Backend, database, frontend and browser test ladders were not run: this step
+  changes no production source, schema or user interface. Future implementation
+  acceptance includes the full affected ladders and real mobile/desktop browsers.
 
-Confirmation stays online-only. It requires an empty queue for that account/card,
-completed verification and a fresh authorized read. A local confirmation lease
-prevents another tab from enqueueing on that card during the operation. The
-existing POST still confirms the current server card; it does not introduce an
-immutable reviewed snapshot. Explicit correction mode continues to support
-confirmed open/completed cards, while locked cards stay read-only.
+**READY FOR LATER IMPLEMENTATION PLANNING:** the definition is complete, with no
+pending product choice. This is not an implementation or deployment verdict.
 
-## Validation
+The initial variant excludes nine-hole play, per-player tees, larger teams,
+four-ball Stableford/match play, automatic pairing and formal disqualification or
+withdrawal adjudication. A side without a valid result on every hole cannot be
+confirmed/completed through the initial workflow. These limits are explicit in
+the contract.
 
-- Standard backend workspace/all-target suite: **133 passed**. Formatting and
-  all-target/all-feature Clippy with warnings denied passed.
-- Complete PostgreSQL workspace/all-target suite with `database-tests`:
-  **428 passed**, including 12 conditional delivery integration tests. Coverage
-  includes lost-response replay, mismatched request IDs, absent/stale/ABA conflicts,
-  no-op effects, direct-SQL revision protection, authorization expiry, lock races
-  and cross-round request-ID collision rollback.
-- Clean migration and development seed passed against disposable PostgreSQL 17.
-  A populated schema-26 database was created with the actual previous migrator,
-  seed and API, then upgraded to 27. Its 18 existing scores gained revision 1;
-  original score columns/timestamps, 18 audit rows, confirmation and round handicap
-  snapshots had identical before/after fingerprints. No receipts were invented.
-  Historical integration fixtures retain their old-schema assertions and use a
-  bounded legacy fixture helper rather than current DTOs against old columns.
-- Frontend suite: **493 passed in 82 files**. Typecheck, lint and production build
-  passed. Tests cover durable transactions, repeated edits, successor revisions,
-  cross-tab claims, exact-generation choices, account isolation, storage failure,
-  request timeouts, verification and online-only confirmation.
-- Chrome: **20 distinct scenarios passed across the resolved runs**: seven offline
-  cases, eight native return-to-page cases, two handicap summaries, the scoring
-  navigation flow and two public-sharing regressions. They cover offline
-  reload/reconnect, both conflict choices, two-tab lost-response successors,
-  logout/account isolation, device-storage failure, confirmed completed-card
-  correction followed by locking, immediate offline discard and hanging reads
-  after acknowledgment. Public anonymous visibility and private-cache isolation
-  remain intact.
-- Browser checks use 320×600, 390×844 and 1280×900 viewports, long content,
-  loading/error/empty/populated/blocked states, overflow checks, 44px controls and
-  trial-click reachability. Mobile/desktop screenshots were inspected; console
-  and network outcomes were checked alongside visible behavior.
-- Read-only source and durable-document review has no open findings. Changes
-  preserve player/team ownership, handicap snapshots, lifecycle authority and
-  hidden-result boundaries. The largest changed production source has 269
-  substantive lines, below the 400-line limit.
-
-Review and validation resolved strict request decoding of extra fields, legacy
-schema fixtures, stale displays after acknowledgment, delayed cross-tab local
-updates during delivery, local actions paused by offline mutation defaults, and
-confirmation lease deadlines. Browser fixtures were updated for durable
-navigation and open-round authorization; cancelled hanging-request handlers need
-explicit cleanup. These changes preserve the intended production contracts.
-
-**READY WITH KNOWN LIMITATIONS:** the production build retains its bundle advisory at 661.39 kB minified JavaScript
-(192.23 kB gzip). The dependency audit reports existing development-tool advisories
-for js-yaml (high), Vitest and @vitest/mocker (moderate); the new dev-only
-fake-indexeddb dependency is unaffected. Those upgrades are separate maintenance.
-Physical iOS/Safari and full production Compose integration were not exercised;
-Chrome and the local API used disposable PostgreSQL 17 because Docker socket
-access was unavailable. No production deployment or production sharing link was
-created.
-
-Deployment requires migration 0027, refreshed runtime grants and matching API
-and frontend builds. Pending edits survive reload for later online delivery, but
-cold offline app launch, service workers and background sync remain outside this
-step. Clearing site data removes pending edits, which server backups do not
-contain. No queued confirmations, score deletion or administrator correction UI
-is introduced. Further roadmap work remains separately approved.
+A separate existing limitation was found while tracing nine-hole handling: the
+current handicap helper has no round-length parameter, and its generic allocator
+does not establish NGF's full-18-card/subset policy. No existing round arithmetic
+or historical data was changed. Nine-hole four-ball requires its own preserved
+layout and handicap contract before support can be claimed.

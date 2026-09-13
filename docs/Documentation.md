@@ -17,6 +17,12 @@ handicap snapshots from the selected tee. Individual stroke play, two-player
 scramble, and two-player foursomes have distinct preserved score ownership and
 handicap rules.
 
+Four-ball has a [defined future contract](ARCHITECTURE.md#planned-four-ball-stroke-play-contract)
+for 18-hole two-player stroke play: separate player entries, derived gross/net
+team results and the same team contribution credited to each partner. It is not
+yet selectable or implemented. Stableford and match play remain subsequent
+separate definition steps.
+
 Members can enter authorized flight scorecards, confirm cards, and browse live
 gross/net round and best-N tournament standings, player contribution histories,
 and read-only preserved result cards. Server-Sent Events trigger authoritative

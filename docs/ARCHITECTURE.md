@@ -758,3 +758,253 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 - General-purpose editable course and multi-tee library behavior beyond supplied
   immutable presets, including whether the UI should
   show explicit per-hole received-stroke badges.
+
+## Planned four-ball stroke-play contract
+
+**Status: defined, not implemented.** The user approved defining four-ball before
+Stableford, match play and the later application reviews, and explicitly chose to
+credit the side's round result to both partners in overall standings. The contract
+below sets the first variant and its design defaults; it does not change current
+runtime behavior. Implementation remains separately approved. Rule references
+were checked on 2026-09-13.
+
+### Rules basis and initial variant
+
+Four-ball uses two partners, each playing their own ball. The side takes the lower
+eligible score on each hole; in handicap play, the gross and net winners can be
+different partners. At least one attributed gross score must be recorded for each
+side-hole; the other partner need not hole out. Either partner's equal score can
+count, and only one partner needs to certify the card. These are rules of the
+format, not Golfside's individual tournament attribution policy.
+[R&A Rule 23.1–23.4](https://www.randa.org/rog/the-rules-of-golf/rule-23).
+
+The initial variant is **18-hole**, two-player four-ball **stroke play**, with
+administrator-assigned, round-specific teams and one shared course/tee layout.
+Four-ball match
+play, four-ball Stableford, larger teams, per-player tees and automatic team
+formation are outside this contract. Both registered partners remain on the
+frozen round team even if only one supplies valid scores. Opening requires every
+eligible entrant to belong to exactly one complete two-player team, with both
+partners in the same valid flight. Odd/unassigned rosters fail readiness; the app
+must not invent a partner or change other rounds' teams.
+
+Nine-hole four-ball is deferred explicitly. The current code accepts shorter
+layouts but calculates handicap without a round-length parameter; it cannot be
+assumed to provide the Norwegian nine-hole policy. NGF rule 6.1b allocates the
+18-hole handicap over the full card, then uses the strokes belonging to the nine
+played holes. Supporting that requires an explicit layout/handicap contract and
+preserved inputs; do not reuse the existing generic hole-count allocator as a
+substitute. Reject non-18-hole four-ball configuration at validation/opening.
+[NGF Handicapreglene 2024, rule 6.1b, printed page 55](https://www.golfforbundet.no/files/documents/handicapreglene-whs-2024.pdf).
+
+### Score ownership and derived results
+
+Separate three concepts in the format policy:
+
+| Responsibility | Four-ball owner |
+| --- | --- |
+| Entered hole result, revision, audit and delivery receipt | Individual player |
+| Round competition result and scorecard confirmation | Preserved round team |
+| Individual overall contribution | The derived side result, once for each frozen partner |
+
+The server derives a side-hole from its partners' eligible numeric entries:
+`gross = min(partner gross)` and `net = min(partner gross - partner hole strokes)`.
+Each metric selects independently. Side totals are sums of those hole results;
+there is no single side Playing Handicap to subtract from a side gross total.
+Do not store derived winning holes as extra team-owned score mutations, or count
+both partners' raw totals as additional team results.
+
+Preserve all entered scores and the source player for each selected metric. Equal
+winners remain equal; use stable player identity only for deterministic display,
+never as an additional sporting tie-break. Private cards can identify every equal
+winner. The existing single-owner/single-handicap DTO must gain an explicit
+four-ball representation; do not manufacture a zero team handicap or send a team
+identifier to the ordinary player-score mutation path.
+
+### Handicap policy
+
+Proposed default allowance: **85% per player**, configurable through the existing
+0–100% draft-round allowance setting and frozen at opening. Apply it once to each
+uncapped, unrounded Course Handicap, then round to the nearest integer with exact
+halves toward positive infinity, including signed plus handicaps. Preserve the
+per-player calculation inputs, policy and final Playing Handicap in the round
+snapshot. Handicaps disabled means zero strokes for both players.
+
+This follows the recommended four-ball stroke-play allowance and avoids double
+rounding. National competition terms can specify allowances; 85% is a default,
+not a claim that every competition must use it.
+[NGF Handicapreglene 2024, rule 6.2a and appendix C, printed pages 55 and 75–76](https://www.golfforbundet.no/files/documents/handicapreglene-whs-2024.pdf),
+[R&A Appendix C](https://www.randa.org/en/roh/appendices/appendix-c).
+
+Use each player's signed stroke-index allocation over the full configured round,
+including strokes given back on the highest stroke indexes for plus handicaps.
+A restricted front-nine projection must not recalculate that allocation. Keep
+existing formats' historical calculations unchanged; four-ball must not inherit
+the scramble index cap/team formula or silently change the individual format's
+existing negative-half rounding.
+
+### Unentered, scored and no-score holes
+
+Model player input as three distinct states: never entered, numeric gross score,
+and explicitly no valid score (for example, picked up). Numeric entries keep the
+existing 1–20 range and include applicable penalty strokes. No-score is not zero,
+net par, an estimated total or a Stableford point value. A blank partner does not
+prevent a side-hole from having a provisional result when the other partner has
+a valid numeric score. At confirmation, the scorer explicitly accepts that any
+remaining blank partner entries provide no counting score on those holes; do not
+write synthetic scores for them.
+
+Permit correcting a mistakenly entered numeric score to no-score through a
+separate explicit, auditable action, with confirmation before submission. Retain
+its identity, revision and history as a nonnumeric state; do not physically delete
+and recreate a score row. Restoring a numeric score advances the same identity's
+revision. This deliberately extends the current numeric-only score contract only
+for four-ball, and needs its own migration/transport/decoder/queue coverage.
+Other formats must reject no-score input until their own contracts support it.
+
+One numeric partner result makes the side-hole scorable; neither partner having
+one leaves that hole without a result. Progress counts side-holes, never the sum
+of player entries. Live totals are provisional and cover only holes with a side
+result. Confirmation requires a numeric side result on every configured hole;
+individual partner cards may remain incomplete. A known picked-up hole with no
+valid partner result cannot be confirmed. Formal disqualification/withdrawal
+adjudication and finishing a round with such unresolved sides are outside the
+initial workflow: show the missing result and block completion, rather than
+fabricating a score or declaring a sporting penalty automatically.
+
+### Authority, confirmation and offline delivery
+
+Keep the existing session, tournament membership, flight and round authorization
+boundaries. A shared side-card UI may enter either partner's own score only when
+that exact player-card write is authorized. Side confirmation requires write
+authority over both partner cards; placing the partners in one flight makes this
+compatible with the ordinary scorer workflow. This remains the application's
+score confirmation, not an assertion that it provides official marker signatures.
+
+Confirmation certifies the current server side-card assembled from both players,
+including nonwinning and missing entries. It remains online-only and uses a fresh
+side-card read. Any actual change to either partner's input invalidates the side
+confirmation, even if the selected gross/net total happens to stay the same.
+True no-op writes and repeated delivery receipts do not invalidate it again.
+Serialize these actions with round completion/locking and existing authority
+checks. Completed rounds remain explicitly correctable; locked rounds reject
+ordinary writes and the new no-score action.
+
+On this account/device, unresolved edits or post-delivery verification for either
+partner block side confirmation. Extend the local confirmation lease to cover
+both underlying player cards atomically; another tab must not enqueue through
+the other partner while confirmation is in flight. Other devices remain subject
+to current server-card confirmation semantics and server locking, as today.
+
+Queue each player's hole independently. Numeric/no-score transitions use the
+same immutable request, expected-state revision, receipt replay, account isolation
+and exact-generation review guarantees as current offline scoring. A retained
+no-score record is a present version, never expected absence. A partner's
+independent edit updates the derived side result but is not a conflict on the
+other player's score. A conflicting edit to the same player/hole presents both
+states, including a clear no-score label, and requires the scorer's choice.
+No queued confirmations, lifecycle changes or cold offline launch are added.
+
+### Standings, history and visibility
+
+**User decision:** Credit the derived side round result to each frozen partner
+once in individual overall standings, matching existing team-round attribution.
+Do not also count the partners' separate raw cards or require either to complete
+an individual 18-hole score. Preserve the existing best-N,
+mandatory-round, completed qualification and highest-numbered-open provisional
+rules. Select gross/net independently. Four-ball side score-to-par can join the
+existing stroke-based contributions from individual play, scramble and foursomes;
+label it as a team contribution rather than an individual's own performance.
+Assigning that benefit equally is a Golfside tournament rule, not an R&A rule or
+a normalization guarantee between formats. Do not infer conversions for later
+Stableford or match-play results.
+
+Round ties keep shared competition positions. The existing optional overall
+final-round tie-break consumes the attributed complete, visible side result, even
+when outside best-N; partners with the same final side result remain tied if all
+other compared values are equal. No playoff or extra countback policy is added.
+History must retain the round team and link to its derived side card after later
+team changes, with partner inputs and independent gross/net winners available to
+authorized members.
+
+Apply existing hidden-final visibility before deriving any visible side total,
+progress or winner explanation. Omit hidden completed finals before best-N and
+tie comparisons. Public links keep their existing summary-only gross/net scope:
+no raw player holes, winner identity, handicap, no-score reason, confirmation or
+account data is added. Changing only hidden inputs must leave every permitted
+result projection unchanged.
+
+### Acceptance examples and implementation boundary
+
+For the examples below, received strokes are the already-calculated per-hole
+allocations, not a percentage applied to the hole score.
+
+| Hole/par | A gross / received | B gross / received | Side gross | Side net |
+| --- | --- | --- | --- | --- |
+| 1 / 4 | 4 / 0 | 5 / 2 | 4 (A) | 3 (B) |
+| 2 / 4 | 5 / 1 | 4 / 0 | 4 (B) | 4 (both) |
+| 3 / 4 | no score | 6 / 2 | 6 (B) | 4 (B) |
+
+The three-hole subtotal is gross 14 (+2) and net 11 (−1), with three side-holes
+scored. It is not a complete 18-hole card. If both players have no score on hole 3,
+progress is two holes and confirmation is unavailable. On an index-18 hole, a
+player with Playing Handicap −2 giving one stroke back and scoring 4 has net 5.
+
+Allowance examples: unrounded Course Handicap 9.6 at 85% gives 8.16, rounded to 8
+(intermediate rounding to 10 would incorrectly produce 9). Course Handicap 20 at
+85% gives 17. Signed Course Handicap −10 at 85% gives −8.5, rounded to −8 (shown
+as plus 8). With handicaps disabled, the gross/net side results coincide.
+
+Complete-round mixed-format example: all three rounds below are completed,
+confirmed and visible, each has par 72, and the tournament counts the best two
+with no mandatory round. Values are gross/net score-to-par.
+
+| Round | Format and preserved partners | A contribution | B contribution |
+| --- | --- | --- | --- |
+| 1 | Individual stroke play | +8 / +2 | +8 / +2 |
+| 2 | Four-ball, A + B together | −2 / −6 | −2 / −6 |
+| 3 | Scramble, A + C and B + D | +1 / −1 | +5 / 0 |
+
+Both A and B receive round 2 once. A's selected totals are gross −1 and net −7;
+B's are gross +3 and net −6. Their later partners do not change round 2 history.
+If only one round counts, round 2 supplies both partners' best gross/net result.
+If that one slot instead belongs to mandatory round 3, round 3 supplies their
+result even though round 2 is better. A missing mandatory result never gets an
+extra optional replacement. An open round remains provisional under the existing
+qualification and highest-numbered-open selection rules.
+
+Separate final-round tie example: four players each have a complete earlier best
+round of gross −3; best-N is 1. The final scheduled round is completed four-ball:
+A + B score even par and C + D score +1. None of these final results enters best-N.
+With `shared_positions`, all four retain the shared position. With
+`final_round_score`, A and B share first and C and D share third. An equal final
+side result retains shared places; hidden or otherwise incomparable final results
+must not break the original tied group. The net view runs the same policy using
+its own net contributions, never these gross values.
+
+A planned full implementation must cover:
+
+- A closed format policy separating input ownership, competition teams,
+  aggregation, confirmation and snapshot treatment; draft creation, pairing and
+  opening must use it consistently. All existing formats keep their behavior.
+- Player score/no-score storage, positive revisions, immutable receipts and audits;
+  derived side-card APIs, per-partner handicaps and completion/confirmation guards.
+  Unknown formats remain rejected until the entire path is available.
+- Gross/net side results, approved individual attribution, private history and
+  visibility-safe public standings, plus mobile score entry for both partners.
+- Fresh and populated-schema migration checks; pure arithmetic/aggregation tests;
+  PostgreSQL authority, ownership, no-score ABA, confirmation and lock races;
+  real Chrome at 320/390/1280px with offline edits on either partner, both conflict
+  choices, unavailable storage, hidden scores, incomplete cards and long names.
+- Best-N/final-round examples with changing partners and mixed existing formats;
+  snapshot invariance after profile changes; reject unsupported nine-hole
+  configuration; no duplicate player contributions;
+  read-only review and the complete affected validation ladders.
+
+The first bounded implementation candidate is the pure domain foundation:
+introduce four-ball-specific per-player allowance and side-hole aggregation types
+and acceptance tests, without making the format selectable or changing existing
+API/database behavior. Stop after the reviewed domain contract passes backend
+checks. Subsequent persistence and UI slices must ship as one coherent supported
+format; an isolated enum or arithmetic helper must not be advertised as playable.
+Those implementation steps remain queued behind all three format definitions.
