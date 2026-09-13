@@ -761,12 +761,30 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 
 ## Planned four-ball stroke-play contract
 
-**Status: defined, not implemented.** The user approved defining four-ball before
-Stableford, match play and the later application reviews, and explicitly chose to
-credit the side's round result to both partners in overall standings. The contract
-below sets the first variant and its design defaults; it does not change current
-runtime behavior. Implementation remains separately approved. Rule references
-were checked on 2026-09-13.
+**Status: pure domain foundation implemented; playable support remains planned.**
+The user chose to credit the side's round result to both partners in overall
+standings. The contract below sets the first variant and design defaults. The
+isolated foundation does not change runtime behavior or make four-ball selectable.
+Later integration remains separately scoped. Rule references were checked on
+2026-09-13.
+
+`backend/src/domain/four_ball/` owns the implemented pure boundary. Its allowance
+function accepts the uncapped, unrounded course-handicap numerator (denominator
+1,130), applies a validated 0–100% allowance (default 85%) and returns checked i16
+course/playing snapshots with signed halves toward positive infinity. Disabled
+handicaps return both snapshots as zero; a zero allowance alone retains the course
+snapshot. Widened arithmetic rejects unsupported snapshot ranges without overflow.
+Existing format formulas and snapshot policies remain unchanged.
+
+Validated numeric input (1–20), unentered and no-score are distinct domain states.
+Side-hole aggregation independently selects gross/net minima from the two players'
+preserved handicaps and retains every tied source identity in deterministic order.
+Full-card aggregation accepts exactly 18 holes and a complete stroke-index
+permutation, rejects duplicate partners, and reports optional totals and the count
+of scored side-holes. No scored holes means no total. Arithmetic completeness is
+not persisted confirmation, readiness authorization or a sporting adjudication.
+These types have no transport serialization, persistence or format-policy wiring;
+future visibility projections must filter before exposing derived results.
 
 ### Rules basis and initial variant
 
@@ -917,7 +935,8 @@ existing stroke-based contributions from individual play, scramble and foursomes
 label it as a team contribution rather than an individual's own performance.
 Assigning that benefit equally is a Golfside tournament rule, not an R&A rule or
 a normalization guarantee between formats. Stableford has its own explicitly selected conversion in the contract below;
-match-play aggregation remains separately undecided.
+match play uses its separately defined match-points table and contributes nothing
+to these overall totals.
 
 Round ties keep shared competition positions. The existing optional overall
 final-round tie-break consumes the attributed complete, visible side result, even
@@ -1001,13 +1020,11 @@ A planned full implementation must cover:
   configuration; no duplicate player contributions;
   read-only review and the complete affected validation ladders.
 
-The first bounded implementation candidate is the pure domain foundation:
-introduce four-ball-specific per-player allowance and side-hole aggregation types
-and acceptance tests, without making the format selectable or changing existing
-API/database behavior. Stop after the reviewed domain contract passes backend
-checks. Subsequent persistence and UI slices must ship as one coherent supported
-format; an isolated enum or arithmetic helper must not be advertised as playable.
-Those implementation steps remain queued behind all three format definitions.
+The pure domain foundation is implemented and tested against the allowance,
+attribution, missing-input, full-layout and range boundaries above. API/database
+behavior remains unchanged. Subsequent persistence and UI slices must ship as one
+coherent supported format; the isolated arithmetic module is not playable support.
+The other format foundations and later integration remain separate queued steps.
 
 ## Planned individual Stableford contract
 
@@ -1490,7 +1507,7 @@ The first bounded match-play implementation candidate is a pure domain foundatio
 relative handicap allocation, typed ordered outcomes, terminal/draw derivation
 and exact match-point arithmetic with these examples. Keep the format unavailable
 and do not change existing result pipelines at that stop. Four-ball's domain
-foundation remains the first queued format implementation candidate.
+foundation is already implemented; further format work remains separately scoped.
 
 Playable release requires separately scoped persistence/migrations, opponent
 readiness, snapshots, match authority and audit/correction paths, idempotency and

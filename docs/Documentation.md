@@ -19,8 +19,11 @@ handicap rules.
 
 Four-ball has a [defined future contract](ARCHITECTURE.md#planned-four-ball-stroke-play-contract)
 for 18-hole two-player stroke play: separate player entries, derived gross/net
-team results and the same team contribution credited to each partner. It is not
-yet selectable or implemented. [Individual Stableford](ARCHITECTURE.md#planned-individual-stableford-contract)
+team results and the same team contribution credited to each partner. Its isolated
+backend calculation foundation is implemented and tested, including per-player
+allowance, independent gross/net winners and side-card progress. Four-ball remains
+unavailable: storage, score entry, confirmation, standings integration and UI are
+not implemented. [Individual Stableford](ARCHITECTURE.md#planned-individual-stableford-contract)
 also has a future 18-hole contract: native gross/net points, explicit zero-point
 pickups and user-selected overall contributions of 36 minus points. Its totals
 must be labelled as points or converted contributions rather than actual strokes.
