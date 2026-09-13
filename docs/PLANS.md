@@ -6,7 +6,9 @@ belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The next candidate requires its account-recovery authority decision before activation.
+The user requested the next step. Recovery implementation is pending the authority
+choice below; repository discovery and the concrete implementation outline are
+prepared. No recovery endpoints, schema, or UI have been activated.
 
 ## Next candidate: administrator-assisted password recovery without email
 
@@ -65,6 +67,64 @@ silently broaden tournament-admin powers or leave those cases undocumented.
 Security reference: the token lifecycle, normal sign-in after reset, and session
 invalidation follow the [OWASP Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html).
 Manual delivery and the proposed administrator authority are product decisions.
+
+**Concrete implementation outline (pending authority choice):**
+
+- Add a dedicated recovery module in domain, repository, and API layers, plus
+  migration `0024_password_recovery.sql`. Keep recovery grants independent of
+  invitation tokens and ordinary login sessions. Store grant UUID, SHA-256 token
+  hash, target account, nullable target player for operator grants, credential
+  generation, issuer kind, optional
+  issuer/tournament context, expiry, and terminal outcome. Retain append-only
+  issue/replace/revoke/redeem audit events without token or password values.
+- Under the proposed tournament-admin policy, use the selected tournament player
+  as the request target. The server resolves the linked account and checks exact
+  issuer admin membership, target enrollment and membership, active player link,
+  no self-reset, and no target admin role globally or in any tournament. Deny
+  ineligible targets generically without revealing their other memberships.
+- Administrator endpoints live under
+  `/api/tournaments/{tournament_id}/players/{player_id}/password-recovery`.
+  `POST` with the issuer's current password creates/replaces a 30-minute grant
+  and returns its ID, expiry, and one-time link. A separate `POST /revoke` with
+  current-password confirmation invalidates outstanding grants in this context;
+  an already revoked grant is harmless. Neither operation changes the password.
+- The public `/reset-password/{grant_id}#token=...` page captures the fragment in
+  memory and immediately removes it from browser history. Preview and redemption
+  use POST bodies under `/api/auth/password-recovery/{grant_id}`; preview does
+  not consume the token and exposes no account directory. Redemption accepts the
+  token and repeated new password, with generic invalid/expired/used feedback.
+  Keep secret-bearing mutation data out of persisted caches and remove inactive
+  mutation state. Public reset works even when another account is signed in.
+- Reuse bounded Argon2 and the existing 12–128 UTF-8-byte password contract.
+  Schema 23 already invalidates sessions when the password hash changes; login
+  already rechecks verified credentials under a user lock before session creation.
+  Recovery must preserve those protections and invalidate all outstanding grants
+  on redemption or intervening password changes. Username-only changes do not
+  advance credential generation and do not independently revoke grants.
+- Serialize target-account mutations and grant consumption, and lock the target's
+  existing memberships before the no-admin check. Protect absent/new memberships
+  too: checking `NOT EXISTS` alone does not prevent concurrent promotion or insert.
+  Use deterministic account-lock ordering and recheck session expiry, issuer
+  authority, player/account links, eligibility, and grant generation after waits.
+  Validate the exact lock order against profile, login, and membership races.
+- Configure a trusted reset origin explicitly: `CORS_ALLOWED_ORIGIN` is optional
+  today, so it is not an unconditional recovery-origin source. Production links
+  require HTTPS; never derive the origin from Host headers. Tokens stay out of
+  URI paths/query strings because the API trace middleware records request URIs.
+- Add a server-only recovery CLI for administrator/sole-organizer/unlinked cases.
+  Require deployment-operator access, an exact account identifier, and an audit
+  reason after identity verification through a known channel. Issue/revoke the
+  same short-lived grants without setting a password or granting a web role.
+  Operator provenance is an explicit grant kind, never inferred from a missing
+  issuer account. Package the CLI in the production backend image and document
+  its deployment privileges and private-output workflow.
+  Keep secrets out of command arguments, environment values, and ordinary logs;
+  expose a newly issued link only through an explicitly selected private output.
+  No operator recovery command exists in the current checkout.
+- Keep frontend work in a focused roster recovery disclosure, one-time link view,
+  public reset page, typed recovery API module, and sign-in guidance. Existing
+  handicap editing and invitation acceptance retain their own flows. If the
+  operator-only policy is selected, omit roster issuance and adjust guidance.
 
 **Validation:** Require read-only authorization/concurrency review, clean and
 upgrade-path PostgreSQL migration checks, and full backend/PostgreSQL/frontend
