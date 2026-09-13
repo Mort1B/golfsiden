@@ -24,7 +24,11 @@ yet selectable or implemented. [Individual Stableford](ARCHITECTURE.md#planned-i
 also has a future 18-hole contract: native gross/net points, explicit zero-point
 pickups and user-selected overall contributions of 36 minus points. Its totals
 must be labelled as points or converted contributions rather than actual strokes.
-Stableford is not implemented either; match play is the next separate definition.
+Stableford is not implemented either. [Singles match play](ARCHITECTURE.md#planned-singles-match-play-contract)
+is defined for 18 holes, with draws and a separate 1/½/0 match-points table. It
+contributes nothing to gross/net overall totals. Its future first version uses
+admin-assigned opponents, a frozen gross/net mode and online match-result reports;
+only numeric notes support offline drafts. Match play is also not implemented.
 
 Members can enter authorized flight scorecards, confirm cards, and browse live
 gross/net round and best-N tournament standings, player contribution histories,

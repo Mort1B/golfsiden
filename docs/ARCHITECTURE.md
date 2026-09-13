@@ -1283,3 +1283,225 @@ comparisons; hidden-score noninterference; public labels; historical regression
 coverage and real Chrome at 320/390/1280px in offline/loading/error/empty/populated
 and long-content states. Follow the complete affected validation ladders and
 read-only review. No runtime test result is claimed by this definition.
+
+## Planned singles match-play contract
+
+This is a future definition, not implemented or selectable. The user approved a
+separate match-points table (win 1, draw ½, loss 0), no contribution to gross/net
+overall totals, and a draw when tied after 18 holes. Implementation follows the
+format definitions in separately approved steps.
+
+### First variant and rules basis
+
+The initial variant is 18-hole singles: exact tournament admins assign two
+opponents per match, both in the same flight and on the round's shared tee.
+Every active round entrant must belong to exactly one match before opening;
+odd, duplicate or incomplete assignments block opening. There are no automatic
+byes, opponent generation or wins for an absent player. Matches are round-local
+records, not teams. Freeze opponents, tee and handicap snapshots when opening.
+Only hole order 1–18 is supported: an unset starting hole means 1, and any other
+flight start is rejected for this format. Other formats retain their behavior.
+
+The organizer selects one official round mode, gross or net, while draft; net is
+the default. Freeze it at opening. A display toggle cannot change the official
+winner. Any alternate gross/net numeric view is informational, not a second
+match result, particularly when concessions or early finishes omit scores.
+
+[R&A Rule 3.2](https://www.randa.org/en/rog/the-rules-of-golf/rule-3) supplies the
+rules basis: holes are won, lost or halved; a lead greater than the remaining
+holes ends the match. Competition terms may allow an 18-hole draw. Concessions
+are final; a conceded next stroke counts toward the hole score. A hole may be
+halved by agreement only after play on it has begun. Agreed match scores have
+correction deadlines, so later raw-score edits cannot automatically rewrite them.
+The product terms designate accepted online result confirmation as the official
+reporting/finality point. This does not postpone an on-course concession's effect.
+
+Net singles uses a fixed 100% allowance and the full difference between opponents'
+Playing Handicaps, following
+[NGF guidance](https://www.golfforbundet.no/spiller/regler/world-handicap-system/test)
+and [Handicapreglene 2024, Appendix C](https://www.golfforbundet.no/files/documents/whs-handicapreglene-2024-%E2%80%93-ny-versjon-juni-2024.pdf).
+Use the preserved tee calculation and the new-format signed rounding policy
+specified above: keep full precision until rounding once, with exact halves
+toward positive infinity. Preserve legacy policies and snapshots unchanged.
+
+For signed Playing Handicaps `a` and `b`, subtract `min(a,b)` from both. One
+player receives zero; the other receives nonnegative difference `d`. At stroke
+index `s` (1–18), that player receives `floor(d/18) + (s <= d % 18 ? 1 : 0)`.
+Compare gross score minus these match-relative strokes. Do not independently
+allocate both absolute handicaps or use a team handicap. Gross mode allocates
+zero strokes. Show the frozen match-relative allocation on each hole.
+
+### Match facts, authority and corrections
+
+A dedicated match aggregate owns ordered hole reports, revisions, concessions,
+confirmation and the official result. Numeric facts remain player-owned; no
+fake team owner, stroke total, pickup score or score-to-par encodes a match win.
+Hole reports record the agreed winner or halve and their basis: completed numeric
+scores, next-stroke concession, hole concession, agreed halve after play began,
+or a recorded organizer ruling. Preserve the gross score including any penalty
+strokes; next-stroke completion also records concession provenance rather than
+claiming every counted stroke was physically played. A missing numeric score is
+not a lost hole. A whole-match concession is a separate terminal event.
+
+Numeric comparison proposes a hole outcome. An authorized scorer explicitly
+reports the opponents' agreed outcome; this becomes the authoritative ledger
+entry, distinct from editable numeric notes. Reports resolve a contiguous prefix
+in played order. The server derives the lead and terminal result from that
+ledger, stopping when `abs(lead) > holes_remaining`, or after hole 18. A zero
+lead there is a draw. Unplayed holes after the finish are labelled as such and
+never required to contain scores. A concession finish uses a concession label,
+not an invented numerical winning margin.
+
+Existing own/flight scoring and exact tournament-admin/scorer permissions govern
+who may record reports, with current membership checks. Recording a communicated
+concession is different from making one: only the actual opponent can concede
+in the sporting sense. An authorized recorder must name the conceding player and
+explicitly attest that the concession was communicated; authority to enter scores
+does not grant authority to concede for another player. Preserve actor, actual
+conceder, basis, timestamp and request identity. An agreed halve requires an
+explicit attestation that play began and both opponents agreed. No automatic
+halves, alternating concessions or inferred agreement from blank entries.
+
+Once accepted, ordinary edits to numeric facts do not change reported outcomes.
+Use an explicit exact-admin, reason-required correction path to fix a recording
+mistake or record an organizer's decision; retain superseded facts and the ruling
+basis. The UI must distinguish a clerical mistake from a change to what actually
+happened on the course. A real concession cannot be withdrawn. The application
+does not decide whether a late sporting correction is permitted under the Rules.
+An organizer must establish the permitted outcome before recording it. Correcting
+an incorrectly recorded concession is not labelled as withdrawing a concession.
+
+Corrections use the current aggregate revision, invalidate confirmation and
+remove any previously awarded points atomically. Revalidate the complete affected
+ledger: if a correction changes the finish, explicitly supersede incompatible
+later reports and require any newly necessary holes to be resolved before
+confirmation. Never silently resurrect old reports or let numeric edits recompute
+an already agreed outcome. Locked-round corrections must use an explicit audited
+administrator path with the same semantics; ordinary writes remain rejected.
+Formal rules adjudication, appeals and automatic penalties are outside this first
+version; recording an organizer-awarded match win is supported with a reason and
+an award label, without fabricated hole results. A dispute without a decision
+stays unresolved and blocks confirmation.
+
+### Completion, concurrency and offline boundary
+
+A match has in-progress, terminal-unconfirmed and confirmed states. Derive the
+terminal state from the authoritative reports or explicit concession/award.
+Reject further ordinary scoring/report mutations once terminal, even while the
+parent round is open; the explicit correction path is the only reopening route.
+Confirmation is online-only by an authorized match recorder with fresh data,
+explicit attestation that the result was agreed or awarded, and no unresolved
+local edits. One match confirmation covers the result for both opponents; two
+18-hole stroke-card confirmations are not required. The round can complete when
+every assigned match has a confirmed terminal disposition. Locking and tournament
+completion retain the existing explicit lifecycle transitions; early finishes
+create no missing-score obligation for holes that were not played.
+
+All mutations affecting a match, including numeric notes, report acceptance,
+corrections and confirmation, must serialize through the parent round then the
+match aggregate, checking authority, state and expected revision in the same
+transaction. New match commands use dedicated typed payloads and account-scoped
+idempotency identities. Exact accepted-request replay returns its original receipt
+without applying the action twice, including after a match finishes. A different
+stale command cannot overwrite a finished match. Persist result/points revision
+changes and invalidate private result queries through the existing live system.
+
+For this first variant, authoritative hole reports, concessions, organizer awards,
+corrections and confirmation require connectivity. On an already-open match card,
+ordinary numeric notes may remain durable offline drafts on this device; they
+are visibly pending and cannot publish an agreed outcome or award points. On
+reconnection, synchronize against the match revision with explicit old/local/server
+conflict choices and then submit reports online. A now-terminal match retains
+blocked drafts for review; it never silently reapplies them. Offline reporting of
+concessions is deferred. This limits recording in the app, not concessions made
+on the course, which still need to be reported accurately once connected.
+
+Use account/match isolation, immutable queued payloads, predecessor-linked
+successors and an atomic local confirmation lease covering both opponents' notes
+and reports. Retain failed or unknown deliveries until reconciled; never silently
+rebase or discard them. Scope new match draft delivery separately from legacy
+stroke queues and preserve existing serialized fingerprints, receipts and pending
+requests. Do not route new match records through a legacy bypass of terminal or
+revision checks. Connectivity limitations must be apparent before play starts.
+
+### Separate standings and visibility
+
+Confirmed matches award exactly 1 point to the winner and 0 to the loser, or ½
+each for a draw. Store exact half-point units (2/1/0), not floating approximations.
+The private match table sums all confirmed match rounds per player, with played,
+win, draw and loss counts and links to permitted match results. Rank by points
+descending with shared places; no margin bonus, best-N, mandatory match, opponent
+strength adjustment or automatic bracket progression. Unstarted and unconfirmed
+matches award nothing, including no provisional draw points. Players with no
+confirmed matches have an unranked no-result state. This table has one official
+points view; label each underlying match's frozen gross/net mode.
+
+Match rounds never enter the stroke/Stableford-equivalent overall contribution
+set. Best-N and mandatory-round eligibility count only formats contributing to
+that set. A match cannot be the mandatory overall round. Mixed tournaments retain
+their overall table; match-only tournaments use an explicit not-applicable/absent
+overall configuration and table, not an invalid N=0 or invented stroke result.
+Keep scheduled/lifecycle round counts distinct from eligible contribution counts.
+A provisional overall contribution is selected from open eligible formats, so an
+open later match round does not displace an otherwise eligible open stroke round.
+
+The existing `final_round_score` tie-break still refers to the final scheduled
+round. If that round is match play, there is no gross/net comparable contribution
+and tied overall players keep shared places; never substitute an earlier round or
+match points. Explain this effect in configuration and result labels. The hidden
+final likewise remains the actual final scheduled round; do not silently move its
+privacy policy to another round.
+
+Authorize membership-private match/history reads as existing private workspace
+reads, with no-store responses. For a hidden final, build projections from the
+permitted hole prefix before deriving lead, progress or any result. Suppress
+winner, terminal status, finish margin/hole, confirmation and awarded points
+whenever their basis is hidden. Until final release, exclude that entire final
+round from the non-admin match-points table, even if one match ended on the front
+nine, to avoid selective awards leaking hidden results or participation. Explicit
+concession/award events need a recorded effective point in the played sequence;
+when visibility cannot establish that the basis is permitted, withhold the event.
+Hidden changes must not affect visible totals, ranks, counts or result metadata.
+The authorized scoring workspace retains existing score-entry visibility rules.
+
+Existing public links continue to expose only the approved overall gross/net
+summary. They do not gain match tables, opponent records, concessions or scorecards.
+Match-only tournaments cannot create a gross/net public results link; show a clear
+unavailable state. Mixed-format public links retain their approved scope and the
+same overall contribution exclusions and final-result protection.
+
+### Acceptance examples and implementation boundary
+
+| Case | Expected behavior |
+| --- | --- |
+| Handicaps 10 and 18 | Relative allocation 0/8; higher player gets one on SI 1–8. Equal gross 5 on SI 3 becomes net 5/4. |
+| Plus handicaps −2 and 14; −4 and −1 | Relative allocation 0/16 and 0/3 respectively. |
+| Handicaps 0 and 40 | Higher player gets three on SI 1–4 and two on SI 5–18. |
+| 13 halves followed by three A wins | A wins 3&2 after hole 16; holes 17–18 remain unplayed. |
+| A leads two after 16 | Not finished: two holes remain. Two B wins produce a draw; halving 17 produces A 2&1. |
+| All 18 holes halved | Draw; ½ each only after confirmation. |
+| Actual match concession before hole 1 | Confirmed concession awards 1/0 without creating 18 hole scores. |
+| A has a win, draw and loss | Three played, W/D/L 1/1/1, 1½ points; no stroke contribution. |
+| One stroke round plus one match round | Overall N=1 is valid; N=2 or a mandatory match is invalid. |
+| Equal overall totals and final scheduled match | `final_round_score` leaves a shared place, regardless of match winner. |
+| Same visible first nine, different hidden finish | Same permitted lead/progress and table; no hidden winner, margin or points. |
+
+The first bounded match-play implementation candidate is a pure domain foundation:
+relative handicap allocation, typed ordered outcomes, terminal/draw derivation
+and exact match-point arithmetic with these examples. Keep the format unavailable
+and do not change existing result pipelines at that stop. Four-ball's domain
+foundation remains the first queued format implementation candidate.
+
+Playable release requires separately scoped persistence/migrations, opponent
+readiness, snapshots, match authority and audit/correction paths, idempotency and
+terminal races, confirmation/completion, typed API decoding, match-only/mixed
+configuration, separate private standings/history, privacy projections, offline
+notes and mobile UI. Do not expose a format enum until all paths are coherent.
+Nine-hole/shotgun/extra-hole play, partner match variants, automatic brackets/byes,
+public match sharing, offline authoritative reports and handicap-system submission
+are excluded initially. Run the complete affected backend/PostgreSQL/frontend
+ladders, legacy compatibility tests, hidden-result noninterference and real Chrome
+at 320/390/1280px with loading, error, empty, populated, long-content and offline
+states. In particular test score/report/correction/confirmation races, replay after
+terminal, two concurrent matches where one finishes, and correction of an early
+finish without fabricating scores. This definition claims no runtime test results.

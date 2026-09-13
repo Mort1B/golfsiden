@@ -5,18 +5,16 @@
 
 ## Active step
 
-None. The next definition or implementation step requires user approval.
+None. Select and bound the next implementation step before changing runtime code.
 
 ## Next candidate
 
-### Define the match-play contract
-
-Specify the supported individual/team variants, opponent setup, handicap
-treatment, hole and match outcomes, concessions, early finishes, ties and
-whether/how matches contribute to overall tournament standings. Check
-authoritative rules and concrete examples, preserve the root invariants and
-resolve product choices before preparing a bounded implementation step. This
-is a definition step; do not implement it yet.
+**Four-ball pure domain foundation:** Implement the approved 18-hole allowance
+and player-hole-to-side gross/net aggregation rules with focused acceptance tests.
+Keep four-ball unavailable and preserve existing format calculations. Define the
+exact files, validation ladder and stop condition when this candidate is started;
+do not combine it with persistence, score entry or the other format foundations.
+See the [four-ball contract](ARCHITECTURE.md#planned-four-ball-stroke-play-contract).
 
 ## Later, as separate bounded steps
 
@@ -24,7 +22,8 @@ is a definition step; do not implement it yet.
    step's ordinary review, tests and validation completed before publication.
    First candidates are the pure domain foundations described in the
    [four-ball contract](ARCHITECTURE.md#planned-four-ball-stroke-play-contract) and
-   [Stableford contract](ARCHITECTURE.md#planned-individual-stableford-contract).
+   [Stableford contract](ARCHITECTURE.md#planned-individual-stableford-contract),
+   followed by the [match-play foundation](ARCHITECTURE.md#planned-singles-match-play-contract).
    Keep each format unavailable until its complete persistence, lifecycle, result,
    offline and UI paths are ready. Scope subsequent slices explicitly after the
    definitions, including the shared no-score and result-kind boundaries.
