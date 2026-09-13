@@ -1,3 +1,4 @@
+mod conditional;
 use std::sync::Arc;
 
 use axum::{
@@ -27,6 +28,7 @@ use crate::{
 
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
+        .merge(conditional::routes())
         .route("/api/rounds/{round_id}/scores", put(save))
         .route("/api/rounds/{round_id}/score-access", get(score_access))
         .route(

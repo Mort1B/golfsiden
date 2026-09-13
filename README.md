@@ -21,8 +21,8 @@ access independently.
   tee, and hole data. Preserve tournament and round handicap snapshots so later
   profile changes do not alter historical results.
 - **Mobile scoring:** Enter and confirm scores for authorized cards, with per-hole
-  handicap stroke indicators in the scorecard summary and automatic refresh when
-  returning to the app.
+  handicap stroke indicators, automatic refresh on return, and durable offline
+  edits on an already-open scorecard with explicit conflict resolution.
 - **Live standings and history:** Follow separate gross and net leaderboards,
   inspect a player's counting rounds, and open preserved individual or team
   scorecards from the results.
@@ -197,10 +197,11 @@ See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documenta
 
 - Supported formats are individual stroke play, two-player scramble, and
   two-player foursomes. Four-ball, Stableford, and match play are not implemented.
-- Scoring requires a connection; there is no offline score queue or automatic
-  replay of writes made while disconnected.
-- Tournament workspaces and results require membership. Public leaderboard
-  sharing is not available.
+- Offline scoring continues in an already-open authorized card. Pending edits
+  survive reload for later online delivery; cold offline launch and background
+  sync are not supported. Confirmation requires a connection.
+- Tournament workspaces and scorecards require membership. Revocable public
+  links expose only the limited live overall standings.
 - Locked rounds reject ordinary score changes. An administrator interface for
   audited corrections to locked-round scores is not yet available.
 - Production deployment targets a single API instance. Rate limits and course

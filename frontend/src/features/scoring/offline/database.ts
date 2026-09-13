@@ -1,0 +1,111 @@
+import type { ExpectedScore, ScoreAcknowledgement } from '../../../api/scorecards/conditional'
+import { acknowledge, cardKey, enqueue, hasLease, LEASE_MS, operation, queueKey, type ConfirmationLease, type PendingScore, type QueuePhase, type QueueTarget } from './model'
+import { decodeLease, decodePending } from './decode'
+
+export const QUEUE_DATABASE = 'golf-pending-scores-v1'
+export const STORAGE_ERROR = 'Kunne ikke lagre på denne enheten. Endringen er ikke trygt lagret. Prøv igjen eller forkast.'
+export const STALE_ERROR = 'Endringen ble oppdatert i en annen fane. Se gjennom den på nytt.'
+
+function request<T>(input: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => { input.onsuccess = () => resolve(input.result); input.onerror = () => reject(new Error(STORAGE_ERROR)) })
+}
+function open(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') { reject(new Error(STORAGE_ERROR)); return }
+    const req = indexedDB.open(QUEUE_DATABASE, 1)
+    req.onupgradeneeded = () => {
+      const pending = req.result.createObjectStore('pending', { keyPath: 'key' })
+      pending.createIndex('account', 'accountId'); pending.createIndex('card', 'cardKey')
+      req.result.createObjectStore('confirmations', { keyPath: 'key' })
+    }
+    req.onsuccess = () => { req.result.onversionchange = () => req.result.close(); resolve(req.result) }
+    req.onerror = () => reject(new Error(STORAGE_ERROR))
+    req.onblocked = () => reject(new Error(STORAGE_ERROR))
+  })
+}
+async function transaction<T>(action: (pending: IDBObjectStore, confirmations: IDBObjectStore) => Promise<T>): Promise<T> {
+  const db = await open().catch(() => { throw new Error(STORAGE_ERROR) })
+  try {
+    const tx = db.transaction(['pending', 'confirmations'], 'readwrite')
+    const committed = new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve(); tx.onabort = () => reject(new Error(STORAGE_ERROR)); tx.onerror = () => reject(new Error(STORAGE_ERROR))
+    })
+    try {
+      const result = await action(tx.objectStore('pending'), tx.objectStore('confirmations'))
+      await committed
+      return result
+    } catch (error) {
+      try { tx.abort() } catch { /* Already completed/aborted. */ }
+      await committed.catch(() => undefined)
+      throw error
+    }
+  } catch (error) {
+    if (error instanceof DOMException) throw new Error(STORAGE_ERROR)
+    throw error
+  } finally { db.close() }
+}
+async function get(store: IDBObjectStore, key: string): Promise<PendingScore | null> {
+  const value: unknown = await request(store.get(key))
+  return value === undefined ? null : decodePending(value)
+}
+async function confirmation(store: IDBObjectStore, key: string): Promise<ConfirmationLease | null> {
+  const value: unknown = await request(store.get(key))
+  return value === undefined ? null : decodeLease(value)
+}
+function write(store: IDBObjectStore, key: string, item: PendingScore | null): void {
+  if (item === null) store.delete(key); else store.put(item)
+}
+export const queueDatabase = {
+  list: (accountId: string): Promise<PendingScore[]> => transaction(async pending => {
+    const values: unknown[] = await request(pending.index('account').getAll(accountId))
+    return values.map(decodePending)
+  }),
+  enqueue: (target: QueueTarget, desired: number, expected: ExpectedScore): Promise<void> => transaction(async (pending, confirmations) => {
+    const lock = await confirmation(confirmations, cardKey(target))
+    if (lock && lock.until > Date.now()) throw new Error('Scorekortet bekreftes i en annen fane. Prøv igjen om litt.')
+    const key = queueKey(target)
+    write(pending, key, enqueue(await get(pending, key), target, desired, expected))
+  }),
+  claim: (key: string, leaseId: string): Promise<PendingScore | null> => transaction(async pending => {
+    const item = await get(pending, key)
+    if (!item || item.phase !== 'queued' || hasLease(item) || item.retryAt > Date.now()) return null
+    const claimed = { ...item, lease: { id: leaseId, until: Date.now() + LEASE_MS } }
+    write(pending, key, claimed)
+    return claimed
+  }),
+  acknowledge: (key: string, ack: ScoreAcknowledgement): Promise<void> => transaction(async pending => {
+    const item = await get(pending, key)
+    if (item) write(pending, key, acknowledge(item, ack))
+  }),
+  fail: (key: string, requestId: string, leaseId: string, phase: QueuePhase): Promise<void> => transaction(async pending => {
+    const item = await get(pending, key)
+    if (!item || item.head.request_id !== requestId || item.lease?.id !== leaseId) return
+    const attempts = item.attempts + 1
+    write(pending, key, { ...item, phase, lease: null, attempts, retryAt: Date.now() + Math.min(30_000, 1000 * 2 ** Math.min(attempts, 5)) })
+  }),
+  retry: (key: string, generation: string): Promise<void> => transaction(async pending => {
+    const item = await get(pending, key)
+    if (!item || item.generation !== generation || hasLease(item)) throw new Error(STALE_ERROR)
+    if (item.phase === 'conflict') return
+    write(pending, key, { ...item, phase: 'queued', retryAt: 0 })
+  }),
+  resolve: (key: string, generation: string, expected: ExpectedScore | null): Promise<void> => transaction(async pending => {
+    const item = await get(pending, key)
+    if (!item || item.generation !== generation || hasLease(item)) throw new Error(STALE_ERROR)
+    write(pending, key, expected === null ? null : { ...item, head: operation(item, item.desired, expected),
+      generation: crypto.randomUUID(), phase: 'queued', lease: null, attempts: 0, retryAt: 0 })
+  }),
+  acquireConfirmation: (key: string, id: string): Promise<number> => transaction(async (pending, confirmations) => {
+    const count = await request(pending.index('card').count(key))
+    const lock = await confirmation(confirmations, key)
+    if (count > 0) throw new Error('Alle lokale endringer må være levert før du bekrefter.')
+    if (lock && lock.until > Date.now()) throw new Error('Scorekortet bekreftes allerede i en annen fane.')
+    const until = Date.now() + LEASE_MS
+    confirmations.put({ key, id, until })
+    return until
+  }),
+  releaseConfirmation: (key: string, id: string): Promise<void> => transaction(async (_pending, confirmations) => {
+    const lock = await confirmation(confirmations, key)
+    if (lock?.id === id) confirmations.delete(key)
+  }),
+}

@@ -1,13 +1,16 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../api/client'
 import { ApiHttpError } from '../../api/http'
 import { scoringKeys, type ScoreOwner, type ScoringScorecard } from '../../api/scorecards'
-import { tournamentKeys } from '../../api/tournaments'
+import { scoreRequest } from '../../api/scorecards/timeout'
 import { privateWorkspaceKeys } from '../../api/privateWorkspace'
 import type { Round } from '../../api/types'
 import { invalidateScorecard, invalidateScoreDependents } from './queries'
 import { useAuth } from '../auth/authContext'
+import { useScoreQueue } from './offline/context'
+import { queueDatabase } from './offline/database'
+import { cardKey, REQUEST_MS } from './offline/model'
 
 interface ConfirmationInput {
   round: Round
@@ -18,84 +21,64 @@ interface ConfirmationInput {
   onConfirmed: () => void
   onTerminal: () => void
 }
-
-type ConfirmationVariables = ConfirmationInput
-
 export function useScorecardConfirmation(input: ConfirmationInput) {
-  const queryClient = useQueryClient()
-  const auth = useAuth()
-  const userId = auth.session?.user_id ?? ''
-  const mutation = useMutation({
+  const client = useQueryClient()
+  const { session } = useAuth()
+  const queue = useScoreQueue()
+  const userId = session?.user_id ?? ''
+  const key = cardKey({ accountId: userId, roundId: input.round.id, owner: input.owner })
+  const busy = useRef(false)
+  const current = useRef(key)
+  current.current = key
+  const controller = useRef<AbortController | null>(null)
+  useEffect(() => () => controller.current?.abort(), [])
+  const blocked = !queue.online || queue.loading || queue.error !== null || queue.items.some(item => item.cardKey === key) || queue.refreshing.some(value => value.item.cardKey === key)
+  const mutation = useMutation({ gcTime: 0, retry: false, networkMode: 'always',
     mutationKey: ['scorecard-confirmation', input.round.id, input.owner.type, input.owner.id],
-    mutationFn: async (variables: ConfirmationVariables) => {
-      if (!variables.csrfToken) throw new Error('Økten er utløpt')
-      if (!variables.card.complete || variables.card.confirmed) {
-        throw new Error('Scorekortet må være komplett og ubekreftet')
-      }
-      return api.confirmScorecard(variables.round.id, variables.owner, variables.csrfToken)
+    mutationFn: async () => {
+      if (!input.csrfToken || !navigator.onLine || blocked || !queue.runtime.isCurrent()) throw new Error('Alle endringer må leveres og forbindelsen må være tilbake før du bekrefter.')
+      const lease = crypto.randomUUID()
+      const own = () => current.current === key && queue.runtime.isCurrent()
+      const until = await queueDatabase.acquireConfirmation(key, lease)
+      try {
+        if (!own()) return
+        const abort = new AbortController(); controller.current = abort
+        await scoreRequest(async signal => {
+          const fresh = await api.scorecardScoring(input.round.id, input.owner, signal)
+          if (!own() || signal.aborted) return
+          if (Date.now() + REQUEST_MS > until) throw new Error('Bekreftelsen tok for lang tid. Oppdater kortet og prøv igjen.')
+          client.setQueryData(scoringKeys.scoring(userId, input.round.id, input.owner), fresh)
+          if (fresh.confirmed) { input.onConfirmed(); return }
+          if (!fresh.complete) throw new Error('Scorekortet må være komplett før du bekrefter.')
+          const card = await api.confirmScorecard(input.round.id, input.owner, input.csrfToken ?? '', signal)
+          if (!own() || signal.aborted) return
+          await invalidateScorecard(client, userId, input.round.id, input.owner)
+          if (!own()) return
+          client.setQueryData(scoringKeys.scoring(userId, input.round.id, input.owner), card)
+          void invalidateScoreDependents(client, userId, input.round.id, input.tournamentId)
+          input.onConfirmed()
+        }, abort.signal)
+      } finally { await queueDatabase.releaseConfirmation(key, lease) }
     },
-    onSuccess: async (card, variables) => {
-      queryClient.setQueryData(scoringKeys.scoring(userId, variables.round.id, variables.owner), card)
-      await invalidateScorecard(queryClient, userId, variables.round.id, variables.owner)
-      queryClient.setQueryData(scoringKeys.scoring(userId, variables.round.id, variables.owner), card)
-      await invalidateScoreDependents(queryClient, userId, variables.round.id, variables.tournamentId)
-      variables.onConfirmed()
-    },
-    onError: async (error, variables) => {
-      if (error instanceof ApiHttpError && (error.status === 401 || error.status === 403)) {
-        variables.onTerminal()
-        queryClient.removeQueries({ queryKey: scoringKeys.scoring(userId, variables.round.id, variables.owner), exact: true })
-        await queryClient.invalidateQueries({ queryKey: privateWorkspaceKeys.scoreAccess(userId, variables.round.id), exact: true })
-        return
+    onError: error => {
+      if (!queue.runtime.isCurrent() || current.current !== key) return
+      if (error instanceof ApiHttpError && (error.status === 401 || error.status === 403 || error.code === 'round_not_editable')) {
+        input.onTerminal()
+        client.removeQueries({ queryKey: scoringKeys.scoring(userId, input.round.id, input.owner), exact: true })
+        void client.invalidateQueries({ queryKey: privateWorkspaceKeys.scoreAccess(userId, input.round.id), exact: true })
+        void client.invalidateQueries({ queryKey: privateWorkspaceKeys.completion(userId, input.round.id), exact: true })
       }
-      if (!(error instanceof ApiHttpError) || error.code !== 'round_not_editable') return
-      variables.onTerminal()
-      const [round, completion] = await Promise.all([
-        api.round(variables.round.id),
-        api.completionValidation(variables.round.id, variables.round.scoring_format),
-      ])
-      const card = completion.status === 'locked'
-        ? await api.scorecardRead(variables.round.id, variables.owner)
-        : await api.scorecardScoring(variables.round.id, variables.owner)
-      queryClient.setQueryData(tournamentKeys.round(userId, variables.round.id), round)
-      queryClient.setQueryData(privateWorkspaceKeys.completion(userId, variables.round.id), completion)
-      if (card.projection === 'scoring') {
-        queryClient.setQueryData(scoringKeys.scoring(userId, variables.round.id, variables.owner), card)
-      } else {
-        queryClient.removeQueries({ queryKey: scoringKeys.scoring(userId, variables.round.id, variables.owner), exact: true })
-        queryClient.setQueryData(scoringKeys.read(userId, variables.round.id, variables.owner), card)
-      }
-      await queryClient.invalidateQueries({ queryKey: tournamentKeys.rounds(userId, variables.tournamentId), exact: true })
     },
+    onSettled: () => { busy.current = false },
   })
   const reset = mutation.reset
-  const scopeKey = `${input.round.id}:${input.owner.type}:${input.owner.id}`
-
-  useEffect(() => reset(), [reset, scopeKey])
-
-  let errorMessage: string | null = null
-  let retryable = true
-  if (mutation.error instanceof ApiHttpError && (mutation.error.status === 401 || mutation.error.status === 403)) {
-    errorMessage = mutation.error.status === 401
-      ? 'Økten er utløpt. Logg inn på nytt.'
-      : 'Du har ikke tilgang til dette scorekortet.'
-    retryable = false
-  } else if (mutation.error instanceof ApiHttpError && mutation.error.code === 'round_not_editable') {
-    errorMessage = 'Runden kan ikke lenger redigeres.'
-    retryable = false
-  } else if (mutation.error) {
-    errorMessage = mutation.error.message
-  }
-
+  useEffect(() => { reset(); busy.current = false }, [reset, key])
   return {
-    confirm: () => mutation.mutate({
-      ...input,
-      owner: input.owner.type === 'player'
-        ? { type: 'player', id: input.owner.id }
-        : { type: 'team', id: input.owner.id },
-    }),
+    confirm: () => { if (!busy.current && !blocked) { busy.current = true; mutation.mutate() } },
     confirming: mutation.isPending,
-    errorMessage,
-    retryable,
+    blocked,
+    errorMessage: mutation.error ? mutation.error instanceof ApiHttpError ? 'Scorekortet kunne ikke bekreftes. Oppdater tilgang og rundestatus.'
+      : mutation.error.name === 'AbortError' ? 'Bekreftelsen tok for lang tid. Oppdater scorekortet før du prøver igjen.' : mutation.error.message : null,
+    retryable: !(mutation.error instanceof ApiHttpError && (mutation.error.status === 401 || mutation.error.status === 403 || mutation.error.code === 'round_not_editable')),
   }
 }

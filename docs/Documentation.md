@@ -170,6 +170,36 @@ session actor as `confirmed_by` plus `confirmed_at`. Confirmation records repres
 stroke changes remain historically audited, but superseded confirmation states
 are not retained as a separate event history.
 
+## Conditional score delivery
+
+`PUT /api/rounds/{round_id}/scores/conditional` requires the current session and
+CSRF token. Its closed request contains `request_id` (UUID), `hole_id`, tagged
+`owner`, `gross_strokes` (1–20), and `expected_score`: either
+`{"type":"absent"}` or `{"type":"present","score_id":"UUID","revision":"1"}`.
+Revisions are canonical positive decimal strings within PostgreSQL bigint range.
+Authorized scoring responses and legacy score-save acknowledgments now include
+required `revision`; actor-free member/public score projections are unchanged.
+
+A successful response is `{"request_id":"UUID","applied_score":{"score_id":"UUID",
+"revision":"1"}}`. It acknowledges that operation's past application, not the
+current score. For example, retrying an operation that saved 5 before somebody
+else saved 6 acknowledges the first operation without restoring 5. Fetch the
+current authorized scorecard to display server state. Follow-up local operations
+must expect the acknowledged predecessor revision, not silently adopt another
+scorer's newly fetched version.
+
+`409 score_version_conflict` means the expected absent/exact version no longer
+matches; no score changes. `409 score_request_mismatch` means the same account's
+request ID was reused with different content. Matching retries add no duplicate
+audit or SSE event and cannot invalidate confirmation again. Even equal-stroke
+requests must match the expected version; intervening changes cannot be hidden
+by returning to the same number. Every delivery, including a receipt hit,
+rechecks current session, membership, owner authority and editable round status.
+Open and completed rounds remain editable; draft/locked rounds reject replay.
+Errors retain the ordinary authentication/CSRF/validation contract, and the
+conditional route's responses are `private, no-store` with a 2 KiB body limit.
+The legacy score PUT remains available with its deliberate last-write-wins rule.
+
 ## Mobile score entry
 
 The React `/score` page keeps tournament, round, tagged owner, hole, and
@@ -203,15 +233,42 @@ the session has expired, the page returns to sign-in. A disconnected Score page
 explains the connection loss and provides a reconnect action instead of waiting
 silently for an unrelated navigation click.
 
-While live progress is being recovered, an already loaded writable score input
-stays mounted for the same explicit player/team and hole. Pending saves,
-confirmation, and failed-score decisions retain their existing state and guards.
-The owner temporarily reads **Valgt scorekort**, completion-dependent selectors
-are hidden, and scoring/confirmation controls wait for recovery. Failed input can
-still be discarded. Transient refresh failures show a retry action. This does
-not enable offline scoring or replay writes on return. Read-only scorecards and
-protected progress remain hidden until authoritative reads succeed; access denial
-and round locking continue to remove write access.
+While live progress is being recovered, an already loaded writable card remains
+available for local hole entry. The owner temporarily reads **Valgt scorekort**,
+and completion-dependent selectors wait for fresh metadata. The browser does not
+restore cleared progress or hidden result data. Actual access denial and round
+locking remove write access; retained device edits cannot bypass those rules.
+
+**Lokale scoreendringer** shows a compact count/status disclosure on Score and a
+link from other private workspace pages when edits need attention. It remains
+available when the selected card cannot load or becomes read-only. Each ordinary
+hole edit commits to this device's IndexedDB before it is labelled locally saved.
+You can then move between holes without waiting for the server. Pending values
+are distinct from server-confirmed score/net values; storage failure keeps an
+explicit unsaved error and navigation guard instead of claiming durability.
+
+Delivery runs while the private workspace is open, with bounded requests,
+automatic retries/backoff, and reconnect/tab-return wakeups. Several tabs coordinate
+through local transactions and leases. A persisted request is immutable; rapid
+further input becomes a successor using the first operation's acknowledged
+revision. Delayed reads cannot turn an old cached score into a verified save.
+
+If another scorer changed the hole, **Sammenlign scorer** fetches the current
+server score and shows it beside the local value. **Behold serverscoren** discards
+only the reviewed local operation; **Bruk min lokale score** creates a new
+conditional operation. Another intervening edit requires comparison again.
+Changing the local operation in another tab also requires renewed review.
+**Forkast lokal endring** removes only the device copy; it cannot undo a request
+that may already have reached the server. Locked/revoked deliveries stay visible
+as blocked pending edits, with explicit retry or local discard.
+
+Queued edits belong to the account that entered them. Logging out pauses delivery
+and hides that account's queue; signing into the same account can resume it.
+Other accounts cannot display or replay those operations. No credentials or full
+private scorecard caches are persisted. Pending edits survive reload for later
+online delivery, but reopening the whole site while offline is not guaranteed:
+there is no offline app shell, service worker or background sync. Clearing browser
+site data removes pending device edits.
 
 The owner, tournament, and round identity precede the active hole or summary.
 Hole selection and the view toggle stay visible below it. The labeled tournament,
@@ -221,17 +278,16 @@ spiller/lag**; the quick card rail and totals follow. The tournament list separa
 The tournament standings start with their heading and table, without introductory
 explanation paragraphs; provisional, qualification, and visibility labels remain.
 
-Each hole has large par, minus, and plus actions bounded to 1-20 strokes. An
-owner-and-hole-scoped coordinator serializes writes, coalesces rapid taps to the
-latest desired score, and refetches the exact scorecard before showing
-`Synkronisert`. Failed writes retain the desired score with Retry and Discard.
-Navigation is guarded while a write, verification, failure decision, or
-confirmation is unresolved. SSE remains a second invalidation path only.
-
-Complete cards can be confirmed from their summary. Confirmed editable cards
-require an explicit correction mode; a changed score removes confirmation and
-the corrected card must be confirmed again. Completed rounds remain correctable,
-while locked rounds are read-only.
+Each hole has large par, minus, and plus actions bounded to 1–20 strokes. SSE
+remains an authoritative-query invalidation signal, never a source of merged
+score values. Full scorecard confirmation remains online-only: all local edits
+for that account/card must be delivered and resolved, and a fresh scoring read
+must succeed. A local confirmation lease prevents another tab from enqueueing
+against the same card during that operation. The existing POST confirms the
+current server card; it is not an immutable snapshot of what was reviewed.
+Confirmed editable cards require explicit correction mode; a changed score
+removes confirmation and the corrected card must be confirmed again. Completed
+rounds remain correctable, while locked rounds are read-only.
 
 `GET /api/rounds/{round_id}/score-access` supplies the exact player or team owners
 the current session may write. The phone-first card rail follows that
@@ -243,8 +299,9 @@ eligible read-only cards.
 The selected card and at most its two writable neighbors use the user-, round-,
 and owner-scoped private TanStack Query cache. Focus or pointer intent may prefetch one
 additional chosen card; there is no eager all-flight fetch and no duplicate
-client score state. The same unresolved-save or confirmation navigation lock
-disables both selectors. The browser never reproduces role or membership policy.
+authoritative client score state. Uncommitted device writes and confirmation
+guard navigation; durable pending edits do not block moving between loaded holes.
+The browser never reproduces role or membership policy.
 The private, non-cacheable access read revalidates and locks the active session/
 player link plus the exact tournament membership inside one repeatable-read
 transaction before it assembles the owner list. An authenticated account without
@@ -1515,6 +1572,7 @@ restore, and rollback procedures are maintained in `docs/deployment_guide.md`.
   draft-round configuration; non-draft rounds are deliberately read-only.
 - Pairing roster reads, atomic admin replacement, the mobile draft editor,
   flight-aware opening readiness, and representative ready seed assignments
-  exist together with membership-wide scoring authority. There is still no
-  offline score queue. Public links provide only the limited overall standings
-  projection described above.
+  exist together with membership-wide scoring authority. Durable offline hole
+  edits support an already-open authorized card; cold offline launch and background
+  sync remain unimplemented. Public links provide only the limited overall
+  standings projection described above.

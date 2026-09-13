@@ -438,3 +438,26 @@ invent a web administrator account as a recovery shortcut.
 
 Keep `.env.production`, dumps, and checksums out of Git. The repository ignores
 `.env.*` except the documented example.
+
+### Schema 27 durable conditional score delivery
+
+Migration 0027 adds score revisions and immutable delivery receipts. It initializes
+existing scores at revision 1 without changing their strokes, timestamps, audits,
+confirmation or handicap snapshots. Apply the migration and refresh runtime grants
+before starting matching API/frontend builds. The new scoring client requires the
+conditional endpoint and required revision strings on authorized scoring responses;
+member and public result projections are unchanged. Older API binaries fail exact
+schema readiness after this migration. Rollback uses the documented backup/restore
+procedure with matching binaries; do not edit or remove an applied migration.
+
+Receipts acknowledge past writes and must not be pruned while their parent account,
+round and score exist: a later retry must remain deduplicated. No receipt cleanup
+job is introduced. Ordinary score changes, including the legacy endpoint and
+explicit database correction path, advance revisions on actual stroke changes.
+
+Unsent edits reside in the user's browser IndexedDB, isolated by account. Server
+backups do not contain those pending edits. Logging out pauses delivery but keeps
+that account's device copy; clearing browser site data removes it. Queue delivery
+requires the app's private workspace to be running with an authorized session.
+Cold offline launch and background sync are outside this release. Confirmation is
+online-only; locked rounds and revoked access cannot be bypassed through replay.

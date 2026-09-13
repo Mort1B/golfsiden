@@ -365,20 +365,9 @@ async fn schema24_upgrade_defaults_shared_without_rewriting_historical_rows_or_p
         .await
         .unwrap();
     assert!(!opened.handicap_snapshots.is_empty());
-    golf_api::repositories::scorecards::save(
-        &pool,
-        golf_api::repositories::scorecards::SaveScore {
-            round_id: opened.round.id,
-            hole_id: uuid!("00000000-0000-0000-0000-000000003201"),
-            owner: golf_api::domain::scorecards::ScoreOwner::Team {
-                id: uuid!("00000000-0000-0000-0000-000000005001"),
-            },
-            gross_strokes: 5,
-            submitted_by: uuid!("00000000-0000-0000-0000-000000000001"),
-        },
-    )
-    .await
-    .unwrap();
+    // Insert using the historical workflow without decoding a current-schema
+    // ScoreEntry, which now requires the revision column introduced in 0027.
+    sqlx::raw_sql("BEGIN; SELECT set_config('app.score_mutation_round_id','00000000-0000-0000-0000-000000004001',true); INSERT INTO scores(id,round_id,tournament_id,hole_id,team_id,gross_strokes,submitted_by) VALUES(gen_random_uuid(),'00000000-0000-0000-0000-000000004001','00000000-0000-0000-0000-000000002001','00000000-0000-0000-0000-000000003201','00000000-0000-0000-0000-000000005001',5,'00000000-0000-0000-0000-000000000001'); COMMIT;").execute(&pool).await.unwrap();
     // A retained pre-upgrade retry receipt must survive byte-for-byte too.
     sqlx::query("INSERT INTO tournament_creation_requests(user_id,request_id,request_hash,tournament_id) VALUES('00000000-0000-0000-0000-000000001001',$1,decode(repeat('ab',32),'hex'),'00000000-0000-0000-0000-000000002001')")
         .bind(Uuid::new_v4()).execute(&pool).await.unwrap();

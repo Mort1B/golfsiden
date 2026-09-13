@@ -13,9 +13,12 @@ import {
 } from './scorecards'
 import type { LeaderboardMetric, ScoringFormat } from './types'
 import { roundLifecycleApi } from './roundLifecycle'
+import { scoreRequest } from './scorecards/timeout'
+import { saveConditionalScore } from './scorecards/conditional'
 import { teamApi } from './teams'
 
 export const api = {
+  saveConditionalScore,
   login: (username: string, password: string) => requestDecoded('/api/auth/login', decodeAuthSession,
     jsonRequest('POST', { username, password })),
   session: async () => {
@@ -54,9 +57,9 @@ export const api = {
   scorecardRead: (roundId: string, owner: ScoreOwner) =>
     requestDecoded(`/api/rounds/${roundId}/scorecards/${owner.type}/${owner.id}`, (value) =>
       decodeReadScorecard(value, roundId, owner)),
-  scorecardScoring: (roundId: string, owner: ScoreOwner) =>
-    requestDecoded(`/api/rounds/${roundId}/scorecards/${owner.type}/${owner.id}/scoring`, (value) =>
-      decodeScoringScorecard(value, roundId, owner)),
+  scorecardScoring: (roundId: string, owner: ScoreOwner, signal?: AbortSignal) =>
+    scoreRequest(child => requestDecoded(`/api/rounds/${roundId}/scorecards/${owner.type}/${owner.id}/scoring`, (value) =>
+      decodeScoringScorecard(value, roundId, owner), { signal: child }), signal),
   saveScore: (roundId: string, holeId: string, owner: ScoreOwner, grossStrokes: number, csrfToken: string) =>
     requestDecoded(`/api/rounds/${roundId}/scores`, (value) =>
       decodeSavedScore(value, roundId, holeId, owner, grossStrokes), jsonRequest('PUT', {
@@ -64,8 +67,8 @@ export const api = {
         owner,
         gross_strokes: grossStrokes,
       }, csrfToken)),
-  confirmScorecard: (roundId: string, owner: ScoreOwner, csrfToken: string) =>
+  confirmScorecard: (roundId: string, owner: ScoreOwner, csrfToken: string, signal?: AbortSignal) =>
     requestDecoded(`/api/rounds/${roundId}/scorecards/${owner.type}/${owner.id}/confirm`, (value) =>
-      decodeScoringScorecard(value, roundId, owner), jsonRequest('POST', {}, csrfToken)),
+      decodeScoringScorecard(value, roundId, owner), { ...jsonRequest('POST', {}, csrfToken), signal }),
   tournamentLiveUrl,
 }

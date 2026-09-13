@@ -1,3 +1,4 @@
+import { PendingScores } from '../features/scoring/offline/PendingScores'
 import { useScoreWorkspaceData } from '../features/scoring/useScoreWorkspaceData'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 import type { ReactNode } from 'react'
@@ -16,7 +17,7 @@ import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 export function ScorePage() {
   const location = useLocation()
   const resume = location.search === ''
-  return <ScoreWorkspace key={resume ? location.key : 'selected'} resume={resume} />
+  return <><PendingScores /><ScoreWorkspace key={resume ? location.key : 'selected'} resume={resume} /></>
 }
 
 function ScoreWorkspace({ resume }: { resume: boolean }) {

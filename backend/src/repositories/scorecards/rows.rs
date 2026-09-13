@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::domain::{
     models::{RoundStatus, ScoringFormat},
-    scorecards::{ScoreEntry, ScoreOwner, ScorecardHoleSource},
+    scorecards::{ScoreEntry, ScoreOwner, ScoreRevision, ScorecardHoleSource},
 };
 
 use super::ScorecardError;
@@ -30,6 +30,7 @@ pub(super) struct ReadVisibilityContext {
 
 #[derive(FromRow)]
 pub(super) struct ScoreRow {
+    pub revision: i64,
     pub id: Uuid,
     pub round_id: Uuid,
     pub hole_id: Uuid,
@@ -43,6 +44,7 @@ pub(super) struct ScoreRow {
 
 #[derive(FromRow)]
 pub(super) struct HoleScoreRow {
+    pub revision: Option<i64>,
     pub round_id: Uuid,
     pub hole_id: Uuid,
     pub hole_number: i16,
@@ -67,6 +69,7 @@ pub(super) fn hole_source_from_row(
     row: HoleScoreRow,
 ) -> Result<ScorecardHoleSource, ScorecardError> {
     let score = match (
+        row.revision,
         row.score_id,
         row.gross_strokes,
         row.submitted_by,
@@ -74,12 +77,14 @@ pub(super) fn hole_source_from_row(
         row.updated_at,
     ) {
         (
+            Some(revision),
             Some(id),
             Some(gross_strokes),
             Some(submitted_by),
             Some(submitted_at),
             Some(updated_at),
         ) => Some(score_from_row(ScoreRow {
+            revision,
             id,
             round_id: row.round_id,
             hole_id: row.hole_id,
@@ -90,7 +95,7 @@ pub(super) fn hole_source_from_row(
             submitted_at,
             updated_at,
         })?),
-        (None, None, None, None, None) => None,
+        (None, None, None, None, None, None) => None,
         _ => return Err(ScorecardError::InvalidStoredData),
     };
     Ok(ScorecardHoleSource {
@@ -109,6 +114,8 @@ pub(super) fn score_from_row(row: ScoreRow) -> Result<ScoreEntry, ScorecardError
         _ => return Err(ScorecardError::InvalidStoredData),
     };
     Ok(ScoreEntry {
+        revision: ScoreRevision::from_database(row.revision)
+            .ok_or(ScorecardError::InvalidStoredData)?,
         id: row.id,
         round_id: row.round_id,
         hole_id: row.hole_id,

@@ -8,6 +8,8 @@ import { ScoreSelectors } from './ScoreSelectors'
 import { writableOwnerProgress, type ScoreView } from './selection'
 import { useHoleScoreSync } from './useHoleScoreSync'
 import { useScorecardConfirmation } from './useScorecardConfirmation'
+import { useScoreQueue } from './offline/context'
+import { expectedScore } from '../../api/scorecards/conditional'
 import { useEffect, useState } from 'react'
 import { useBlocker } from 'react-router-dom'
 import { WritableCardSwitcher } from './WritableCardSwitcher'
@@ -34,6 +36,10 @@ interface ScoringExperienceProps {
 }
 
 export function ScoringExperience(props: ScoringExperienceProps) {
+  const queue = useScoreQueue()
+  const localScores = new Map([...queue.refreshing.map(value => value.item), ...queue.items]
+    .filter(item => item.roundId === props.round.id && item.owner.type === props.selectedOwner.owner.type && item.owner.id === props.selectedOwner.owner.id)
+    .map(item => [item.holeId, item.desired]))
   const ownerKey = `${props.round.id}:${props.selectedOwner.owner.type}:${props.selectedOwner.owner.id}`
   const [correctionKey, setCorrectionKey] = useState<string | null>(null)
   const correctionMode = correctionKey === ownerKey
@@ -48,11 +54,8 @@ export function ScoringExperience(props: ScoringExperienceProps) {
     owner: props.selectedOwner.owner,
     holeId: props.hole.hole_id,
     serverValue: props.hole.score?.gross_strokes ?? null,
-    csrfToken,
-    onVerified: (card) => {
-      if (card.confirmed) setCorrectionKey(null)
-    },
-    onTerminal: () => setCorrectionKey(null),
+    holeNumber: props.hole.hole_number,
+    expected: expectedScore(props.card.holes.find(hole => hole.hole_id === props.hole.hole_id)?.score ?? null),
   })
   const confirmation = useScorecardConfirmation({
     round: props.round,
@@ -69,7 +72,7 @@ export function ScoringExperience(props: ScoringExperienceProps) {
   const canEdit = editableRound
     && csrfToken !== null
     && props.canWrite
-    && !props.recovering
+    && sync.storageReady
     && (!props.card.confirmed || correctionMode)
   const writableCards = writableOwnerProgress(props.owners, props.writableOwners)
 
@@ -104,14 +107,14 @@ export function ScoringExperience(props: ScoringExperienceProps) {
 
       {!csrfToken && <div className="scoring-notice error" role="alert">Økten er utløpt. Logg inn på nytt for å lagre.</div>}
       {!props.canWrite && <div className="scoring-notice">Du kan se dette scorekortet, men ikke føre score for det.</div>}
-      {props.recovering && <div className="scoring-notice" role="status">Oppdaterer scoretilgang og rundestatus. Pågående scoreendring beholdes.</div>}
+      {props.recovering && <div className="scoring-notice" role="status">Oppdaterer scoretilgang og rundestatus. Du kan føre hull på dette kortet; endringer lagres først på enheten. Bekreftelse venter til forbindelsen er tilbake.</div>}
       {navigationWarning && <div className="scoring-notice warning" role="alert">Fullfør eller forkast den pågående scoreendringen før du går videre.</div>}
       {props.round.status === 'locked' && <div className="scoring-notice">Runden er låst. Scorekortet er skrivebeskyttet.</div>}
       {props.round.status === 'completed' && <div className="scoring-notice">Runden er fullført. Korrigering er mulig frem til låsing.</div>}
       {props.card.confirmed && editableRound && !correctionMode && (
         <div className="correction-gate">
           <p>Scorekortet er bekreftet og skrivebeskyttet.</p>
-          <button type="button" disabled={navigationLocked || !csrfToken || !props.canWrite || props.recovering} onClick={() => setCorrectionKey(ownerKey)}>Korriger score</button>
+          <button type="button" disabled={navigationLocked || !csrfToken || !props.canWrite || !sync.storageReady} onClick={() => setCorrectionKey(ownerKey)}>Korriger score</button>
         </div>
       )}
       {correctionMode && props.card.confirmed && <div className="scoring-notice warning">Korrigeringsmodus er aktiv. Første endring fjerner bekreftelsen.</div>}
@@ -122,8 +125,8 @@ export function ScoringExperience(props: ScoringExperienceProps) {
           hole={props.hole}
           sync={sync.snapshot}
           canEdit={canEdit}
-          navigationLocked={navigationLocked || props.recovering === true}
-          retryDisabled={props.recovering}
+          navigationLocked={navigationLocked}
+          retryDisabled={false}
           onScore={sync.setScore}
           onRetry={sync.retry}
           onDiscard={sync.discard}
@@ -133,8 +136,10 @@ export function ScoringExperience(props: ScoringExperienceProps) {
       ) : (
         <ScorecardSummaryView
           card={props.card}
-          disabled={navigationLocked || props.recovering === true}
+          localScores={localScores}
+          disabled={navigationLocked}
           readOnly={!editableRound || !csrfToken || !props.canWrite}
+          confirmationDisabled={confirmation.blocked || props.recovering === true}
           confirming={confirmation.confirming}
           confirmationError={confirmation.errorMessage}
           confirmationRetryable={confirmation.retryable}
@@ -143,6 +148,7 @@ export function ScoringExperience(props: ScoringExperienceProps) {
         />
       )}
 
+      {props.recovering && <button className="score-recovery-toggle" type="button" disabled={navigationLocked} onClick={() => props.onView(props.view === 'hole' ? 'summary' : 'hole')}>{props.view === 'hole' ? 'Oppsummering' : 'Ett hull'}</button>}
       {!props.recovering && <ScoreSelectors
         tournaments={props.tournaments}
         rounds={props.rounds}
@@ -169,7 +175,7 @@ export function ScoringExperience(props: ScoringExperienceProps) {
         onPrefetch={props.onPrefetchOwner}
       />}
 
-      <dl className="scorecard-strip">
+      <dl className="scorecard-strip" aria-label="Summer fra serveren">
         <div><dt>Brutto</dt><dd>{props.card.holes_scored > 0 ? props.card.gross_total : '–'}</dd></div>
         <div><dt>Netto</dt><dd>{props.card.holes_scored > 0 ? props.card.net_total : '–'}</dd></div>
         <div><dt>Hull</dt><dd>{props.card.holes_scored}/{props.card.number_of_holes}</dd></div>

@@ -6,7 +6,9 @@ use uuid::Uuid;
 use super::scoring::{ScoringError, handicap_strokes_for_hole};
 
 mod projection;
+mod revision;
 pub use projection::{ScorecardReadProjection, read_projection};
+pub use revision::{AppliedScore, ExpectedScore, ScoreAcknowledgement, ScoreRevision};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -33,6 +35,7 @@ impl ScoreOwner {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ScoreEntry {
+    pub revision: ScoreRevision,
     pub id: Uuid,
     pub round_id: Uuid,
     pub hole_id: Uuid,
@@ -193,6 +196,7 @@ mod tests {
             par: 4,
             stroke_index,
             score: gross.map(|gross_strokes| ScoreEntry {
+                revision: ScoreRevision::from_database(1).unwrap(),
                 id: Uuid::from_u128(200 + hole_number as u128),
                 round_id,
                 hole_id: Uuid::from_u128(100 + hole_number as u128),

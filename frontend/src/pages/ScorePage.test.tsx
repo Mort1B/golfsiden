@@ -1,4 +1,7 @@
 // @vitest-environment jsdom
+import { IDBFactory } from 'fake-indexeddb'
+import { ScoreQueueProvider } from '../features/scoring/offline/ScoreQueueProvider'
+import { queueDatabase } from '../features/scoring/offline/database'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
@@ -24,20 +27,21 @@ function card(scored: number[] = []): ScoringScorecard {
   return { projection: 'scoring', round_id: round.id, owner, number_of_holes: 18,
     gross_total: scored.length * 4, net_total: scored.length * 4, playing_handicap: 0,
     holes_scored: scored.length, complete: scored.length === 18, confirmed: false, confirmed_at: null, confirmed_by: null,
-    holes: Array.from({ length: 18 }, (_, index) => ({ hole_id: `hole-${index + 1}`, hole_number: index + 1, par: 4, stroke_index: index + 1, handicap_strokes: 0,
+    holes: Array.from({ length: 18 }, (_, index) => ({ hole_id: `00000000-0000-0000-0001-${String(index + 1).padStart(12, '0')}`, hole_number: index + 1, par: 4, stroke_index: index + 1, handicap_strokes: 0,
       net_strokes: scored.includes(index + 1) ? 4 : null, score: scored.includes(index + 1) ? {
-        id: `score-${index}`, round_id: round.id, hole_id: `hole-${index + 1}`, owner, gross_strokes: 4,
-        submitted_by: session.user_id, submitted_at: tournament.created_at, updated_at: tournament.updated_at,
+        id: `00000000-0000-0000-0002-${String(index + 1).padStart(12, '0')}`, round_id: round.id, hole_id: `00000000-0000-0000-0001-${String(index + 1).padStart(12, '0')}`, owner, gross_strokes: 4,
+        revision: '1', submitted_by: session.user_id, submitted_at: tournament.created_at, updated_at: tournament.updated_at,
       } : null })) }
 }
 const explicit = (hole: number, view = 'hole') => `/score?tournament=${tournament.id}&round=${round.id}&owner_type=player&owner=${owner.id}&hole=${hole}&view=${view}`
 function mount(path = '/score') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 20_000 } } })
   const router = createMemoryRouter([{ path: '/score', element: <ScorePage /> }, { path: '/elsewhere', element: <p>Elsewhere</p> }], { initialEntries: [path] })
-  render(<QueryClientProvider client={client}><AuthContext value={auth}><ScoringGuardProvider><ScoreResumeProvider><RouterProvider router={router} /></ScoreResumeProvider></ScoringGuardProvider></AuthContext></QueryClientProvider>)
+  render(<QueryClientProvider client={client}><AuthContext value={auth}><ScoreQueueProvider><ScoringGuardProvider><ScoreResumeProvider><RouterProvider router={router} /></ScoreResumeProvider></ScoringGuardProvider></ScoreQueueProvider></AuthContext></QueryClientProvider>)
   return { client, router }
 }
 beforeEach(() => {
+  vi.stubGlobal('indexedDB', new IDBFactory())
   vi.mocked(useTournamentLive).mockReturnValue(false)
   vi.spyOn(api, 'tournaments').mockResolvedValue([tournament])
   vi.spyOn(api, 'rounds').mockResolvedValue([round])
@@ -49,44 +53,37 @@ afterEach(() => { cleanup(); vi.restoreAllMocks() })
 const expectHole = async (number: number) => { await waitFor(() => expect(screen.getByRole('heading', { name: String(number) })).toBeTruthy()) }
 
 describe('scoring route resume', () => {
-  it('retains a failed edit and navigation guard through disconnect and failed completion refresh', async () => {
-    const save = vi.spyOn(api, 'saveScore').mockRejectedValue(new Error('Save unavailable'))
+  it('retains durable input and allows navigation during disconnected and failed recovery', async () => {
+    vi.spyOn(api, 'saveConditionalScore').mockRejectedValue(new Error('Unavailable'))
     const { client, router } = mount(explicit(8))
     await expectHole(8)
+    await waitFor(() => expect(screen.getByRole('button', { name: /Registrer par/ }).hasAttribute('disabled')).toBe(false))
     fireEvent.click(screen.getByRole('button', { name: /Registrer par/ }))
-    await screen.findByText('Save unavailable')
+    await waitFor(async () => expect(await queueDatabase.list(session.user_id)).toHaveLength(1))
     await act(() => handleTournamentLiveSignal(client, session.user_id, 'error'))
     await expectHole(8)
-    expect(screen.getByText('Save unavailable')).toBeTruthy()
     expect(screen.queryByText('Spiller med et langt navn')).toBeNull()
-    expect(screen.getByRole('button', { name: 'Legg til ett slag' }).hasAttribute('disabled')).toBe(true)
-    await act(() => router.navigate('/elsewhere'))
-    expect(router.state.location.pathname).toBe('/score')
+    expect(screen.getByRole('button', { name: 'Legg til ett slag' }).hasAttribute('disabled')).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: 'Neste' }))
+    await expectHole(9)
     vi.mocked(api.completionValidation).mockRejectedValue(new Error('Progress unavailable'))
     vi.mocked(api.scoreAccess).mockRejectedValue(new ApiHttpError(503, 'unavailable', 'Access unavailable'))
     await act(() => handleTournamentLiveSignal(client, session.user_id, 'open'))
     await screen.findByText('Noe kunne ikke oppdateres. Viste data beholdes.')
-    expect(screen.getByText('Save unavailable')).toBeTruthy()
-    vi.mocked(api.completionValidation).mockResolvedValue(completion())
-    vi.mocked(api.scoreAccess).mockResolvedValue({ round_id: round.id, writable_owners: [owner] })
-    await act(() => handleTournamentLiveSignal(client, session.user_id, 'open'))
-    await screen.findByRole('heading', { name: 'Spiller med et langt navn' })
-    expect(screen.getByText('Save unavailable')).toBeTruthy()
-    expect(save).toHaveBeenCalledOnce()
-    fireEvent.click(screen.getByRole('button', { name: 'Forkast' }))
     await act(() => router.navigate('/elsewhere'))
     expect(router.state.location.pathname).toBe('/elsewhere')
+    expect(await queueDatabase.list(session.user_id)).toHaveLength(1)
   })
-  it('keeps submitted and queued score intent through a live reconnect without duplicate writes', async () => {
+  it('keeps immutable submitted and successor intent through reconnect', async () => {
     let release: () => void = () => undefined
     const pending = new Promise<void>(resolve => { release = resolve })
     const saved = card([8]).holes[7]?.score
     if (!saved) throw new Error('Missing saved score')
     let stored = 0
-    const save = vi.spyOn(api, 'saveScore').mockImplementation(async (_round, _hole, _owner, value) => {
-      if (value === 4) await pending
-      stored = value
-      return { ...saved, gross_strokes: value }
+    const save = vi.spyOn(api, 'saveConditionalScore').mockImplementation(async (_round, input) => {
+      if (input.gross_strokes === 4) await pending
+      stored = input.gross_strokes
+      return { request_id: input.request_id, applied_score: { score_id: saved.id, revision: String(stored) } }
     })
     vi.mocked(api.scorecardScoring).mockImplementation(async () => {
       const latest = card(stored ? [8] : []); const hole = latest.holes[7]
@@ -96,16 +93,18 @@ describe('scoring route resume', () => {
     })
     const { client } = mount(explicit(8))
     await expectHole(8)
+    await waitFor(() => expect(screen.getByRole('button', { name: /Registrer par/ }).hasAttribute('disabled')).toBe(false))
     fireEvent.click(screen.getByRole('button', { name: /Registrer par/ }))
+    await waitFor(() => expect(save).toHaveBeenCalledOnce())
     fireEvent.click(screen.getByRole('button', { name: 'Legg til ett slag' }))
+    await waitFor(async () => expect((await queueDatabase.list(session.user_id))[0]?.desired).toBe(5))
     await act(() => handleTournamentLiveSignal(client, session.user_id, 'error'))
-    await expectHole(8)
     await act(() => handleTournamentLiveSignal(client, session.user_id, 'open'))
-    expect(screen.getByText('Ny endring venter …')).toBeTruthy()
     await act(async () => { release() })
-    await waitFor(() => expect(save).toHaveBeenCalledTimes(2))
-    await screen.findByText('Synkronisert')
-    expect(save.mock.calls.map(call => call[3])).toEqual([4, 5])
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(2), { timeout: 5000 })
+    await screen.findByText('Lagret på serveren')
+    expect(save.mock.calls.map(call => call[1].gross_strokes)).toEqual([4, 5])
+    expect(save.mock.calls[1]?.[1].expected_score).toEqual({ type: 'present', score_id: saved.id, revision: '4' })
   })
   it('keeps pending confirmation guarded through completion clearing', async () => {
     const complete = card(Array.from({ length: 18 }, (_, i) => i + 1))
@@ -113,7 +112,8 @@ describe('scoring route resume', () => {
     let resolve: (value: ScoringScorecard) => void = () => undefined
     const confirm = vi.spyOn(api, 'confirmScorecard').mockImplementation(() => new Promise(done => { resolve = done }))
     const { client, router } = mount(explicit(8, 'summary'))
-    fireEvent.click(await screen.findByRole('button', { name: 'Bekreft fullført scorekort' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Bekreft fullført scorekort' }).hasAttribute('disabled')).toBe(false))
+    fireEvent.click(screen.getByRole('button', { name: 'Bekreft fullført scorekort' }))
     await screen.findByRole('button', { name: 'Bekrefter …' })
     await act(() => handleTournamentLiveSignal(client, session.user_id, 'error'))
     expect(screen.getByRole('button', { name: 'Bekrefter …' }).hasAttribute('disabled')).toBe(true)
@@ -128,7 +128,8 @@ describe('scoring route resume', () => {
     vi.mocked(api.scorecardScoring).mockResolvedValue(card(Array.from({ length: 18 }, (_, i) => i + 1)))
     const confirm = vi.spyOn(api, 'confirmScorecard').mockRejectedValue(new Error('Confirmation unavailable'))
     const { client } = mount(explicit(8, 'summary'))
-    fireEvent.click(await screen.findByRole('button', { name: 'Bekreft fullført scorekort' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Bekreft fullført scorekort' }).hasAttribute('disabled')).toBe(false))
+    fireEvent.click(screen.getByRole('button', { name: 'Bekreft fullført scorekort' }))
     await screen.findByText('Confirmation unavailable')
     vi.mocked(useTournamentLive).mockReturnValue(true)
     await act(() => handleTournamentLiveSignal(client, session.user_id, 'error'))
@@ -217,12 +218,12 @@ describe('scoring route resume', () => {
     await waitFor(() => expect(router.state.location.search).toContain('view=summary'))
     expect(await screen.findByRole('button', { name: 'Bekreft fullført scorekort' })).toBeTruthy()
   })
-  it('starts at one on an empty card and keeps a failed input guarded until discarded', async () => {
-    vi.spyOn(api, 'saveScore').mockRejectedValue(new Error('Save unavailable'))
+  it('starts at one and guards input that fails device persistence until discarded', async () => {
+    vi.spyOn(queueDatabase, 'enqueue').mockRejectedValue(new Error('Device storage unavailable'))
     const { router } = mount()
     await expectHole(1)
     fireEvent.click(screen.getByRole('button', { name: /Registrer par/ }))
-    await screen.findByText('Save unavailable')
+    await screen.findByText('Device storage unavailable')
     await act(() => router.navigate('/elsewhere'))
     expect(router.state.location.pathname).toBe('/score')
     fireEvent.click(screen.getByRole('button', { name: /Forkast/ }))

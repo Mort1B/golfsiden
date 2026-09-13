@@ -90,7 +90,7 @@ export async function mockWorkspace(page: Page, streamUrl: string) {
         complete: state.restricted ? null : false, confirmed: state.restricted ? null : false,
         confirmed_at: null, visibility: { mode: state.restricted ? 'front_nine' : 'full' } } })
     }
-    if (path.endsWith('/scores')) {
+    if (path.endsWith('/scores') || path.endsWith('/scores/conditional')) {
       state.saves += 1
       return route.fulfill({ status: 503, json: { error: { code: 'unavailable', message: 'Lagring utilgjengelig' } } })
     }

@@ -1,104 +1,118 @@
-# Public live result-sharing
+# Durable offline scoring
 
-Tournament admins can now open **Turneringsstyring → Innstillinger → Del resultater
-offentlig** and deliberately create a reusable link to overall gross/net standings.
-The page shows existing player display names and permitted summary results without
-requiring an account. A link lasts 30 days; admins can replace or revoke it earlier.
-The creation receipt supports copy and manual fallback and is the only place the
-secret is shown. Nothing is sent to another person automatically.
+An already-open authorized scorecard can now keep accepting hole scores after
+connectivity drops. Each edit is saved on this device before delivery, so the
+scorer can move between holes while offline. **Lokale scoreendringer** shows
+pending edits, delivery failures, blocked edits and conflicts, with a link back
+from other private workspace pages. Device-storage failure remains visibly
+unsaved and keeps a short navigation guard.
 
-The public page refreshes every 15 seconds while visible, on return to the tab,
-and on explicit refresh. It shows positions/ties, selected totals, qualification,
-provisional progress and applicable final-round tie explanations. It omits account
-and player identifiers, handicaps, teams, contribution history, hole scores,
-private scorecard links and score-entry controls.
+When somebody else changes the same hole, **Sammenlign scorer** shows the local
+and current server values. The scorer explicitly chooses **Behold serverscoren**
+or **Bruk min lokale score**. Choosing local makes a new conditional request;
+another intervening change requires another comparison. Discarding an edit
+removes only its device copy and cannot undo a request that already reached the
+server.
 
-## Visibility and capability boundaries
+## Safe delivery and current server state
 
-Public results always use ordinary non-admin visibility, even when an organizer
-opens the link while signed in. For example, an open final with 73 gross strokes
-but hidden back nine can show only its permitted 37 front-nine strokes. Changing
-a hidden back-nine score does not change public JSON. Once a hidden final is
-completed it is excluded altogether until release. Best-N selection and tournament
-tie-breaks consume only that permitted projection.
+Migration 0027 adds server-controlled score revisions and immutable delivery
+receipts. Conditional requests bind an account-scoped request ID to an immutable
+target, expected absence or exact score ID/revision, and strokes. The repository
+reauthorizes the session, membership, owner and editable round before every
+attempt, including receipt hits. Score writes and receipts commit atomically.
+Locked rounds and revoked access cannot be bypassed through replay.
 
-Migration 0026 stores only hashes of independent random 256-bit secrets and derives
-immutable issue/replace/revoke audits. Grant identity and 30-day expiry cannot be
-edited through ordinary writes. Grant ownership belongs to the tournament and
-survives issuer demotion; each management action checks current exact-admin
-session, membership and credential generation. Parent tournament deletion
-intentionally cascades capabilities and their audits.
+For example, one request saves 5 but loses its response. Another scorer then saves
+6. Retrying the original request acknowledges its earlier application without
+restoring 5. If the first scorer entered a successor while waiting, that successor
+expects the revision that actually saved 5 and conflicts with the later 6. It
+never silently adopts the unrelated revision returned by a fresh read.
 
-A public read holds its grant lock through consistent projected result assembly,
-checking wall-clock expiry after lock waits and after loading. Rotation/revocation
-serialize with reads. Invalid, expired and revoked capabilities share a generic
-unavailable response. Existing private handlers retain membership authorization;
-the public boundary never calls the unrestricted internal read helper.
+Existing legacy score writes retain their last-write-wins contract, while all
+actual stroke changes advance revisions. True no-ops and matching retries add no
+duplicate score audit, SSE event or confirmation invalidation. Member and public
+result projections remain unchanged; only authorized scoring DTOs expose
+revisions. Receipt retention is tied to parent data, with no timed pruning that
+could turn an old retry into a new write.
 
-Frontend public DTOs allow only the selected summary fields. Each link visit owns
-a separate QueryClient, and changing even only the secret for the same grant
-replaces that cache. Refreshes and metric changes remove earlier snapshots;
-failed reads hide rows, terminal unavailability stops polling and bounded expiry
-timers avoid the JavaScript maximum-delay overflow. Delayed responses cannot
-restore a previous visit. Private HTTP requests still include cookies by default;
-public result requests explicitly omit them and use a 12-second timeout.
+The browser queue lives separately from authoritative TanStack Query data.
+IndexedDB transactions coordinate tabs, immutable requests, delivery leases and
+exact-generation conflict/discard decisions. Account and session fences prevent
+old callbacks or another signed-in account from displaying or replaying the
+queue. Logout retains unresolved edits for the original account's later login.
+No credentials or full private scorecards are persisted.
 
-The reusable secret stays in the link fragment and transient page memory, never
-local/session storage or cache keys. HTTP requests carry it in the body. The API
-and updated Caddy routes set no-store, no-referrer and noindex/nofollow. Previously
-delivered data cannot be recalled: an open page can retain its last authorized
-snapshot until the next refresh, up to 15 seconds plus request latency.
+A delivery acknowledgment is not treated as current server state. The browser
+refreshes the authorized card before showing server-confirmed scores and net
+values or allowing another edit on that hole. Bounded refresh failures retain
+that verification state while other queued holes continue. Cached authorized
+input remains usable during connection recovery without restoring cleared
+private progress or hidden results.
+
+Confirmation stays online-only. It requires an empty queue for that account/card,
+completed verification and a fresh authorized read. A local confirmation lease
+prevents another tab from enqueueing on that card during the operation. The
+existing POST still confirms the current server card; it does not introduce an
+immutable reviewed snapshot. Explicit correction mode continues to support
+confirmed open/completed cards, while locked cards stay read-only.
 
 ## Validation
 
-- Standard backend workspace/all-target suite: **131 passed**.
-- Complete PostgreSQL workspace/all-target suite with `database-tests`: **414
-  passed**, including 14 focused sharing integration tests and the token unit
-  regression. Clean migration, schema-25 upgrade with actual history,
-  development seed, exact-admin/CSRF/stale behavior, immutable audits, parent
-  deletion and independent gross/net hidden-score noninterference passed.
-- Concurrency tests observe real lock waits: reads before revoke/rotation, queued
-  reads after revoke, simultaneous replacements, and expiry during both grant
-  waits and fact loading. Formatting and all-target/all-feature Clippy with
-  warnings denied passed.
-- Frontend full suite: **466 passed in 78 files**. The final nonce adjustment also
-  passed all 9 focused public lifecycle regressions; final typecheck (including
-  browser TypeScript), warning-free lint and production build passed.
-- Chrome sharing: **2 scenarios passed** at 320×600, 390×844 and 1280×900. The
-  real API flow creates a fresh tournament/course/flight, issues/copies a link,
-  displays anonymous live score changes, releases/re-hides final results, compares
-  admin-cookie visibility, completes the hidden final, replaces and revokes the
-  link. It also covers metadata loading/error/retry, delayed issuance and a real
-  competing-admin stale write. Controlled states cover long names, gross/net
-  ties, loading/error/empty, visible polling, tab return/offline, wrong/removed
-  fragments, Back/Forward, late old responses and local expiry.
-- Existing Chrome return-to-page regressions: **8 passed**; tournament tie-break
-  browser regressions: **2 passed**. There were **12 passing browser scenarios**
-  across the affected suites.
-- Caddy 2.10.2 served shared HTML with all three privacy headers and retained the
-  ordinary-page referrer policy. Shared public/admin API error paths also retained
-  those headers with the upstream deliberately unavailable. Independent API
-  integration tests assert headers on application responses and errors.
-- Mobile/desktop screenshots were inspected, with capability fields masked and
-  tracing/automatic failure screenshots disabled. Checks include horizontal
-  overflow, 44px primary controls, trial-click reachability, no private API/SSE
-  calls from public views and expected-only console/network outcomes.
-- Read-only backend/frontend and durable-document review has no open findings.
-  Diff checks passed; the largest changed production source has 286 substantive
-  lines.
+- Standard backend workspace/all-target suite: **133 passed**. Formatting and
+  all-target/all-feature Clippy with warnings denied passed.
+- Complete PostgreSQL workspace/all-target suite with `database-tests`:
+  **428 passed**, including 12 conditional delivery integration tests. Coverage
+  includes lost-response replay, mismatched request IDs, absent/stale/ABA conflicts,
+  no-op effects, direct-SQL revision protection, authorization expiry, lock races
+  and cross-round request-ID collision rollback.
+- Clean migration and development seed passed against disposable PostgreSQL 17.
+  A populated schema-26 database was created with the actual previous migrator,
+  seed and API, then upgraded to 27. Its 18 existing scores gained revision 1;
+  original score columns/timestamps, 18 audit rows, confirmation and round handicap
+  snapshots had identical before/after fingerprints. No receipts were invented.
+  Historical integration fixtures retain their old-schema assertions and use a
+  bounded legacy fixture helper rather than current DTOs against old columns.
+- Frontend suite: **493 passed in 82 files**. Typecheck, lint and production build
+  passed. Tests cover durable transactions, repeated edits, successor revisions,
+  cross-tab claims, exact-generation choices, account isolation, storage failure,
+  request timeouts, verification and online-only confirmation.
+- Chrome: **20 distinct scenarios passed across the resolved runs**: seven offline
+  cases, eight native return-to-page cases, two handicap summaries, the scoring
+  navigation flow and two public-sharing regressions. They cover offline
+  reload/reconnect, both conflict choices, two-tab lost-response successors,
+  logout/account isolation, device-storage failure, confirmed completed-card
+  correction followed by locking, immediate offline discard and hanging reads
+  after acknowledgment. Public anonymous visibility and private-cache isolation
+  remain intact.
+- Browser checks use 320×600, 390×844 and 1280×900 viewports, long content,
+  loading/error/empty/populated/blocked states, overflow checks, 44px controls and
+  trial-click reachability. Mobile/desktop screenshots were inspected; console
+  and network outcomes were checked alongside visible behavior.
+- Read-only source and durable-document review has no open findings. Changes
+  preserve player/team ownership, handicap snapshots, lifecycle authority and
+  hidden-result boundaries. The largest changed production source has 269
+  substantive lines, below the 400-line limit.
 
-Initial non-escalated backend tests could not bind their existing local HTTP mock
-sockets; the rerun with local socket access passed. Review found and resolved
-missing audit protections, a privacy fixture whose final did not affect the
-selected score, and same-grant secret cache reuse. The initial browser fixture
-needed its required flight before round opening; a later polling race required
-the test to accept revocation already detected before its manual refresh. Final
-focused runs passed without changing the intended production rules.
+Review and validation resolved strict request decoding of extra fields, legacy
+schema fixtures, stale displays after acknowledgment, delayed cross-tab local
+updates during delivery, local actions paused by offline mutation defaults, and
+confirmation lease deadlines. Browser fixtures were updated for durable
+navigation and open-round authorization; cancelled hanging-request handlers need
+explicit cleanup. These changes preserve the intended production contracts.
 
-**READY WITH KNOWN LIMITATIONS:** the existing bundle advisory remains at 645.93 kB
-minified JavaScript (186.83 kB gzip). Physical iOS/Safari, full production Compose
-image integration and a production deployment were not exercised; validation
-used local Chrome, the development API, disposable PostgreSQL 17 and the actual
-Caddy configuration in a disposable container. Deployment requires migration
-0026, refreshed runtime grants and matching API/frontend/Caddy builds. No production
-link was created. Offline scoring and all other queued features remain deferred.
+**READY WITH KNOWN LIMITATIONS:** the production build retains its bundle advisory at 661.39 kB minified JavaScript
+(192.23 kB gzip). The dependency audit reports existing development-tool advisories
+for js-yaml (high), Vitest and @vitest/mocker (moderate); the new dev-only
+fake-indexeddb dependency is unaffected. Those upgrades are separate maintenance.
+Physical iOS/Safari and full production Compose integration were not exercised;
+Chrome and the local API used disposable PostgreSQL 17 because Docker socket
+access was unavailable. No production deployment or production sharing link was
+created.
+
+Deployment requires migration 0027, refreshed runtime grants and matching API
+and frontend builds. Pending edits survive reload for later online delivery, but
+cold offline app launch, service workers and background sync remain outside this
+step. Clearing site data removes pending edits, which server backups do not
+contain. No queued confirmations, score deletion or administrator correction UI
+is introduced. Further roadmap work remains separately approved.

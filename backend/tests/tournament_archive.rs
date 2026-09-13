@@ -1,4 +1,6 @@
 #![cfg(feature = "database-tests")]
+#[path = "support/legacy_scorecards.rs"]
+mod legacy_scorecards;
 #[path = "support/legacy_sessions.rs"]
 mod legacy_sessions;
 
@@ -88,7 +90,7 @@ async fn seed_at_schema(pool: &PgPool, locked: bool, legacy: bool) -> Uuid {
     if legacy {
         let session = legacy_sessions::create_and_start(pool, ADMIN, TRIP, TOKEN).await;
         if locked {
-            lock_round(pool).await;
+            legacy_scorecards::lock_player_round(pool, ROUND, TRIP, PLAYER, ADMIN).await;
         }
         return session;
     }
@@ -529,7 +531,17 @@ async fn schema19_upgrade_preserves_workflow_completion_evidence(pool: PgPool) {
         .unwrap();
     let mut expected = before;
     expected["trip"]["tie_break_policy"] = serde_json::json!("shared_positions");
+    for score in expected["scores"].as_array_mut().unwrap() {
+        score["revision"] = serde_json::json!(1);
+    }
     assert_eq!(expected, history(&pool).await);
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM score_mutation_receipts")
+            .fetch_one(&pool)
+            .await
+            .unwrap(),
+        0
+    );
 }
 
 async fn history(pool: &PgPool) -> Value {

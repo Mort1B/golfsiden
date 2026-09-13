@@ -1,7 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
-import { decodeAuthSession } from '../src/api/auth'
-import { decodeTournamentList, decodeTournamentRounds } from '../src/api/tournaments/decoders'
-import { decodeCompletionValidation, decodeReadScorecard, ownerTypeForFormat, type ScoringScorecard } from '../src/api/scorecards'
+import { offlineFixture } from './offlineSupport'
+import { decodeCompletionValidation, ownerTypeForFormat, type ScoringScorecard } from '../src/api/scorecards'
 import { LIVE_RESULTS_EXPLANATION, MANDATORY_ROUND_EXPLANATION } from '../src/features/leaderboards/resultExplanations'
 
 test.skip(process.env.GOLF_SCORING_FLOW_BROWSER !== '1', 'Requires disposable seeded local services and GOLF_SCORING_FLOW_BROWSER=1.')
@@ -19,27 +18,19 @@ async function layout(page: Page, state: string) {
   }
 }
 
-test('resume fresh gaps, explicit history, quick cards, guarded saves, async states and responsive composition', async ({ page }) => {
-  await page.goto('/login')
-  await page.getByLabel('Brukernavn', { exact: true }).fill('admin')
-  await page.getByLabel('Passord', { exact: true }).fill('golf-dev-2026')
-  await page.getByRole('button', { name: 'Logg inn', exact: true }).click()
-  await expect(page).not.toHaveURL(/\/login/)
-  const auth = decodeAuthSession(await (await page.request.get('/api/auth/session')).json())
-  const trips = decodeTournamentList(await (await page.request.get('/api/tournaments')).json())
-  const trip = trips.find(item => item.name === 'Guttas Golf 2026')
-  if (!trip) throw new Error('Missing seed tournament')
-  const rounds = decodeTournamentRounds(await (await page.request.get(`/api/tournaments/${trip.id}/rounds`)).json(), trip.id)
-  const round = rounds[0]
-  if (!round) throw new Error('Missing seed round')
+test('resume fresh gaps, explicit history, quick cards, durable saves, async states and responsive composition', async ({ page, context }) => {
+  const fixture = await offlineFixture(page)
+  const { auth, tournament: trip, round, card: source } = fixture
+  const rounds = [round]
   const progress = decodeCompletionValidation(await (await page.request.get(`/api/rounds/${round.id}/completion-validation`)).json(), round.id, ownerTypeForFormat(round.scoring_format))
-  const first = progress.owners[0]; const second = progress.owners[1]
-  if (!first || !second) throw new Error('Missing seed owners')
-  const source = decodeReadScorecard(await (await page.request.get(`/api/rounds/${round.id}/scorecards/${first.owner.type}/${first.owner.id}`)).json(), round.id, first.owner)
+  const first = progress.owners[0]
+  if (!first) throw new Error('Missing fixture owner')
+  const second = { ...first, owner: { type: 'player' as const, id: crypto.randomUUID() }, owner_name: 'Andre spiller' }
+  progress.owners.push(second)
   const errors: string[] = []; const failed: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', msg => { if (msg.type() === 'error' && !msg.text().startsWith('Failed to load resource:')) errors.push(msg.text()) })
-  page.on('requestfailed', req => { if (!req.url().includes('/live') && !req.failure()?.errorText.includes('ERR_ABORTED')) failed.push(req.url()) })
+  page.on('requestfailed', req => { if (!req.url().includes('/live') && !req.failure()?.errorText.includes('ERR_ABORTED') && !req.failure()?.errorText.includes('ERR_INTERNET_DISCONNECTED')) failed.push(req.url()) })
   page.on('response', response => { if (response.status() >= 400 && response.status() !== 503) failed.push(`${response.status()} ${new URL(response.url()).pathname}`) })
   let scored = [1, 3]; let fail = false; let empty = false
   let pending: Promise<void> | null = null
@@ -57,7 +48,7 @@ test('resume fresh gaps, explicit history, quick cards, guarded saves, async sta
     if (!requestedOwner) throw new Error('Unexpected card owner')
     const holes = source.holes.map(hole => ({ ...hole, handicap_strokes: 0, net_strokes: scored.includes(hole.hole_number) ? hole.par : null,
       score: scored.includes(hole.hole_number) ? { id: hole.hole_id, round_id: round.id, hole_id: hole.hole_id, owner: requestedOwner,
-        gross_strokes: hole.par, submitted_by: auth.user_id, submitted_at: trip.created_at, updated_at: trip.updated_at } : null }))
+        gross_strokes: hole.par, revision: '1', submitted_by: auth.user_id, submitted_at: trip.created_at, updated_at: trip.updated_at } : null }))
     const total = holes.reduce((sum, hole) => sum + (hole.score?.gross_strokes ?? 0), 0)
     const card: ScoringScorecard = { projection: 'scoring', round_id: round.id, owner: requestedOwner, holes, gross_total: total, net_total: total,
       playing_handicap: 0, holes_scored: scored.length, number_of_holes: source.number_of_holes, complete: scored.length === source.number_of_holes, confirmed: false, confirmed_at: null, confirmed_by: null }
@@ -101,13 +92,23 @@ test('resume fresh gaps, explicit history, quick cards, guarded saves, async sta
   await page.getByRole('button', { name: 'Prøv igjen', exact: true }).click()
   await expect(page.locator('#current-hole-heading')).toHaveText('1')
   await expect(page).toHaveURL(new RegExp(`owner=${second.owner.id}`))
-  await page.route(`**/api/rounds/${round.id}/scores`, route => route.fulfill({ status: 503, json: { error: { code: 'unavailable', message: 'Lagring utilgjengelig' } } }))
+  await page.route(`**/api/rounds/${round.id}/scores/conditional`, route => route.fulfill({ status: 503, json: { error: { code: 'unavailable', message: 'Lagring utilgjengelig' } } }))
   await page.getByRole('button', { name: /Registrer par/ }).click()
-  await expect(page.locator('.score-save-error')).toBeVisible()
+  await expect(page.locator('.score-sync')).toContainText('Lagret på denne enheten')
   await nav.getByRole('link', { name: 'Profil' }).click()
-  await expect(page).toHaveURL(/\/score\?/)
-  await layout(page, 'failed-save')
-  await page.getByRole('button', { name: 'Forkast' }).click()
+  await expect(page).toHaveURL(/\/profile/)
+  await page.getByRole('link', { name: 'Lokale scoreendringer (1)' }).click()
+  await page.locator('.pending-scores summary').click()
+  await expect(page.getByText(/Levering mislyktes/)).toBeVisible()
+  await layout(page, 'pending-save')
+  // Pause automatic delivery so this assertion exercises local discard independently
+  // of the separately covered active-lease guard.
+  await context.setOffline(true)
+  await expect(page.getByRole('button', { name: 'Forkast lokal endring' })).toBeEnabled()
+  await page.getByRole('button', { name: 'Forkast lokal endring' }).click()
+  await page.getByRole('button', { name: 'Ja, fjern lokal kopi' }).click()
+  await expect(page.locator('.pending-scores summary')).toContainText('(0)')
+  await context.setOffline(false)
   await nav.getByRole('link', { name: 'Profil' }).click()
   scored = source.holes.map(hole => hole.hole_number)
   await nav.getByRole('link', { name: 'Score', exact: true }).click()

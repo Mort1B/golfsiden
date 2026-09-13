@@ -1505,3 +1505,6 @@ async fn concurrent_score_writes_apply_in_round_lock_order(pool: PgPool) {
     assert_eq!(events.recv().await.unwrap().id, INDIVIDUAL_ROUND_ID);
     assert!(matches!(events.try_recv(), Err(TryRecvError::Empty)));
 }
+
+#[path = "scorecards/conditional.rs"]
+mod conditional;

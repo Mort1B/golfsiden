@@ -1,3 +1,5 @@
+import { ScoreQueueProvider } from '../features/scoring/offline/ScoreQueueProvider'
+import { PendingScoreLink } from '../features/scoring/offline/PendingScores'
 import { useState } from 'react'
 import { BarChart3, ClipboardPen, LogIn, LogOut, Trophy, UserRound } from 'lucide-react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
@@ -12,6 +14,10 @@ const baseNavItems = [
 ]
 
 export function AppShell() {
+  return <ScoreQueueProvider><PrivateShell /></ScoreQueueProvider>
+}
+
+function PrivateShell() {
   const auth = useAuth()
   const scoringGuard = useScoringGuard()
   const [signOutError, setSignOutError] = useState<string | null>(null)
@@ -33,6 +39,7 @@ export function AppShell() {
       </aside>
       {signOutError && <p className="session-error" role="alert">{signOutError}</p>}
       <main className="main-content">
+        <PendingScoreLink />
         <Outlet />
       </main>
       <nav className={`bottom-nav nav-count-${navItems.length}`} aria-label="Hovedmeny">

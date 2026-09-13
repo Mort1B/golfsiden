@@ -1,4 +1,6 @@
 #![cfg(feature = "database-tests")]
+#[path = "support/legacy_scorecards.rs"]
+mod legacy_scorecards;
 #[path = "support/legacy_sessions.rs"]
 mod legacy_sessions;
 
@@ -115,7 +117,7 @@ async fn seed_at_schema(pool: &PgPool, locked: bool, legacy: bool) -> Uuid {
     if legacy {
         let session = legacy_sessions::create_and_start(pool, ADMIN, TRIP, TOKEN).await;
         if locked {
-            lock_round(pool).await;
+            legacy_scorecards::lock_player_round(pool, ROUND, TRIP, PLAYER, ADMIN).await;
         }
         return session;
     }

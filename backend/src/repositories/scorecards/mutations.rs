@@ -88,7 +88,7 @@ pub async fn save_authenticated(
     Ok(result)
 }
 
-async fn save_with_actor(
+pub(super) async fn save_with_actor(
     transaction: &mut Transaction<'_, Postgres>,
     context: &RoundContext,
     input: SaveScore,
@@ -108,7 +108,7 @@ async fn save_with_actor(
     set_mutation_context(transaction, input.round_id).await?;
     let row = if let Some(existing) = existing {
         sqlx::query_as::<_, ScoreRow>(
-            "UPDATE scores SET gross_strokes = $2, submitted_by = $3 WHERE id = $1 RETURNING id, round_id, hole_id, player_id, team_id, gross_strokes, submitted_by, submitted_at, updated_at",
+            "UPDATE scores SET gross_strokes = $2, submitted_by = $3 WHERE id = $1 RETURNING revision, id, round_id, hole_id, player_id, team_id, gross_strokes, submitted_by, submitted_at, updated_at",
         )
         .bind(existing.id)
         .bind(input.gross_strokes)
@@ -117,7 +117,7 @@ async fn save_with_actor(
         .await?
     } else {
         sqlx::query_as::<_, ScoreRow>(
-            "INSERT INTO scores (id, round_id, tournament_id, hole_id, player_id, team_id, gross_strokes, submitted_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, round_id, hole_id, player_id, team_id, gross_strokes, submitted_by, submitted_at, updated_at",
+            "INSERT INTO scores (id, round_id, tournament_id, hole_id, player_id, team_id, gross_strokes, submitted_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING revision, id, round_id, hole_id, player_id, team_id, gross_strokes, submitted_by, submitted_at, updated_at",
         )
         .bind(Uuid::new_v4())
         .bind(input.round_id)
@@ -209,7 +209,7 @@ async fn confirm_with_actor(
     })
 }
 
-fn require_editable(context: &RoundContext) -> Result<(), ScorecardError> {
+pub(super) fn require_editable(context: &RoundContext) -> Result<(), ScorecardError> {
     if matches!(context.status, RoundStatus::Open | RoundStatus::Completed) {
         Ok(())
     } else {
@@ -234,7 +234,7 @@ async fn require_user(
     }
 }
 
-async fn set_mutation_context(
+pub(super) async fn set_mutation_context(
     transaction: &mut Transaction<'_, Postgres>,
     round_id: Uuid,
 ) -> Result<(), sqlx::Error> {
@@ -245,7 +245,7 @@ async fn set_mutation_context(
     Ok(())
 }
 
-fn map_authorization_error(error: ScoreAuthorizationError) -> ScorecardError {
+pub(super) fn map_authorization_error(error: ScoreAuthorizationError) -> ScorecardError {
     match error {
         ScoreAuthorizationError::NotFound => ScorecardError::NotFound,
         ScoreAuthorizationError::Unauthenticated => ScorecardError::Unauthenticated,

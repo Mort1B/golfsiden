@@ -13,6 +13,7 @@ export interface ScoreEntry {
   submitted_by: string
   submitted_at: string
   updated_at: string
+  revision: string
 }
 
 export interface ReadScoreEntry { id: string; gross_strokes: number }

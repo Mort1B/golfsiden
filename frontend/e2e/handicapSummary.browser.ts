@@ -60,7 +60,7 @@ test('summary displays server strokes for unscored, scored, zero and team cards'
     card = { ...card, gross_total: 5, net_total: 3, holes_scored: 1,
       holes: card.holes.map(hole => hole.hole_number !== 17 ? hole : { ...hole, net_strokes: 3,
         score: { id: '00000000-0000-0000-0000-000000000099', round_id: round.id, hole_id: hole.hole_id,
-          owner: card.owner, gross_strokes: 5, submitted_by: card.owner.id, submitted_at: '2026-09-13T12:00:00Z', updated_at: '2026-09-13T12:00:00Z' } }) }
+          owner: card.owner, gross_strokes: 5, revision: '1', submitted_by: card.owner.id, submitted_at: '2026-09-13T12:00:00Z', updated_at: '2026-09-13T12:00:00Z' } }) }
     await page.goto(scoreUrl.replace('view=hole', 'view=summary'))
     await expect(page.getByRole('button', { name: /Hull 17 Par/ })).toContainText('Netto 3')
     await expect(page.getByRole('img', { name: '2 ekstra slag på hull 17', exact: true })).toHaveText('+2')

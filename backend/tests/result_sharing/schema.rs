@@ -1,8 +1,5 @@
 use super::support::*;
-use golf_api::{
-    domain::scorecards::ScoreOwner,
-    repositories::{result_sharing, round_lifecycle, scorecards, tournaments},
-};
+use golf_api::repositories::{result_sharing, round_lifecycle, tournaments};
 use serde_json::Value;
 use sqlx::PgPool;
 use uuid::{Uuid, uuid};
@@ -106,20 +103,9 @@ async fn schema25_upgrade_retains_actual_history_and_does_not_create_links(pool:
     round_lifecycle::open_authorized(&pool, session, round)
         .await
         .unwrap();
-    scorecards::save(
-        &pool,
-        scorecards::SaveScore {
-            round_id: round,
-            hole_id: uuid!("00000000-0000-0000-0000-000000003201"),
-            owner: ScoreOwner::Team {
-                id: uuid!("00000000-0000-0000-0000-000000005001"),
-            },
-            gross_strokes: 5,
-            submitted_by: ADMIN,
-        },
-    )
-    .await
-    .unwrap();
+    // Insert using the historical workflow without decoding a current-schema
+    // ScoreEntry, which now requires the revision column introduced in 0027.
+    sqlx::raw_sql("BEGIN; SELECT set_config('app.score_mutation_round_id','00000000-0000-0000-0000-000000004001',true); INSERT INTO scores(id,round_id,tournament_id,hole_id,team_id,gross_strokes,submitted_by) VALUES(gen_random_uuid(),'00000000-0000-0000-0000-000000004001','00000000-0000-0000-0000-000000002001','00000000-0000-0000-0000-000000003201','00000000-0000-0000-0000-000000005001',5,'00000000-0000-0000-0000-000000000001'); COMMIT;").execute(&pool).await.unwrap();
     let query = "SELECT jsonb_build_object('tournaments',(SELECT jsonb_agg(to_jsonb(t) ORDER BY id) FROM tournaments t),'scores',(SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM scores s),'snapshots',(SELECT jsonb_agg(to_jsonb(h) ORDER BY round_id,player_id) FROM round_handicap_snapshots h))";
     let before: Value = sqlx::query_scalar(query).fetch_one(&pool).await.unwrap();
     assert!(!before["scores"].as_array().unwrap().is_empty());

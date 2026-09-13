@@ -3,8 +3,10 @@ import type { ScorecardSummary } from '../../api/scorecards'
 
 interface ScorecardSummaryViewProps {
   card: ScorecardSummary
+  localScores?: ReadonlyMap<string, number>
   disabled: boolean
   readOnly: boolean
+  confirmationDisabled?: boolean
   confirming: boolean
   confirmationError: string | null
   confirmationRetryable: boolean
@@ -19,6 +21,7 @@ export function ScorecardSummaryView(props: ScorecardSummaryViewProps) {
   return (
     <section className="scorecard-summary" aria-labelledby="summary-heading">
       <header><div><p>Scorekort</p><h2 id="summary-heading">Oppsummering</h2></div><strong>{props.card.holes_scored}/{visibleHoleCount}</strong></header>
+      {props.localScores && props.localScores.size > 0 && <p className="scoring-notice">Summer og antall registrerte hull viser serverens scorekort. Lokale endringer vises på hvert hull; netto venter på oppdatering.</p>}
       <dl className="score-totals">
         <div><dt>Brutto</dt><dd>{props.card.holes_scored > 0 ? props.card.gross_total : '–'}</dd></div>
         <div><dt>Netto</dt><dd>{props.card.holes_scored > 0 ? props.card.net_total : '–'}</dd></div>
@@ -41,18 +44,19 @@ export function ScorecardSummaryView(props: ScorecardSummaryViewProps) {
                   {hole.handicap_strokes > 0 ? `+${hole.handicap_strokes}` : `−${Math.abs(hole.handicap_strokes)}`}
                 </span>}
               </small></span>
-              <span><strong>{hole.score?.gross_strokes ?? '–'}</strong><small>Netto {hole.net_strokes ?? '–'}</small></span>
+              <span><strong>{props.localScores?.has(hole.hole_id) ? `Lokalt ${props.localScores.get(hole.hole_id)}` : hole.score?.gross_strokes ?? '–'}</strong><small>{props.localScores?.has(hole.hole_id) ? 'Netto venter' : `Netto ${hole.net_strokes ?? '–'}`}</small></span>
             </button>
           </li>
         ))}
       </ol>
+      {props.confirmationDisabled && <p role="status">Bekreftelse krever forbindelse og at alle lokale endringer er levert.</p>}
       {props.card.confirmed && <p className="confirmation-state">Scorekortet er bekreftet</p>}
       {!props.card.confirmed && props.card.complete && !props.readOnly && (
-        <button type="button" className="confirm-scorecard" disabled={props.disabled || props.confirming} onClick={props.onConfirm}>
+        <button type="button" className="confirm-scorecard" disabled={props.disabled || props.confirming || props.confirmationDisabled} onClick={props.onConfirm}>
           {props.confirming ? 'Bekrefter …' : 'Bekreft fullført scorekort'}
         </button>
       )}
-      {props.confirmationError && <div className="confirmation-error" role="alert"><p>{props.confirmationError}</p>{props.confirmationRetryable && props.card.complete && !props.card.confirmed && !props.readOnly && <button type="button" disabled={props.disabled || props.confirming} onClick={props.onConfirm}>Prøv bekreftelse igjen</button>}</div>}
+      {props.confirmationError && <div className="confirmation-error" role="alert"><p>{props.confirmationError}</p>{props.confirmationRetryable && props.card.complete && !props.card.confirmed && !props.readOnly && <button type="button" disabled={props.disabled || props.confirming || props.confirmationDisabled} onClick={props.onConfirm}>Prøv bekreftelse igjen</button>}</div>}
     </section>
   )
 }

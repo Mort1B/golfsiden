@@ -120,3 +120,6 @@
 .score-hole-controls { margin-top: 12px; border: 0; padding-bottom: 0; }
 .score-hole-controls label:first-child { grid-column: 1 / -1; }
 .scorecard-owner { padding-top: 0; }
+
+.score-recovery-toggle { min-height: 44px; padding: 10px 12px; border: 1px solid #176640; border-radius: 6px; background: #fff; color: #176640; font-weight: 750; }
+.score-recovery-toggle:focus-visible { outline: 3px solid #176640; outline-offset: 3px; }

@@ -379,6 +379,25 @@ and reapplies runtime grants before the API is started.
 - Score writes and confirmation serialize on the round row. Repository writes set
   a transaction-local context, while database triggers acquire the same lock with
   `NOWAIT` for direct SQL so reverse lock ordering fails instead of deadlocking.
+- Migration 0027 adds server-controlled positive bigint score revisions, serialized
+  as canonical decimal strings only in authorized mutation/scoring DTOs. A narrow
+  trigger increments revisions on actual stroke changes through every write path,
+  rejects forged revisions and leaves true no-ops unchanged. Existing scores start
+  at revision 1 without modifying their score, timestamps, audits or confirmation.
+- Conditional hole delivery adds an account/request-ID receipt boundary alongside
+  the compatible legacy PUT. The repository locks the round and reauthorizes the
+  current session, membership and tagged owner before inspecting any receipt.
+  An unseen operation compares explicit absence or exact score ID/revision before
+  the normal no-op/write helper. Score and immutable receipt commit together;
+  cross-round request-ID collisions roll back the losing transaction completely.
+  Wall-clock session expiry is checked after waits and again before commit.
+- A receipt acknowledges past application, never current score state. It binds
+  normalized target, expected version and strokes to the account/request ID and
+  supplies the applied score ID/revision for safe successors. Reusing an ID with
+  different content conflicts; duplicate delivery adds no score audit or SSE.
+  Receipt deletion is allowed only through intentional parent deletion, with no
+  timed cleanup that could let a delayed retry become a new write. Member/public
+  result projections never expose revisions or receipts.
 - Scorecard confirmation is separate from score submission. A correction removes
   the current confirmation; stroke audit history remains append-only.
 - Completion and locking serialize on the round row before reading scorecard
@@ -634,20 +653,31 @@ and reapplies runtime grants before the API is started.
   Writable `/scoring` queries are deliberately excluded. Browser time never
   changes authorization or locally reveals cached facts, and restricted hole
   URLs are canonicalized to the visible prefix.
-- Temporary completion clearing retains the mounted scorer only for the exact
-  explicit tournament/round/owner/hole, matching cached score access, and a decoded
-  writable card in an editable round. This preserves its existing score coordinator
-  and confirmation observer; it stores no extra server state. Cleared completion
-  names/progress are not reused: a generic owner label and recovery notice replace
-  them, and new writes, retries, confirmation, and card navigation are disabled.
-  In-flight operations retain their existing serialization; failed input remains
-  discardable. Transient completion/access failures retain this disabled state.
-  Terminal authorization errors, authoritative owner removal, and locked-round
-  reconciliation retain the ordinary fail-closed/read-only paths.
-- Hole mutation intent stays outside TanStack Query in one round/owner/hole
-  coordinator. It serializes writes, coalesces rapid input, and requires an
-  authoritative refetch match before reporting synchronization. Route and unload
-  guards prevent unresolved intent from being silently abandoned.
+- Temporary completion clearing retains only the exact cached authorized scoring
+  card in an editable round, with generic owner text instead of cleared progress
+  metadata. Local hole edits and navigation within that card remain available;
+  confirmation and completion-dependent card selection wait for recovery. Actual
+  authorization denial or locking removes write access. Pending local operations
+  remain discoverable separately and cannot restore private server caches.
+- Ordinary hole intent lives in account-scoped IndexedDB, separate from TanStack
+  Query's authoritative server state. Persistence must commit before an edit is
+  described as saved on this device. Each hole has an immutable head operation,
+  latest desired successor, generation token and bounded cross-tab delivery lease.
+  An acknowledgment bases a successor on the predecessor's applied revision,
+  never on a newly observed unrelated score. Canonical card refetches supply
+  current server values; acknowledgment data never replaces a scorecard.
+- The private workspace queue runner is fenced to current account/CSRF identity,
+  retries with bounded requests/backoff and wakes on reconnect/page return.
+  Logout pauses delivery while preserving same-account pending edits. Other
+  accounts cannot display or replay them. Broadcast notifications contain no
+  score payloads; IndexedDB transactions arbitrate claims and exact-generation
+  discard/resolution. Conflict review fetches an authorized current score and
+  requires an explicit choice; choosing local creates a new conditional operation.
+- Navigation guards cover uncommitted device writes and confirmation, while
+  durable queued edits survive navigation/reload. Confirmation stays online-only,
+  with an empty-card-queue lease and fresh authorized read before the existing
+  server-current-card POST. No service worker, full-card persistence, cold offline
+  app shell, queued confirmation or background synchronization is introduced.
 - Handicap and net-score calculations remain backend-owned. Pending gross input
   is visible immediately, but net output is shown only after decoded server
   verification.
@@ -678,7 +708,8 @@ Implemented resources:
 | `POST` | `/api/tournaments/{tournament_id}/archive` | Exact-admin explicit archive of a completed tournament; preserves private history |
 | `GET` | `/api/rounds/{round_id}/leaderboards/gross` | Retrieve the live gross round leaderboard |
 | `GET` | `/api/rounds/{round_id}/leaderboards/net` | Retrieve the live net round leaderboard |
-| `PUT` | `/api/rounds/{round_id}/scores` | Save or correct one hole score |
+| `PUT` | `/api/rounds/{round_id}/scores` | Save or correct one hole score (compatible legacy write) |
+| `PUT` | `/api/rounds/{round_id}/scores/conditional` | Reauthorize and conditionally deliver an idempotent hole operation |
 | `GET` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}` | Retrieve a private member-authorized gross/net scorecard summary |
 | `GET` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/scoring` | Retrieve the full card after exact writable-owner authorization |
 | `POST` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/confirm` | Confirm a complete scorecard |
@@ -723,7 +754,7 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 - Regional alternatives to the implemented WHS course-handicap conversion.
 - Scramble formulas beyond the initial configurable 35%/15% implementation.
 - Additional tournament tie-break policies and configurable individual-round ties.
-- Offline mutation queue and score conflict presentation.
+- Cold offline launch, offline app-shell delivery and background synchronization.
 - General-purpose editable course and multi-tee library behavior beyond supplied
   immutable presets, including whether the UI should
   show explicit per-hole received-stroke badges.

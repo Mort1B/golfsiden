@@ -1,4 +1,5 @@
 import { decodeArray, decodeBoolean, decodeInteger, decodeObject, decodeTimestamp, decodeUuid, invalidData } from '../decoder'
+import { decodeScoreRevision } from './revision'
 import { decodeScoreVisibility } from '../visibility'
 import type { ReadScoreEntry, ReadScorecard, ReadScorecardHole, ScoreEntry, ScoreOwner, ScoringScorecard, ScoringScorecardHole } from './contracts'
 import { ownerEquals } from './contracts'
@@ -19,6 +20,7 @@ function rejectFields(data: Record<string, unknown>, path: string, fields: reado
 export function decodeScoreEntry(value: unknown, path: string, expectedRoundId: string, expectedHoleId: string, expectedOwner: ScoreOwner): ScoreEntry {
   const data = decodeObject(value, path, 'scorekortdata')
   const decoded: ScoreEntry = {
+    revision: decodeScoreRevision(data.revision),
     id: decodeUuid(data.id, `${path}.id`, 'scorekortdata'),
     round_id: decodeUuid(data.round_id, `${path}.round_id`, 'scorekortdata'),
     hole_id: decodeUuid(data.hole_id, `${path}.hole_id`, 'scorekortdata'),
@@ -34,7 +36,7 @@ export function decodeScoreEntry(value: unknown, path: string, expectedRoundId: 
 
 function decodeReadScore(value: unknown, path: string): ReadScoreEntry {
   const data = decodeObject(value, path, 'scorekortdata')
-  rejectFields(data, path, ['round_id', 'hole_id', 'owner', 'submitted_by', 'submitted_at', 'updated_at'])
+  rejectFields(data, path, ['round_id', 'hole_id', 'owner', 'submitted_by', 'submitted_at', 'updated_at', 'revision'])
   return { id: decodeUuid(data.id, `${path}.id`, 'scorekortdata'), gross_strokes: decodeInteger(data.gross_strokes, `${path}.gross_strokes`, 1, 20, 'scorekortdata') }
 }
 

@@ -1,6 +1,6 @@
 import { Check, ChevronLeft, ChevronRight, Minus, Plus, RefreshCw, RotateCcw } from 'lucide-react'
 import type { ScorecardHole, ScoringScorecard } from '../../api/scorecards'
-import type { ScoreSyncSnapshot } from './scoreCoordinator'
+import type { ScoreSyncSnapshot } from './scoreSyncState'
 
 interface HoleEntryProps {
   card: ScoringScorecard
@@ -17,12 +17,15 @@ interface HoleEntryProps {
 }
 
 function syncLabel(sync: ScoreSyncSnapshot): string {
-  if (sync.phase === 'saving') return 'Lagrer …'
-  if (sync.phase === 'queued') return 'Ny endring venter …'
-  if (sync.phase === 'verifying') return 'Kontrollerer lagret score …'
+  if (sync.phase === 'saving') return 'Lagrer på enheten …'
+  if (sync.phase === 'queued') return 'Lagret på denne enheten · venter på levering'
+  if (sync.phase === 'verifying') return 'Lagret på denne enheten · sender til serveren …'
+  if (sync.phase === 'conflict') return 'Scorene er ulike · åpne lokale scoreendringer for å velge'
+  if (sync.phase === 'blocked') return 'Levering er stoppet · se lokale scoreendringer'
+  if (sync.phase === 'refreshing') return 'Oppdaterer serverscore · netto venter'
   if (sync.phase === 'synced') return 'Synkronisert'
-  if (sync.phase === 'failed') return 'Lagring feilet'
-  return sync.serverValue === null ? 'Ikke registrert' : 'Lagret'
+  if (sync.phase === 'failed') return 'Ikke lagret på enheten'
+  return sync.serverValue === null ? 'Ikke registrert' : 'Lagret på serveren'
 }
 
 export function HoleEntry(props: HoleEntryProps) {

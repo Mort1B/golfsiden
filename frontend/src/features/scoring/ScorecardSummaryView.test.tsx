@@ -52,3 +52,11 @@ it('only renders the visible allocation prefix in a restricted read summary', ()
   expect(screen.queryByRole('button', { name: /Hull 10/ })).toBeNull()
   expect(screen.queryByRole('button', { name: /Bekreft/ })).toBeNull()
 })
+
+it('labels local values separately and waits for server net while preserving server totals', () => {
+  render(<ScorecardSummaryView {...props} card={card([1, 1])} localScores={new Map([['hole-0', 5]])} />)
+  expect(screen.getByText('Lokalt 5')).toBeTruthy()
+  expect(screen.getByText('Netto venter')).toBeTruthy()
+  expect(screen.getByText(/Summer og antall registrerte hull viser serverens scorekort/)).toBeTruthy()
+  expect(screen.getAllByRole('button')).toHaveLength(2)
+})

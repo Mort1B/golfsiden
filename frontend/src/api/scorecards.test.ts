@@ -37,6 +37,7 @@ describe('scorecard boundaries', () => {
           hole_id: holeId,
           owner,
           gross_strokes: 5,
+          revision: '1',
           submitted_by: userId,
           submitted_at: '2026-09-10T10:00:00Z',
           updated_at: '2026-09-10T10:00:01.123Z',

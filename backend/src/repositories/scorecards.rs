@@ -1,4 +1,6 @@
+mod conditional;
 mod handicaps;
+pub use conditional::{ConditionalSaveScore, save_conditional};
 mod mutations;
 mod rows;
 
@@ -34,6 +36,8 @@ pub enum ScorecardConflict {
     OwnerNotEligible,
     HoleMismatch,
     Incomplete,
+    VersionConflict,
+    RequestMismatch,
 }
 
 impl ScorecardConflict {
@@ -44,6 +48,8 @@ impl ScorecardConflict {
             Self::OwnerNotEligible => "score_owner_not_eligible",
             Self::HoleMismatch => "score_hole_mismatch",
             Self::Incomplete => "scorecard_incomplete",
+            Self::VersionConflict => "score_version_conflict",
+            Self::RequestMismatch => "score_request_mismatch",
         }
     }
 
@@ -54,6 +60,10 @@ impl ScorecardConflict {
             Self::OwnerNotEligible => "score owner is not eligible for this round",
             Self::HoleMismatch => "hole does not belong to the round tee",
             Self::Incomplete => "every configured hole must be scored before confirmation",
+            Self::VersionConflict => "score changed; review the current score before retrying",
+            Self::RequestMismatch => {
+                "request identifier was already used for a different score operation"
+            }
         }
     }
 }
@@ -219,7 +229,7 @@ async fn load_score(
     hole_id: Uuid,
     owner: ScoreOwner,
 ) -> Result<Option<ScoreEntry>, ScorecardError> {
-    let row = sqlx::query_as::<_, ScoreRow>("SELECT id, round_id, hole_id, player_id, team_id, gross_strokes, submitted_by, submitted_at, updated_at FROM scores WHERE round_id = $1 AND hole_id = $2 AND (($3::uuid IS NOT NULL AND player_id = $3) OR ($4::uuid IS NOT NULL AND team_id = $4)) FOR UPDATE")
+    let row = sqlx::query_as::<_, ScoreRow>("SELECT revision, id, round_id, hole_id, player_id, team_id, gross_strokes, submitted_by, submitted_at, updated_at FROM scores WHERE round_id = $1 AND hole_id = $2 AND (($3::uuid IS NOT NULL AND player_id = $3) OR ($4::uuid IS NOT NULL AND team_id = $4)) FOR UPDATE")
         .bind(round_id).bind(hole_id).bind(owner.player_id()).bind(owner.team_id())
         .fetch_optional(&mut **transaction).await?;
     row.map(score_from_row).transpose()
@@ -251,7 +261,7 @@ async fn build_summary(
     owner: ScoreOwner,
 ) -> Result<ScorecardSummary, ScorecardError> {
     let playing_handicap = validate_owner(connection, context, owner).await?;
-    let rows = sqlx::query_as::<_, HoleScoreRow>("SELECT $1::uuid AS round_id, h.id AS hole_id, h.hole_number, h.par, h.stroke_index, s.id AS score_id, s.player_id, s.team_id, s.gross_strokes, s.submitted_by, s.submitted_at, s.updated_at FROM holes h LEFT JOIN scores s ON s.round_id = $1 AND s.hole_id = h.id AND (($2::uuid IS NOT NULL AND s.player_id = $2) OR ($3::uuid IS NOT NULL AND s.team_id = $3)) WHERE h.tee_id = $4 ORDER BY h.hole_number")
+    let rows = sqlx::query_as::<_, HoleScoreRow>("SELECT $1::uuid AS round_id, h.id AS hole_id, h.hole_number, h.par, h.stroke_index, s.id AS score_id, s.revision, s.player_id, s.team_id, s.gross_strokes, s.submitted_by, s.submitted_at, s.updated_at FROM holes h LEFT JOIN scores s ON s.round_id = $1 AND s.hole_id = h.id AND (($2::uuid IS NOT NULL AND s.player_id = $2) OR ($3::uuid IS NOT NULL AND s.team_id = $3)) WHERE h.tee_id = $4 ORDER BY h.hole_number")
         .bind(context.id).bind(owner.player_id()).bind(owner.team_id()).bind(context.tee_id)
         .fetch_all(&mut *connection).await?;
     let sources = rows
