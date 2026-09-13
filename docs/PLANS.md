@@ -9,10 +9,7 @@ None. The next implementation step requires user approval.
 
 ## Next candidate
 
-**One open round per tournament:** Decide the product rule before adding a
-PostgreSQL constraint. Current reads deterministically select the highest-
-numbered open round. Any enforcement needs an existing-data preflight and
-concurrency validation without silently closing historical rounds.
+None selected.
 
 ## Later, as separate bounded steps
 
