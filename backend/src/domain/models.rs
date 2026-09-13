@@ -59,6 +59,14 @@ pub enum TournamentRole {
     Viewer,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "tournament_tie_break_policy", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum TournamentTieBreakPolicy {
+    SharedPositions,
+    FinalRoundScore,
+}
+
 #[derive(Debug, Clone, Serialize, FromRow)]
 pub struct Tournament {
     pub id: Uuid,
@@ -69,6 +77,7 @@ pub struct Tournament {
     pub number_of_rounds: i16,
     pub counted_rounds: i16,
     pub mandatory_round_id: Option<Uuid>,
+    pub tie_break_policy: TournamentTieBreakPolicy,
     pub status: TournamentStatus,
     pub scoring_mode: ScoringMode,
     pub created_at: DateTime<Utc>,

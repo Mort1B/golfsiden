@@ -1,3 +1,4 @@
+import { validateTournamentTieBreakRounds } from './leaderboards/tournamentRanks'
 import type { LeaderboardMetric, Round, TournamentContribution, TournamentLeaderboard } from './types'
 import { privateWorkspaceKeys } from './privateWorkspace'
 import { validateMandatoryRound } from './mandatoryRounds'
@@ -72,8 +73,7 @@ export function validateTournamentLeaderboardRounds(leaderboard: TournamentLeade
     }
   }
   if (leaderboard.visibility.mode === 'front_nine') {
-    const finalRound = rounds.reduce<Round | undefined>((latest, round) =>
-      latest === undefined || round.round_number > latest.round_number ? round : latest, undefined)
+    const finalRound = rounds.find((round) => round.round_number === leaderboard.final_round_number)
     if (finalRound !== undefined && leaderboard.included_round_ids.includes(finalRound.id)) {
       invalidData('resultatdata', 'leaderboard.hidden final round')
     }
@@ -84,5 +84,6 @@ export function validateTournamentLeaderboardRounds(leaderboard: TournamentLeade
     }
   }
   validateDisplayedSelection(leaderboard, roundsById)
+  validateTournamentTieBreakRounds(leaderboard, rounds)
   return leaderboard
 }

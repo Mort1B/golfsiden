@@ -3,7 +3,7 @@ import type { PairingValidation } from '../../../../api/roundLifecycle'
 import type { RoundCompletionValidation } from '../../../../api/scorecards'
 import type { Round, Tournament } from '../../../../api/types'
 
-export const tournament: Tournament = {
+export const tournament: Tournament = { tie_break_policy: 'shared_positions',
   id: '00000000-0000-0000-0000-000000000001', name: 'Testturnering', description: '',
   start_date: '2026-09-06', end_date: '2026-09-07', number_of_rounds: 1,
   counted_rounds: 1, mandatory_round_id: null, status: 'active', scoring_mode: 'individual',

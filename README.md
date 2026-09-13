@@ -11,7 +11,8 @@ access independently.
 ## Features
 
 - **Tournament management:** Create tournaments, plan rounds, choose how many
-  results count toward the standings, and optionally require a specific round.
+  results count toward the standings, optionally require a specific round, and
+  choose shared places or a final-round comparison for equal tournament totals.
   Manage each tournament from draft through completion and archive.
 - **Individual and team formats:** Play individual stroke play, two-player
   scramble, or two-player foursomes. Organizers assign teams and flights for each

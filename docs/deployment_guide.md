@@ -218,6 +218,25 @@ a representative tournament read. Exercise reset only with a designated test
 account, never an operator's real password as an implicit deployment check.
 This implementation does not deploy or recover production accounts itself.
 
+### Schema 25 tournament tie-breaks
+
+Migration 0025 adds the required typed tournament tie policy and extends the
+existing permanent pre-start configuration guard. Existing tournaments, including
+active and finished events, retain shared places through the `shared_positions`
+default. New tournaments also default to shared places; organizers may select
+`final_round_score` in draft settings. Scores, handicap snapshots, creation
+receipts and serialized retry fingerprints remain unchanged.
+
+Back up, migrate with owner authority, refresh runtime permissions and deploy
+matching API/frontend builds. Keep `RUN_MIGRATIONS=false`. Schema-24 binaries
+cannot serve schema 25; rollback uses the pre-upgrade backup and fresh-volume
+restore. The updated frontend requires the new response metadata, and older
+clients can reject standings whose shared positions have been resolved. Reload
+open clients onto the matching frontend before enabling the optional policy.
+Verify readiness, an existing tournament read and representative gross/net
+standings. Schema upgrades and historical preservation were tested against a
+disposable PostgreSQL database; this change does not migrate production itself.
+
 ### Upgrade sequence
 
 Before every upgrade:

@@ -6,8 +6,10 @@ export type RoundStatus = 'draft' | 'open' | 'completed' | 'locked'
 export type ScoringFormat = 'individual_stroke_play' | 'team_scramble' | 'two_player_foursomes'
 export type ParticipantStatus = 'active' | 'withdrawn'
 export type LeaderboardMetric = 'gross' | 'net'
+export type TournamentTieBreakPolicy = 'shared_positions' | 'final_round_score'
 
 export interface Tournament {
+  tie_break_policy: TournamentTieBreakPolicy
   id: string
   name: string
   description: string
@@ -155,6 +157,7 @@ export interface TournamentContribution {
 }
 
 export interface TournamentLeaderboardEntry {
+  tie_break_score_to_par: number | null
   position: number | null
   tied: boolean
   player_id: string
@@ -172,6 +175,8 @@ export interface TournamentLeaderboardEntry {
 }
 
 export interface TournamentLeaderboard {
+  tie_break_policy: TournamentTieBreakPolicy
+  final_round_number: number
   tournament_id: string
   metric: LeaderboardMetric
   required_counted_rounds: number

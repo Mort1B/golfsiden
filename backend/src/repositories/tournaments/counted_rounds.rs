@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use super::{COLUMNS, TournamentMutationError};
 use crate::{
-    domain::models::{Tournament, TournamentStatus},
+    domain::models::{Tournament, TournamentStatus, TournamentTieBreakPolicy},
     repositories::tournament_authorization,
 };
 
@@ -19,6 +19,7 @@ pub async fn update_counted_rounds_authorized(
     tournament_id: Uuid,
     counted_rounds: i16,
     mandatory_round_id: Option<Uuid>,
+    tie_break_policy: Option<TournamentTieBreakPolicy>,
     expected_updated_at: DateTime<Utc>,
 ) -> Result<UpdateCountedRoundsResult, TournamentMutationError> {
     let likely_admin = sqlx::query_scalar::<_, bool>(
@@ -102,7 +103,9 @@ pub async fn update_counted_rounds_authorized(
     if tournament.updated_at != expected_updated_at {
         return Err(TournamentMutationError::ConfigurationStale);
     }
-    if tournament.counted_rounds == counted_rounds
+    let tie_break_policy = tie_break_policy.unwrap_or(tournament.tie_break_policy);
+    if tournament.tie_break_policy == tie_break_policy
+        && tournament.counted_rounds == counted_rounds
         && tournament.mandatory_round_id == mandatory_round_id
     {
         transaction.commit().await?;
@@ -123,13 +126,14 @@ pub async fn update_counted_rounds_authorized(
     .await?;
 
     let tournament = sqlx::query_as::<_, Tournament>(&format!(
-        "UPDATE tournaments SET counted_rounds = $2, mandatory_round_id = $3
+        "UPDATE tournaments SET counted_rounds = $2, mandatory_round_id = $3, tie_break_policy = $4
          WHERE id = $1
          RETURNING {COLUMNS}"
     ))
     .bind(tournament_id)
     .bind(counted_rounds)
     .bind(mandatory_round_id)
+    .bind(tie_break_policy)
     .fetch_one(&mut *transaction)
     .await?;
     transaction.commit().await?;

@@ -6,7 +6,7 @@ const playerId = '00000000-0000-0000-0000-000000000020'
 const userId = '00000000-0000-0000-0000-000000000030'
 
 const response = {
-  tournament: {
+  tournament: { tie_break_policy: 'shared_positions',
     id: tournamentId,
     name: 'Høsttur',
     description: '',

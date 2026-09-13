@@ -462,6 +462,7 @@ async fn tournament_start_permanently_locks_configuration_before_round_opening(p
         TOURNAMENT,
         2,
         None,
+        None,
         updated_at(&pool).await,
     )
     .await;
@@ -509,6 +510,7 @@ async fn tournament_start_permanently_locks_configuration_before_round_opening(p
         TOURNAMENT,
         2,
         None,
+        None,
         updated_at(&pool).await,
     )
     .await;
@@ -517,3 +519,6 @@ async fn tournament_start_permanently_locks_configuration_before_round_opening(p
         Err(tournaments::TournamentMutationError::ConfigurationLocked)
     ));
 }
+
+#[path = "tournament_counted_rounds/tie_breaks.rs"]
+mod tie_breaks;

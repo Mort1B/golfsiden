@@ -87,6 +87,7 @@ export function TournamentManagementSections({ tournament, roster, rounds, navig
         </dl>
         <CountedRoundsEditor
           tournament={tournament}
+          authorityRefreshing={authorityRefreshing}
           rounds={rounds.data}
           roundsPending={rounds.pending}
           roundsError={rounds.error}

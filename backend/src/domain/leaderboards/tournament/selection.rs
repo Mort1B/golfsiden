@@ -1,4 +1,6 @@
+use crate::domain::models::TournamentTieBreakPolicy;
 use std::cmp::Ordering;
+use uuid::Uuid;
 
 use super::super::{LeaderboardMetric, TournamentLeaderboardEntry};
 use super::contributions::CandidateContribution;
@@ -75,7 +77,11 @@ pub(super) fn select_displayed(
     });
 }
 
-pub(super) fn rank_entries(entries: &mut [TournamentLeaderboardEntry]) {
+pub(super) fn rank_entries(
+    entries: &mut [TournamentLeaderboardEntry],
+    policy: TournamentTieBreakPolicy,
+    final_round_id: Option<Uuid>,
+) {
     entries.sort_by(
         |left, right| match (has_selected(left), has_selected(right)) {
             (true, true) => right
@@ -96,22 +102,54 @@ pub(super) fn rank_entries(entries: &mut [TournamentLeaderboardEntry]) {
         },
     );
 
-    let ranked = entries
-        .iter()
-        .take_while(|entry| has_selected(entry))
-        .count();
-    for index in 0..ranked {
-        let tied_previous = index > 0 && rank_key(&entries[index - 1]) == rank_key(&entries[index]);
-        entries[index].position = Some(if tied_previous {
-            entries[index - 1].position.unwrap_or(index)
-        } else {
-            index + 1
-        });
-        entries[index].tied = tied_previous
-            || entries.get(index + 1).is_some_and(|next| {
-                has_selected(next) && rank_key(next) == rank_key(&entries[index])
-            });
+    if policy == TournamentTieBreakPolicy::FinalRoundScore {
+        for group in entries.chunk_by_mut(|left, right| primary_key(left) == primary_key(right)) {
+            if group.len() > 1
+                && group
+                    .iter()
+                    .all(|entry| comparable_final(entry, final_round_id).is_some())
+            {
+                for entry in group.iter_mut() {
+                    entry.tie_break_score_to_par = comparable_final(entry, final_round_id);
+                }
+                // Stable sort preserves progress/name/UUID order for residual ties.
+                group.sort_by_key(|entry| entry.tie_break_score_to_par);
+            }
+        }
     }
+    let mut offset = 0;
+    for group in entries.chunk_by_mut(|left, right| rank_key(left) == rank_key(right)) {
+        let tied = group.len() > 1;
+        for entry in group.iter_mut().filter(|entry| has_selected(entry)) {
+            entry.position = Some(offset + 1);
+            entry.tied = tied;
+        }
+        offset += group.len();
+    }
+}
+
+fn comparable_final(
+    entry: &TournamentLeaderboardEntry,
+    final_round_id: Option<Uuid>,
+) -> Option<i32> {
+    if !entry.eligible
+        || !has_selected(entry)
+        || entry
+            .contributions
+            .iter()
+            .any(|item| item.counted && item.provisional)
+    {
+        return None;
+    }
+    entry
+        .contributions
+        .iter()
+        .find(|item| {
+            Some(item.round_id) == final_round_id
+                && !item.provisional
+                && item.holes_scored == item.number_of_holes
+        })
+        .map(|item| item.score_to_par)
 }
 
 fn sort_candidates(candidates: &mut [&CandidateContribution], metric: LeaderboardMetric) {
@@ -152,6 +190,15 @@ fn provisional_progress(entry: &TournamentLeaderboardEntry) -> usize {
         .sum()
 }
 
-fn rank_key(entry: &TournamentLeaderboardEntry) -> (usize, i32) {
-    (entry.counted_contributions, entry.score_to_par)
+fn primary_key(entry: &TournamentLeaderboardEntry) -> (bool, usize, i32) {
+    (
+        has_selected(entry),
+        entry.counted_contributions,
+        entry.score_to_par,
+    )
+}
+
+fn rank_key(entry: &TournamentLeaderboardEntry) -> (bool, usize, i32, Option<i32>) {
+    let (selected, count, score) = primary_key(entry);
+    (selected, count, score, entry.tie_break_score_to_par)
 }

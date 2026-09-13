@@ -367,6 +367,7 @@ async fn start_and_counted_round_update_serialize_without_deadlock(pool: PgPool)
             TOURNAMENT_A,
             2,
             Some(uuid!("15000000-0000-0000-0000-000000000032")),
+            None,
             expected,
         )
         .await

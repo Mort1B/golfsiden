@@ -1,3 +1,5 @@
+import { decodeTieBreakPolicy } from '../tieBreakPolicy'
+import { validateTournamentRanks } from './tournamentRanks'
 import { decodeArray, decodeBoolean, decodeInteger, decodeObject, decodeString, decodeUuid } from '../decoder'
 import type {
   CurrentTeam,
@@ -40,6 +42,7 @@ function contribution(value: unknown, path: string): TournamentContribution {
 function tournamentEntry(value: unknown, path: string): TournamentLeaderboardEntry {
   const data = decodeObject(value, path, 'resultatdata')
   return {
+    tie_break_score_to_par: data.tie_break_score_to_par === null ? null : decodeInteger(data.tie_break_score_to_par, `${path}.tie_break_score_to_par`, undefined, undefined, 'resultatdata'),
     position: nullablePosition(data.position, `${path}.position`),
     tied: decodeBoolean(data.tied, `${path}.tied`, 'resultatdata'),
     player_id: decodeUuid(data.player_id, `${path}.player_id`, 'resultatdata'),
@@ -161,46 +164,6 @@ function validateEntry(
   if (entry.score_to_par !== total - entry.par_total) invalidLeaderboard(`${path}.score_to_par`)
 }
 
-function selectedProgress(entry: TournamentLeaderboardEntry): number {
-  return entry.contributions
-    .filter((item) => item.counted && item.provisional)
-    .reduce((sum, item) => sum + item.holes_scored, 0)
-}
-
-function validateRanks(entries: TournamentLeaderboardEntry[]): void {
-  let rankedCount = 0
-  for (const entry of entries) {
-    if (entry.contributions.some((item) => item.counted)) rankedCount += 1
-    else break
-  }
-  if (entries.slice(rankedCount).some((entry) => entry.position !== null || entry.tied)) {
-    invalidLeaderboard('leaderboard.entries.position')
-  }
-  for (let index = 0; index < rankedCount; index += 1) {
-    const entry = entries[index]
-    if (entry === undefined) invalidLeaderboard('leaderboard.entries.position')
-    const previous = entries[index - 1]
-    const next = entries[index + 1]
-    const samePrevious = previous !== undefined
-      && previous.counted_contributions === entry.counted_contributions
-      && previous.score_to_par === entry.score_to_par
-    const sameNext = index + 1 < rankedCount && next !== undefined
-      && next.counted_contributions === entry.counted_contributions
-      && next.score_to_par === entry.score_to_par
-    const expectedPosition = samePrevious ? previous.position : index + 1
-    if (entry.position !== expectedPosition || entry.tied !== (samePrevious || sameNext)) {
-      invalidLeaderboard(`leaderboard.entries[${index}].position`)
-    }
-    if (previous !== undefined && (previous.counted_contributions < entry.counted_contributions
-      || (previous.counted_contributions === entry.counted_contributions
-        && (previous.score_to_par > entry.score_to_par
-          || (previous.score_to_par === entry.score_to_par
-            && selectedProgress(previous) < selectedProgress(entry)))))) {
-      invalidLeaderboard(`leaderboard.entries[${index}].position`)
-    }
-  }
-}
-
 function validateCoherence(leaderboard: TournamentLeaderboard): void {
   const included = new Set(leaderboard.included_round_ids)
   if (included.size !== leaderboard.included_round_ids.length) invalidLeaderboard('leaderboard.included_round_ids')
@@ -218,7 +181,7 @@ function validateCoherence(leaderboard: TournamentLeaderboard): void {
     }
     validateEntry(entry, path, leaderboard, included)
   })
-  validateRanks(leaderboard.entries)
+  validateTournamentRanks(leaderboard)
 }
 
 export function decodeTournamentLeaderboard(
@@ -227,10 +190,13 @@ export function decodeTournamentLeaderboard(
   expectedMetric: LeaderboardMetric,
 ): TournamentLeaderboard {
   const data = decodeObject(value, 'leaderboard', 'resultatdata')
+  const finalRoundNumber = decodeInteger(data.final_round_number, 'leaderboard.final_round_number', 1, 30, 'resultatdata')
   const decoded: TournamentLeaderboard = {
+    final_round_number: finalRoundNumber,
+    tie_break_policy: decodeTieBreakPolicy(data.tie_break_policy, 'leaderboard.tie_break_policy', 'resultatdata'),
     tournament_id: decodeUuid(data.tournament_id, 'leaderboard.tournament_id', 'resultatdata'),
     metric: decodeMetric(data.metric, 'leaderboard.metric'),
-    required_counted_rounds: decodeInteger(data.required_counted_rounds, 'leaderboard.required_counted_rounds', 1, undefined, 'resultatdata'),
+    required_counted_rounds: decodeInteger(data.required_counted_rounds, 'leaderboard.required_counted_rounds', 1, finalRoundNumber, 'resultatdata'),
     mandatory_round_id: data.mandatory_round_id === null ? null : decodeUuid(data.mandatory_round_id, 'leaderboard.mandatory_round_id', 'resultatdata'),
     current_round_id: data.current_round_id === null ? null : decodeUuid(data.current_round_id, 'leaderboard.current_round_id', 'resultatdata'),
     included_round_ids: decodeArray(data.included_round_ids, 'leaderboard.included_round_ids', (item, path) => decodeUuid(item, path, 'resultatdata'), 'resultatdata'),

@@ -3,7 +3,7 @@ import { ApiHttpError } from '../../api/http'
 import type { Round, Tournament, TournamentPlayerRoster } from '../../api/types'
 import { tournamentStartFailure, tournamentStartReadiness } from './tournamentStart'
 
-const tournament: Tournament = {
+const tournament: Tournament = { tie_break_policy: 'shared_positions',
   id: '00000000-0000-0000-0000-000000000001',
   name: 'En turnering med et svært langt navn som fortsatt skal vises uten å endre reglene',
   description: '', start_date: '2026-09-01', end_date: '2026-09-04',

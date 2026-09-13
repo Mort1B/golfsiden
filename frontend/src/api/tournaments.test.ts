@@ -10,7 +10,7 @@ import {
 } from './tournaments'
 import type { Tournament } from './types'
 
-const tournament: Tournament = {
+const tournament: Tournament = { tie_break_policy: 'shared_positions',
   id: '00000000-0000-0000-0000-000000000001',
   name: 'Tur',
   description: '',
@@ -231,5 +231,23 @@ describe('tournament memberships', () => {
 
     await expect(tournamentApi.detail(tournament.id)).rejects.toThrow('identity')
     await expect(tournamentApi.rounds(tournament.id)).rejects.toThrow('identity')
+  })
+})
+
+describe('tournament tie policy', () => {
+  it('requires a known policy on tournament reads', () => {
+    expect(() => decodeTournament({ ...tournament, tie_break_policy: undefined })).toThrow('tie_break_policy')
+    expect(() => decodeTournament({ ...tournament, tie_break_policy: 'countback' })).toThrow('tie_break_policy')
+    expect(decodeTournament({ ...tournament, tie_break_policy: 'final_round_score' }).tie_break_policy).toBe('final_round_score')
+  })
+  it('sends an explicit setting while preserving the omitted-setting contract for old callers', async () => {
+    const input = { counted_rounds: 1, mandatory_round_id: null, expected_tournament_updated_at: tournament.updated_at }
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ ...tournament, tie_break_policy: 'final_round_score' }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const result = await tournamentApi.updateCountedRounds(tournament.id, { ...input, tie_break_policy: 'final_round_score' }, 'csrf')
+    expect(result.tie_break_policy).toBe('final_round_score')
+    expect(fetchMock).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({ body: JSON.stringify({ ...input, tie_break_policy: 'final_round_score' }) }))
+    await tournamentApi.updateCountedRounds(tournament.id, input, 'csrf')
+    expect(fetchMock).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({ body: JSON.stringify(input) }))
   })
 })

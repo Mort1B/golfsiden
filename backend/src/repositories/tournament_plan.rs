@@ -5,7 +5,7 @@ use crate::domain::{
 use sqlx::{Postgres, Transaction};
 use uuid::Uuid;
 
-const TOURNAMENT_COLUMNS: &str = "id, name, description, start_date, end_date, number_of_rounds, counted_rounds, mandatory_round_id, status, scoring_mode, created_at, updated_at";
+const TOURNAMENT_COLUMNS: &str = "id, name, description, start_date, end_date, number_of_rounds, counted_rounds, mandatory_round_id, tie_break_policy, status, scoring_mode, created_at, updated_at";
 const ROUND_COLUMNS: &str = "id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, status, handicap_enabled, handicap_allowance_percent, scoring_format, created_at, updated_at";
 
 pub async fn insert(

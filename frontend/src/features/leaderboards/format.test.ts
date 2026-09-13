@@ -10,7 +10,7 @@ import {
   selectedProvisional,
 } from './format'
 
-const entry: TournamentLeaderboardEntry = {
+const entry: TournamentLeaderboardEntry = { tie_break_score_to_par: null,
   position: 1,
   tied: false,
   player_id: '00000000-0000-0000-0000-000000001001',

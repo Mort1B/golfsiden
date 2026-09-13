@@ -3,7 +3,7 @@ import { ApiHttpError } from '../../api/http'
 import type { Round, Tournament } from '../../api/types'
 import { applicableFinalRound, finalRoundVisibilityFailure } from './finalRoundVisibility'
 
-const tournament: Tournament = {
+const tournament: Tournament = { tie_break_policy: 'shared_positions',
   id: '00000000-0000-0000-0000-000000000001',
   name: 'Tur', description: '', start_date: '2026-09-01', end_date: '2026-09-03',
   number_of_rounds: 3, counted_rounds: 2, mandatory_round_id: null, status: 'active',

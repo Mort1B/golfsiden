@@ -66,7 +66,18 @@ struct UpdateCountedRounds {
     counted_rounds: i16,
     #[serde(deserialize_with = "deserialize_nullable_uuid")]
     mandatory_round_id: Option<Uuid>,
+    #[serde(default, deserialize_with = "deserialize_policy")]
+    tie_break_policy: Option<crate::domain::models::TournamentTieBreakPolicy>,
     expected_tournament_updated_at: DateTime<Utc>,
+}
+
+fn deserialize_policy<'de, D>(
+    deserializer: D,
+) -> Result<Option<crate::domain::models::TournamentTieBreakPolicy>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    crate::domain::models::TournamentTieBreakPolicy::deserialize(deserializer).map(Some)
 }
 
 fn deserialize_nullable_uuid<'de, D>(deserializer: D) -> Result<Option<Uuid>, D::Error>
@@ -166,7 +177,7 @@ async fn update_counted_rounds(
 ) -> ApiResult<impl IntoResponse> {
     let Json(input) = input.map_err(|_| {
         ApiError::BadRequest(
-            "request must contain only counted_rounds, mandatory_round_id, and expected_tournament_updated_at"
+            "request must contain only counted_rounds, mandatory_round_id, optional tie_break_policy, and expected_tournament_updated_at"
                 .to_owned(),
         )
     })?;
@@ -181,6 +192,7 @@ async fn update_counted_rounds(
         tournament_id,
         input.counted_rounds,
         input.mandatory_round_id,
+        input.tie_break_policy,
         input.expected_tournament_updated_at,
     )
     .await

@@ -1,7 +1,9 @@
 use serde::Serialize;
 use uuid::Uuid;
 
-use crate::domain::models::{ParticipantStatus, RoundStatus, ScoringFormat};
+use crate::domain::models::{
+    ParticipantStatus, RoundStatus, ScoringFormat, TournamentTieBreakPolicy,
+};
 use crate::domain::score_visibility::VisibilityMetadata;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -154,6 +156,8 @@ pub struct ParticipantFact {
 
 #[derive(Debug, Clone)]
 pub struct TournamentLeaderboardFacts {
+    pub final_round_number: i16,
+    pub tie_break_policy: TournamentTieBreakPolicy,
     pub tournament_id: Uuid,
     pub counted_rounds: usize,
     pub mandatory_round_id: Option<Uuid>,
@@ -170,6 +174,7 @@ pub struct CurrentTeam {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct TournamentLeaderboardEntry {
+    pub tie_break_score_to_par: Option<i32>,
     pub position: Option<usize>,
     pub tied: bool,
     pub player_id: Uuid,
@@ -204,6 +209,8 @@ pub struct TournamentContribution {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct TournamentLeaderboard {
+    pub final_round_number: i16,
+    pub tie_break_policy: TournamentTieBreakPolicy,
     pub tournament_id: Uuid,
     pub metric: LeaderboardMetric,
     pub required_counted_rounds: usize,

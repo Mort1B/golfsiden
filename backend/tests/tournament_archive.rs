@@ -527,7 +527,9 @@ async fn schema19_upgrade_preserves_workflow_completion_evidence(pool: PgPool) {
     tournaments::archive_authorized(&pool, session, TRIP, version(&pool).await)
         .await
         .unwrap();
-    assert_eq!(before, history(&pool).await);
+    let mut expected = before;
+    expected["trip"]["tie_break_policy"] = serde_json::json!("shared_positions");
+    assert_eq!(expected, history(&pool).await);
 }
 
 async fn history(pool: &PgPool) -> Value {

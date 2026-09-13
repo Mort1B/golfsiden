@@ -50,7 +50,7 @@ describe('leaderboard decoders', () => {
       entries: [],
     }, seedRoundId, seedTournamentId, 'net')
 
-    const tournament = decodeTournamentLeaderboard({
+    const tournament = decodeTournamentLeaderboard({ tie_break_policy: 'shared_positions', final_round_number: 4,
       tournament_id: seedTournamentId,
       metric: 'gross',
       required_counted_rounds: 3,
@@ -81,7 +81,7 @@ describe('leaderboard decoders', () => {
     const highestOpen = roundFixture(highestOpenId, 3, 'open')
     const draft = roundFixture(draftRoundId, 4, 'draft')
     const rounds = [completed, locked, lowerOpen, highestOpen, draft]
-    const leaderboard = decodeTournamentLeaderboard({
+    const leaderboard = decodeTournamentLeaderboard({ tie_break_policy: 'shared_positions', final_round_number: 4,
       tournament_id: seedTournamentId,
       metric: 'gross',
       required_counted_rounds: 2,
@@ -133,7 +133,7 @@ describe('leaderboard decoders', () => {
     const secondRoundId = '00000000-0000-0000-0000-000000004002'
     const thirdRoundId = '00000000-0000-0000-0000-000000004003'
     const currentRoundId = '00000000-0000-0000-0000-000000004004'
-    const response = decodeTournamentLeaderboard({
+    const response = decodeTournamentLeaderboard({ tie_break_policy: 'shared_positions', final_round_number: 4,
       tournament_id: seedTournamentId,
       metric: 'net',
       required_counted_rounds: 2,
@@ -141,7 +141,7 @@ describe('leaderboard decoders', () => {
       current_round_id: currentRoundId,
       included_round_ids: [seedRoundId, secondRoundId, thirdRoundId],
       visibility: fullVisibility,
-      entries: [{
+      entries: [{ tie_break_score_to_par: null,
         position: 1,
         tied: false,
         player_id: playerId,
@@ -203,7 +203,7 @@ describe('leaderboard decoders', () => {
     }, seedTournamentId, 'net')
 
     expect(response.required_counted_rounds).toBe(2)
-    expect(response.entries[0]).toMatchObject({
+    expect(response.entries[0]).toMatchObject({ tie_break_score_to_par: null,
       counted_contributions: 2,
       eligible: true,
       par_total: 144,
@@ -240,7 +240,7 @@ describe('leaderboard decoders', () => {
       counted: true,
       mandatory: true,
     }
-    const leaderboardEntry = {
+    const leaderboardEntry = { tie_break_score_to_par: null,
       position: null,
       tied: false,
       player_id: '00000000-0000-0000-0000-000000001001',
@@ -256,7 +256,7 @@ describe('leaderboard decoders', () => {
       contributions: [contribution],
       current_team: null,
     }
-    const base = {
+    const base = { tie_break_policy: 'shared_positions', final_round_number: 4,
       tournament_id: seedTournamentId,
       metric: 'gross',
       required_counted_rounds: 1,
@@ -312,7 +312,7 @@ describe('leaderboard decoders', () => {
       counted: true,
       mandatory: false,
     }
-    const entry = {
+    const entry = { tie_break_score_to_par: null,
       position: 1,
       tied: false,
       player_id: playerId,
@@ -328,7 +328,7 @@ describe('leaderboard decoders', () => {
       contributions: [contribution],
       current_team: null,
     }
-    const base = {
+    const base = { tie_break_policy: 'shared_positions', final_round_number: 4,
       tournament_id: seedTournamentId,
       metric: 'gross',
       required_counted_rounds: 1,
@@ -410,7 +410,7 @@ describe('leaderboard decoders', () => {
       counted: true,
       mandatory: false,
     }
-    const entry = {
+    const entry = { tie_break_score_to_par: null,
       position: 1,
       tied: false,
       player_id: playerId,
@@ -426,7 +426,7 @@ describe('leaderboard decoders', () => {
       contributions: [contribution],
       current_team: null,
     }
-    const base = {
+    const base = { tie_break_policy: 'shared_positions', final_round_number: 4,
       tournament_id: seedTournamentId,
       metric: 'gross',
       required_counted_rounds: 1,
@@ -485,7 +485,7 @@ describe('leaderboard decoders', () => {
       counted: true,
       mandatory: false,
     }
-    const entry = {
+    const entry = { tie_break_score_to_par: null,
       position: 1,
       tied: false,
       player_id: playerId,
@@ -501,7 +501,7 @@ describe('leaderboard decoders', () => {
       contributions: [contribution],
       current_team: null,
     }
-    const base = {
+    const base = { tie_break_policy: 'shared_positions', final_round_number: 4,
       tournament_id: seedTournamentId,
       metric: 'gross',
       required_counted_rounds: 1,
@@ -568,7 +568,7 @@ describe('leaderboard decoders', () => {
       counted: true,
       mandatory: false,
     }
-    const entry = {
+    const entry = { tie_break_score_to_par: null,
       position: 1,
       tied: false,
       player_id: playerId,
@@ -584,7 +584,7 @@ describe('leaderboard decoders', () => {
       contributions: [completed, provisional],
       current_team: null,
     }
-    const base = {
+    const base = { tie_break_policy: 'shared_positions', final_round_number: 4,
       tournament_id: seedTournamentId,
       metric: 'gross',
       required_counted_rounds: 2,
@@ -596,7 +596,7 @@ describe('leaderboard decoders', () => {
     }
 
     const decoded = decodeTournamentLeaderboard(base, seedTournamentId, 'gross')
-    expect(decoded.entries[0]).toMatchObject({
+    expect(decoded.entries[0]).toMatchObject({ tie_break_score_to_par: null,
       completed_rounds: 1,
       counted_contributions: 1,
       eligible: false,
@@ -669,7 +669,7 @@ describe('leaderboard decoders', () => {
       counted: false,
       mandatory: false,
     }
-    const common = {
+    const common = { tie_break_policy: 'shared_positions', final_round_number: 4,
       tournament_id: seedTournamentId,
       required_counted_rounds: 1,
       mandatory_round_id: null,
@@ -677,7 +677,7 @@ describe('leaderboard decoders', () => {
       included_round_ids: [seedRoundId],
       visibility: fullVisibility,
     }
-    const grossEntry = {
+    const grossEntry = { tie_break_score_to_par: null,
       position: 1,
       tied: false,
       player_id: playerId,
@@ -745,7 +745,7 @@ describe('leaderboard decoders', () => {
       counted: true,
       mandatory: false,
     }
-    const decoded = decodeTournamentLeaderboard({
+    const decoded = decodeTournamentLeaderboard({ tie_break_policy: 'shared_positions', final_round_number: 2,
       tournament_id: seedTournamentId,
       metric: 'gross',
       required_counted_rounds: 1,
@@ -753,7 +753,7 @@ describe('leaderboard decoders', () => {
       current_round_id: currentRoundId,
       included_round_ids: [],
       visibility: { mode: 'front_nine' },
-      entries: [{
+      entries: [{ tie_break_score_to_par: null,
         position: 1,
         tied: false,
         player_id: playerId,

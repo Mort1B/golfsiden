@@ -5,7 +5,7 @@ import type { Tournament } from '../../api/types'
 import { MANAGEMENT_SECTIONS, managementSectionFromHash, resolveManagementAccess } from './managementWorkspace'
 
 const tournamentId = '00000000-0000-0000-0000-000000000001'
-const tournament: Tournament = {
+const tournament: Tournament = { tie_break_policy: 'shared_positions',
   id: tournamentId,
   name: 'Langhelg',
   description: '',

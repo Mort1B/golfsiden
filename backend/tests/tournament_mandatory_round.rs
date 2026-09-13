@@ -122,6 +122,7 @@ async fn race_configuration_with_delete(
             TOURNAMENT,
             1,
             Some(target_round_id),
+            None,
             expected,
         )
         .await
@@ -357,6 +358,7 @@ async fn selection_and_replacement_serialize_with_target_round_deletion(pool: Pg
         TOURNAMENT,
         1,
         Some(ROUND_ONE),
+        None,
         updated_at(&pool).await,
     )
     .await
@@ -383,6 +385,7 @@ async fn selection_and_replacement_serialize_with_target_round_deletion(pool: Pg
         session_id,
         TOURNAMENT,
         1,
+        None,
         None,
         updated_at(&pool).await,
     )

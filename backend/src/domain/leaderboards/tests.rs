@@ -283,6 +283,8 @@ fn tournament_aggregates_changing_team_attribution_and_ranks_round_count_first()
     };
     let result = build_tournament_leaderboard(
         &TournamentLeaderboardFacts {
+            final_round_number: 30,
+            tie_break_policy: crate::domain::models::TournamentTieBreakPolicy::SharedPositions,
             tournament_id: id(100),
             counted_rounds: 2,
             mandatory_round_id: None,
@@ -359,6 +361,8 @@ fn tournament_ties_use_only_completed_rounds_and_selected_total() {
     ];
     let result = build_tournament_leaderboard(
         &TournamentLeaderboardFacts {
+            final_round_number: 30,
+            tie_break_policy: crate::domain::models::TournamentTieBreakPolicy::SharedPositions,
             tournament_id: id(100),
             counted_rounds: 1,
             mandatory_round_id: None,
@@ -410,6 +414,8 @@ fn case_insensitive_name_ties_fall_directly_to_uuid() {
 
     let tournament = build_tournament_leaderboard(
         &TournamentLeaderboardFacts {
+            final_round_number: 30,
+            tie_break_policy: crate::domain::models::TournamentTieBreakPolicy::SharedPositions,
             tournament_id: id(100),
             counted_rounds: 1,
             mandatory_round_id: None,

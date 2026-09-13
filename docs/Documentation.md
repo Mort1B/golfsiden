@@ -8,8 +8,8 @@ strict TypeScript React client. Username/password accounts enter through atomic
 creator onboarding or tournament invitations; tournament membership, rather
 than a global role or player directory, owns access.
 
-Exact tournament admins configure counted and optional mandatory rounds, select
-or manually register one immutable course/tee revision per draft round, manage
+Exact tournament admins configure counted rounds, an optional mandatory round and
+the overall tie-break policy, select or manually register one immutable course/tee revision per draft round, manage
 teams and flights, start the tournament, and open, complete, or lock individual
 rounds through separate controls in the management workspace's Rundestyring section.
 Opening calculates and freezes
@@ -644,17 +644,27 @@ automatic team assignment, or new lifecycle rules.
 The workspace provides semantic anchors for settings, entrants, invitations,
 rounds, courses, pairings, and lifecycle. Most sections report only facts already
 preserved by the existing private APIs and link to the invitation and round
-surfaces. Settings exposes “Tellende runder” and an optional mandatory-round
-selector while the tournament and every existing round remain draft. `PATCH
+surfaces. Settings exposes “Tellende runder og lik totalscore”: counted rounds,
+an optional mandatory round, and “Ved lik totalscore sammenlagt” while the tournament and every
+existing round remain draft. Choose “Delt plass” (the default) or “Siste runde,
+deretter delt plass”. `PATCH
 /api/tournaments/{tournament_id}/counted-rounds` requires an explicit
 `mandatory_round_id` UUID or JSON `null` together with counted N, the current
-tournament timestamp, CSRF, and exact tournament-admin membership. It locks the
-round set before the tournament, rejects cross-tournament IDs and stale writes,
-and permanently freezes both values when the tournament starts or a round has
+tournament timestamp, CSRF, and exact tournament-admin membership. Optional
+`tie_break_policy` accepts `shared_positions` or `final_round_score`; omission
+preserves the current policy, while explicit null and unknown values are rejected.
+Tournament read responses require this field. Creation/onboarding inputs remain
+unchanged and all new tournaments default to shared positions. The mutation locks
+the round set before the tournament, rejects cross-tournament IDs and stale writes,
+and permanently freezes all three values when the tournament starts or a round has
 opened. PostgreSQL independently requires the admin workflow context and uses
 durable opening/snapshot markers even if later data is removed. An unchanged
-pair preserves `updated_at` and emits no event; a real change returns the
+configuration preserves `updated_at` and emits no event; a real change returns the
 authoritative private tournament and publishes one post-commit invalidation.
+The editor refreshes scoped tournament and standings queries, disables changes
+while authority or round status is unresolved, and offers explicit retry after
+a failed refresh. Drafts and late save responses are isolated by tournament,
+user and session identity.
 
 The Rundestyring section exposes `Start turneringen` only to the exact tournament
 admin. `POST /api/tournaments/{tournament_id}/start` requires CSRF plus the
@@ -1268,6 +1278,23 @@ selected provisional result. Provisional hole progress stabilizes display order
 inside a sporting tie but does not break the tie. Names, UUIDs, and the other
 metric never enter the sporting tie identity.
 
+Shared positions remain the default. With `final_round_score`, an equal-primary
+ranking group is compared using the final scheduled round in the requested
+metric, even when that result falls outside best-N. Lower final score-to-par wins;
+equal final scores retain competition positions (for example 1, 2, 2, 4). Every
+member of the group must be eligible, have no selected provisional contribution,
+and have a complete, visible, non-provisional final contribution. If any member
+cannot be compared, the whole group retains shared positions. The final is the
+configured `number_of_rounds`, never the latest loaded or completed round.
+
+The response also requires top-level `tie_break_policy` and `final_round_number`,
+plus nullable `tie_break_score_to_par` on every entry. A non-null value means the whole tied
+group was compared, including entries still tied after comparison. It is null
+for shared policy, singleton groups, unstarted entries and every incomparable
+group. The UI describes the selected rule and displays “Siste runde” with the
+same gross/net score only when this metadata is present. Hidden final facts never
+influence that comparison or its explanation. Round standings are unchanged.
+
 The response returns `required_counted_rounds`, nullable `mandatory_round_id`, and every player's complete
 round-ordered contribution history. Each contribution preserves its round ID,
 tagged player or team owner, owner name, provisional state, visible hole progress,
@@ -1403,8 +1430,8 @@ restore, and rollback procedures are maintained in `docs/deployment_guide.md`.
 - Request throttling is process-local, so the supported production topology is
   one API replica. A future multi-replica topology requires a shared limiter.
 - Tournament settings currently edit only the atomic pre-start best-N and
-  optional mandatory-round configuration and expose the explicit
-  tournament-start action. Explicit completion and archive APIs have administrator
+  optional mandatory-round and overall tie-break configuration and expose the
+  explicit tournament-start action. Explicit completion and archive APIs have administrator
   confirmation controls; the tournament list offers current/archive/all views.
   General tournament editing remains unimplemented. The Courses section supports
   draft-round configuration; non-draft rounds are deliberately read-only.

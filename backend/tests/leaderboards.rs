@@ -476,36 +476,39 @@ async fn tournament_api_aggregates_completed_rounds_and_keeps_current_teams(pool
     assert_eq!(status, StatusCode::OK);
     assert_eq!(response["visibility"], json!({"mode": "full"}));
     response.as_object_mut().unwrap().remove("visibility");
-    assert_eq!(
-        response,
-        json!({
-            "tournament_id": TOURNAMENT,
-            "metric": "net",
-            "required_counted_rounds": 2,
-            "mandatory_round_id": null,
-            "current_round_id": ROUND_DRAFT,
-            "included_round_ids": [ROUND_ONE, ROUND_TWO],
-            "entries": [
-                {"position": 1, "tied": false, "player_id": PLAYER_B, "display_name": "Bob", "status": "active", "completed_rounds": 2, "counted_contributions": 2, "eligible": true, "gross_total": 18, "net_total": -8, "par_total": 16, "score_to_par": -24, "contributions": [
-                    {"round_id": ROUND_ONE, "mandatory": false, "provisional": false, "owner": {"type": "player", "id": PLAYER_B}, "owner_name": "Bob", "holes_scored": 2, "number_of_holes": 2, "gross_total": 10, "net_total": -10, "par_total": 8, "score_to_par": -18, "counted": true},
-                    {"round_id": ROUND_TWO, "mandatory": false, "provisional": false, "owner": {"type": "team", "id": TEAM_TWO_A}, "owner_name": "Low pair", "holes_scored": 2, "number_of_holes": 2, "gross_total": 8, "net_total": 2, "par_total": 8, "score_to_par": -6, "counted": true}
-                ], "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM, "team_name": "Latest current"}},
-                {"position": 2, "tied": false, "player_id": PLAYER_A, "display_name": "Ada", "status": "active", "completed_rounds": 2, "counted_contributions": 2, "eligible": true, "gross_total": 18, "net_total": 4, "par_total": 16, "score_to_par": -12, "contributions": [
-                    {"round_id": ROUND_ONE, "mandatory": false, "provisional": false, "owner": {"type": "player", "id": PLAYER_A}, "owner_name": "Ada", "holes_scored": 2, "number_of_holes": 2, "gross_total": 10, "net_total": 2, "par_total": 8, "score_to_par": -6, "counted": true},
-                    {"round_id": ROUND_TWO, "mandatory": false, "provisional": false, "owner": {"type": "team", "id": TEAM_TWO_A}, "owner_name": "Low pair", "holes_scored": 2, "number_of_holes": 2, "gross_total": 8, "net_total": 2, "par_total": 8, "score_to_par": -6, "counted": true}
-                ], "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM, "team_name": "Latest current"}},
-                {"position": 3, "tied": false, "player_id": PLAYER_D, "display_name": "Zed", "status": "withdrawn", "completed_rounds": 2, "counted_contributions": 2, "eligible": true, "gross_total": 20, "net_total": 15, "par_total": 16, "score_to_par": -1, "contributions": [
-                    {"round_id": ROUND_ONE, "mandatory": false, "provisional": false, "owner": {"type": "player", "id": PLAYER_D}, "owner_name": "Zed", "holes_scored": 2, "number_of_holes": 2, "gross_total": 10, "net_total": 5, "par_total": 8, "score_to_par": -3, "counted": true},
-                    {"round_id": ROUND_TWO, "mandatory": false, "provisional": false, "owner": {"type": "team", "id": TEAM_TWO_B}, "owner_name": "Mixed pair", "holes_scored": 2, "number_of_holes": 2, "gross_total": 10, "net_total": 10, "par_total": 8, "score_to_par": 2, "counted": true}
-                ], "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM_TWO, "team_name": "Latest current two"}},
-                {"position": 4, "tied": false, "player_id": PLAYER_PLUS, "display_name": "Plus", "status": "active", "completed_rounds": 2, "counted_contributions": 2, "eligible": true, "gross_total": 18, "net_total": 19, "par_total": 16, "score_to_par": 3, "contributions": [
-                    {"round_id": ROUND_ONE, "mandatory": false, "provisional": false, "owner": {"type": "player", "id": PLAYER_PLUS}, "owner_name": "Plus", "holes_scored": 2, "number_of_holes": 2, "gross_total": 8, "net_total": 9, "par_total": 8, "score_to_par": 1, "counted": true},
-                    {"round_id": ROUND_TWO, "mandatory": false, "provisional": false, "owner": {"type": "team", "id": TEAM_TWO_B}, "owner_name": "Mixed pair", "holes_scored": 2, "number_of_holes": 2, "gross_total": 10, "net_total": 10, "par_total": 8, "score_to_par": 2, "counted": true}
-                ], "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM_TWO, "team_name": "Latest current two"}},
-                {"position": null, "tied": false, "player_id": PLAYER_ZERO, "display_name": "Withdrawn zero", "status": "withdrawn", "completed_rounds": 0, "counted_contributions": 0, "eligible": false, "gross_total": 0, "net_total": 0, "par_total": 0, "score_to_par": 0, "contributions": [], "current_team": null}
-            ]
-        })
-    );
+    let mut expected = json!({
+        "tournament_id": TOURNAMENT,
+        "metric": "net",
+        "required_counted_rounds": 2,
+        "mandatory_round_id": null,
+        "current_round_id": ROUND_DRAFT,
+        "included_round_ids": [ROUND_ONE, ROUND_TWO],
+        "entries": [
+            {"position": 1, "tied": false, "player_id": PLAYER_B, "display_name": "Bob", "status": "active", "completed_rounds": 2, "counted_contributions": 2, "eligible": true, "gross_total": 18, "net_total": -8, "par_total": 16, "score_to_par": -24, "contributions": [
+                {"round_id": ROUND_ONE, "mandatory": false, "provisional": false, "owner": {"type": "player", "id": PLAYER_B}, "owner_name": "Bob", "holes_scored": 2, "number_of_holes": 2, "gross_total": 10, "net_total": -10, "par_total": 8, "score_to_par": -18, "counted": true},
+                {"round_id": ROUND_TWO, "mandatory": false, "provisional": false, "owner": {"type": "team", "id": TEAM_TWO_A}, "owner_name": "Low pair", "holes_scored": 2, "number_of_holes": 2, "gross_total": 8, "net_total": 2, "par_total": 8, "score_to_par": -6, "counted": true}
+            ], "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM, "team_name": "Latest current"}},
+            {"position": 2, "tied": false, "player_id": PLAYER_A, "display_name": "Ada", "status": "active", "completed_rounds": 2, "counted_contributions": 2, "eligible": true, "gross_total": 18, "net_total": 4, "par_total": 16, "score_to_par": -12, "contributions": [
+                {"round_id": ROUND_ONE, "mandatory": false, "provisional": false, "owner": {"type": "player", "id": PLAYER_A}, "owner_name": "Ada", "holes_scored": 2, "number_of_holes": 2, "gross_total": 10, "net_total": 2, "par_total": 8, "score_to_par": -6, "counted": true},
+                {"round_id": ROUND_TWO, "mandatory": false, "provisional": false, "owner": {"type": "team", "id": TEAM_TWO_A}, "owner_name": "Low pair", "holes_scored": 2, "number_of_holes": 2, "gross_total": 8, "net_total": 2, "par_total": 8, "score_to_par": -6, "counted": true}
+            ], "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM, "team_name": "Latest current"}},
+            {"position": 3, "tied": false, "player_id": PLAYER_D, "display_name": "Zed", "status": "withdrawn", "completed_rounds": 2, "counted_contributions": 2, "eligible": true, "gross_total": 20, "net_total": 15, "par_total": 16, "score_to_par": -1, "contributions": [
+                {"round_id": ROUND_ONE, "mandatory": false, "provisional": false, "owner": {"type": "player", "id": PLAYER_D}, "owner_name": "Zed", "holes_scored": 2, "number_of_holes": 2, "gross_total": 10, "net_total": 5, "par_total": 8, "score_to_par": -3, "counted": true},
+                {"round_id": ROUND_TWO, "mandatory": false, "provisional": false, "owner": {"type": "team", "id": TEAM_TWO_B}, "owner_name": "Mixed pair", "holes_scored": 2, "number_of_holes": 2, "gross_total": 10, "net_total": 10, "par_total": 8, "score_to_par": 2, "counted": true}
+            ], "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM_TWO, "team_name": "Latest current two"}},
+            {"position": 4, "tied": false, "player_id": PLAYER_PLUS, "display_name": "Plus", "status": "active", "completed_rounds": 2, "counted_contributions": 2, "eligible": true, "gross_total": 18, "net_total": 19, "par_total": 16, "score_to_par": 3, "contributions": [
+                {"round_id": ROUND_ONE, "mandatory": false, "provisional": false, "owner": {"type": "player", "id": PLAYER_PLUS}, "owner_name": "Plus", "holes_scored": 2, "number_of_holes": 2, "gross_total": 8, "net_total": 9, "par_total": 8, "score_to_par": 1, "counted": true},
+                {"round_id": ROUND_TWO, "mandatory": false, "provisional": false, "owner": {"type": "team", "id": TEAM_TWO_B}, "owner_name": "Mixed pair", "holes_scored": 2, "number_of_holes": 2, "gross_total": 10, "net_total": 10, "par_total": 8, "score_to_par": 2, "counted": true}
+            ], "current_team": {"round_id": ROUND_DRAFT, "team_id": LATEST_TEAM_TWO, "team_name": "Latest current two"}},
+            {"position": null, "tied": false, "player_id": PLAYER_ZERO, "display_name": "Withdrawn zero", "status": "withdrawn", "completed_rounds": 0, "counted_contributions": 0, "eligible": false, "gross_total": 0, "net_total": 0, "par_total": 0, "score_to_par": 0, "contributions": [], "current_team": null}
+        ]
+    });
+    expected["tie_break_policy"] = json!("shared_positions");
+    expected["final_round_number"] = json!(4);
+    for entry in expected["entries"].as_array_mut().unwrap() {
+        entry["tie_break_score_to_par"] = Value::Null;
+    }
+    assert_eq!(response, expected);
 
     let missing = Uuid::new_v4();
     let (status, response) = get(

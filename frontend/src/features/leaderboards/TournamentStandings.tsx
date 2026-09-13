@@ -1,3 +1,4 @@
+import { tieBreakExplanation, tieBreakLabel } from './tieBreakExplanation'
 import { Flag, Radio, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { LeaderboardMetric, Round, TournamentLeaderboard, TournamentLeaderboardEntry } from '../../api/types'
@@ -65,6 +66,9 @@ function TournamentRow({
             {provisionalProgressLabel(provisional)}
           </p>
         )}
+        {entry.tie_break_score_to_par !== null && (
+          <p className="leaderboard-tie-break">Siste runde: {scoreToParLabel(entry.tie_break_score_to_par)} {metricLabel(metric).toLowerCase()} · sammenlignet ved lik totalscore</p>
+        )}
         {mandatoryRound !== null && mandatoryState !== null && (
           <p className="leaderboard-mandatory">
             <Flag aria-hidden="true" />
@@ -102,6 +106,7 @@ export function TournamentStandings({ leaderboard, rounds }: { leaderboard: Tour
         <div><p>Sammenlagt</p><h2>{metricLabel(leaderboard.metric)} resultat</h2></div>
         <span>Beste {leaderboard.required_counted_rounds} av {rounds.length}</span>
       </div>
+      <p className="leaderboard-tie-policy"><strong>Lik totalscore: {tieBreakLabel(leaderboard.tie_break_policy)}.</strong> {tieBreakExplanation(leaderboard.tie_break_policy)}</p>
       <ol className="leaderboard-list" aria-label={`${metricLabel(leaderboard.metric)} resultat for turneringen`}>
         {leaderboard.entries.map((entry) => (
           <TournamentRow

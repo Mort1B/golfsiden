@@ -25,7 +25,7 @@ pub fn build_tournament_leaderboard_projected(
     hidden_completed_round_id: Option<uuid::Uuid>,
     current_visibility: VisibilityMetadata,
 ) -> Result<TournamentLeaderboard, LeaderboardError> {
-    if facts.counted_rounds == 0 {
+    if facts.counted_rounds == 0 || facts.final_round_number < 1 {
         return Err(LeaderboardError::InvalidStoredData);
     }
     let participants = participant_map(&facts.participants)?;
@@ -139,6 +139,7 @@ pub fn build_tournament_leaderboard_projected(
                 LeaderboardMetric::Net => net_total - par_total,
             };
             Ok(TournamentLeaderboardEntry {
+                tie_break_score_to_par: None,
                 position: None,
                 tied: false,
                 player_id: participant.player_id,
@@ -159,8 +160,15 @@ pub fn build_tournament_leaderboard_projected(
             })
         })
         .collect::<Result<Vec<_>, LeaderboardError>>()?;
-    rank_entries(&mut entries);
+    let final_round_id = facts
+        .rounds
+        .iter()
+        .find(|round| round.round.round_number == facts.final_round_number)
+        .map(|round| round.round.round_id);
+    rank_entries(&mut entries, facts.tie_break_policy, final_round_id);
     Ok(TournamentLeaderboard {
+        final_round_number: facts.final_round_number,
+        tie_break_policy: facts.tie_break_policy,
         tournament_id: facts.tournament_id,
         metric,
         required_counted_rounds: facts.counted_rounds,

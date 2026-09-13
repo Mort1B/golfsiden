@@ -1,3 +1,4 @@
+import { decodeTieBreakPolicy } from '../tieBreakPolicy'
 import {
   decodeArray,
   decodeBoolean,
@@ -141,6 +142,7 @@ export function decodeTournament(value: unknown, path = 'tournament'): Tournamen
     start_date: decodeDate(data.start_date, `${path}.start_date`, 'turneringsdata'),
     end_date: decodeDate(data.end_date, `${path}.end_date`, 'turneringsdata'),
     number_of_rounds: numberOfRounds,
+    tie_break_policy: decodeTieBreakPolicy(data.tie_break_policy, `${path}.tie_break_policy`, 'turneringsdata'),
     counted_rounds: decodeInteger(data.counted_rounds, `${path}.counted_rounds`, 1, numberOfRounds, 'turneringsdata'),
     mandatory_round_id: data.mandatory_round_id === null
       ? null

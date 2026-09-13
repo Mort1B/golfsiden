@@ -12,7 +12,7 @@ use crate::domain::leaderboards::{
     build_tournament_leaderboard_projected,
 };
 use crate::domain::{
-    models::TournamentRole,
+    models::{TournamentRole, TournamentTieBreakPolicy},
     score_visibility::{
         VisibilityFacts, VisibilityMetadata, VisibilityMode, unrestricted, visibility,
     },
@@ -135,8 +135,8 @@ async fn tournament_read(
     sqlx::query(transaction_mode)
         .execute(&mut *transaction)
         .await?;
-    let (counted_rounds, mandatory_round_id) = sqlx::query_as::<_, (i16, Option<Uuid>)>(
-        "SELECT counted_rounds, mandatory_round_id FROM tournaments WHERE id = $1",
+    let (counted_rounds, mandatory_round_id, final_round_number, tie_break_policy) = sqlx::query_as::<_, (i16, Option<Uuid>, i16, TournamentTieBreakPolicy)>(
+        "SELECT counted_rounds, mandatory_round_id, number_of_rounds, tie_break_policy FROM tournaments WHERE id = $1",
     )
     .bind(tournament_id)
     .fetch_optional(&mut *transaction)
@@ -202,6 +202,8 @@ async fn tournament_read(
     })
     .collect();
     let facts = TournamentLeaderboardFacts {
+        final_round_number,
+        tie_break_policy,
         tournament_id,
         counted_rounds,
         mandatory_round_id,

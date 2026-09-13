@@ -177,6 +177,8 @@ fn completed_foursomes_round(round_number: i16) -> RoundLeaderboardFacts {
 
 fn facts(rounds: Vec<RoundLeaderboardFacts>, counted_rounds: usize) -> TournamentLeaderboardFacts {
     TournamentLeaderboardFacts {
+        final_round_number: 30,
+        tie_break_policy: crate::domain::models::TournamentTieBreakPolicy::SharedPositions,
         tournament_id: id(1),
         counted_rounds,
         mandatory_round_id: None,
@@ -781,3 +783,6 @@ fn provisional_even_par_players_remain_tied_with_each_other() {
         assert!(!result.entries[2].tied);
     }
 }
+
+#[path = "tie_break_tests.rs"]
+mod tie_break_tests;

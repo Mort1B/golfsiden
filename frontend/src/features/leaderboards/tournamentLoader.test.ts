@@ -28,7 +28,7 @@ function round(status: Round['status']): Round {
 }
 
 function leaderboard(currentRoundId: string | null, includedRoundIds: string[]): TournamentLeaderboard {
-  return {
+  return { tie_break_policy: 'shared_positions', final_round_number: 2,
     tournament_id: tournamentId,
     metric: 'gross',
     required_counted_rounds: 1,

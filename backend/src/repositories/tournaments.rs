@@ -20,7 +20,7 @@ use crate::{
     repositories::tournament_authorization::{self, AuthorizationError},
 };
 
-pub(super) const COLUMNS: &str = "id, name, description, start_date, end_date, number_of_rounds, counted_rounds, mandatory_round_id, status, scoring_mode, created_at, updated_at";
+pub(super) const COLUMNS: &str = "id, name, description, start_date, end_date, number_of_rounds, counted_rounds, mandatory_round_id, tie_break_policy, status, scoring_mode, created_at, updated_at";
 
 #[derive(Debug, Error)]
 pub enum TournamentMutationError {
@@ -70,6 +70,7 @@ struct MyTournamentRow {
     number_of_rounds: i16,
     counted_rounds: i16,
     mandatory_round_id: Option<Uuid>,
+    tie_break_policy: crate::domain::models::TournamentTieBreakPolicy,
     status: TournamentStatus,
     scoring_mode: ScoringMode,
     created_at: chrono::DateTime<chrono::Utc>,
@@ -153,7 +154,7 @@ pub async fn create(
 pub async fn list_for_user(pool: &PgPool, user_id: Uuid) -> Result<Vec<MyTournament>, sqlx::Error> {
     let rows = sqlx::query_as::<_, MyTournamentRow>(
         "SELECT t.id, t.name, t.description, t.start_date, t.end_date,
-                t.number_of_rounds, t.counted_rounds, t.mandatory_round_id, t.status, t.scoring_mode, t.created_at,
+                t.number_of_rounds, t.counted_rounds, t.mandatory_round_id, t.tie_break_policy, t.status, t.scoring_mode, t.created_at,
                 t.updated_at, tm.role,
                 CASE WHEN tp.player_id IS NOT NULL THEN u.player_id END AS player_id
          FROM tournament_memberships tm
@@ -182,6 +183,7 @@ impl MyTournamentRow {
                 number_of_rounds: self.number_of_rounds,
                 counted_rounds: self.counted_rounds,
                 mandatory_round_id: self.mandatory_round_id,
+                tie_break_policy: self.tie_break_policy,
                 status: self.status,
                 scoring_mode: self.scoring_mode,
                 created_at: self.created_at,

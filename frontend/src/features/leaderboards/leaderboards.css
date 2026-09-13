@@ -70,3 +70,6 @@
   .leaderboard-identity h2 { font-size: 1rem; }
   .leaderboard-progress, .leaderboard-members, .leaderboard-live { font-size: .78rem; }
 }
+
+.leaderboard-tie-policy { margin: 0 2px 12px; color: #526058; font-size: .78rem; line-height: 1.5; overflow-wrap: anywhere; }
+.leaderboard-tie-break { margin-top: 5px; color: #365f49; font-size: .72rem; line-height: 1.4; overflow-wrap: anywhere; }

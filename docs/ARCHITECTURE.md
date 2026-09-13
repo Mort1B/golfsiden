@@ -74,10 +74,14 @@ and reapplies runtime grants before the API is started.
   round in that same tournament. Creator onboarding preallocates round UUIDs so
   both facts persist atomically; the admin mutation uses optimistic tournament
   time and the same round-before-tournament lock order as opening. One database
-  trigger protects both fields with exact-admin context and the permanent
-  start/open/snapshot freeze. A mandatory round reserves one of N slots even
+  trigger protects these fields and typed `tie_break_policy` with exact-admin
+  context and the permanent start/open/snapshot freeze. A mandatory round reserves one of N slots even
   when its result is missing; gross and net independently select the remaining
-  completed contributions.
+  completed contributions. Migration 0025 defaults both existing and newly created
+  tournaments to `shared_positions`; `final_round_score` is selected through the
+  pre-start configuration API. Creation inputs and serialized validated-plan retry
+  fingerprints are unchanged. Omitted PATCH policy preserves the saved value;
+  explicit null is rejected.
 - Course handicap uses exact tenths and rational arithmetic for `index * slope / 113 + rating - par`. Individual allowance is applied to the unrounded result before final rounding. Scramble caps each registered index at `36.0` before tee conversion; its member snapshots retain that effective index and rounded course handicap for the later team formula.
 - One closed round-format policy is the application source of truth for score-
   owner kind, exact team size, snapshot-handicap treatment, and team playing-
@@ -428,7 +432,16 @@ and reapplies runtime grants before the API is started.
   before selected score-to-par and alone controls eligibility; separate gross
   and net routes never use the other metric as a hidden tie-break. Sporting ties
   compare only entries with selected contributions; an unstarted/unranked entry
-  cannot make an even-par provisional entry tied.
+  cannot make an even-par provisional entry tied. Optional `final_round_score`
+  compares entire equal-primary groups only when every entry is eligible, has no
+  selected provisional contribution, and has a complete visible non-provisional
+  contribution from the configured final scheduled round. This contribution may
+  be excluded from best-N. Missing comparable data retains the whole shared group;
+  equal final values retain competition positions. Repositories pass the parent
+  round count explicitly; assembly resolves that exact round rather than the
+  greatest loaded round. Comparison consumes visible attributed contributions,
+  never hidden raw facts. Required policy/final-number response fields and nullable
+  entry `tie_break_score_to_par` explain comparisons, including residual ties.
 - Round-leaderboard owner construction is isolated from format-neutral stored-
   fact validation, score/confirmation assembly, totals, and ranking. One closed,
   exhaustive policy maps each current scoring format to snapshot-owned entries
@@ -483,7 +496,12 @@ and reapplies runtime grants before the API is started.
   authorization substitute.
 - A non-null mandatory-round identity is also composed with the exact decoded
   tournament round collection before settings or leaderboard data enters the
-  query cache. Unknown or cross-target round identities fail closed.
+  query cache. Unknown or cross-target round identities fail closed. Tournament
+  tie metadata is validated against the exact visible scheduled final and every
+  member of its primary-score group before cache insertion. React renders server
+  positions without sorting or recalculating sporting ranks. The settings editor
+  remounts on user/session/tournament change and refreshes authoritative scoped
+  queries after writes; a late response cannot populate a replacement workspace.
 - Route shells key tournament, management, round, leaderboard, result-history,
   read-card, and invitation workspaces by their target identity. This makes
   correction/count drafts,
@@ -646,7 +664,7 @@ Implemented resources:
 | `PUT` | `/api/me/profile` | CSRF-protected own name/current handicap update; server-owned audit description and no tournament rewrites |
 | `POST` | `/api/me/profile/username` | Current-password-confirmed canonical username change; sessions retained |
 | `POST` | `/api/me/profile/password` | Current-password-confirmed password change; invalidate every session and clear cookie |
-| `PATCH` | `/api/tournaments/{tournament_id}/counted-rounds` | Atomically update best-N and optional mandatory-round configuration before tournament start |
+| `PATCH` | `/api/tournaments/{tournament_id}/counted-rounds` | Atomically update best-N, optional mandatory round and overall tie-break policy before tournament start |
 | `GET` | `/api/tournaments/{tournament_id}/course-catalog` | Search the bundled curated course shortlist as a tournament admin |
 | `GET` | `/api/tournaments/{tournament_id}/course-presets` | Read only registered immutable supplied layouts as an exact tournament admin; private, no-store |
 | `GET` | `/api/tournaments/{tournament_id}/course-provider/courses/{provider_course_id}` | Retrieve normalized provider tee and hole detail as a tournament admin |
@@ -666,7 +684,7 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
 - Public scorecard/share-link policy.
 - Regional alternatives to the implemented WHS course-handicap conversion.
 - Scramble formulas beyond the initial configurable 35%/15% implementation.
-- Configurable tie-break ordering beyond shared competition positions.
+- Additional tournament tie-break policies and configurable individual-round ties.
 - Public leaderboard token/link design.
 - Offline mutation queue and score conflict presentation.
 - General-purpose editable course and multi-tee library behavior beyond supplied
