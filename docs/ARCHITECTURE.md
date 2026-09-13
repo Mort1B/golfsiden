@@ -1029,7 +1029,7 @@ The pure domain foundation is implemented and tested against the allowance,
 attribution, missing-input, full-layout and range boundaries above. API/database
 behavior remains unchanged. Subsequent persistence and UI slices must ship as one
 coherent supported format; the isolated arithmetic module is not playable support.
-The other format foundations and later integration remain separate queued steps.
+Playable integration of each new format remains separately scoped.
 
 ## Planned individual Stableford contract
 
@@ -1332,10 +1332,40 @@ checks is not a playable-format release verdict.
 
 ## Planned singles match-play contract
 
-This is a future definition, not implemented or selectable. The user approved a
-separate match-points table (win 1, draw ½, loss 0), no contribution to gross/net
-overall totals, and a draw when tied after 18 holes. Implementation follows the
-format definitions in separately approved steps.
+**Status: pure domain foundation implemented; playable support remains planned.**
+The user approved a separate match-points table (win 1, draw ½, loss 0), no
+contribution to gross/net overall totals, and a draw when tied after 18 holes.
+The isolated foundation does not make match play selectable. Runtime integration
+remains separately scoped.
+
+`backend/src/domain/match_play/` owns the implemented pure boundary. A gross/net
+mode defaults to net; `HandicapAllocation` takes already-preserved signed i16
+Playing Handicaps and widens before subtraction, supporting the full 65,535
+relative difference. Gross mode allocates zero; net mode allocates the full
+difference across 18 stroke indexes. Numeric proposals consume two shared
+validated gross scores and never modify accepted outcomes. No new allowance,
+tee conversion or snapshot-opening entry point is introduced here.
+
+`derive_match` consumes typed, already-accepted reports with contiguous hole
+numbers 1–18. It derives signed lead, resolved reports and terminal results,
+rejecting gaps, duplicate/out-of-order holes and every report after a finish.
+Strict lead greater than remaining ends play; a tied 18-hole result is a draw.
+Explicit concession and organizer-award variants terminate without inventing
+hole scores or a numerical margin. Private state fields preserve derivation
+invariants. Resolved reports are not a claim that every hole was physically played.
+
+`MatchState::point_award` returns no points for an unconfirmed state and rejects
+confirmation of an unfinished match. A confirmed terminal result yields exact
+2/1/0 half-point units, with checked addition through `MatchPoints`. These points
+are not overall stroke contributions. The caller-supplied confirmation status is
+an arithmetic input, not a persisted confirmation action or authority grant.
+
+These types have no serialization, player/team assignment, report provenance,
+correction, delivery-receipt, privacy-policy or storage integration. Future
+adapters must establish agreement/concession/ruling provenance, the effective point
+needed for visibility, exact authority and confirmation before calling the domain.
+Restricted reads must derive from permitted reports/events instead of redacting
+a full result afterward. Existing format and result pipelines remain unchanged.
 
 ### First variant and rules basis
 
@@ -1532,11 +1562,11 @@ same overall contribution exclusions and final-result protection.
 | Equal overall totals and final scheduled match | `final_round_score` leaves a shared place, regardless of match winner. |
 | Same visible first nine, different hidden finish | Same permitted lead/progress and table; no hidden winner, margin or points. |
 
-The first bounded match-play implementation candidate is a pure domain foundation:
-relative handicap allocation, typed ordered outcomes, terminal/draw derivation
-and exact match-point arithmetic with these examples. Keep the format unavailable
-and do not change existing result pipelines at that stop. Four-ball's domain
-foundation is already implemented; further format work remains separately scoped.
+The pure domain foundation is implemented and tested for relative allocation,
+numeric proposals, ordered accepted outcomes, terminal/draw derivation and exact
+match-point arithmetic. Match play remains unavailable and existing result
+pipelines are unchanged. Four-ball and Stableford also have isolated foundations;
+playable integration remains separately scoped for each format.
 
 Playable release requires separately scoped persistence/migrations, opponent
 readiness, snapshots, match authority and audit/correction paths, idempotency and
@@ -1550,4 +1580,5 @@ ladders, legacy compatibility tests, hidden-result noninterference and real Chro
 at 320/390/1280px with loading, error, empty, populated, long-content and offline
 states. In particular test score/report/correction/confirmation races, replay after
 terminal, two concurrent matches where one finishes, and correction of an early
-finish without fabricating scores. This definition claims no runtime test results.
+finish without fabricating scores. Passing foundation checks is not a playable
+match-format release verdict.

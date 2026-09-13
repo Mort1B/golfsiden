@@ -4,6 +4,7 @@ pub mod four_ball;
 pub mod handicap;
 pub mod invitations;
 pub mod leaderboards;
+pub mod match_play;
 pub mod models;
 pub mod onboarding;
 pub mod player_score_input;

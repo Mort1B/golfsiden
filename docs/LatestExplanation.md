@@ -1,83 +1,85 @@
-# Stableford domain foundation
+# Match-play domain foundation
 
-The backend now has an isolated Stableford calculation module for the approved
-18-hole individual contract. It calculates gross/net points, resolved progress
-and the user-selected overall equivalent while preserving numeric stroke facts.
-**Stableford remains unavailable in the application.** No format enum, API,
-persistence, queue, lifecycle, ranking or UI behavior changed.
+The backend now has an isolated 18-hole singles match-play foundation. It
+calculates relative handicaps, proposes numeric hole outcomes, derives a result
+from ordered accepted reports and calculates exact match points. **Match play
+remains unavailable in the application.** No format enum, API, database schema,
+reporting authority, queue, lifecycle, standings or UI behavior changed.
 
-The implementation is `backend/src/domain/stableford/`; the full future contract
-is in [Architecture](ARCHITECTURE.md#planned-individual-stableford-contract).
+The module is `backend/src/domain/match_play/`; the full future contract is in
+[Architecture](ARCHITECTURE.md#planned-singles-match-play-contract).
 
 ## Implemented behavior
 
-Numeric entries earn `max(0, 2 + par - strokes)` points in each metric, applying
-the preserved signed Playing Handicap by hole before calculating net points.
-Explicit pickups resolve a hole for zero points in both views and have no numeric
-stroke value. Blanks have no result and remain unresolved. Negative adjusted net
-strokes remain valid, so points have no six-point ceiling.
+The default mode is net. With preserved Playing Handicaps 10 and 18, the lower
+player receives zero and the higher receives eight strokes on indexes 1–8.
+Signed plus handicaps use the same difference: −2 and 14 become 0 and 16.
+Gross mode allocates zero. Widening before subtraction safely supports opposite
+i16 extremes with a difference of 65,535. The foundation consumes preserved
+Playing Handicaps; it does not calculate or freeze opening snapshots.
 
-Points, actual gross/adjusted-net strokes and overall equivalents are separate
-opaque types. For a partial card the equivalent is `2 * resolved - points`; a
-complete card uses `36 - points`. No resolved holes means no contribution. A card
-of 18 pickups is complete with zero points and a +36 equivalent, while 18 blanks
-are unstarted. Completeness describes arithmetic only, not confirmation authority.
+Two validated numeric gross scores can propose a hole outcome. Proposals are
+separate from already-accepted reports, so recalculating a numeric comparison
+cannot silently rewrite an agreed match score. The accepted report sequence must
+resolve holes 1–18 in order; gaps, duplicate/out-of-order holes and any report
+after a terminal result return explicit errors.
 
-Full actual stroke totals exist only when all 18 holes have numeric entries.
-Seventeen pars and a 10 on a par-4 produce actual gross 78, 34 points and a +2
-overall equivalent. Replacing the 10 with a pickup retains points/equivalent but
-removes the full stroke total. A numeric correction from 9 to 10 remains visible
-in the derived stroke facts even when its points do not change.
+A lead greater than the remaining holes ends the match. Three up after 16 is 3&2;
+two up after 16 remains in progress. Halving hole 17 then produces 2&1, while
+losing the final two holes produces a draw. An 18-hole tie ends as a draw with no
+extra holes. Concessions and organizer awards are distinct finish types without
+invented stroke scores or numerical margins. A pre-start concession needs no
+fake hole reports. Report counts represent resolved outcomes, not necessarily
+holes physically played.
 
-The pure projection accepts a caller-authorized hole mask and skips hidden inputs
-before calculating points, progress, contributions or actual-total availability.
-Allocation still uses the full 18-hole layout. Nine permitted holes with 20 points
-contribute −2, not +16. Hidden numeric/pickup/blank changes produce exactly the
-same projected object. Membership checks, exclusion of a completed hidden final
-and public transport policy remain later integration responsibilities.
+A caller-supplied confirmed status and a terminal result are both required for a
+point award. Unconfirmed results award nothing; premature confirmation returns
+an error. Wins/draws/losses use exact 2/1/0 half-point units. A win, draw and loss
+sum to three half-units (1½ points), with checked addition preventing overflow.
+These values never enter gross/net overall contributions in this foundation.
 
-## Shared boundary and compatibility
+## Boundaries preserved
 
-Four-ball and Stableford share the identical numeric/unentered/no-score types in
-`domain/player_score_input.rs`. The four-ball module re-exports the types at their
-original paths. Numeric construction now returns the shared `InvalidGrossScore`
-error instead of a four-ball error variant. This is an internal foundation change;
-no serialized request, receipt or existing runtime error contract changes.
-Four-ball aggregation, allowance calculations and all existing format policies
-remain unchanged.
+The new types have no transport serialization or persistence. They do not assign
+opponents, grant authority to concede for somebody else, verify agreement/rulings,
+withdraw concessions, correct records or implement receipt replay. Future reporting
+adapters must validate those facts, retain provenance and record the effective
+point needed for visibility. The domain's confirmation input is not an actual
+confirmation action.
 
-Stableford takes a preserved i16 Playing Handicap and validates par against the
-existing 2–7 range plus a complete 1–18 stroke-index permutation. The fixed-size
-card input does not support nine-hole competitions. This step adds no Stableford
-allowance or snapshot-opening entry point; the defined 100% default and snapshot
-policy must be connected in a separately scoped later integration step.
+Restricted projections must supply permitted reports/events before deriving the
+result. A test demonstrates identical state from the same permitted first nine
+with different later winners; it is not a membership or final-visibility policy
+implementation. Complete match-table exclusion for a hidden final and all public
+sharing boundaries remain later integration responsibilities.
+
+Existing four-ball, Stableford and legacy scoring calculations are unchanged.
+The previously recorded generic allocator `i32::MIN` edge remains queued; the new
+match allocation widens signed i16 inputs and does not call that allocator.
 
 ## Validation and remaining work
 
-- All 20 new focused tests passed: contract examples, independent gross/net points,
-  pickups versus blanks, actual-total presence, complete/partial contributions,
-  zero-point corrections, plus handicaps, more than six points, numeric/layout
-  validation, signed i16 extremes and full-object hidden-input noninterference.
-- The full backend suite (170 tests) and all-target/all-feature Clippy with
-  warnings denied passed, along with formatting. Existing four-ball tests remain
-  passing after the shared input extraction; the transport enum still rejects
-  Stableford.
-- The full database-feature suite (465 tests), migrate and seed passed against
+- All 21 new focused tests passed: signed differences and allocation sums, numeric
+  gross/net proposals and mirrored opponents, strict early finishes, final-hole
+  wins, draws, concessions/awards, malformed/trailing reports, confirmation gating,
+  exact point sums and overflow, prefix derivation and runtime unavailability.
+- The full backend suite (191 tests), formatting and all-target/all-feature Clippy
+  with warnings denied passed. Existing format tests remain passing.
+- The full database-feature suite (486 tests), migrate and seed passed against
   a fresh disposable PostgreSQL 17.11 cluster using local binaries and an isolated
   loopback port. The temporary server was stopped after validation.
 - Read-only scoring review found no material issues in the implementation or
   tests. Changed production files remain below the 400-line limit. Documentation
   references and diff checks passed.
 - Frontend/browser checks do not apply: no user-facing path or frontend file
-  changed. Playable release still requires snapshot/opening, storage and audited
-  numeric/no-score mutations, compatible receipts/offline queues, confirmation,
-  standings/history, private/public decoding and mobile scoring integration.
+  changed. Playable release still requires opponent setup, frozen mode/snapshots,
+  authorized reporting and audited corrections, persistence/receipt guards,
+  completion/confirmation, match-only/mixed configuration, private standings,
+  visibility-safe projections, offline notes and mobile scoring integration.
 
-The generic allocator's previously recorded `i32::MIN` edge remains in the code
-review queue; both new foundations' i16 snapshot inputs cannot reach it. No
-unrelated allocator change or subsequent implementation step was started.
+All three new formats now have isolated domain foundations. The next candidate
+is four-ball playable integration under its approved contract, scoped before
+implementation; Stableford and match-play integration remain separate steps.
 
-The next candidate is the match-play pure domain foundation.
-
-**READY:** the bounded Stableford foundation is reviewed and validated. This is
-not playable Stableford support or a full-format release verdict.
+**READY:** the bounded match-play foundation is reviewed and validated. This is
+not playable match-play support or a full-format release verdict.

@@ -35,7 +35,10 @@ and UI integration are implemented. [Singles match play](ARCHITECTURE.md#planned
 is defined for 18 holes, with draws and a separate 1/½/0 match-points table. It
 contributes nothing to gross/net overall totals. Its future first version uses
 admin-assigned opponents, a frozen gross/net mode and online match-result reports;
-only numeric notes support offline drafts. Match play is also not implemented.
+only numeric notes support offline drafts. Its isolated backend foundation now
+calculates relative handicaps, ordered hole results, early finishes/draws and exact
+match points. Match play remains unavailable until opponent setup, reporting,
+confirmation, storage, separate standings and UI integration are implemented.
 
 Members can enter authorized flight scorecards, confirm cards, and browse live
 gross/net round and best-N tournament standings, player contribution histories,

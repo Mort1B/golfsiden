@@ -9,20 +9,22 @@ None. Select and bound the next implementation step before changing runtime code
 
 ## Next candidate
 
-**Match-play pure domain foundation:** Implement the approved relative handicap
-allocation, typed ordered outcomes, early-finish/draw derivation and exact match
-point arithmetic with focused acceptance tests. Keep match play unavailable and
-preserve existing result pipelines. Bound the files, validation and stop condition
-when starting; do not combine this with persistence, reporting authority or UI.
-See the [match-play contract](ARCHITECTURE.md#planned-singles-match-play-contract).
+**Four-ball playable integration:** Connect the approved foundation through the
+input/competition-owner policy, player numeric/no-score storage and revisions,
+side-card APIs and confirmation, lifecycle guards, derived round/overall results,
+private/public projections, offline delivery and mobile score entry. Preserve
+existing formats and credit the derived side result once to each frozen partner.
+Before implementation, define the exact ownership, contracts, migrations,
+validation and release stop condition. Keep four-ball unavailable until every
+required path is coherent; do not combine this with other new formats.
+See the [four-ball contract](ARCHITECTURE.md#planned-four-ball-stroke-play-contract).
 
 ## Later, as separate bounded steps
 
-1. **Integrate approved format contracts:** After the match-play foundation,
-   scope the shared result boundaries and each format's persistence, lifecycle,
-   result, offline and UI integration explicitly, one bounded step at a time.
-   Keep formats unavailable until their complete paths are ready; finish the
-   ordinary review/tests/validation for each step before publication.
+1. **Stableford and match-play integration:** After four-ball, scope each approved
+   format's remaining shared result boundaries, persistence, lifecycle, results,
+   offline and UI paths separately. Keep formats unavailable until complete;
+   finish the ordinary review/tests/validation for each step before publication.
 2. **Code review:** Review the resulting application across the completed formats,
    including the existing generic stroke allocator's `i32::MIN` edge (unreachable
    through the new foundations' i16 snapshot boundaries).
