@@ -43,7 +43,7 @@ pub(super) async fn in_transaction(
     }) {
         let effective_index_tenths =
             effective_index_tenths(loaded.facts.scoring_format, entrant.handicap_index_tenths);
-        let handicap = calculate(
+        let mut handicap = calculate(
             effective_index_tenths,
             slope_rating,
             course_rating_tenths,
@@ -52,6 +52,21 @@ pub(super) async fn in_transaction(
             loaded.facts.handicap_enabled,
             loaded.facts.scoring_format,
         );
+        if loaded.facts.scoring_format == crate::domain::models::ScoringFormat::FourBallStrokePlay {
+            handicap = crate::domain::four_ball::calculate_handicap(
+                course_handicap_numerator(
+                    effective_index_tenths,
+                    slope_rating,
+                    course_rating_tenths,
+                    loaded.course_par,
+                ),
+                loaded.handicap_allowance_percent,
+                loaded.facts.handicap_enabled,
+            )
+            .map_err(|_| {
+                OpenRoundError::Scoring(crate::domain::scoring::ScoringError::InvalidTeamSize)
+            })?;
+        }
         course_numerators.insert(
             entrant.player_id,
             course_handicap_numerator(

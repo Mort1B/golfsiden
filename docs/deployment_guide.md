@@ -461,3 +461,21 @@ that account's device copy; clearing browser site data removes it. Queue deliver
 requires the app's private workspace to be running with an authorized session.
 Cold offline launch and background sync are outside this release. Confirmation is
 online-only; locked rounds and revoked access cannot be bypassed through replay.
+
+### Schema 28 four-ball scoring
+
+Migration 0028 adds the four-ball format and dedicated player inputs, audits and
+delivery receipts. Back up the database, apply the forward migration with the
+owner connection, refresh runtime grants, then start matching API and web builds.
+Existing numeric scores, revisions, audits, confirmations, snapshots and immutable
+offline request bodies are preserved. Older API binaries fail exact schema
+readiness after migration. Rollback requires the documented backup/restore process
+and matching binaries; never edit an applied migration.
+
+Four-ball numeric/no-score inputs retain their identity and revision history.
+Delivery receipts must remain while their parent account, round and input exist;
+do not add a receipt-pruning job. Intentional parent deletion retains the defined
+cascade behavior. The legacy numeric queue and new four-ball queue protocol share
+the browser's account-isolated storage. Server backups do not include unsent
+device edits. Confirmation requires an online authorized session, and locked
+rounds reject ordinary four-ball corrections.

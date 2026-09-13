@@ -149,7 +149,10 @@ async fn load_visible_holes(
          JOIN rounds r ON r.id = s.round_id
          JOIN holes h ON h.id = s.hole_id AND h.tee_id = r.tee_id
          WHERE s.round_id = $1 AND h.hole_number <= 9
-         GROUP BY s.player_id, s.team_id",
+         GROUP BY s.player_id, s.team_id
+         UNION ALL SELECT NULL::uuid,tm.team_id,count(DISTINCT i.hole_id)
+         FROM four_ball_inputs i JOIN team_memberships tm ON tm.round_id=i.round_id AND tm.player_id=i.player_id
+         JOIN holes h ON h.id=i.hole_id WHERE i.round_id=$1 AND i.gross_strokes IS NOT NULL AND h.hole_number<=9 GROUP BY tm.team_id",
     )
     .bind(round_id)
     .fetch_all(connection)
@@ -317,7 +320,7 @@ async fn load_team_owners(
     round_id: Uuid,
 ) -> Result<Vec<OwnerProgressFact>, sqlx::Error> {
     let rows = sqlx::query_as::<_, OwnerProgressRow>(
-        "SELECT t.id AS owner_id, t.name AS owner_name, count(s.id) AS holes_scored,
+        "SELECT t.id AS owner_id, t.name AS owner_name, CASE WHEN r.scoring_format::text='four_ball_stroke_play' THEN four_ball_side_holes(t.round_id,t.id) ELSE count(s.id) END AS holes_scored,
                 EXISTS(SELECT 1 FROM scorecard_confirmations sc WHERE sc.round_id = t.round_id AND sc.team_id = t.id)
                 AND (r.scoring_format <> 'two_player_foursomes'
                      OR EXISTS(SELECT 1 FROM round_team_handicap_snapshots rths WHERE rths.round_id = t.round_id AND rths.team_id = t.id)) AS confirmed

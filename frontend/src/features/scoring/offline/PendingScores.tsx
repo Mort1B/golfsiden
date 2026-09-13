@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../auth/authContext'
 import { scoringSearch } from '../selection'
 import { useScoreQueue } from './context'
-import { hasLease, type PendingScore } from './model'
+import { hasLease, pendingLabel, pendingOwner, type PendingScore } from './model'
 import { queueDatabase } from './database'
 import { ConflictReview } from './ConflictReview'
 import './pendingScores.css'
@@ -46,9 +46,9 @@ function PendingRow({ item }: { item: PendingScore }) {
   })
   const busy = active || mutation.isPending
   const href = `/score?${scoringSearch({ tournamentId: item.tournamentId, roundId: item.roundId,
-    owner: item.owner, holeNumber: item.holeNumber, view: 'hole' }).toString()}`
+    owner: pendingOwner(item), holeNumber: item.holeNumber, view: 'hole' }).toString()}`
   return <li>
-    <div className="pending-score-title"><Link to={href}>Hull {item.holeNumber} · {item.owner.type === 'team' ? 'lagkort' : 'spillerkort'}</Link><strong>Lokalt: {item.desired} slag</strong></div>
+    <div className="pending-score-title"><Link to={href}>Hull {item.holeNumber} · {item.owner.type === 'team' ? 'lagkort' : 'spillerkort'}</Link><strong>Lokalt: {pendingLabel(item)}</strong></div>
     <p role="status">{active ? 'Sender til serveren …' : item.phase === 'conflict' ? 'En annen score er lagret på serveren. Velg hvilken du vil beholde.'
       : item.phase === 'blocked' ? 'Kan ikke leveres med gjeldende tilgang eller rundestatus. Den lokale endringen beholdes.'
         : item.attempts > 0 ? 'Lagret på denne enheten. Levering mislyktes; prøver automatisk igjen.' : 'Lagret på denne enheten. Venter på levering.'}</p>
@@ -60,7 +60,7 @@ function PendingRow({ item }: { item: PendingScore }) {
     </div>
     {discard && <div className="pending-review">
       {discard.generation !== item.generation && <p role="alert">Endringen ble oppdatert i en annen fane. Avbryt og se gjennom den på nytt.</p>}
-      <p>Fjern bare den lokale kopien av {discard.desired} slag på hull {item.holeNumber}? Dette angrer ikke en score som allerede kan ha nådd serveren.</p>
+      <p>Fjern bare den lokale kopien av {pendingLabel(discard)} på hull {item.holeNumber}? Dette angrer ikke en score som allerede kan ha nådd serveren.</p>
       <button type="button" disabled={busy || discard.generation !== item.generation} onClick={() => mutation.mutate({ type: 'discard', generation: discard.generation })}>Ja, fjern lokal kopi</button>
       <button type="button" disabled={mutation.isPending} onClick={() => setDiscard(null)}>Avbryt</button>
     </div>}

@@ -90,8 +90,7 @@ pub async fn insert(
     for (input_round, (_, round_id)) in input.rounds.iter().zip(round_ids) {
         let allowance =
             crate::domain::round_formats::RoundFormatPolicy::for_format(input_round.scoring_format)
-                .required_allowance_percent()
-                .unwrap_or(100);
+                .default_allowance_percent();
         let round = sqlx::query_as::<_, Round>(&format!(
             "INSERT INTO rounds
                (id, tournament_id, round_number, name, round_date,

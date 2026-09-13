@@ -3,7 +3,7 @@ import type { ScoreVisibility } from './visibility'
 export type TournamentStatus = 'draft' | 'active' | 'completed' | 'archived'
 export type ScoringMode = 'individual' | 'team' | 'combined'
 export type RoundStatus = 'draft' | 'open' | 'completed' | 'locked'
-export type ScoringFormat = 'individual_stroke_play' | 'team_scramble' | 'two_player_foursomes'
+export type ScoringFormat = 'individual_stroke_play' | 'team_scramble' | 'two_player_foursomes' | 'four_ball_stroke_play'
 export type ParticipantStatus = 'active' | 'withdrawn'
 export type LeaderboardMetric = 'gross' | 'net'
 export type TournamentTieBreakPolicy = 'shared_positions' | 'final_round_score'
@@ -116,7 +116,7 @@ export interface RoundLeaderboardEntry {
   number_of_holes: number
   complete: boolean | null
   confirmed: boolean | null
-  playing_handicap: number
+  playing_handicap: number | null
   gross_total: number
   net_total: number
   par_played: number

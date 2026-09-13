@@ -348,8 +348,8 @@ and reapplies runtime grants before the API is started.
   membership ordering, legacy timestamps, and the single post-commit event.
 - Lifecycle readiness is one pure decision shared by the private validation read
   and locked opening transaction. Every effectively active entrant must be in a
-  nonempty flight. Individual rounds reject legacy teams; scramble and foursomes
-  rounds retain exact two-player score-owner teams and require each team to be wholly contained
+  nonempty flight. Individual rounds reject legacy teams; scramble, foursomes and
+  four-ball rounds retain exact two-player competition teams and require each team to be wholly contained
   in one flight, while allowing several teams per flight. Schedule metadata is
   deliberately absent from readiness facts. Opening reads pairings only after
   locking the round/tournament and entrant rows; pairing triggers use that same
@@ -361,6 +361,9 @@ and reapplies runtime grants before the API is started.
   contained in that flight for scramble and foursomes. Foursomes authorization
   additionally requires the preserved team handicap snapshot. Starting-hole, tee-time, name, and
   ordering coincidences carry no authorization meaning.
+- Four-ball separates input and competition ownership: mutations authorize exact
+  player cards, while score-access lists a team side only when both frozen partner
+  cards are authorized. Side scoring reads and confirmation repeat both checks.
 - The private score-access read re-locks the active session/user and exact
   tournament membership through deterministic owner assembly in a repeatable-
   read transaction. Missing target membership is forbidden rather than
@@ -406,6 +409,9 @@ and reapplies runtime grants before the API is started.
   team handicap snapshot per owner. Both the repository and lifecycle
   trigger require every owner to have exactly the configured hole count and a
   current confirmation.
+- Four-ball completion counts distinct side-holes with at least one numeric
+  partner input. Pickups and duplicate partner entries cannot inflate progress.
+  No team handicap snapshot or synthetic winning team score is stored.
 - `tournaments.final_round_back_nine_hidden` is the database-owned visibility
   state for the configured final. It defaults to hidden and has an independent
   `visibility_updated_at` concurrency token. Migration 0018 preserves finals
@@ -713,6 +719,10 @@ Implemented resources:
 | `GET` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}` | Retrieve a private member-authorized gross/net scorecard summary |
 | `GET` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/scoring` | Retrieve the full card after exact writable-owner authorization |
 | `POST` | `/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/confirm` | Confirm a complete scorecard |
+| `PUT` | `/api/rounds/{round_id}/four-ball/inputs/conditional` | Conditionally deliver one player's numeric or no-score input |
+| `GET` | `/api/rounds/{round_id}/four-ball/scorecards/{team_id}` | Read an actor-free, visibility-projected side card |
+| `GET` | `/api/rounds/{round_id}/four-ball/scorecards/{team_id}/scoring` | Read the full side after authorizing both player cards |
+| `POST` | `/api/rounds/{round_id}/four-ball/scorecards/{team_id}/confirm` | Confirm the current side with one numeric result per hole |
 | `GET` | `/api/rounds/{round_id}/teams` | Compatibility read for round teams |
 | `GET` | `/api/tournaments/{tournament_id}/leaderboards/gross` | Retrieve individual tournament gross standings |
 | `GET` | `/api/tournaments/{tournament_id}/leaderboards/net` | Retrieve individual tournament net standings |
@@ -759,14 +769,14 @@ Errors consistently use `{ "error": { "code": "...", "message": "..." } }`.
   immutable presets, including whether the UI should
   show explicit per-hole received-stroke badges.
 
-## Planned four-ball stroke-play contract
+## Four-ball stroke-play contract
 
-**Status: pure domain foundation implemented; playable support remains planned.**
+**Status: playable 18-hole support implemented.**
 The user chose to credit the side's round result to both partners in overall
-standings. The contract below sets the first variant and design defaults. The
-isolated foundation does not change runtime behavior or make four-ball selectable.
-Later integration remains separately scoped. Rule references were checked on
-2026-09-13.
+standings. The contract below governs setup, preserved player inputs, independent
+side results, confirmation, offline delivery and private scorecards. Stableford
+and match-play integration remain separately scoped. Rule references were checked
+on 2026-09-13.
 
 `backend/src/domain/four_ball/` owns the implemented pure boundary. Its allowance
 function accepts the uncapped, unrounded course-handicap numerator (denominator
@@ -785,11 +795,44 @@ of scored side-holes. No scored holes means no total. Arithmetic completeness is
 not persisted confirmation, readiness authorization or a sporting adjudication.
 The identical numeric/unentered/no-score types now live in
 `domain/player_score_input.rs` and are re-exported at the original four-ball paths.
-Numeric construction returns the shared `InvalidGrossScore` error; the isolated
-four-ball error no longer owns input validation. No runtime caller or payload
-contract changes. These types have no transport serialization, persistence or
-format-policy wiring; future visibility projections must filter before exposing
-derived results.
+Numeric construction returns the shared `InvalidGrossScore` error. These pure
+types remain independent of transport and persistence. The runtime adapters in
+`domain/four_ball_card/`, `repositories/four_ball/` and the dedicated side
+leaderboard assembly connect the foundation to protected application behavior.
+
+### Persistence and transport boundaries
+
+Migration 0028 adds the format and dedicated `four_ball_inputs`,
+`four_ball_input_audits` and `four_ball_mutation_receipts`. Legacy numeric scores,
+audits, confirmations, revisions and serialized receipt fingerprints are preserved.
+Legacy score paths reject four-ball; the dedicated tables reject other formats.
+Input identity is player-only, unique per round/player/hole and retained across
+numeric/no-score transitions. PostgreSQL manages positive revisions, audit context,
+editable status, snapshot/tee consistency and parent-round serialization.
+
+The conditional input API uses a closed numeric/no-score union and the existing
+absent/present expected version and acknowledgement contract. Current authority
+is checked before replay and after waits before commit. A cross-round request-ID
+collision rolls back the losing input, audit and confirmation changes together.
+Receipts are immutable and retained while their parents exist.
+
+Side cards carry two preserved partner handicaps, per-hole allocations and
+entries, independent gross/net winners and side totals. Round leaderboard
+`playing_handicap` is null only for four-ball. Member read entries contain only
+`id` and `input`; scoring entries additionally contain revisions and actor/time
+metadata. Cards never expose `confirmed_by`. Membership authorization precedes
+format errors in private reads. Restricted metadata is withheld and winners,
+totals and progress are derived from permitted holes.
+
+The frontend uses dedicated decoders and side components. New queued edits have
+`protocol: four_ball_v1`, an immutable team-side identity, player-owned head and
+numeric/no-score desired state. Untagged legacy heads retain their exact existing
+serialization. A matching acknowledgement supplies a successor's expected version;
+fresh side reads verify delivery without rebasing conflicting edits. Both player
+confirmation leases are acquired and released in one IndexedDB transaction.
+When a live refetch cancels the queue's verification query, verification remains
+pending and retries on the next wake. Cancellation does not incur the ordinary
+network-failure backoff, and cached data alone cannot clear the verification.
 
 ### Rules basis and initial variant
 
@@ -846,7 +889,7 @@ identifier to the ordinary player-score mutation path.
 
 ### Handicap policy
 
-Proposed default allowance: **85% per player**, configurable through the existing
+Default allowance: **85% per player**, configurable through the existing
 0–100% draft-round allowance setting and frozen at opening. Apply it once to each
 uncapped, unrounded Course Handicap, then round to the nearest integer with exact
 halves toward positive infinity, including signed plus handicaps. Preserve the
@@ -912,6 +955,12 @@ True no-op writes and repeated delivery receipts do not invalidate it again.
 Serialize these actions with round completion/locking and existing authority
 checks. Completed rounds remain explicitly correctable; locked rounds reject
 ordinary writes and the new no-score action.
+
+A completed-round correction can remove the only numeric result on a side-hole.
+The incomplete, unconfirmed side remains readable, but contributes nothing to
+overall standings until it is complete again. It requires fresh confirmation
+before locking. Locked or confirmed incomplete cards still fail integrity checks;
+other formats retain their existing completeness rules.
 
 On this account/device, unresolved edits or post-delivery verification for either
 partner block side confirmation. Extend the local confirmation lease to cover
@@ -1006,7 +1055,7 @@ side result retains shared places; hidden or otherwise incomparable final result
 must not break the original tied group. The net view runs the same policy using
 its own net contributions, never these gross values.
 
-A planned full implementation must cover:
+The implemented boundaries and their validation cover:
 
 - A closed format policy separating input ownership, competition teams,
   aggregation, confirmation and snapshot treatment; draft creation, pairing and
@@ -1025,11 +1074,10 @@ A planned full implementation must cover:
   configuration; no duplicate player contributions;
   read-only review and the complete affected validation ladders.
 
-The pure domain foundation is implemented and tested against the allowance,
-attribution, missing-input, full-layout and range boundaries above. API/database
-behavior remains unchanged. Subsequent persistence and UI slices must ship as one
-coherent supported format; the isolated arithmetic module is not playable support.
-Playable integration of each new format remains separately scoped.
+The pure foundation, persistence, lifecycle, results and frontend form one supported
+format. The latest iteration's concrete validation evidence belongs in
+`LatestExplanation.md`. Stableford and match-play remain unavailable until their
+own separately scoped playable integrations are complete.
 
 ## Planned individual Stableford contract
 

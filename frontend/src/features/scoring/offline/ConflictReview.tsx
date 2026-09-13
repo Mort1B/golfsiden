@@ -1,33 +1,40 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { fourBallApi, expectedFourBall, inputLabel, type FourBallScoringCard } from '../../../api/fourBall'
+import type { ScoringScorecard } from '../../../api/scorecards'
 import { api } from '../../../api/client'
 import { scoringKeys } from '../../../api/scorecards'
 import { expectedScore } from '../../../api/scorecards/conditional'
 import { scoreRequest } from '../../../api/scorecards/timeout'
 import { useScoreQueue } from './context'
 import { queueDatabase } from './database'
-import { hasLease, type PendingScore } from './model'
+import { hasLease, pendingOwner, pendingLabel, type PendingScore } from './model'
 
 export function ConflictReview({ item, onClose }: { item: PendingScore; onClose: () => void }) {
   const { runtime, online } = useScoreQueue()
-  const query = useQuery({ queryKey: scoringKeys.scoring(item.accountId, item.roundId, item.owner),
-    queryFn: ({ signal }) => scoreRequest(child => api.scorecardScoring(item.roundId, item.owner, child), signal),
+  const query = useQuery<ScoringScorecard | FourBallScoringCard>({ queryKey: scoringKeys.scoring(item.accountId, item.roundId, pendingOwner(item)),
+    queryFn: ({ signal }) => scoreRequest<ScoringScorecard | FourBallScoringCard>(child => item.protocol === 'four_ball_v1' ? fourBallApi.scoring(item.roundId, item.sideId, child) : api.scorecardScoring(item.roundId, item.owner, child), signal),
     staleTime: 0, refetchOnMount: 'always', retry: false,
   })
-  const hole = query.data?.holes.find(value => value.hole_id === item.holeId)
+  const card = query.data
+  const fourHole = card && 'format' in card ? card.holes.find(value => value.hole_id === item.holeId)?.players.find(player => player.player_id === item.owner.id) : undefined
+  const legacyHole = card && !('format' in card) ? card.holes.find(value => value.hole_id === item.holeId) : undefined
+  const hole = fourHole ?? legacyHole
+  const expected = fourHole ? expectedFourBall(fourHole.score) : legacyHole ? expectedScore(legacyHole.score) : null
+  const serverLabel = fourHole ? inputLabel(fourHole.score?.input ?? null) : legacyHole?.score ? `${legacyHole.score.gross_strokes} slag` : 'Ikke registrert'
   const ready = online && query.isFetchedAfterMount && !query.isFetching && !query.error && hole !== undefined && !hasLease(item)
   const mutation = useMutation({ gcTime: 0, retry: false, networkMode: 'always',
     mutationFn: async (choice: 'local' | 'server') => {
       if (!ready || !hole || !runtime.isCurrent()) throw new Error('Oppdater serverscoren før du velger.')
-      await queueDatabase.resolve(item.key, item.generation, choice === 'local' ? expectedScore(hole.score) : null)
+      await queueDatabase.resolve(item.key, item.generation, choice === 'local' ? expected : null)
       if (runtime.isCurrent()) { await runtime.changed(); onClose() }
     },
   })
   return <div className="pending-review">
     <h3>Velg score for hull {item.holeNumber}</h3>
-    <p>Din lokale score: <strong>{item.desired} slag</strong></p>
+    <p>Din lokale score: <strong>{pendingLabel(item)}</strong></p>
     {!query.isFetchedAfterMount || query.isFetching ? <p role="status">Henter gjeldende serverscore …</p>
       : query.error ? <div role="alert"><p>Kunne ikke hente gjeldende serverscore. Den lokale endringen beholdes.</p><button type="button" onClick={() => void query.refetch()}>Hent serverscore igjen</button></div>
-        : hole && <p>Score på serveren: <strong>{hole.score ? `${hole.score.gross_strokes} slag` : 'Ikke registrert'}</strong></p>}
+        : hole && <p>Score på serveren: <strong>{serverLabel}</strong></p>}
     <p>En ny endring fra andre etter dette valget krever at du sammenligner igjen.</p>
     {mutation.error && <p role="alert">{mutation.error.message}</p>}
     <div className="pending-actions">

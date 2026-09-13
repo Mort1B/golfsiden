@@ -23,6 +23,7 @@ export type ReadinessIssueCode =
   | 'empty_team'
   | 'invalid_scramble_team_size'
   | 'invalid_foursomes_team_size'
+  | 'invalid_four_ball_team_size'
   | 'missing_flight_assignment'
   | 'ineligible_flight_assignment'
   | 'empty_flight'
@@ -39,7 +40,7 @@ export type ReadinessIssueCode =
 const readinessIssueCodes = [
   'round_not_draft', 'tournament_not_openable', 'no_active_entrants',
   'missing_team_assignment', 'ineligible_team_assignment', 'empty_team',
-  'invalid_scramble_team_size', 'invalid_foursomes_team_size',
+  'invalid_scramble_team_size', 'invalid_foursomes_team_size', 'invalid_four_ball_team_size',
   'missing_flight_assignment', 'ineligible_flight_assignment', 'empty_flight',
   'legacy_individual_groups_present', 'team_split_across_flights', 'missing_course',
   'missing_tee', 'mismatched_course_tee', 'missing_handicap_ratings',

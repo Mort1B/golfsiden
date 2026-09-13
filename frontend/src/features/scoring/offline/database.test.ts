@@ -36,7 +36,7 @@ describe('durable score transactions', () => {
     await queueDatabase.acknowledge(original.key, { request_id: original.head.request_id, applied_score: applied })
     const successor = await current()
     expect(successor.desired).toBe(7)
-    expect(successor.head.gross_strokes).toBe(7)
+    expect(successor.protocol !== 'four_ball_v1' && successor.head.gross_strokes).toBe(7)
     expect(successor.head.request_id).not.toBe(original.head.request_id)
     expect(successor.head.expected_score).toEqual({ type: 'present', ...applied })
     await queueDatabase.acknowledge(original.key, { request_id: original.head.request_id, applied_score: applied })

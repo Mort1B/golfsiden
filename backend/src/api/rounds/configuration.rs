@@ -251,6 +251,9 @@ impl IntoResponse for ConfigurationApiError {
                 "course_provider_tee_stale",
                 "the selected provider tee is no longer available",
             ),
+            Self::Repository(RoundConfigurationError::InvalidFourBallLayout) => {
+                conflict("four_ball_requires_18_holes", "four-ball requires 18 holes")
+            }
             Self::Repository(RoundConfigurationError::NotDraft) => {
                 conflict("round_not_draft", "round must be draft")
             }

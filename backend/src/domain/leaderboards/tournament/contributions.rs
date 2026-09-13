@@ -81,6 +81,11 @@ pub(super) fn attribute_round(
                 continue;
             }
         } else if entry.complete != Some(true) {
+            if leaderboard.scoring_format
+                == crate::domain::models::ScoringFormat::FourBallStrokePlay
+            {
+                continue;
+            }
             return Err(LeaderboardError::InvalidStoredData);
         }
         let candidate = CandidateContribution {

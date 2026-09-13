@@ -14,6 +14,7 @@ const issueLabels: Record<ReadinessIssueCode, string> = {
   ineligible_team_assignment: 'Lag inneholder deltakere som ikke kan spille.',
   empty_team: 'Et lag mangler spillere.',
   invalid_scramble_team_size: 'Hvert scramblelag må ha nøyaktig to spillere.',
+  invalid_four_ball_team_size: 'Hvert four-ball-lag må ha nøyaktig to spillere.',
   invalid_foursomes_team_size: 'Hvert foursomeslag må ha nøyaktig to spillere.',
   missing_flight_assignment: 'Deltakere mangler flight.',
   ineligible_flight_assignment: 'Flighter inneholder deltakere som ikke kan spille.',

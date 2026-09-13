@@ -1,3 +1,4 @@
+mod four_ball;
 mod owners;
 
 use std::cmp::Ordering;
@@ -53,6 +54,9 @@ pub fn build_round_leaderboard_projected(
 
     let holes = validated_holes(facts)?;
     let snapshots = validated_snapshots(facts)?;
+    if facts.round.scoring_format == crate::domain::models::ScoringFormat::FourBallStrokePlay {
+        return four_ball::build(facts, metric, visibility, &holes, &snapshots);
+    }
     let owners = build_owner_seeds(facts, &snapshots)?;
     let visible_hole_count = match visibility.mode {
         VisibilityMode::Full => round.number_of_holes as usize,
@@ -211,7 +215,7 @@ fn assemble_entries(
                 complete: (!restricted).then_some(full_complete),
                 confirmed: (!restricted)
                     .then_some(full_complete && confirmed.contains(&owner_seed.owner)),
-                playing_handicap: owner_seed.playing_handicap,
+                playing_handicap: Some(owner_seed.playing_handicap),
                 gross_total,
                 net_total,
                 par_played,

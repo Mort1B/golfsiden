@@ -47,6 +47,7 @@ pub enum ScoringFormat {
     IndividualStrokePlay,
     TeamScramble,
     TwoPlayerFoursomes,
+    FourBallStrokePlay,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
@@ -205,6 +206,7 @@ pub enum ReadinessIssueCode {
     EmptyTeam,
     InvalidScrambleTeamSize,
     InvalidFoursomesTeamSize,
+    InvalidFourBallTeamSize,
     MissingFlightAssignment,
     IneligibleFlightAssignment,
     EmptyFlight,

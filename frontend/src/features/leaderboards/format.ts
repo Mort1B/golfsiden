@@ -11,6 +11,7 @@ const scoringFormatLabels = {
   individual_stroke_play: 'Individuelt slagspill',
   team_scramble: 'Lag-scramble',
   two_player_foursomes: 'Foursomes (to spillere)',
+  four_ball_stroke_play: 'Four-ball (to spillere)',
 } satisfies Record<ScoringFormat, string>
 
 export function scoringFormatLabel(format: ScoringFormat): string {

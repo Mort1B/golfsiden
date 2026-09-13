@@ -89,6 +89,7 @@ export function RoundsStep(props: RoundsStepProps) {
                   <option value="individual_stroke_play">Individuell slagkonkurranse</option>
                   <option value="team_scramble">Lagscramble (to spillere)</option>
                   <option value="two_player_foursomes">Foursomes (to spillere)</option>
+                  <option value="four_ball_stroke_play">Four-ball (to spillere, 18 hull)</option>
                 </select>
               </label>
             </fieldset>

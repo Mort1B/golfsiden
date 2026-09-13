@@ -393,3 +393,27 @@ async fn schema21_upgrade_preserves_seed_and_adds_empty_retry_registry(pool: PgP
     assert_eq!(counts(&pool).await.4, 0);
     seed(&pool).await;
 }
+
+#[sqlx::test(migrations = "../migrations")]
+async fn four_ball_creation_defaults_85_and_keeps_existing_defaults(pool: PgPool) {
+    seed(&pool).await;
+    session(&pool, USER, TOKEN).await;
+    let mut value = payload(Uuid::new_v4());
+    value["rounds"][0]["scoring_format"] = json!("four_ball_stroke_play");
+    let app = api::router(AppState::new(pool.clone()));
+    let response = app
+        .oneshot(request(&value, Some(TOKEN), true))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let created = body(response).await;
+    let tournament: Uuid = serde_json::from_value(created["tournament_id"].clone()).unwrap();
+    let rounds:Vec<(String,i16)>=sqlx::query_as("SELECT scoring_format::text,handicap_allowance_percent FROM rounds WHERE tournament_id=$1 ORDER BY round_number").bind(tournament).fetch_all(&pool).await.unwrap();
+    assert_eq!(
+        rounds,
+        vec![
+            ("individual_stroke_play".into(), 100),
+            ("four_ball_stroke_play".into(), 85)
+        ]
+    );
+}

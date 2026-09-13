@@ -1,0 +1,28 @@
+.four-ball-partners { display: grid; gap: 1rem; margin-block: 1rem; }
+.four-ball-partner { min-width: 0; border: 0; padding: 0; margin: 0; }
+.four-ball-partner legend { max-width: 100%; font-weight: 700; overflow-wrap: anywhere; }
+.four-ball-partner > p { margin-block: .4rem; font-size: .82rem; color: #4f5b54; }
+.four-ball-stepper button, .four-ball-actions button, .four-ball-partner button, .four-ball-summary button, .four-ball-confirm button {
+  min-height: 44px; padding: 8px 12px; border: 1px solid #b8c2ba; border-radius: 6px; background: #fff; color: #155f3a; font-weight: 750; cursor: pointer;
+}
+.four-ball-stepper button:disabled, .four-ball-actions button:disabled, .four-ball-partner button:disabled, .four-ball-summary button:disabled, .four-ball-confirm button:disabled { opacity: .55; cursor: not-allowed; }
+.four-ball-stepper button:focus-visible, .four-ball-actions button:focus-visible, .four-ball-partner button:focus-visible, .four-ball-summary button:focus-visible, .four-ball-confirm button:focus-visible { outline: 3px solid #176640; outline-offset: 2px; }
+.four-ball-partner .four-ball-record-par, .four-ball-confirm button { border-color: #176640; background: #176640; color: #fff; }
+.handicap-stroke-badge { display: inline-block; padding: 1px 5px; border: 1px solid #b9d5c4; border-radius: 4px; background: #edf5f0; color: #155f3a; font-size: .7rem; font-weight: 800; white-space: nowrap; }
+.four-ball-stepper { display: grid; grid-template-columns: 52px minmax(0, 1fr) 52px; gap: .5rem; align-items: center; }
+.four-ball-stepper button { min-height: 52px; background: #f2f5f2; font-size: 1.5rem; }
+.four-ball-stepper output { text-align: center; font-size: 1.5rem; overflow-wrap: anywhere; }
+.four-ball-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: .75rem; }
+.four-ball-actions button, .four-ball-summary button, .four-ball-partner button { min-height: 44px; }
+.four-ball-result { display: grid; gap: .4rem; margin-block: .75rem; }
+.four-ball-result > div { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: .5rem; }
+.four-ball-result dd { margin: 0; overflow-wrap: anywhere; }
+.four-ball-summary ol { list-style: none; padding: 0; }
+.four-ball-summary li { padding-block: 1rem; border-bottom: 1px solid var(--border, #d4d8d4); }
+.four-ball-summary li > button { width: 100%; text-align: left; }
+.four-ball-summary .scorecard-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.four-ball-partner-summary { display: grid; gap: .25rem; overflow-wrap: anywhere; }
+.four-ball-confirm label { display: flex; align-items: center; gap: .75rem; min-height: 44px; }
+.four-ball-confirm input { min-width: 24px; min-height: 24px; }
+.four-ball-confirm button { min-height: 44px; }
+@media (min-width: 700px) { .four-ball-partners { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; } }

@@ -22,6 +22,8 @@ pub enum RoundConfigurationError {
     Authorization(#[from] AuthorizationError),
     #[error("round is not draft")]
     NotDraft,
+    #[error("four-ball requires 18 holes")]
+    InvalidFourBallLayout,
     #[error("round configuration has changed")]
     Stale,
     #[error("database operation failed")]
@@ -32,6 +34,7 @@ pub enum RoundConfigurationError {
 
 #[derive(sqlx::FromRow)]
 struct RoundPreflight {
+    scoring_format: crate::domain::models::ScoringFormat,
     tournament_id: Uuid,
     status: RoundStatus,
     updated_at: DateTime<Utc>,
@@ -79,6 +82,11 @@ pub async fn configure(
     check_round(&round, expected_updated_at)?;
 
     let inserted = course_revisions::insert_in_transaction(&mut transaction, revision).await?;
+    if round.scoring_format == crate::domain::models::ScoringFormat::FourBallStrokePlay
+        && inserted.tee.holes.len() != 18
+    {
+        return Err(RoundConfigurationError::InvalidFourBallLayout);
+    }
     let updated = sqlx::query_as::<_, Round>(&format!(
         "UPDATE rounds
          SET course_id = $2, course_name = $3, tee_id = $4, tee_name = $5,
@@ -105,11 +113,13 @@ async fn load_preflight(
     transaction: &mut Transaction<'_, Postgres>,
     round_id: Uuid,
 ) -> Result<RoundPreflight, RoundConfigurationError> {
-    sqlx::query_as("SELECT tournament_id, status, updated_at FROM rounds WHERE id = $1")
-        .bind(round_id)
-        .fetch_optional(&mut **transaction)
-        .await?
-        .ok_or(AuthorizationError::NotFound.into())
+    sqlx::query_as(
+        "SELECT tournament_id, status, updated_at, scoring_format FROM rounds WHERE id = $1",
+    )
+    .bind(round_id)
+    .fetch_optional(&mut **transaction)
+    .await?
+    .ok_or(AuthorizationError::NotFound.into())
 }
 
 fn check_round(

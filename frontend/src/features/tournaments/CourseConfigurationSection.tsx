@@ -82,6 +82,7 @@ function RoundCourseConfiguration({ tournamentId, round, expanded, onToggle, onC
         <p className="course-locked"><MapPin aria-hidden="true" />Bare utkast kan endre bane og utslagssted. Eventuelle ulagrede felt beholdes nedenfor, men kan ikke lagres.</p>
       )}
         <div id={`course-editor-${round.id}`} className="course-editor" hidden={!expanded}>
+          {round.scoring_format === 'four_ball_stroke_play' && <p>Four-ball krever et felles utslagssted med nøyaktig 18 hull.</p>}
           <fieldset className="course-mode" disabled={!effectivelyDraft}><legend>Registreringsmåte</legend>
             <label><input type="radio" name={`course-mode-${round.id}`} checked={mode === 'saved'} onChange={() => changeMode('saved')} disabled={state.mutation.isPending} /> Velg lagret bane</label>
             <label><input type="radio" name={`course-mode-${round.id}`} checked={mode === 'provider'} onChange={() => changeMode('provider')} disabled={state.mutation.isPending} /> Velg fra katalog</label>
@@ -102,7 +103,7 @@ function RoundCourseConfiguration({ tournamentId, round, expanded, onToggle, onC
             />
             </fieldset>
           ) : (
-            <ManualCourseForm holeCount={round.number_of_holes} disabled={state.mutation.isPending || !effectivelyDraft} error={configurationErrorMessage(state.mutation.error)} onSave={saveManual} />
+            <ManualCourseForm holeCount={round.number_of_holes} fixedHoleCount={round.scoring_format === 'four_ball_stroke_play'} disabled={state.mutation.isPending || !effectivelyDraft} error={configurationErrorMessage(state.mutation.error)} onSave={saveManual} />
           )}
         </div>
       <p className="course-receipt" aria-live="polite">{receipt}</p>

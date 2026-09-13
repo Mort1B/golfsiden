@@ -160,6 +160,7 @@ export function configurationFailure(error: Error | null): ConfigurationFailure 
 }
 
 export function configurationErrorMessage(error: Error | null): string | null {
+  if (error instanceof ApiHttpError && error.code === 'four_ball_requires_18_holes') return 'Four-ball krever nøyaktig 18 hull. Velg et utslagssted med 18 hull.'
   switch (configurationFailure(error)) {
     case 'stale': return 'Runden ble endret et annet sted. Oppdaterte rundefakta er hentet; kontroller valgene og prøv igjen.'
     case 'not-draft': return 'Runden er ikke lenger et utkast og kan ikke endres.'

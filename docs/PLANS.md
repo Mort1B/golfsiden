@@ -5,30 +5,25 @@
 
 ## Active step
 
-None. Select and bound the next implementation step before changing runtime code.
+No active implementation step.
 
 ## Next candidate
 
-**Four-ball playable integration:** Connect the approved foundation through the
-input/competition-owner policy, player numeric/no-score storage and revisions,
-side-card APIs and confirmation, lifecycle guards, derived round/overall results,
-private/public projections, offline delivery and mobile score entry. Preserve
-existing formats and credit the derived side result once to each frozen partner.
-Before implementation, define the exact ownership, contracts, migrations,
-validation and release stop condition. Keep four-ball unavailable until every
-required path is coherent; do not combine this with other new formats.
-See the [four-ball contract](ARCHITECTURE.md#planned-four-ball-stroke-play-contract).
+**Stableford playable integration:** Scope the approved 18-hole individual format
+through snapshots, numeric/pickup storage, conditional offline delivery, confirmation,
+native gross/net points, private history and mixed overall standings using 36 minus
+points. Preserve typed score units, visibility and existing format contracts. Write
+and review one bounded implementation step before beginning work.
 
 ## Later, as separate bounded steps
 
-1. **Stableford and match-play integration:** After four-ball, scope each approved
-   format's remaining shared result boundaries, persistence, lifecycle, results,
-   offline and UI paths separately. Keep formats unavailable until complete;
-   finish the ordinary review/tests/validation for each step before publication.
-2. **Code review:** Review the resulting application across the completed formats,
-   including the existing generic stroke allocator's `i32::MIN` edge (unreachable
-   through the new foundations' i16 snapshot boundaries).
+1. **Match-play playable integration:** Implement the approved singles format,
+   draws after 18 holes and separate 1/½/0 match-points table without changing
+   gross/net overall totals. Scope reporting, authority and confirmation explicitly.
+2. **Code review:** Review the application across completed formats, including the
+   generic stroke allocator's `i32::MIN` edge, which is unreachable through the new
+   foundations' i16 snapshot boundaries.
 3. **Performance work:** Measure representative workloads and scope changes from
-   the findings.
+   the findings, including the existing frontend bundle-size warning.
 4. **Security review:** Review the resulting application and address findings in
    separately bounded steps.

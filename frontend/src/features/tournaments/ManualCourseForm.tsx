@@ -12,12 +12,13 @@ import {
 
 interface Props {
   holeCount: number
+  fixedHoleCount?: boolean
   disabled: boolean
   error: string | null
   onSave: (selection: ManualCourseSelection) => Promise<boolean>
 }
 
-export function ManualCourseForm({ holeCount, disabled, error, onSave }: Props) {
+export function ManualCourseForm({ holeCount, fixedHoleCount = false, disabled, error, onSave }: Props) {
   const formId = useId()
   const formRef = useRef<HTMLFormElement>(null)
   const [draft, setDraft] = useState<ManualCourseDraft>(() => createManualDraft(holeCount))
@@ -67,7 +68,7 @@ export function ManualCourseForm({ holeCount, disabled, error, onSave }: Props) 
   return (
     <form ref={formRef} className="manual-course-form" aria-busy={disabled} noValidate onSubmit={(event) => void submit(event)}>
       <div className="course-form-grid">
-        <label><span>Antall hull</span><input {...errorProps('holeCount')} required inputMode="numeric" value={draft.holeCount} onChange={(event) => changeHoleCount(event.target.value)} disabled={disabled} />{fieldErrors.holeCount && <small id={`${formId}-holeCount-error`} className="field-error">{fieldErrors.holeCount}</small>}</label>
+        <label><span>Antall hull</span><input {...errorProps('holeCount')} required inputMode="numeric" value={draft.holeCount} readOnly={fixedHoleCount} onChange={(event) => changeHoleCount(event.target.value)} disabled={disabled} />{fieldErrors.holeCount && <small id={`${formId}-holeCount-error`} className="field-error">{fieldErrors.holeCount}</small>}</label>
         <label><span>Banenavn</span><input {...errorProps('courseName')} required value={draft.courseName} onChange={(event) => field('courseName', event.target.value)} disabled={disabled} />{fieldErrors.courseName && <small id={`${formId}-courseName-error`} className="field-error">{fieldErrors.courseName}</small>}</label>
         <label><span>Sted <small>(valgfritt)</small></span><input {...errorProps('location')} value={draft.location} onChange={(event) => field('location', event.target.value)} disabled={disabled} />{fieldErrors.location && <small id={`${formId}-location-error`} className="field-error">{fieldErrors.location}</small>}</label>
         <label><span>Kategori</span><select value={draft.category} onChange={(event) => setDraft((current) => ({ ...current, category: category(event.target.value) }))} disabled={disabled}><option value="male">Herre</option><option value="female">Dame</option></select></label>

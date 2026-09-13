@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo } from 'react'
+import { fourBallApi, type FourBallCard } from '../../api/fourBall'
 import { api } from '../../api/client'
 import { ownerEquals, scoringKeys, type ScorecardSummary } from '../../api/scorecards'
 import { ApiHttpError } from '../../api/http'
@@ -74,12 +75,14 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
     && (effectiveRoundStatus === 'open' || effectiveRoundStatus === 'completed')
     && writableOwners.some((writable) => ownerEquals(writable, owner.owner))
   const queryOwner = owner?.owner ?? { type: 'player' as const, id: '' }
-  const cardQuery = useQuery<ScorecardSummary>({
+  const cardQuery = useQuery<ScorecardSummary | FourBallCard>({
     ...fresh,
     queryKey: canWrite
       ? scoringKeys.scoring(userId, round?.id ?? '', queryOwner)
       : scoringKeys.read(userId, round?.id ?? '', queryOwner),
-    queryFn: () => canWrite
+    queryFn: () => round?.scoring_format === 'four_ball_stroke_play'
+      ? canWrite ? fourBallApi.scoring(round.id, queryOwner.id) : fourBallApi.read(round.id, queryOwner.id)
+      : canWrite
       ? api.scorecardScoring(round?.id ?? '', queryOwner)
       : api.scorecardRead(round?.id ?? '', queryOwner),
     enabled: round !== undefined && owner !== undefined && accessQuery.data !== undefined,
@@ -99,7 +102,7 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
     void Promise.all([refetchCompletion(), refetchAccess(), refetchRounds()])
   }, [owner, queryClient, refetchAccess, refetchCompletion, refetchRounds, round, terminalScoringError, userId])
   const resumeCard = resume && cardQuery.data?.projection === 'scoring' ? cardQuery.data : null
-  const missingHole = resumeCard?.holes.filter((item) => item.score === null)
+  const missingHole = resumeCard?.holes.filter((item) => 'players' in item ? item.gross === null : item.score === null)
     .sort((a, b) => a.hole_number - b.hole_number)[0]
   const view = resumeCard && resumeCard.holes.length > 0 && !missingHole ? 'summary' : parseScoreView(searchParams.get('view'))
   const requestedHole = missingHole?.hole_number ?? parseHoleNumber(searchParams.get('hole'))
@@ -108,9 +111,9 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
 
   const prefetchOwner = useCallback((nextOwner: NonNullable<typeof owner>['owner']) => {
     if (!round) return
-    void queryClient.prefetchQuery({
+    void queryClient.prefetchQuery<ScorecardSummary | FourBallCard>({
       queryKey: scoringKeys.scoring(userId, round.id, nextOwner),
-      queryFn: () => api.scorecardScoring(round.id, nextOwner),
+      queryFn: () => round.scoring_format === 'four_ball_stroke_play' ? fourBallApi.scoring(round.id, nextOwner.id) : api.scorecardScoring(round.id, nextOwner),
     })
   }, [queryClient, round, userId])
 

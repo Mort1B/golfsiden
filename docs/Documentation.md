@@ -14,16 +14,16 @@ teams and flights, start the tournament, and open, complete, or lock individual
 rounds through separate controls in the management workspace's Rundestyring section.
 Opening calculates and freezes
 handicap snapshots from the selected tee. Individual stroke play, two-player
-scramble, and two-player foursomes have distinct preserved score ownership and
+scramble, two-player foursomes and four-ball have distinct preserved score ownership and
 handicap rules.
 
-Four-ball has a [defined future contract](ARCHITECTURE.md#planned-four-ball-stroke-play-contract)
-for 18-hole two-player stroke play: separate player entries, derived gross/net
-team results and the same team contribution credited to each partner. Its isolated
-backend calculation foundation is implemented and tested, including per-player
-allowance, independent gross/net winners and side-card progress. Four-ball remains
-unavailable: storage, score entry, confirmation, standings integration and UI are
-not implemented. [Individual Stableford](ARCHITECTURE.md#planned-individual-stableford-contract)
+Four-ball is playable as [18-hole two-player stroke play](ARCHITECTURE.md#four-ball-stroke-play-contract):
+each partner enters their own scores, the server selects the team's gross/net
+result independently on each hole, and the same team contribution is credited
+once to each frozen partner. The default allowance is 85%, configurable before
+opening. Numeric scores and explicit pickups are distinct, auditable inputs;
+offline edits, team confirmation, standings and private scorecards support both.
+[Individual Stableford](ARCHITECTURE.md#planned-individual-stableford-contract)
 also has a future 18-hole contract: native gross/net points, explicit zero-point
 pickups and user-selected overall contributions of 36 minus points. Its totals
 must be labelled as points or converted contributions rather than actual strokes.
@@ -116,6 +116,12 @@ monitoring, backup, credential rotation, and disaster recovery commands.
   Playing Handicap is captured in an immutable round-team snapshot.
 - SSE messages invalidate client queries; clients refetch authoritative data.
 
+- Four-ball uses two individual player inputs and one derived team result per
+  hole. Its configurable allowance defaults to 85% and applies once to each
+  unrounded Course Handicap; preserved player snapshots retain the final values.
+  There is no single team Playing Handicap. Either partner's valid numeric score
+  can complete a hole, and the team's result contributes once to each partner.
+
 ## Round opening
 
 A round can open only while its parent tournament is `active`. Tournament start
@@ -128,14 +134,14 @@ codes plus deterministic team, flight, legacy-group, and split-team details. An
 eligible entrant has both an active tournament entry and an active player record.
 Every eligible entrant must belong to exactly one nonempty flight, and ineligible
 entrants cannot remain assigned. Individual rounds require no teams and reject
-all remaining legacy grouping teams. Scramble and foursomes rounds additionally
-require every eligible entrant in exactly one two-player score-owning team, with
+all remaining legacy grouping teams. Scramble, foursomes and four-ball rounds additionally
+require every eligible entrant in exactly one two-player competition team, with
 both members contained in one flight; one flight may contain multiple complete
 teams. Their exact-size issue codes remain format-specific. Flight tee time and
 starting hole are optional metadata and never prove grouping or readiness.
 
 The response preserves `missing_players`, `ineligible_players`, and `team_sizes`;
-team assignment details apply to both team formats, while legacy individual team sizes
+team assignment details apply to all team formats, while legacy individual team sizes
 remain visible for compatibility. It adds `missing_flight_players`,
 `ineligible_flight_players`, `flight_sizes`, `legacy_individual_groups`, and
 `split_teams`, plus stable issue codes for each new invalid state. Course, tee,
@@ -154,6 +160,10 @@ and scoring configuration after draft and require all status/snapshot changes to
 use the lifecycle transaction.
 
 ## Live scorecards
+
+The numeric endpoints below serve individual stroke play, scramble and foursomes.
+Four-ball uses the dedicated player-input and derived-team endpoints described
+under **Four-ball scorecards**.
 
 `PUT /api/rounds/{round_id}/scores` immediately saves or corrects one hole. Its
 `owner` is tagged as `player` or `team`; `submitted_by` is derived exclusively
@@ -222,6 +232,54 @@ Open and completed rounds remain editable; draft/locked rounds reject replay.
 Errors retain the ordinary authentication/CSRF/validation contract, and the
 conditional route's responses are `private, no-store` with a 2 KiB body limit.
 The legacy score PUT remains available with its deliberate last-write-wins rule.
+
+## Four-ball scorecards
+
+Four-ball requires exactly two administrator-assigned partners in the same flight
+and a shared 18-hole tee. Each partner has their own preserved Playing Handicap
+and per-hole stroke badges. The side summary shows every counting player for
+gross and net separately, including tied winners; these may be different players.
+Unentered fields and **Plukket opp** provide no counting score. A pickup requires
+an explicit confirmation action and is never stored as zero strokes.
+
+`PUT /api/rounds/{round_id}/four-ball/inputs/conditional` takes `request_id`,
+`hole_id`, a player-only `owner`, `expected_score` and `input`:
+`{"type":"numeric","gross_strokes":4}` or `{"type":"no_score"}`.
+The expected version, acknowledgement and conflict codes follow conditional score
+delivery above. Numeric/pickup/restored-numeric transitions keep the same input
+UUID and advance its revision. A pickup is a present version, not absence.
+Legacy score endpoints reject four-ball; their numeric contracts are unchanged.
+
+`GET /api/rounds/{round_id}/four-ball/scorecards/{team_id}` returns an actor-free
+side card. Each player entry contains only `id` and `input`. The same path plus
+`/scoring` authorizes both player cards and adds each entry's revision and scoring
+metadata. Both include two partners, per-player handicap allocations, independent
+gross/net winners, optional totals and side-hole progress. Neither card exposes
+`confirmed_by`, and there is no synthetic team handicap. Restricted final-round
+reads show only the first nine holes and withhold completion, confirmation and
+confirmation time. The scoring read rejects locked rounds. All routes are private
+and non-cacheable; membership is checked before private-read format errors.
+
+`POST` to the side path plus `/confirm`, with `{}`, certifies the current server
+card after authorizing both partners. It requires at least one numeric partner
+score on every hole. The scorer acknowledges that remaining blank partner fields
+provide no score; individual cards need not be complete. Any actual change to
+either input clears team confirmation, even if neither team total changes.
+No-op writes and replayed receipts preserve confirmation.
+
+On the device, pending edits or post-delivery verification for either partner
+block confirmation. Both player cards are reserved atomically across browser tabs
+while confirmation runs. New queued operations use `four_ball_v1`; existing
+untagged numeric operations and their immutable requests remain compatible.
+Conflicts show the current numeric, pickup or unentered state alongside the local
+choice. Discard and retry remain available when local storage fails.
+
+Completed rounds remain correctable until locking. If a pickup removes the only
+numeric score on a hole, the incomplete team card remains readable and its round
+contribution is withheld from both partners' overall standings until complete
+again. It must be confirmed again before locking. Private history retains the
+original team and supports both hole and summary views. Public links retain their
+existing overall-summary scope and never expose partner inputs or winner details.
 
 ## Mobile score entry
 

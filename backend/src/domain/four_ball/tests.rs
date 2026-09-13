@@ -303,9 +303,9 @@ fn rejects_duplicate_partners_and_invalid_full_layouts_even_on_empty_cards() {
 }
 
 #[test]
-fn format_remains_rejected_by_existing_transport_enum() {
+fn playable_format_is_accepted_by_the_closed_transport_enum() {
     assert!(serde_json::from_str::<ScoringFormat>("\"four_ball\"").is_err());
-    assert!(serde_json::from_str::<ScoringFormat>("\"four_ball_stroke_play\"").is_err());
+    assert!(serde_json::from_str::<ScoringFormat>("\"four_ball_stroke_play\"").is_ok());
 }
 
 #[test]

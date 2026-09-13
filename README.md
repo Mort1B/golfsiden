@@ -15,7 +15,9 @@ access independently.
   choose shared places or a final-round comparison for equal tournament totals.
   Manage each tournament from draft through completion and archive.
 - **Individual and team formats:** Play individual stroke play, two-player
-  scramble, or two-player foursomes. Organizers assign teams and flights for each
+  scramble, two-player foursomes, or 18-hole four-ball. Four-ball records each
+  partner's own scores and selects the team's best gross/net score on each hole.
+  Organizers assign teams and flights for each
   round, with team membership able to change between rounds.
 - **Courses and handicaps:** Select a saved course layout or configure course,
   tee, and hole data. Preserve tournament and round handicap snapshots so later
@@ -195,8 +197,9 @@ See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documenta
 
 ## Current limitations
 
-- Supported formats are individual stroke play, two-player scramble, and
-  two-player foursomes. Four-ball, Stableford, and match play are not implemented.
+- Supported formats are individual stroke play, two-player scramble,
+  two-player foursomes and 18-hole four-ball. Stableford and match play have
+  tested calculation foundations but are not yet playable.
 - Offline scoring continues in an already-open authorized card. Pending edits
   survive reload for later online delivery; cold offline launch and background
   sync are not supported. Confirmation requires a connection.

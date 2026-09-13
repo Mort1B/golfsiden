@@ -1,4 +1,4 @@
-//! Pure foundation for future 18-hole four-ball; not a selectable round format.
+//! Pure calculations for the 18-hole four-ball stroke-play format.
 
 mod handicap;
 

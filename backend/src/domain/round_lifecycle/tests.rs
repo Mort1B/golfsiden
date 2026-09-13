@@ -28,7 +28,9 @@ fn base_facts(format: ScoringFormat) -> ReadinessFacts {
         ],
         teams: match format {
             ScoringFormat::IndividualStrokePlay => Vec::new(),
-            ScoringFormat::TeamScramble | ScoringFormat::TwoPlayerFoursomes => vec![TeamFact {
+            ScoringFormat::TeamScramble
+            | ScoringFormat::TwoPlayerFoursomes
+            | ScoringFormat::FourBallStrokePlay => vec![TeamFact {
                 team_id: Uuid::from_u128(20),
                 team_name: "Team 1".to_owned(),
                 player_ids: vec![player_a, player_b],

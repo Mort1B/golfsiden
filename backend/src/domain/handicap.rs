@@ -44,6 +44,11 @@ pub fn calculate(
                 denominator * 100,
             )
         }
+        SnapshotHandicapPolicy::FourBallRoundAllowance => {
+            let n = numerator * i64::from(allowance_percent);
+            let d = denominator * 100;
+            n.div_euclid(d) + i64::from(n.rem_euclid(d) * 2 >= d)
+        }
         SnapshotHandicapPolicy::UncappedCourseHandicap => course_handicap,
         SnapshotHandicapPolicy::IndexCappedCourseHandicap { .. } => course_handicap,
     };

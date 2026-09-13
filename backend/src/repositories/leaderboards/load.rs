@@ -54,7 +54,7 @@ pub(super) async fn related(
     .fetch_all(&mut *connection)
     .await?;
     let scores = sqlx::query_as::<_, ScoreRow>(
-        "SELECT round_id, hole_id, player_id, team_id, gross_strokes FROM scores WHERE round_id = ANY($1) ORDER BY round_id, hole_id, player_id, team_id",
+        "SELECT round_id, hole_id, player_id, team_id, gross_strokes FROM scores WHERE round_id = ANY($1) UNION ALL SELECT round_id,hole_id,player_id,NULL::uuid AS team_id,gross_strokes FROM four_ball_inputs WHERE round_id=ANY($1) AND gross_strokes IS NOT NULL ORDER BY round_id, hole_id, player_id, team_id",
     )
     .bind(&round_ids)
     .fetch_all(&mut *connection)

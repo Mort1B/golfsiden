@@ -38,6 +38,7 @@ interface ScoringExperienceProps {
 export function ScoringExperience(props: ScoringExperienceProps) {
   const queue = useScoreQueue()
   const localScores = new Map([...queue.refreshing.map(value => value.item), ...queue.items]
+    .filter(item => item.protocol !== 'four_ball_v1')
     .filter(item => item.roundId === props.round.id && item.owner.type === props.selectedOwner.owner.type && item.owner.id === props.selectedOwner.owner.id)
     .map(item => [item.holeId, item.desired]))
   const ownerKey = `${props.round.id}:${props.selectedOwner.owner.type}:${props.selectedOwner.owner.id}`

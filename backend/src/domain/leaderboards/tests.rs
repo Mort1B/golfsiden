@@ -183,7 +183,7 @@ fn scramble_uses_frozen_members_and_formula() {
         gross_strokes: 5,
     }];
     let result = build_round_leaderboard(&facts, LeaderboardMetric::Net).unwrap();
-    assert_eq!(result.entries[0].playing_handicap, 6);
+    assert_eq!(result.entries[0].playing_handicap, Some(6));
     assert_eq!(result.entries[0].net_total, 2);
     assert_eq!(result.entries[0].members[0].player_id, id(1));
 }
@@ -218,7 +218,7 @@ fn foursomes_uses_preserved_team_handicap_instead_of_rounded_members() {
     };
 
     let result = build_round_leaderboard(&facts, LeaderboardMetric::Net).unwrap();
-    assert_eq!(result.entries[0].playing_handicap, 1);
+    assert_eq!(result.entries[0].playing_handicap, Some(1));
 }
 
 #[test]

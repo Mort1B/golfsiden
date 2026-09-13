@@ -28,13 +28,13 @@ export function useHoleScoreSync(input: HoleScoreSyncInput) {
   const [local, setLocal] = useState<LocalWrite | null>(null)
   const sequence = useRef(0)
   const chain = useRef(Promise.resolve())
-  const pending = queue.items.find(item => item.key === key)
-  const refreshing = queue.refreshing.find(value => value.item.key === key)
+  const pending = queue.items.find(item => item.key === key && item.protocol !== 'four_ball_v1')
+  const refreshing = queue.refreshing.find(value => value.item.key === key && value.item.protocol !== 'four_ball_v1')
   const current = local?.key === key ? local : null
   const snapshot: ScoreSyncSnapshot = {
     scope: { roundId: input.round.id, owner: input.owner, holeId: input.holeId },
     serverValue: input.serverValue,
-    desiredValue: current?.value ?? pending?.desired ?? refreshing?.item.desired ?? input.serverValue,
+    desiredValue: current?.value ?? (pending?.protocol !== 'four_ball_v1' ? pending?.desired : undefined) ?? (refreshing?.item.protocol !== 'four_ball_v1' ? refreshing?.item.desired : undefined) ?? input.serverValue,
     phase: current?.error ? 'failed' : current?.saving ? 'saving' : pending ? pending.phase !== 'queued' ? pending.phase : hasLease(pending) ? 'verifying' : 'queued' : refreshing ? 'refreshing' : 'idle',
     error: current?.error ? { message: current.error, retryable: true, configuration: false } : null,
   }

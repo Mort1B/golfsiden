@@ -1,85 +1,88 @@
-# Match-play domain foundation
+# Playable four-ball stroke play
 
-The backend now has an isolated 18-hole singles match-play foundation. It
-calculates relative handicaps, proposes numeric hole outcomes, derives a result
-from ordered accepted reports and calculates exact match points. **Match play
-remains unavailable in the application.** No format enum, API, database schema,
-reporting authority, queue, lifecycle, standings or UI behavior changed.
+Four-ball is now available from tournament setup through scoring, confirmation,
+round completion, overall standings and private history. It uses administrator-
+assigned two-player teams, a shared 18-hole tee and a configurable allowance that
+defaults to 85%. Each player keeps an individual handicap snapshot and input card;
+the server independently selects the team's best gross and net score on each hole.
+The team's round result contributes once to each frozen partner's overall total.
 
-The module is `backend/src/domain/match_play/`; the full future contract is in
-[Architecture](ARCHITECTURE.md#planned-singles-match-play-contract).
+For example, on a par-four hole, A scores 4 with no received stroke and B scores 5
+with two received strokes. The team counts gross 4 from A and net 3 from B. Equal
+winning inputs retain both player identities. A pickup supplies no counting score;
+one numeric partner result is enough for the hole. There is no scalar team handicap.
 
-## Implemented behavior
+## Persistence, authority and results
 
-The default mode is net. With preserved Playing Handicaps 10 and 18, the lower
-player receives zero and the higher receives eight strokes on indexes 1–8.
-Signed plus handicaps use the same difference: −2 and 14 become 0 and 16.
-Gross mode allocates zero. Widening before subtraction safely supports opposite
-i16 extremes with a difference of 65,535. The foundation consumes preserved
-Playing Handicaps; it does not calculate or freeze opening snapshots.
+Migration 0028 introduces dedicated player inputs, audits and immutable delivery
+receipts. Numeric, pickup and restored numeric values retain the same input UUID
+and advance a positive revision. Legacy numeric scores and immutable request bodies
+remain unchanged. Ordinary member scorecards are actor-free; scoring reads and
+team confirmation authorize both partners. Membership precedes private-read format
+errors. Hidden-final filtering applies before totals, progress and winner details.
+Public links retain their existing overall-summary scope.
 
-Two validated numeric gross scores can propose a hole outcome. Proposals are
-separate from already-accepted reports, so recalculating a numeric comparison
-cannot silently rewrite an agreed match score. The accepted report sequence must
-resolve holes 1–18 in order; gaps, duplicate/out-of-order holes and any report
-after a terminal result return explicit errors.
+Confirmation requires one numeric team result on all 18 holes and explicit
+acknowledgement of remaining blank partner fields. Every actual partner input
+change clears team confirmation, even when neither team total changes. No-ops and
+receipt replays preserve it. A completed-round pickup can leave a side incomplete:
+the card stays readable, its overall contribution is withheld until complete again,
+and fresh confirmation is required before locking. Locked rounds reject ordinary
+input changes and replay.
 
-A lead greater than the remaining holes ends the match. Three up after 16 is 3&2;
-two up after 16 remains in progress. Halving hole 17 then produces 2&1, while
-losing the final two holes produces a draw. An 18-hole tie ends as a draw with no
-extra holes. Concessions and organizer awards are distinct finish types without
-invented stroke scores or numerical margins. A pre-start concession needs no
-fake hole reports. Report counts represent resolved outcomes, not necessarily
-holes physically played.
+## Scoring and offline behavior
 
-A caller-supplied confirmed status and a terminal result are both required for a
-point award. Unconfirmed results award nothing; premature confirmation returns
-an error. Wins/draws/losses use exact 2/1/0 half-point units. A win, draw and loss
-sum to three half-units (1½ points), with checked addition preventing overflow.
-These values never enter gross/net overall contributions in this foundation.
+The mobile scorecard has two named partner controls, explicit pickup confirmation,
+per-player stroke badges, and independent gross/net winners. Hole and summary
+controls precede the card. Read-only history supports the same hole navigation.
 
-## Boundaries preserved
+Four-ball adds a tagged offline protocol while retaining existing untagged numeric
+requests. Follow-up edits expect the acknowledged predecessor's revision; conflicts
+show the local and current server states, including pickup and unentered values.
+Pending edits or delivery verification on either partner block confirmation. Both
+player-card leases are acquired atomically across tabs. Storage failures retain
+usable retry/discard controls and guard navigation until the unsaved edit is handled.
 
-The new types have no transport serialization or persistence. They do not assign
-opponents, grant authority to concede for somebody else, verify agreement/rulings,
-withdraw concessions, correct records or implement receipt replay. Future reporting
-adapters must validate those facts, retain provenance and record the effective
-point needed for visibility. The domain's confirmation input is not an actual
-confirmation action.
+Browser validation reproduced a live-refetch cancellation being treated as a
+network error, leaving an already-updated card disabled for the retry delay. A
+regression failed before the repair and passes afterward: cancellation retries on
+the next queue wake while keeping verification pending. Only a successful fresh
+read clears verification; actual network failures retain their existing backoff.
 
-Restricted projections must supply permitted reports/events before deriving the
-result. A test demonstrates identical state from the same permitted first nine
-with different later winners; it is not a membership or final-visibility policy
-implementation. Complete match-table exclusion for a hidden final and all public
-sharing boundaries remain later integration responsibilities.
+## Validation
 
-Existing four-ball, Stableford and legacy scoring calculations are unchanged.
-The previously recorded generic allocator `i32::MIN` edge remains queued; the new
-match allocation widens signed i16 inputs and does not call that allocator.
+- Backend: formatting, all-target tests (**192 passed**) and all-feature Clippy
+  with warnings denied passed.
+- PostgreSQL: the full database-feature ladder (**505 passed**) and **17** focused
+  four-ball cases passed on disposable PostgreSQL 17.11. Fresh migration, a populated
+  schema-27 upgrade and seeding twice passed. Coverage includes retained identity,
+  audits, no-op/replay, direct SQL guards, current authority, deterministic receipt
+  contention and late session expiry, rollback of confirmation changes, completed
+  pickups, once-per-partner attribution and hidden private/public projections.
+- Frontend: **517 tests across 89 files**, typecheck, lint and production build
+  passed on the final source. Queue regressions preserve the actual legacy serialized
+  head and verify atomic leases, acknowledged successors and cancellation recovery.
+- Real Chrome: **13 cases passed**, comprising six four-ball cases and seven existing
+  offline-scoring regressions. Layout checks used 320x600, 390x844 and 1280x900 with
+  screenshots, overflow checks and reachable 44-pixel controls. Cases cover long
+  names, empty/populated/loading/error states, manual setup, both partners, pickup
+  identity, both conflict choices, lost acknowledgements across reload/two tabs,
+  storage failure, confirmation, completed corrections, locked history, hidden
+  results and tab return. The legacy cases retain account isolation and blocked
+  corrections. Console and network assertions passed with deliberate injected
+  failures accounted for.
+- Read-only backend, frontend, concurrency and documentation reviews have no open
+  material findings. Production source files remain below 400 substantive lines;
+  diff and documentation-link checks passed.
 
-## Validation and remaining work
+Execution logs are under `/tmp/four-ball-*.log`; browser screenshots use
+`/tmp/golf-offline-four-ball-*.png`. These temporary local artifacts are not published.
 
-- All 21 new focused tests passed: signed differences and allocation sums, numeric
-  gross/net proposals and mirrored opponents, strict early finishes, final-hole
-  wins, draws, concessions/awards, malformed/trailing reports, confirmation gating,
-  exact point sums and overflow, prefix derivation and runtime unavailability.
-- The full backend suite (191 tests), formatting and all-target/all-feature Clippy
-  with warnings denied passed. Existing format tests remain passing.
-- The full database-feature suite (486 tests), migrate and seed passed against
-  a fresh disposable PostgreSQL 17.11 cluster using local binaries and an isolated
-  loopback port. The temporary server was stopped after validation.
-- Read-only scoring review found no material issues in the implementation or
-  tests. Changed production files remain below the 400-line limit. Documentation
-  references and diff checks passed.
-- Frontend/browser checks do not apply: no user-facing path or frontend file
-  changed. Playable release still requires opponent setup, frozen mode/snapshots,
-  authorized reporting and audited corrections, persistence/receipt guards,
-  completion/confirmation, match-only/mixed configuration, private standings,
-  visibility-safe projections, offline notes and mobile scoring integration.
+## Scope and readiness
 
-All three new formats now have isolated domain foundations. The next candidate
-is four-ball playable integration under its approved contract, scoped before
-implementation; Stableford and match-play integration remain separate steps.
-
-**READY:** the bounded match-play foundation is reviewed and validated. This is
-not playable match-play support or a full-format release verdict.
+**READY:** playable four-ball is implemented, reviewed and validated. The build
+retains its existing chunk-size warning (main JavaScript 685.92 kB, 197.98 kB gzip);
+performance work remains queued. Four-ball is 18-hole only. Cold offline launch,
+background sync and queued confirmation are not provided. Stableford and match
+play retain their tested calculation foundations but remain unavailable until
+separate playable-integration steps are approved and completed.

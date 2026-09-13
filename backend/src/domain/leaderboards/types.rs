@@ -127,7 +127,7 @@ pub struct RoundLeaderboardEntry {
     pub number_of_holes: usize,
     pub complete: Option<bool>,
     pub confirmed: Option<bool>,
-    pub playing_handicap: i32,
+    pub playing_handicap: Option<i32>,
     pub gross_total: i32,
     pub net_total: i32,
     pub par_played: i32,

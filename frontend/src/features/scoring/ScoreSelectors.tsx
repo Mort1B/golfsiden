@@ -1,4 +1,4 @@
-import type { OwnerCompletionProgress, ScoreOwner, ScorecardHole } from '../../api/scorecards'
+import type { OwnerCompletionProgress, ScoreOwner } from '../../api/scorecards'
 import type { Round, Tournament } from '../../api/types'
 import type { ScoreView } from './selection'
 
@@ -6,7 +6,7 @@ interface ScoreSelectorsProps {
   tournaments: Tournament[]
   rounds: Round[]
   owners: OwnerCompletionProgress[]
-  holes: ScorecardHole[]
+  holes: { hole_id: string; hole_number: number }[]
   tournamentId: string
   roundId: string
   owner: ScoreOwner

@@ -40,7 +40,7 @@ pub async fn writable_owners(
     let role = membership_role(&mut transaction, context.0, principal.user_id)
         .await?
         .ok_or(ScoreAuthorizationError::Forbidden)?;
-    let owners = resolve_owners(
+    let mut owners = resolve_owners(
         &mut transaction,
         &principal,
         Some(role),
@@ -48,6 +48,15 @@ pub async fn writable_owners(
         context.1,
     )
     .await?;
+    if context.1 == ScoringFormat::FourBallStrokePlay {
+        let players = owners
+            .iter()
+            .filter_map(|owner| owner.player_id())
+            .collect::<Vec<_>>();
+        let ids = sqlx::query_scalar::<_, Uuid>("SELECT team_id FROM team_memberships WHERE round_id=$1 GROUP BY team_id HAVING count(*)=2 AND bool_and(player_id=ANY($2)) ORDER BY team_id")
+            .bind(round_id).bind(players).fetch_all(&mut *transaction).await?;
+        owners = ids.into_iter().map(|id| ScoreOwner::Team { id }).collect();
+    }
     transaction.commit().await?;
     Ok(owners)
 }
@@ -128,7 +137,7 @@ async fn resolve_owners(
     }
 
     match RoundFormatPolicy::for_format(format) {
-        RoundFormatPolicy::PlayerOwned { .. } => {
+        RoundFormatPolicy::PlayerOwned { .. } | RoundFormatPolicy::FourBall => {
             let ids = individual_owner_ids(connection, round_id, privileged, player_id).await?;
             Ok(ids
                 .into_iter()

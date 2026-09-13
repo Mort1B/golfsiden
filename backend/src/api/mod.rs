@@ -2,6 +2,7 @@ mod auth;
 mod authorization;
 mod course_catalog;
 mod course_provider;
+mod four_ball;
 mod invitations;
 mod leaderboards;
 mod live;
@@ -47,6 +48,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .merge(tournament_creation::routes())
         .merge(rounds::routes())
         .merge(scorecards::routes())
+        .merge(four_ball::routes())
         .merge(teams::routes())
         .merge(tournament_visibility::routes())
         .route("/api/tournaments/{tournament_id}/live", get(live::events))

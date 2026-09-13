@@ -1,5 +1,6 @@
 import type { ExpectedScore, ScoreAcknowledgement } from '../../../api/scorecards/conditional'
-import { acknowledge, cardKey, enqueue, hasLease, LEASE_MS, operation, queueKey, type ConfirmationLease, type PendingScore, type QueuePhase, type QueueTarget } from './model'
+import { acknowledge, cardKey, enqueue, hasLease, LEASE_MS, resolveOperation, enqueueFourBall, type FourBallTarget, queueKey, type ConfirmationLease, type PendingScore, type QueuePhase, type QueueTarget } from './model'
+import type { FourBallInput } from '../../../api/fourBall'
 import { decodeLease, decodePending } from './decode'
 
 export const QUEUE_DATABASE = 'golf-pending-scores-v1'
@@ -66,6 +67,12 @@ export const queueDatabase = {
     const key = queueKey(target)
     write(pending, key, enqueue(await get(pending, key), target, desired, expected))
   }),
+  enqueueFourBall: (target: FourBallTarget, desired: FourBallInput, expected: ExpectedScore): Promise<void> => transaction(async (pending, confirmations) => {
+    const lock = await confirmation(confirmations, cardKey(target))
+    if (lock && lock.until > Date.now()) throw new Error('Scorekortet bekreftes i en annen fane. Prøv igjen om litt.')
+    const key = queueKey(target)
+    write(pending, key, enqueueFourBall(await get(pending, key), target, desired, expected))
+  }),
   claim: (key: string, leaseId: string): Promise<PendingScore | null> => transaction(async pending => {
     const item = await get(pending, key)
     if (!item || item.phase !== 'queued' || hasLease(item) || item.retryAt > Date.now()) return null
@@ -92,20 +99,25 @@ export const queueDatabase = {
   resolve: (key: string, generation: string, expected: ExpectedScore | null): Promise<void> => transaction(async pending => {
     const item = await get(pending, key)
     if (!item || item.generation !== generation || hasLease(item)) throw new Error(STALE_ERROR)
-    write(pending, key, expected === null ? null : { ...item, head: operation(item, item.desired, expected),
-      generation: crypto.randomUUID(), phase: 'queued', lease: null, attempts: 0, retryAt: 0 })
+    write(pending, key, expected === null ? null : resolveOperation(item, expected))
   }),
-  acquireConfirmation: (key: string, id: string): Promise<number> => transaction(async (pending, confirmations) => {
-    const count = await request(pending.index('card').count(key))
-    const lock = await confirmation(confirmations, key)
-    if (count > 0) throw new Error('Alle lokale endringer må være levert før du bekrefter.')
-    if (lock && lock.until > Date.now()) throw new Error('Scorekortet bekreftes allerede i en annen fane.')
+  acquireConfirmation: (target: string | readonly string[], id: string): Promise<number> => transaction(async (pending, confirmations) => {
+    const keys = [...new Set(typeof target === 'string' ? [target] : target)]
+    if (keys.length === 0) throw new Error('Scorekort mangler')
+    for (const key of keys) {
+      const count = await request(pending.index('card').count(key))
+      const lock = await confirmation(confirmations, key)
+      if (count > 0) throw new Error('Alle lokale endringer må være levert før du bekrefter.')
+      if (lock && lock.until > Date.now()) throw new Error('Scorekortet bekreftes allerede i en annen fane.')
+    }
     const until = Date.now() + LEASE_MS
-    confirmations.put({ key, id, until })
+    for (const key of keys) confirmations.put({ key, id, until })
     return until
   }),
-  releaseConfirmation: (key: string, id: string): Promise<void> => transaction(async (_pending, confirmations) => {
-    const lock = await confirmation(confirmations, key)
-    if (lock?.id === id) confirmations.delete(key)
+  releaseConfirmation: (target: string | readonly string[], id: string): Promise<void> => transaction(async (_pending, confirmations) => {
+    for (const key of new Set(typeof target === 'string' ? [target] : target)) {
+      const lock = await confirmation(confirmations, key)
+      if (lock?.id === id) confirmations.delete(key)
+    }
   }),
 }

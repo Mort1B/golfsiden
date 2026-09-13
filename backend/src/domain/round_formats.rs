@@ -15,6 +15,7 @@ pub enum ScoreOwnerKind {
 pub enum SnapshotHandicapPolicy {
     UncappedIndividualRoundAllowance,
     UncappedCourseHandicap,
+    FourBallRoundAllowance,
     IndexCappedCourseHandicap { maximum_index_tenths: i32 },
 }
 
@@ -45,6 +46,7 @@ impl TeamPlayingHandicap {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RoundFormatPolicy {
+    FourBall,
     PlayerOwned {
         snapshot_handicap: SnapshotHandicapPolicy,
     },
@@ -58,6 +60,7 @@ pub enum RoundFormatPolicy {
 impl RoundFormatPolicy {
     pub const fn for_format(format: ScoringFormat) -> Self {
         match format {
+            ScoringFormat::FourBallStrokePlay => Self::FourBall,
             ScoringFormat::IndividualStrokePlay => Self::PlayerOwned {
                 snapshot_handicap: SnapshotHandicapPolicy::UncappedIndividualRoundAllowance,
             },
@@ -79,13 +82,31 @@ impl RoundFormatPolicy {
     pub const fn owner_kind(self) -> ScoreOwnerKind {
         match self {
             Self::PlayerOwned { .. } => ScoreOwnerKind::Player,
-            Self::TeamOwned { .. } => ScoreOwnerKind::Team,
+            Self::TeamOwned { .. } | Self::FourBall => ScoreOwnerKind::Team,
+        }
+    }
+
+    /// Input authority is distinct from competition/confirmation ownership.
+    pub const fn input_owner_kind(self) -> ScoreOwnerKind {
+        match self {
+            Self::FourBall => ScoreOwnerKind::Player,
+            _ => self.owner_kind(),
+        }
+    }
+    pub const fn default_allowance_percent(self) -> i16 {
+        match self {
+            Self::FourBall => 85,
+            _ => match self.required_allowance_percent() {
+                Some(value) => value,
+                None => 100,
+            },
         }
     }
 
     pub fn exact_team_size(self) -> Option<usize> {
         match self {
             Self::PlayerOwned { .. } => None,
+            Self::FourBall => Some(2),
             Self::TeamOwned {
                 exact_team_size, ..
             } => Some(usize::from(exact_team_size)),
@@ -94,6 +115,7 @@ impl RoundFormatPolicy {
 
     pub const fn snapshot_handicap(self) -> SnapshotHandicapPolicy {
         match self {
+            Self::FourBall => SnapshotHandicapPolicy::FourBallRoundAllowance,
             Self::PlayerOwned { snapshot_handicap }
             | Self::TeamOwned {
                 snapshot_handicap, ..
@@ -104,7 +126,8 @@ impl RoundFormatPolicy {
     pub fn effective_index_tenths(self, registered_tenths: i32) -> i32 {
         match self.snapshot_handicap() {
             SnapshotHandicapPolicy::UncappedIndividualRoundAllowance
-            | SnapshotHandicapPolicy::UncappedCourseHandicap => registered_tenths,
+            | SnapshotHandicapPolicy::UncappedCourseHandicap
+            | SnapshotHandicapPolicy::FourBallRoundAllowance => registered_tenths,
             SnapshotHandicapPolicy::IndexCappedCourseHandicap {
                 maximum_index_tenths,
             } => registered_tenths.min(maximum_index_tenths),
@@ -117,7 +140,7 @@ impl RoundFormatPolicy {
         allowance_percent: i16,
     ) -> Result<Option<i32>, ScoringError> {
         match self {
-            Self::PlayerOwned { .. } => Ok(None),
+            Self::PlayerOwned { .. } | Self::FourBall => Ok(None),
             Self::TeamOwned {
                 team_playing_handicap,
                 ..
@@ -141,7 +164,7 @@ impl RoundFormatPolicy {
                 team_playing_handicap,
                 ..
             } => team_playing_handicap.uses_preserved_team_snapshot(),
-            Self::PlayerOwned { .. } => false,
+            Self::PlayerOwned { .. } | Self::FourBall => false,
         }
     }
 }
@@ -189,5 +212,35 @@ mod tests {
         assert_eq!(policy.effective_index_tenths(540), 540);
         assert_eq!(policy.required_allowance_percent(), Some(50));
         assert!(policy.requires_preserved_team_handicap_snapshot());
+    }
+}
+
+#[cfg(test)]
+mod four_ball_tests {
+    use super::*;
+    #[test]
+    fn four_ball_separates_player_inputs_from_side_competition_and_defaults() {
+        let policy = RoundFormatPolicy::for_format(ScoringFormat::FourBallStrokePlay);
+        assert_eq!(policy.input_owner_kind(), ScoreOwnerKind::Player);
+        assert_eq!(policy.owner_kind(), ScoreOwnerKind::Team);
+        assert_eq!(policy.exact_team_size(), Some(2));
+        assert_eq!(policy.default_allowance_percent(), 85);
+        assert_eq!(policy.effective_index_tenths(540), 540);
+        assert_eq!(policy.team_playing_handicap(&[10, 20], 85), Ok(None));
+        assert!(!policy.requires_preserved_team_handicap_snapshot());
+        assert_eq!(
+            RoundFormatPolicy::for_format(ScoringFormat::IndividualStrokePlay)
+                .default_allowance_percent(),
+            100
+        );
+        assert_eq!(
+            RoundFormatPolicy::for_format(ScoringFormat::TeamScramble).default_allowance_percent(),
+            100
+        );
+        assert_eq!(
+            RoundFormatPolicy::for_format(ScoringFormat::TwoPlayerFoursomes)
+                .default_allowance_percent(),
+            50
+        );
     }
 }

@@ -11,6 +11,7 @@ const formatLabel = {
   individual_stroke_play: 'Individuell slagkonkurranse',
   team_scramble: 'Lagscramble',
   two_player_foursomes: 'Foursomes (to spillere)',
+  four_ball_stroke_play: 'Four-ball (to spillere)',
 } satisfies Record<ScoringFormat, string>
 
 export function ReviewStep({ draft, onBack, submitting, headingRef, existingSession, backDisabled = false }: { draft: WizardDraft; onBack: () => void; submitting: boolean; headingRef: RefObject<HTMLHeadingElement | null>; existingSession?: AuthSession; backDisabled?: boolean }) {

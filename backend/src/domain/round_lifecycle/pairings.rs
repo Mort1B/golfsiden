@@ -118,6 +118,10 @@ pub(super) fn validate(facts: &ReadinessFacts, issues: &mut Vec<ReadinessIssue>)
                 "score-owning teams cannot be empty",
             );
             let (size_code, size_message) = match facts.scoring_format {
+                ScoringFormat::FourBallStrokePlay => (
+                    ReadinessIssueCode::InvalidFourBallTeamSize,
+                    "four-ball teams must contain exactly two players",
+                ),
                 ScoringFormat::TeamScramble => (
                     ReadinessIssueCode::InvalidScrambleTeamSize,
                     "scramble teams must contain exactly two players",

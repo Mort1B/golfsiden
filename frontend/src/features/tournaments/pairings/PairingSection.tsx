@@ -10,6 +10,7 @@ const pairingFormatLabels = {
   individual_stroke_play: 'Individuell · flighter',
   team_scramble: 'Scramble · lag og flighter',
   two_player_foursomes: 'Foursomes · lag og flighter',
+  four_ball_stroke_play: 'Four-ball · lag og flighter',
 } satisfies Record<ScoringFormat, string>
 
 export function PairingSection({ tournamentId, rounds, linkedRoundId, navigationKey }: Props) {

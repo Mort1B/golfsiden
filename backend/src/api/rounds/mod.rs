@@ -94,8 +94,8 @@ struct CreateRound {
     number_of_holes: i16,
     #[serde(default = "default_true")]
     handicap_enabled: bool,
-    #[serde(default = "default_allowance")]
-    handicap_allowance_percent: i16,
+    #[serde(default)]
+    handicap_allowance_percent: Option<i16>,
     scoring_format: ScoringFormat,
 }
 
@@ -105,10 +105,6 @@ fn default_holes() -> i16 {
 
 fn default_true() -> bool {
     true
-}
-
-fn default_allowance() -> i16 {
-    100
 }
 
 async fn list(
@@ -167,7 +163,13 @@ async fn create(
             tee_name: &input.tee_name,
             number_of_holes: input.number_of_holes,
             handicap_enabled: input.handicap_enabled,
-            handicap_allowance_percent: input.handicap_allowance_percent,
+            handicap_allowance_percent: input.handicap_allowance_percent.unwrap_or(
+                if input.scoring_format == ScoringFormat::FourBallStrokePlay {
+                    85
+                } else {
+                    100
+                },
+            ),
             scoring_format: input.scoring_format,
         },
     )
@@ -267,12 +269,24 @@ async fn validate_create(
             tournament.number_of_rounds
         )));
     }
+    if input.scoring_format == ScoringFormat::FourBallStrokePlay && input.number_of_holes != 18 {
+        return Err(ApiError::BadRequest("four-ball requires 18 holes".into()));
+    }
     if !(1..=36).contains(&input.number_of_holes) {
         return Err(ApiError::BadRequest(
             "number_of_holes must be between 1 and 36".to_owned(),
         ));
     }
-    validate_handicap_allowance(input.scoring_format, input.handicap_allowance_percent)?;
+    validate_handicap_allowance(
+        input.scoring_format,
+        input.handicap_allowance_percent.unwrap_or(
+            if input.scoring_format == ScoringFormat::FourBallStrokePlay {
+                85
+            } else {
+                100
+            },
+        ),
+    )?;
     match (input.course_id, input.tee_id) {
         (None, None) => {}
         (Some(course_id), Some(tee_id)) => {

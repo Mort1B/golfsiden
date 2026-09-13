@@ -19,4 +19,5 @@ pub mod scoring;
 pub mod stableford;
 pub mod tournament_plan;
 
+pub mod four_ball_card;
 pub mod password_recovery;

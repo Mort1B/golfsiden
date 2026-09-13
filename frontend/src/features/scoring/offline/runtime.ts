@@ -1,4 +1,7 @@
-import type { QueryClient } from '@tanstack/react-query'
+import { isCancelledError, type QueryClient } from '@tanstack/react-query'
+import type { ScoringScorecard } from '../../../api/scorecards'
+import type { FourBallScoringCard } from '../../../api/fourBall'
+import { fourBallApi } from '../../../api/fourBall'
 import { api } from '../../../api/client'
 import { ApiHttpError } from '../../../api/http'
 import { scoreRequest } from '../../../api/scorecards/timeout'
@@ -7,7 +10,7 @@ import { privateWorkspaceKeys } from '../../../api/privateWorkspace'
 import { scoringKeys } from '../../../api/scorecards'
 import { invalidateScorecard, invalidateScoreDependents } from '../queries'
 import { queueDatabase, STORAGE_ERROR } from './database'
-import { hasLease, REQUEST_MS, type PendingScore } from './model'
+import { hasLease, pendingOwner, REQUEST_MS, type PendingScore } from './model'
 
 export interface RefreshingScore { item: PendingScore; id: string; retryAt: number; failed: boolean }
 export interface QueueSnapshot { items: PendingScore[]; refreshing: RefreshingScore[]; loading: boolean; error: string | null; online: boolean }
@@ -93,7 +96,9 @@ export class QueueRuntime {
       if (!this.isCurrent()) return
       const controller = new AbortController(); this.controller = controller
       timer = window.setTimeout(() => controller.abort(), REQUEST_MS)
-      const ack = await api.saveConditionalScore(item.roundId, item.head, this.csrfToken, controller.signal)
+      const ack = item.protocol === 'four_ball_v1'
+        ? await fourBallApi.save(item.roundId, item.head, this.csrfToken, controller.signal)
+        : await api.saveConditionalScore(item.roundId, item.head, this.csrfToken, controller.signal)
       if (!this.isCurrent()) return
       await queueDatabase.acknowledge(item.key, ack)
       if (!this.isCurrent()) return
@@ -109,7 +114,7 @@ export class QueueRuntime {
       try { await queueDatabase.fail(item.key, item.head.request_id, leaseId, phase); await this.changed() }
       catch { this.update({ error: STORAGE_ERROR }) }
       if (phase === 'blocked' && this.isCurrent()) {
-        this.client.removeQueries({ queryKey: scoringKeys.scoring(this.accountId, item.roundId, item.owner), exact: true })
+        this.client.removeQueries({ queryKey: scoringKeys.scoring(this.accountId, item.roundId, pendingOwner(item)), exact: true })
         void this.client.invalidateQueries({ queryKey: privateWorkspaceKeys.scoreAccess(this.accountId, item.roundId), exact: true })
         void this.client.invalidateQueries({ queryKey: privateWorkspaceKeys.completion(this.accountId, item.roundId), exact: true })
       }
@@ -118,15 +123,16 @@ export class QueueRuntime {
   private async refreshCard(refresh: RefreshingScore): Promise<void> {
     const item = refresh.item
     if (!this.isCurrent()) return
-    await invalidateScorecard(this.client, this.accountId, item.roundId, item.owner)
+    await invalidateScorecard(this.client, this.accountId, item.roundId, pendingOwner(item))
     if (!this.isCurrent()) return
-    const key = scoringKeys.scoring(this.accountId, item.roundId, item.owner)
+    const key = scoringKeys.scoring(this.accountId, item.roundId, pendingOwner(item))
     try {
       await this.client.cancelQueries({ queryKey: key, exact: true })
       if (!this.isCurrent()) return
       await this.client.fetchQuery({ queryKey: key, staleTime: 0, retry: false,
         queryFn: async ({ signal }) => {
-          const card = await scoreRequest(child => api.scorecardScoring(item.roundId, item.owner, child), signal)
+          const card = await scoreRequest<ScoringScorecard | FourBallScoringCard>(child => item.protocol === 'four_ball_v1'
+            ? fourBallApi.scoring(item.roundId, item.sideId, child) : api.scorecardScoring(item.roundId, item.owner, child), signal)
           if (!this.isCurrent()) throw new Error('Økten er endret')
           return card
         } })
@@ -141,8 +147,11 @@ export class QueueRuntime {
         }
         return
       }
+      // A live refetch can replace this query. Keep verification pending, but
+      // retry on the next wake instead of applying a network-failure backoff.
+      const cancelled = isCancelledError(error)
       this.update({ refreshing: this.snapshot.refreshing.map(value => value.id === refresh.id
-        ? { ...value, failed: true, retryAt: Date.now() + 15_000 } : value) })
+        ? { ...value, failed: !cancelled, retryAt: cancelled ? 0 : Date.now() + 15_000 } : value) })
     }
     if (this.isCurrent()) void invalidateScoreDependents(this.client, this.accountId, item.roundId, item.tournamentId)
   }
