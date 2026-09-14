@@ -1,130 +1,156 @@
-# Playable singles match play
+# Application review and prioritized repair plan
 
-Singles match play is now available from tournament creation and manual opponent
-assignment through numeric notes, online reporting, confirmation, completion,
-audited correction and private match history. It uses a shared 18-hole tee and
-flights starting at hole 1. Every active entrant needs exactly one same-flight
-opponent. Administrators retain control of all assignments.
+The 2026-09-14 review of commit `b8af787` found **one high, two medium and three
+low findings** across the completed scoring formats and shared application paths.
+The user requested review and planning; no production source, tests or migrations
+were changed. [PLANS.md](PLANS.md) contains six separate bounded repair candidates,
+starting with preservation of unsaved scoring input.
 
-The official mode defaults to net with fixed 100% allowance and can be changed
-to gross while draft. Opening freezes mode, opponents, tee and individual Playing
-Handicaps. Net play allocates the full relative difference: handicaps 10 and 18
-become 0 and 8 received strokes. Gross play allocates zero. A lead greater than
-holes remaining ends the match; a tie after 18 is a draw. A 3&2 finish requires
-no invented scores on holes 17–18. A win, draw and loss give 1½ points across three
-played matches, in the separate private table.
+## High findings
 
-## Notes, accepted reports and corrections
+### H1 — unsaved input can disappear after lock or access denial
 
-Numeric notes belong to the individual opponents and may be queued offline.
-They never accept an outcome automatically. Online reports preserve the agreed
-next-hole result and its numeric, concession, agreed-halve or organizer-ruling
-basis. Whole-match concessions and awards have explicit provenance and can end
-play before hole 1 without fabricating scores. The actual conceder must be named
-and communication attested; recorder authority does not invent sporting consent.
+A failed IndexedDB write leaves the intended score only in component-local state.
+Switching to a read projection or replacing the scorer with an authorization error
+unmounts that state and releases its navigation guard. This affects the shared
+legacy scorer (individual stroke, scramble, foursomes), four-ball and Stableford.
+Match play has a separate local-only recovery path.
 
-Confirmation is bound to the current match revision and awards exact 2/1/0
-half-point units. Every assigned match must be terminal and confirmed before
-round completion or locking. Numeric note edits never rewrite accepted evidence.
-An exact administrator can correct a recording error or record an organizer ruling
-with a reason and an explicit replacement ledger. Superseded facts remain audited;
-correction clears confirmation and points atomically. The corrected result must be
-confirmed again, including when corrected through the dedicated locked-round path.
-Ordinary locked writes remain forbidden.
+The review reproduced the legacy case in real Chrome at 390x844: prepare a
+confirmed completed card with server score 4, force pending-store `put` to throw,
+correct to 5, and verify the failed-device-save warning, disabled logout and empty
+queue. Lock the round externally. The warning/recovery disappears, logout becomes
+enabled and the durable queue remains empty; the only copy of 5 is lost without
+discard. Backend score integrity remains intact, but local user intent is lost.
 
-## Contracts, privacy and offline recovery
+Evidence: `frontend/src/features/scoring/useScoreWorkspaceData.ts:74–105`,
+`frontend/src/pages/ScorePage.tsx:43–75`,
+`frontend/src/features/scoring/useHoleScoreSync.ts:28–54`,
+`frontend/src/features/scoring/stableford/StablefordExperience.tsx:26–35`, and
+`frontend/src/features/scoring/fourBall/FourBallExperience.tsx:23–28`.
 
-Migrations 0030–0031 add matches, unique round-local opponents, player notes,
-audit and immutable account-scoped receipts. Commands serialize through round then
-match locks, recheck session and scope after waits, and atomically update ledger,
-revision, confirmation, audit and receipt. Exact authorized replay returns the
-original acknowledgement even after finish; a fresh stale command conflicts.
+Repair must preserve only account/owner/hole-scoped local intent when authority
+changes; retaining unauthorized canonical score data is not an acceptable fix.
+Regression coverage must include numeric and pickup states, both four-ball partners,
+lock, denied scoring, metadata failures, discard and identity changes.
 
-Migration 0032 makes overall configuration explicitly absent for match-only trips:
-`counted_rounds` and mandatory round are null. Mixed trips count only non-match
-formats and cannot make a match mandatory. Deferred cross-table validation permits
-tournament-before-round creation. An internal generation row prevents concurrent
-format changes from invalidating N under READ COMMITTED or REPEATABLE READ while
-preserving public configuration timestamps and no-op behavior. Legacy non-match
-configuration and scoring data remain intact.
+## Medium findings
 
-Match-only private overall requests return a typed not-applicable result after
-membership authorization. Mixed responses retain their existing shapes and
-Stableford value basis, including configured draft rounds. Matches never enter
-best-N or displace an eligible open provisional round. Final-round identity remains
-the actual scheduled final; a final match cannot supply a stroke tie-break.
+### M1 — compatible score writes and confirmations can outlive their session
 
-Private match projections derive only from permitted events before calculating
-lead or finish. Read cards omit revision, event IDs and audit metadata. Hidden
-facts are null; the whole hidden final is excluded from the non-admin match table
-until release, including front-nine finishes. Public links retain their existing
-overall-only scope and are unavailable for match-only trips.
+Authenticated legacy save and confirmation check the session before waiting for
+the membership lock, then commit without a fresh expiry check. Newer conditional
+and dedicated-format commands have explicit final session checks.
 
-A separate `golf-match-notes-v1` IndexedDB database uses `match_notes_v1` and one
-generation-checked immutable chain across both opponents. The existing numeric,
-four-ball and Stableford queues remain compatible. Match-wide leases and persisted
-online-action markers protect concurrent tabs and unknown acknowledgements.
-Original receipt identities survive uncertain 401/403 responses; known accepted
-heads are verified before removal. Terminal/locked states block unsent successors.
-Explicit review shows old, local and permitted server values without silently
-rebasing; hidden values are distinguished from blanks. Failed storage, background
-metadata failures and scoring denial preserve unsaved notes and navigation guards.
-Authorization loss exposes only local recovery while authoritative actions stop.
+Both legacy endpoints were reproduced against the isolated API and PostgreSQL.
+Each fixture's session was changed to expire after 1.5 seconds. A separate
+transaction held its membership row for four seconds while the HTTP request waited.
+Both requests returned 200 after more than two seconds, and database reads confirmed
+the new score or confirmation had persisted. These were deliberate disposable
+fixture mutations, not production data changes.
 
-## Validation
+Evidence: `backend/src/repositories/scorecards/mutations.rs:66–88` and `:168–178`,
+`backend/src/repositories/score_authorization.rs:81–87`. The existing conditional
+regression at `backend/tests/scorecards/conditional.rs:482–521` provides the repair
+test pattern. Recheck current session validity before committing both authenticated
+legacy operations, including no-op responses; expiry must roll back effects and
+prevent SSE notification.
 
-- Backend: **204 standard tests**, formatting, all-feature Clippy with warnings
-  denied and binary build passed. Production source remains below 400 substantive
-  lines. The initial sandboxed unit run could not bind mock HTTP servers; the
-  authorized rerun passed.
-- PostgreSQL: **558 tests across 55 targets**, including **22 match integration
-  tests**, passed on disposable PostgreSQL 17.11. Fresh migration through all
-  **32 versions**, populated schema-29 preservation, schema-31 normalization,
-  migration command and seed twice passed. Coverage includes session/membership
-  changes after waits, atomic rollback, direct-SQL integrity, receipt contention,
-  terminal/confirmation/correction races, nullable overall and hidden-result
-  noninterference. Both isolation levels exercise the configuration guard.
-- Frontend: **572 tests across 102 files**, strict typecheck, lint and production
-  build passed. Tests cover runtime contract rejection, wizard transitions,
-  final-match tie explanation and durable queue/receipt behavior.
-- Real Chrome: **30 distinct scenarios passed**: eight match scenarios plus nine
-  Stableford, six four-ball and seven legacy offline scenarios. Match checks at
-  320x600, 390x844 and 1280x900 cover manual setup and mode changes, real wizard
-  creation with nullable N, numeric reporting, pre-hole concession, early finish,
-  draw points, confirmation revision changes, locked correction, private player
-  scope, hidden results/release, two tabs, storage failure, non-admin external lock
-  and scoring denial. A separate regression verifies a dirty note survives
-  background round-metadata 500, then 403 local-only recovery and successful retry.
-  Loading/error/empty/populated/long-content states, keyboard focus, 44px controls,
-  overflow, scroll/trial-click navigation clearance and console/network checks pass.
-  Screenshots at all three widths were visually inspected.
-- Read-only backend, API/queue and UI reviews have no remaining material findings.
-  Review drove repairs to snapshot-isolation eligibility guards, unknown receipt
-  handling, revision-bound confirmation, player scope, focus restoration and
-  recovery/privacy after authorization changes.
+### M2 — private projections remain visible after denied refresh
 
-Backend logs use `/tmp/match-final-{build,fmt,unit-unsandboxed,clippy,full-db,
-cargo-migrate,cargo-seed}.log`. Frontend logs include
-`/tmp/match-frontend-final-tests2.log`, `/tmp/match-frontend-build.log`,
-`/tmp/match-browser-final3.log`, `/tmp/match-browser-metadata.log` and
-`/tmp/match-legacy-browser.log`. Screenshots use `/tmp/match-setup-320.png`,
-`/tmp/match-results-390.png`, `/tmp/match-scoring-1280.png` and
-`/tmp/match-draw-member-320.png`. Temporary evidence is not published.
+Direct scorecards, player history and round result pages treat authorization errors
+with prior data like ordinary background failures. The installed TanStack Query
+retains prior data when a refetch fails. SSE checks membership on relevant events;
+a healthy idle stream does not guarantee immediate cache clearing.
 
-## Scope and readiness
+Chrome reproduced a direct private card displaying gross 7 after its card request
+returned a controlled 403 during page-return refresh. The healthy stream stayed
+connected and the page displayed “Viste data beholdes” alongside the prior score.
+This demonstrates the UI response to a known denial; it is not evidence of a
+server endpoint returning new private data to an unauthorized caller.
 
-**READY:** the coherent singles format is implemented, reviewed and validated.
-The existing build warning remains: main JavaScript **772.97 kB**, **220.43 kB gzip**.
-Match card listing intentionally uses bounded per-match reads, capped at 500 manual
-assignments per round; performance work remains a separate queued step.
+Evidence: `frontend/src/pages/DirectScorecardPage.tsx:67–88`,
+`frontend/src/pages/PlayerHistoryPage.tsx:52–62`, and
+`frontend/src/pages/LeaderboardPage.tsx:161–167`.
 
-Individual next-stroke concession and organizer-award controls were not each
-clicked separately in Chrome; their typed contracts and backend variants are
-covered by automated tests. No Docker deployment or new production restore
-exercise was run in this step; native PostgreSQL migration/seed and Chrome/API
-integration provide the recorded runtime evidence.
+Classify 401/403/404 as authoritative denial, hide/remove the affected private
+projection and require successful authorization before redisplay. Keep permitted
+transient-error behavior distinct and preserve H1's local-only recovery.
 
-Nine-hole/extra-hole play, byes/brackets, team match play, public match sharing,
-rules adjudication, handicap-system submission, cold offline launch, background
-sync and offline authoritative reporting remain outside this release. The next
-application code review, performance work and security review remain queued.
+## Low findings
+
+### L1 — generic allocator has a signed-minimum defect
+
+`backend/src/domain/scoring.rs:107–110` converts `i32::MIN.unsigned_abs()` back to
+i32 before allocating. An executable probe compiled the current function body
+unchanged: the 18-hole allocation summed to +2,147,483,646 instead of −2,147,483,648,
+and a one-hole debug call panicked on negation. The same probe checked every i16
+handicap across 18 holes: all 65,536 sums were correct. Current stored Playing
+Handicaps are i16, so no reachable current score-result failure was established.
+Use widened arithmetic or a typed overflow result and test endpoint conservation.
+
+### L2 — invalid course selections receive the wrong format explanation
+
+`backend/src/repositories/round_configuration.rs:85–91` reports
+`InvalidFourBallLayout` for an invalid Stableford layout as well. The mapping in
+`backend/src/api/rounds/configuration.rs:254–255` says “four-ball requires 18 holes.”
+Singles match play omits this explicit check and falls through the database
+constraint mapping. The schema still rejects invalid layouts; the failure is
+error-contract quality. Add format-aware validation and preserve atomic rollback.
+This finding is source-confirmed; no new course-selection HTTP reproduction ran.
+
+### L3 — match-only results remove the tournament selector
+
+`frontend/src/pages/LeaderboardPage.tsx:87` returns the match result component
+before the shared selector; `MatchResultsPage.tsx:25` offers only links within the
+same tournament. Multi-tournament users cannot switch trips from global results
+after selecting a match-only trip. Keep tournament selection above format dispatch.
+This finding is source-confirmed; no new multi-tournament browser reproduction ran.
+
+## Review scope and validation
+
+The primary reviewer inspected shared arithmetic, overall selection and application
+integration. Independent read-only reviewers covered backend persistence/API/
+concurrency, frontend queues/private results, and match/Stableford/four-ball domain
+rules and projections. Findings were checked against current code and the preserved
+product invariants, rather than inferred from previously passing tests.
+
+New focused evidence:
+
+- One Chrome diagnostic reproduced failed-device-save loss after external lock.
+- One Chrome diagnostic reproduced cached private-card display after a 403 refresh.
+- Two PostgreSQL/API diagnostics reproduced expired-session legacy save and confirm.
+- The source-extracted Rust probe reproduced the i32 boundary defect and verified
+  allocation conservation across all 65,536 current i16 handicap values.
+- Final documentation/diff checks and read-only plan review cover severity, bounded
+  repair ownership, invariants and acceptance criteria.
+
+The four diagnostic scenarios pass when they observe the existing defect; they
+are not repaired regression tests or evidence that these paths are correct.
+Temporary probes and logs are under `/tmp/golf-review-browser/`,
+`/tmp/golf-review-browser.log`, `/tmp/golf-review-private-denial.log`,
+`/tmp/golf-review-session-expiry.log` and `/tmp/golf-review-allocator.log`.
+They are not published as application tests. Reproduction steps and source evidence
+above are retained so each implementation step can add a regression that fails
+before its repair.
+
+No new valid-input defect was confirmed in inspected match ledger ordering,
+concessions/rulings, early finish/draw, exact point awards, match-relative handicaps,
+Stableford pickup/equivalent arithmetic or four-ball independent gross/net selection.
+This is a bounded review conclusion, not proof that the entire application has no
+other defects. Team ownership, snapshot and visibility invariants remain repair
+constraints; no automatic team generation or pairing changes are proposed.
+
+The full backend/frontend/PostgreSQL ladders, exhaustive browser matrix, migration/
+seed reruns, Docker deployment, external golf-rule research, performance profiling
+and operational security audit were not rerun in this review-only step. Production
+code and schemas were unchanged; focused reproductions were selected to establish
+the findings. Earlier release tests are historical evidence, not new passes.
+
+## Outcome
+
+**READY for remediation planning.** The high finding warrants repair first;
+this review does not mark the existing defects fixed or issue a clean application
+release verdict. Implement H1, then M1 and M2, then the low findings individually
+with the prescribed ladders, review and documentation. Performance measurement
+and the broader security review remain later separate work.
