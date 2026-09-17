@@ -1,4 +1,5 @@
 import { usePrivateResultQuery } from '../features/leaderboards/usePrivateResultQuery'
+import { TournamentSelect } from '../features/leaderboards/TournamentSelect'
 import { MatchResults } from './MatchResultsPage'
 import { MatchRound } from '../features/matchPlay/MatchRound'
 import { Link } from 'react-router-dom'
@@ -86,7 +87,13 @@ export function LeaderboardPage() {
     )
   }
 
-  if (selectedTournament.counted_rounds === null) return <MatchResults tournamentId={tournamentId} />
+  if (selectedTournament.counted_rounds === null) return <MatchResults
+    tournamentId={tournamentId}
+    tournamentSelector={<section className="leaderboard-controls" aria-label="Resultatvisning">
+      <TournamentSelect tournaments={tournaments} tournamentId={tournamentId}
+        onChange={(id) => setSearchParams(leaderboardSearch(id, scope, undefined, metric))} />
+    </section>}
+  />
 
   if (roundsQuery.data) {
     const canonical = leaderboardSearch(tournamentId, scope, selectedRound?.id, metric)

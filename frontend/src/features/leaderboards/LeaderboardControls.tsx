@@ -1,5 +1,6 @@
 import type { LeaderboardMetric, Round, Tournament } from '../../api/types'
 import type { LeaderboardScope } from './selection'
+import { TournamentSelect } from './TournamentSelect'
 
 interface LeaderboardControlsProps {
   tournaments: Tournament[]
@@ -30,14 +31,7 @@ export function LeaderboardControls({
 }: LeaderboardControlsProps) {
   return (
     <section className="leaderboard-controls" aria-label="Resultatvisning">
-      <label className="leaderboard-select">
-        <span>Turnering</span>
-        <select value={tournamentId} onChange={(event) => onTournamentChange(event.target.value)}>
-          {tournaments.map((tournament) => (
-            <option key={tournament.id} value={tournament.id}>{tournament.name}</option>
-          ))}
-        </select>
-      </label>
+      <TournamentSelect tournaments={tournaments} tournamentId={tournamentId} onChange={onTournamentChange} />
 
       <fieldset className="segmented-control">
         <legend>Resultattype</legend>

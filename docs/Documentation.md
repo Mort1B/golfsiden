@@ -38,6 +38,12 @@ before opening. Numeric notes support offline drafts; accepted reports,
 concessions, confirmation and audited corrections require connectivity. Early
 finishes need no invented scores. Match points contribute nothing to gross/net
 overall totals; match-only tournaments show the separate table and private history.
+On global **Resultater** (`/leaderboard`), **Turnering** stays available for both
+match-only and mixed/stroke tournaments, including while match results load or
+show an error. Switching clears the previous round/player selection; Back and
+Forward restore the prior selection, including a player-filtered match view.
+Mixed tournaments retain their links between match points and gross/net overall
+results. Tournament-specific match-history routes keep their existing navigation.
 
 Members can enter authorized flight scorecards, confirm cards, and browse live
 gross/net round and best-N tournament standings, player contribution histories,

@@ -1746,6 +1746,14 @@ set. Best-N and mandatory-round eligibility count only formats contributing to
 that set. A match cannot be the mandatory overall round. Mixed tournaments retain
 their overall table; match-only tournaments use an explicit not-applicable/absent
 overall configuration and table, not an invalid N=0 or invented stroke result.
+The global `/leaderboard` route keeps a shared tournament selector above the
+match-only result body, including loading and error states. It supplies that
+control as a composition slot; dedicated match-result routes retain their own
+navigation. Tournament changes use the existing leaderboard URL builder, dropping
+the previous round/player selection. The match-only branch remains before gross/net
+URL canonicalization so direct player filters and browser history are preserved;
+it still suppresses inapplicable gross/net queries.
+
 Keep scheduled/lifecycle round counts distinct from eligible contribution counts.
 A provisional overall contribution is selected from open eligible formats, so an
 open later match round does not displace an otherwise eligible open stroke round.
