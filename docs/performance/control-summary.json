@@ -1,0 +1,134 @@
+{
+  "sourceCommit": "7fe6bcb1ffd6751d6621aba19293a801a885e81f",
+  "assetHashes": {
+    "index-8M17TplR.css": "4c6a7913f48d93f22ac6601bd7be69a0fb8e14ac856eeb82eccd02bd6f3762a8",
+    "index-B8zZcM52.js": "e107a79f7b521378df2f8daaf58abcd8b1fea12fa6e8d6fadca24904bb803d80"
+  },
+  "browser": "153.0.8010.36",
+  "node": "v22.22.2",
+  "cpu": "11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz",
+  "logicalCpus": 8,
+  "memoryGiB": 15.313995361328125,
+  "conditions": {
+    "latencyMs": 100,
+    "downloadBytesPerSecond": 200000,
+    "uploadBytesPerSecond": 93750,
+    "cpuSlowdown": 4,
+    "gzip": true,
+    "streamDelayMs": 10000,
+    "api": "HTTP synthetic fixtures; no backend/database latency",
+    "cold": "fresh browser context, empty HTTP cache",
+    "warm": "same-context full navigation, cached immutable assets, new JS/query cache",
+    "observeAfterReadyMs": 700
+  },
+  "errors": [],
+  "unexpected": [],
+  "summary": {
+    "long-390-cold": {
+      "samples": 3,
+      "readyMs": {
+        "min": 2268,
+        "median": 2296,
+        "max": 2312
+      },
+      "fcpMs": {
+        "min": 1704,
+        "median": 1704,
+        "max": 1716
+      },
+      "lcpObservedMs": {
+        "min": 2000,
+        "median": 2036,
+        "max": 2040
+      },
+      "tbtProxyMs": {
+        "min": 94,
+        "median": 96,
+        "max": 98
+      },
+      "apiRequests": {
+        "min": 6,
+        "median": 6,
+        "max": 6
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 3,
+        "max": 3
+      },
+      "listEncodedBytes": {
+        "min": 14571,
+        "median": 14571,
+        "max": 14571
+      },
+      "listDecodedBytes": {
+        "min": 503583,
+        "median": 503583,
+        "max": 503583
+      },
+      "domNodes": {
+        "min": 883,
+        "median": 883,
+        "max": 883
+      }
+    },
+    "long-390-warm": {
+      "samples": 3,
+      "readyMs": {
+        "min": 803,
+        "median": 819,
+        "max": 821
+      },
+      "fcpMs": {
+        "min": 256,
+        "median": 256,
+        "max": 272
+      },
+      "lcpObservedMs": {
+        "min": 532,
+        "median": 544,
+        "max": 556
+      },
+      "tbtProxyMs": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "apiRequests": {
+        "min": 6,
+        "median": 6,
+        "max": 6
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 3,
+        "max": 3
+      },
+      "listEncodedBytes": {
+        "min": 14571,
+        "median": 14571,
+        "max": 14571
+      },
+      "listDecodedBytes": {
+        "min": 503583,
+        "median": 503583,
+        "max": 503583
+      },
+      "domNodes": {
+        "min": 883,
+        "median": 883,
+        "max": 883
+      }
+    }
+  }
+}

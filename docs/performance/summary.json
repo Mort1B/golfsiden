@@ -1,0 +1,769 @@
+{
+  "sourceCommit": "7fe6bcb1ffd6751d6621aba19293a801a885e81f",
+  "assetHashes": {
+    "index-8M17TplR.css": "4c6a7913f48d93f22ac6601bd7be69a0fb8e14ac856eeb82eccd02bd6f3762a8",
+    "index-B8zZcM52.js": "e107a79f7b521378df2f8daaf58abcd8b1fea12fa6e8d6fadca24904bb803d80"
+  },
+  "browser": "153.0.8010.36",
+  "node": "v22.22.2",
+  "cpu": "11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz",
+  "logicalCpus": 8,
+  "memoryGiB": 15.313995361328125,
+  "conditions": {
+    "latencyMs": 100,
+    "downloadBytesPerSecond": 200000,
+    "uploadBytesPerSecond": 93750,
+    "cpuSlowdown": 4,
+    "gzip": true,
+    "api": "HTTP synthetic fixtures; no backend/database latency",
+    "cold": "fresh browser context, empty HTTP cache",
+    "warm": "same-context full navigation, cached immutable assets, new JS/query cache",
+    "observeAfterReadyMs": 700
+  },
+  "errors": [],
+  "unexpected": [],
+  "summary": {
+    "login-390-cold": {
+      "samples": 5,
+      "readyMs": {
+        "min": 1716,
+        "median": 1731,
+        "max": 1738
+      },
+      "fcpMs": {
+        "min": 1692,
+        "median": 1704,
+        "max": 1704
+      },
+      "lcpObservedMs": {
+        "min": 1692,
+        "median": 1704,
+        "max": 1704
+      },
+      "tbtProxyMs": {
+        "min": 93,
+        "median": 97,
+        "max": 100
+      },
+      "apiRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "liveRequests": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "listRequests": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "listEncodedBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "listDecodedBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "domNodes": {
+        "min": 32,
+        "median": 32,
+        "max": 32
+      }
+    },
+    "login-390-warm": {
+      "samples": 5,
+      "readyMs": {
+        "min": 238,
+        "median": 255,
+        "max": 256
+      },
+      "fcpMs": {
+        "min": 224,
+        "median": 240,
+        "max": 244
+      },
+      "lcpObservedMs": {
+        "min": 224,
+        "median": 240,
+        "max": 244
+      },
+      "tbtProxyMs": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "apiRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "liveRequests": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "listRequests": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "listEncodedBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "listDecodedBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "domNodes": {
+        "min": 32,
+        "median": 32,
+        "max": 32
+      }
+    },
+    "populated-390-cold": {
+      "samples": 5,
+      "readyMs": {
+        "min": 2281,
+        "median": 2370,
+        "max": 2413
+      },
+      "fcpMs": {
+        "min": 1704,
+        "median": 1708,
+        "max": 1740
+      },
+      "lcpObservedMs": {
+        "min": 2116,
+        "median": 2152,
+        "max": 2208
+      },
+      "tbtProxyMs": {
+        "min": 94,
+        "median": 96,
+        "max": 126
+      },
+      "apiRequests": {
+        "min": 6,
+        "median": 8,
+        "max": 8
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 1,
+        "median": 3,
+        "max": 3
+      },
+      "listEncodedBytes": {
+        "min": 2723,
+        "median": 8169,
+        "max": 8169
+      },
+      "listDecodedBytes": {
+        "min": 82697,
+        "median": 248091,
+        "max": 248091
+      },
+      "domNodes": {
+        "min": 277,
+        "median": 277,
+        "max": 277
+      }
+    },
+    "populated-390-warm": {
+      "samples": 5,
+      "readyMs": {
+        "min": 837,
+        "median": 855,
+        "max": 871
+      },
+      "fcpMs": {
+        "min": 240,
+        "median": 244,
+        "max": 264
+      },
+      "lcpObservedMs": {
+        "min": 628,
+        "median": 644,
+        "max": 664
+      },
+      "tbtProxyMs": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 8,
+        "max": 8
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 3,
+        "max": 3
+      },
+      "listEncodedBytes": {
+        "min": 8169,
+        "median": 8169,
+        "max": 8169
+      },
+      "listDecodedBytes": {
+        "min": 248091,
+        "median": 248091,
+        "max": 248091
+      },
+      "domNodes": {
+        "min": 277,
+        "median": 277,
+        "max": 277
+      }
+    },
+    "long-390-cold": {
+      "samples": 5,
+      "readyMs": {
+        "min": 2419,
+        "median": 2500,
+        "max": 2524
+      },
+      "fcpMs": {
+        "min": 1692,
+        "median": 1704,
+        "max": 1720
+      },
+      "lcpObservedMs": {
+        "min": 2152,
+        "median": 2192,
+        "max": 2212
+      },
+      "tbtProxyMs": {
+        "min": 92,
+        "median": 97,
+        "max": 98
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 14571,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 503583,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "domNodes": {
+        "min": 883,
+        "median": 883,
+        "max": 883
+      }
+    },
+    "long-390-warm": {
+      "samples": 5,
+      "readyMs": {
+        "min": 1004,
+        "median": 1021,
+        "max": 1038
+      },
+      "fcpMs": {
+        "min": 240,
+        "median": 248,
+        "max": 252
+      },
+      "lcpObservedMs": {
+        "min": 684,
+        "median": 704,
+        "max": 716
+      },
+      "tbtProxyMs": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "apiRequests": {
+        "min": 14,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 9,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 43713,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 1510749,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "domNodes": {
+        "min": 883,
+        "median": 883,
+        "max": 883
+      }
+    },
+    "history-390-cold": {
+      "samples": 5,
+      "readyMs": {
+        "min": 2314,
+        "median": 2412,
+        "max": 2472
+      },
+      "fcpMs": {
+        "min": 1696,
+        "median": 1708,
+        "max": 1708
+      },
+      "lcpObservedMs": {
+        "min": 2080,
+        "median": 2112,
+        "max": 2152
+      },
+      "tbtProxyMs": {
+        "min": 92,
+        "median": 97,
+        "max": 102
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 14571,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 503583,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "domNodes": {
+        "min": 96,
+        "median": 96,
+        "max": 96
+      }
+    },
+    "history-390-warm": {
+      "samples": 5,
+      "readyMs": {
+        "min": 954,
+        "median": 968,
+        "max": 972
+      },
+      "fcpMs": {
+        "min": 240,
+        "median": 244,
+        "max": 256
+      },
+      "lcpObservedMs": {
+        "min": 640,
+        "median": 652,
+        "max": 660
+      },
+      "tbtProxyMs": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "apiRequests": {
+        "min": 14,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 9,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 43713,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 1510749,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "domNodes": {
+        "min": 96,
+        "median": 96,
+        "max": 96
+      }
+    },
+    "stress-390-cold": {
+      "samples": 5,
+      "readyMs": {
+        "min": 2866,
+        "median": 2896,
+        "max": 3298
+      },
+      "fcpMs": {
+        "min": 1696,
+        "median": 1700,
+        "max": 1712
+      },
+      "lcpObservedMs": {
+        "min": 2208,
+        "median": 2264,
+        "max": 2332
+      },
+      "tbtProxyMs": {
+        "min": 173,
+        "median": 218,
+        "max": 248
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 8,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 3,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 53530,
+        "median": 53530,
+        "max": 160590
+      },
+      "listDecodedBytes": {
+        "min": 2097834,
+        "median": 2097834,
+        "max": 6293502
+      },
+      "domNodes": {
+        "min": 3467,
+        "median": 3467,
+        "max": 3467
+      }
+    },
+    "stress-390-warm": {
+      "samples": 5,
+      "readyMs": {
+        "min": 1339,
+        "median": 1820,
+        "max": 1869
+      },
+      "fcpMs": {
+        "min": 244,
+        "median": 260,
+        "max": 308
+      },
+      "lcpObservedMs": {
+        "min": 756,
+        "median": 840,
+        "max": 936
+      },
+      "tbtProxyMs": {
+        "min": 56,
+        "median": 108,
+        "max": 140
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 53530,
+        "median": 160590,
+        "max": 160590
+      },
+      "listDecodedBytes": {
+        "min": 2097834,
+        "median": 6293502,
+        "max": 6293502
+      },
+      "domNodes": {
+        "min": 3467,
+        "median": 3467,
+        "max": 3467
+      }
+    },
+    "long-320-cold": {
+      "samples": 3,
+      "readyMs": {
+        "min": 2450,
+        "median": 2505,
+        "max": 2527
+      },
+      "fcpMs": {
+        "min": 1696,
+        "median": 1700,
+        "max": 1704
+      },
+      "lcpObservedMs": {
+        "min": 2160,
+        "median": 2192,
+        "max": 2232
+      },
+      "tbtProxyMs": {
+        "min": 95,
+        "median": 98,
+        "max": 100
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 14571,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 503583,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "domNodes": {
+        "min": 883,
+        "median": 883,
+        "max": 883
+      }
+    },
+    "long-320-warm": {
+      "samples": 3,
+      "readyMs": {
+        "min": 1005,
+        "median": 1020,
+        "max": 1037
+      },
+      "fcpMs": {
+        "min": 244,
+        "median": 244,
+        "max": 248
+      },
+      "lcpObservedMs": {
+        "min": 692,
+        "median": 712,
+        "max": 732
+      },
+      "tbtProxyMs": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "apiRequests": {
+        "min": 14,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 9,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 43713,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 1510749,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "domNodes": {
+        "min": 883,
+        "median": 883,
+        "max": 883
+      }
+    },
+    "long-1280-cold": {
+      "samples": 3,
+      "readyMs": {
+        "min": 2402,
+        "median": 2426,
+        "max": 2461
+      },
+      "fcpMs": {
+        "min": 1704,
+        "median": 1716,
+        "max": 1724
+      },
+      "lcpObservedMs": {
+        "min": 2132,
+        "median": 2156,
+        "max": 2168
+      },
+      "tbtProxyMs": {
+        "min": 94,
+        "median": 96,
+        "max": 99
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 8,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 3,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 14571,
+        "median": 14571,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 503583,
+        "median": 503583,
+        "max": 1510749
+      },
+      "domNodes": {
+        "min": 883,
+        "median": 883,
+        "max": 883
+      }
+    },
+    "long-1280-warm": {
+      "samples": 3,
+      "readyMs": {
+        "min": 984,
+        "median": 1005,
+        "max": 1006
+      },
+      "fcpMs": {
+        "min": 248,
+        "median": 248,
+        "max": 252
+      },
+      "lcpObservedMs": {
+        "min": 692,
+        "median": 696,
+        "max": 704
+      },
+      "tbtProxyMs": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "apiRequests": {
+        "min": 14,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 9,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 43713,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 1510749,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "domNodes": {
+        "min": 883,
+        "median": 883,
+        "max": 883
+      }
+    }
+  }
+}

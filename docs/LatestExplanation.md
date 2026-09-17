@@ -1,62 +1,70 @@
-# Refresh authority after overlapping page returns
+# Performance baseline before optimization
 
-**M3 is complete — READY.** A page return that overlaps an unfinished refresh now
-queues another session and authority refresh. Previously, the second return
-shared the older promise without scheduling fresh reads. If a round locked after
-those earlier authority responses, editable controls could remain after recovery.
-The completed refresh now reflects the newer lock and displays the read-only card.
+**The investigation is complete — READY WITH KNOWN LIMITATIONS.** It measures
+the production frontend build and synthetic populated/long-content browser
+workloads, traces match-list database work, and proposes one bounded next repair.
+No runtime, dependency, API, schema, scoring or authorization behavior changed.
 
-The shared return boundary keeps one active refresh and one queued flag per
-query client and user. Same-turn signals coalesce; a return during authentication
-or private reads schedules a subsequent pass without cancelling the active pass.
-A return during that subsequent pass can queue another. Only external return
-signals schedule additional work, so this does not introduce polling or an
-unconditional retry loop. The shared promise covers the queued work, and cleanup
-occurs inside the drain to avoid losing a return at completion.
+The [baseline report](performance/README.md) retains reproducible scripts, asset
+hashes, every timing sample, request/byte counts, workload definitions and explicit
+measurement limits. Source examined was `7fe6bcb1ffd6751d6621aba19293a801a885e81f`.
 
-Each pass checks the cached account before refreshing authentication, then requires
-a successful session for that same account before private reads. Expiry, account
-changes and failed authentication stop private refreshes. A later valid return
-can retry. An old account's queued pass cannot restart or cancel the replacement
-account's authentication request.
+The production frontend has one 782,064-byte JavaScript entry chunk, 222,606 bytes
+gzipped. Login loads it too. Under the fixed 100 ms/1.6 Mbps/4× CPU Chrome profile,
+390px median cold readiness was 1.73 seconds for login, 2.37 seconds for 12 match
+cards and 2.50 seconds for 72 cards across three rounds. These are synthetic
+navigation metrics, not field Core Web Vitals or production service-level claims.
 
-Ordinary score-event invalidation, private projection clearing, local scoring
-entry, durable edits, pending verification and delivery restrictions retain their
-existing behavior. No backend, schema or score-mutation contract changed.
+For example, selecting one player's history displays three cards but still fetches
+and decodes all 72 cards. The long workload issued three to nine list requests;
+the stream-opening control consistently issued three when opening was delayed
+beyond the observation window. Initial stream recovery must continue to clear
+private projections and refresh authority. This finding does not authorize
+removing freshness checks or accepting stale results.
+
+Backend source tracing found `5 + 17M` SELECTs per fully authorized administrator
+list request, including HTTP authentication. Privileged opponent checks also
+materialize `2MP` snapshot owner IDs (M matches, P players); 100 two-player matches
+mean 1,705 SELECTs and 40,000 authorization rows. These are source-derived counts.
+Real SQL timing, pool contention and production impact were not measured.
+
+The first proposed repair is route-level JavaScript splitting. It can address
+the measured startup payload while keeping shared auth/offline providers intact.
+The plan defines comparison and regression gates, including chunk-load recovery.
+Database authorization reuse, compact/player-scoped listings and stream-refresh
+coalescing remain separate candidates. No high-severity production defect was
+established; findings are prioritized medium/low with their evidence limits.
 
 ## Validation and review
 
-- Eight focused unit tests cover coalescing, returns during authentication and
-  subsequent passes, expiry, account changes, failed reads and later recovery.
-  Before the repair, seven failed and one passed (`/tmp/m3-red.log`). The focused
-  suite then passed all 23 tests (`/tmp/m3-focused.log`).
-- The unchanged controlled browser reproducer passed three repetitions after the
-  repair (`/tmp/m3-reproducer-green.log`); the prior investigation recorded three
-  failures. It still holds an older scoring response across a frozen-page return
-  after completed authority reads, with no added pre-freeze freshness barrier.
-- The original intermittent frozen-page case passed five unchanged repetitions
-  (`/tmp/m3-original-repeated.log`).
-- All 11 return-browser scenarios passed (`/tmp/m3-browser-full.log`). The overlap
-  regression is now automatic at 320, 390 and 1280 pixels, with fresh session reads,
-  read-only state, no edit controls and preserved hole selection asserted. The
-  matrix also covers native stream restart, delayed/failed recovery, durable edits,
-  session expiry, restricted/revoked reads and history/reload selection.
-- Mobile and desktop screenshots were inspected. Long names wrap, horizontal
-  overflow checks pass, and touch targets remain reachable. Captures are
-  `/tmp/m3-overlapping-return-320.png`, `/tmp/m3-overlapping-return-390.png` and
-  `/tmp/m3-overlapping-return-1280.png`. Browser console, page-error and unexpected
-  HTTP checks passed.
-- The complete frontend ladder passed: 621 tests across 108 files, type checking,
-  lint and production build (`/tmp/m3-frontend-full.log`, `/tmp/m3-typecheck.log`,
-  `/tmp/m3-lint.log`, `/tmp/m3-build.log`). The existing bundle-size warning remains
-  a performance investigation candidate.
-- Read-only review found no source or test issues. `git diff --check` passed.
-  Architecture, current behavior and the plan were updated with this iteration.
+- `npm --prefix frontend run build` passed with the existing bundle warning.
+  A fresh in-memory attribution build matched every emitted file byte-for-byte;
+  browser asset SHA-256 hashes matched the recorded bundle.
+- The reviewed browser run passed 62 navigations: five cold/warm pairs per 390px
+  workload and three pairs for long content at both 320 and 1280 pixels. A separate
+  six-navigation delayed-stream control passed. Every final table/card count was
+  correct, every sample ended with zero pending non-SSE requests, and console,
+  page errors, HTTP failures, unexpected fixture requests and horizontal overflow
+  checks were clear.
+- Mobile and desktop screenshots were inspected; long names wrap. This is a
+  performance/layout sample, not a new interaction/accessibility acceptance suite.
+  Full request artifacts and screenshots are in `/tmp/golf-performance-final/`
+  and `/tmp/golf-performance-delayed-stream/`; essential samples and conditions
+  are retained under `docs/performance/`.
+- Read-only specialist review checked the SQL trace and measurement design.
+  Settled-content/pending-request assertions and build-provenance checks were
+  added after its findings, then the baseline was rerun. Highly compressible
+  fixtures, optimistic warm static caching, desktop throttling and custom timing
+  metrics are explicitly documented. Final read-only review independently checked
+  all 68 retained samples and the SQL trace; no actionable findings remained.
+- Script syntax checks and `git diff --check` passed. The production build includes
+  TypeScript compilation. Frontend unit/lint and backend/database ladders were not
+  rerun: only documentation and measurement scripts changed, with no product code
+  or dependency changes.
 
-Browser validation uses a mocked API with real Chrome lifecycle transitions and
-a native local SSE server. It establishes client refresh ordering, not real
-PostgreSQL lock enforcement or server-mutation authorization. Backend/PostgreSQL
-checks were not run because this step changes no backend or schema code.
-
-The next candidate is a measured performance baseline. No optimization or wider
-security review was started in this step.
+Real API/PostgreSQL measurements were unavailable: no local PostgreSQL binaries
+were found, Docker socket access was denied, and passwordless sudo was unavailable.
+No shared or production database was used. Physical phones, production delivery,
+hidden-final/revocation behavior, mixed formats and sustained live-event load are
+outside this measurement. Browser fixtures cannot validate backend privacy or
+authorization. The next step remains unstarted pending the user's instruction.

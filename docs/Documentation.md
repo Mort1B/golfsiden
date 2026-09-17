@@ -1902,6 +1902,15 @@ belong in `docs/ARCHITECTURE.md`, while this file owns current behavior and
 operator-facing contracts. The production deployment, migration, backup,
 restore, and rollback procedures are maintained in `docs/deployment_guide.md`.
 
+The [2026-09-17 performance baseline](performance/README.md) includes reproducible
+production-bundle attribution, throttled Chrome workloads, repeated cold/warm
+samples and match-list request counts. It uses synthetic HTTP data; its browser
+timings do not measure real API/PostgreSQL latency or establish production service
+levels. The current frontend eagerly loads one JavaScript entry chunk, and
+player-specific match history fetches full round listings before filtering. The
+baseline proposes route-level splitting as one separate next step; it implements
+no runtime optimization.
+
 ## Known limitations
 
 - Singles match play supports 18-hole singles from hole 1 with manual same-flight

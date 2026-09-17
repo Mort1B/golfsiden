@@ -1586,6 +1586,17 @@ metadata is null, not a fabricated false or zero. Match listing intentionally
 loads cards per match within the 500 manual assignments per round bound; revisit
 this N+1 boundary before increasing that limit.
 
+The [performance baseline](performance/README.md) traces the additional cost of
+reusing mutation authorization during discovery: a fully authorized admin/scorer
+listing performs `5 + 17M` SELECTs including HTTP authentication, and resolves all
+P snapshot owner IDs twice per match (`2MP` returned authorization rows). These
+are source-derived counts, not database timings. The assignment endpoint also
+has a 32,768-byte body limit, independent of the repository's 500-pair bound.
+Private match results fetch one full listing for every match round and filter
+player history only after runtime decoding. Initial live-stream opening clears
+projections and can repeat list reads depending on response order. Those privacy
+and freshness boundaries remain required when selecting a later optimization.
+
 Match-only private overall reads return
 `{type: "not_applicable", reason: "match_only", tournament_id, metric}` after the
 normal membership check in the same repeatable-read transaction. Eligible overall
