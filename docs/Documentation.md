@@ -512,12 +512,13 @@ and completion-dependent selectors wait for fresh metadata. The browser does not
 restore cleared progress or hidden result data. Fresh access-denial or locked-round
 metadata removes write access; retained device edits cannot bypass those rules.
 
-Known return-refresh limitation: if a page freezes while a previous reconnect
-refresh is still pending, a subsequent return can share that older refresh
-without requesting authority again. A lock that happened between its authority
-reads and the return may therefore leave cached scoring controls visible. This
-client freshness defect is queued for repair; the investigation did not exercise
-or establish a bypass of server-side mutation checks.
+If a page returns again while its earlier refresh is pending, the browser queues
+one follow-up pass. It revalidates the session before fetching current authority,
+so a lock occurring between the earlier reads and the later return is reflected
+in the resulting read-only card. Repeated signals coalesce while a pass runs;
+a return during the follow-up queues another pass. With no new return there is
+no automatic loop or polling. A changed/expired account or failed session check
+stops private refreshes until a subsequent valid return.
 
 **Lokale scoreendringer** shows a compact count/status disclosure on Score and a
 link from other private workspace pages when edits need attention. It remains

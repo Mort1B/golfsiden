@@ -585,12 +585,17 @@ and reapplies runtime grants before the API is started.
   before private-query refresh, and checks the resulting identity again. Ordinary
   SSE events still do not invalidate authentication. No timer or polling loop is
   introduced, and a return never itself grants score access.
-  Current limitation: a second return while that full refresh is pending shares
-  its existing promise without scheduling a later pass. If authority responses
-  were captured before a freeze but another private read remains pending, a
-  persisted return after a lock can retain the old editable projection. The
-  opt-in `returnOrdering.browser.ts` reproduces this ordering; the bounded
-  trailing-refresh repair is tracked in `PLANS.md`.
+  Return refreshes keep one active drain and one queued-follow-up flag per
+  user/client. Same-turn subscribers coalesce before the first pass; a return
+  during authentication or private reads marks a later pass without cancelling
+  the current work. Every pass rechecks the current account before authentication
+  and requires successful same-account validation before private invalidation.
+  Account change, expiry or failed authentication stops that drain; a later
+  external return can retry. Only new external return signals queue work, so
+  reads/failures cannot start a polling loop. All callers share completion of the
+  queued passes, and map cleanup occurs synchronously when the drain finishes.
+  `returnOrdering.browser.ts` covers authority changing while an earlier read is
+  pending, at mobile and desktop sizes.
 - Target-bearing frontend DTOs are decoded against the requested tournament,
   round, player, owner, metric, invitation predecessor, and course-configuration
   identities before cache insertion. Roster, round, team, pairing, invitation,

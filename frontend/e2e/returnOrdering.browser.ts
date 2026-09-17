@@ -1,11 +1,20 @@
 import { test, expect, type CDPSession } from '@playwright/test'
 import { liveServer, mockWorkspace, scoreUrl, scorecard, round, owner } from './returnLoadingSupport'
 
-test.skip(process.env.GOLF_RETURN_ORDERING_REPRO !== '1', 'Opt-in regression reproducer: the pending-return defect is tracked in docs/PLANS.md.')
-
-test('a frozen return must refresh authority after an unfinished earlier return', async ({ page, context }, testInfo) => {
+for (const [width, height] of [[320, 600], [390, 844], [1280, 900]] as const) {
+test(`a frozen return refreshes authority after an unfinished earlier return at ${width}px`, async ({ page, context }, testInfo) => {
+  await page.setViewportSize({ width, height })
   const live = await liveServer()
-  const trace: string[] = []
+  const trace: string[] = [], errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  page.on('console', message => {
+    if (message.type() === 'error' && !message.text().startsWith('Failed to load resource:')) errors.push(message.text())
+  })
+  page.on('response', response => { if (response.status() >= 400) errors.push(`HTTP ${response.status()}`) })
+  page.on('requestfailed', request => {
+    const failure = request.failure()?.errorText ?? ''
+    if (!new URL(request.url()).pathname.endsWith('/live') && !['net::ERR_ABORTED', 'net::ERR_INTERNET_DISCONNECTED'].includes(failure)) errors.push(failure)
+  })
   let release: () => void = () => undefined
   let held = false, started = 0, authReads = 0
   const pending = new Promise<void>(resolve => { release = resolve })
@@ -70,11 +79,20 @@ test('a frozen return must refresh authority after an unfinished earlier return'
     await expect(page.getByText('Du kan se dette scorekortet, men ikke føre score for det.')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Legg til ett slag' })).toHaveCount(0)
     await expect(page.locator('#current-hole-heading')).toHaveText('8')
+    expect(authReads).toBeGreaterThan(before)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    for (const control of await page.locator('.score-page button:visible, .score-page select:visible').all()) {
+      expect((await control.boundingBox())?.height).toBeGreaterThanOrEqual(44)
+      if (await control.isEnabled()) await control.click({ trial: true })
+    }
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.screenshot({ path: `/tmp/m3-overlapping-return-${width}.png`, fullPage: true })
+    expect(errors).toEqual([])
   } finally {
     release()
     await cdp?.detach()
-    console.log(JSON.stringify(trace, null, 2))
     await testInfo.attach('request-ordering', { body: JSON.stringify(trace, null, 2), contentType: 'application/json' })
     await live.close()
   }
 })
+}

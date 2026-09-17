@@ -3,21 +3,40 @@ import { authKeys, type AuthSession } from './auth'
 import { privateWorkspaceKeys } from './privateWorkspace'
 import type { TournamentLiveSignal } from './tournamentLive'
 
-const resumes = new WeakMap<QueryClient, Map<string, Promise<void>>>()
+interface ReturnRefresh { promise: Promise<void>; queued: boolean }
+const resumes = new WeakMap<QueryClient, Map<string, ReturnRefresh>>()
 
 function refreshOnReturn(client: QueryClient, userId: string): Promise<void> {
   let pending = resumes.get(client)
   if (!pending) { pending = new Map(); resumes.set(client, pending) }
   const existing = pending.get(userId)
-  if (existing) return existing
-  const refresh = client.invalidateQueries({ queryKey: authKeys.session, exact: true }).then(async () => {
-    // A return may discover expiry or another signed-in account. Never revive its predecessor.
-    if (client.getQueryState(authKeys.session)?.status !== 'success'
-      || client.getQueryData<AuthSession | null>(authKeys.session)?.user_id !== userId) return
-    await invalidateLiveQueries(client, userId)
-  }).finally(() => pending.delete(userId))
+  if (existing) {
+    existing.queued = true
+    return existing.promise
+  }
+  const refresh: ReturnRefresh = { promise: Promise.resolve(), queued: true }
+  // Defer the first pass so same-turn subscribers share one refresh. Later
+  // returns queue one follow-up without cancelling reads already in progress.
+  refresh.promise = Promise.resolve().then(async () => {
+    try {
+      while (refresh.queued) {
+        refresh.queued = false
+        // An old user's pending read must not restart authentication after an
+        // account switch. A cached same-user auth error can still be retried.
+        if (client.getQueryData<AuthSession | null>(authKeys.session)?.user_id !== userId) return
+        await client.invalidateQueries({ queryKey: authKeys.session, exact: true })
+        if (client.getQueryState(authKeys.session)?.status !== 'success'
+          || client.getQueryData<AuthSession | null>(authKeys.session)?.user_id !== userId) return
+        await invalidateLiveQueries(client, userId)
+      }
+    } finally {
+      // Clear synchronously with drain completion, before another return can
+      // queue work on a promise whose loop has already finished.
+      if (pending.get(userId) === refresh) pending.delete(userId)
+    }
+  })
   pending.set(userId, refresh)
-  return refresh
+  return refresh.promise
 }
 
 export function isLiveInvalidationTarget(queryKey: readonly unknown[], userId: string): boolean {

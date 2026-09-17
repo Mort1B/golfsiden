@@ -22,10 +22,12 @@ it('deduplicates return checks and revalidates identity before refetching privat
     const first = handleTournamentLiveSignal(client, session.user_id, 'resume')
     expect(handleTournamentLiveSignal(client, session.user_id, 'resume')).toBe(first)
     expect(privateRead).not.toHaveBeenCalled()
+    await vi.waitFor(() => expect(sessionRead).toHaveBeenCalledTimes(1))
     finish(session); await first
     expect(sessionRead).toHaveBeenCalledOnce()
     expect(privateRead).toHaveBeenCalledOnce()
     const next = handleTournamentLiveSignal(client, session.user_id, 'resume')
+    await vi.waitFor(() => expect(sessionRead).toHaveBeenCalledTimes(2))
     finish(null); await next
     expect(privateRead).toHaveBeenCalledOnce()
   } finally { stopAuth(); stopCard(); client.clear() }

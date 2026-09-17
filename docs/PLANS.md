@@ -5,59 +5,37 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The next bounded candidate below awaits an implementation instruction.
+None. The next candidate requires the user's instruction to proceed.
 
-## Priorities
+## Next candidate — performance baseline
 
-| Priority | ID | Finding | Repair order |
-| --- | --- | --- | --- |
-| Medium | M3 | A page return can be lost behind an unfinished earlier refresh | 1 |
+**Goal:** identify evidence-backed performance findings before selecting an
+optimization. The existing frontend bundle warning and bounded match-card reads
+are investigation candidates, not proof of a user-visible performance defect.
 
-## Medium — M3: refresh authority after overlapping page returns
+**Scope and behavior:** measure representative populated and long-content
+workloads, including mobile page loading and match-card request volume. Record
+baseline conditions, timing, bundle contribution and request counts. Classify
+confirmed findings as high, medium or low, and define one bounded repair candidate
+from the evidence. This step is investigation and documentation only.
 
-**Evidence:** `frontend/src/api/liveInvalidation.ts:11-18` returns the pending
-per-user promise for another `resume`, with no later refresh. An enabled score
-button can still represent cached authority. The original frozen-page browser
-case failed once in five unchanged repeats. The controlled
-`returnOrdering.browser.ts` reproducer failed three of three runs: rounds,
-completion and score-access responses completed as open; a scoring read stayed
-pending; the page froze, the fixture locked the round, and persisted `pageshow`
-shared the old refresh. Releasing the captured scoring response caused no fresh
-authority requests, leaving editable controls instead of the read-only card.
-No unauthorized server write or lost durable draft was demonstrated.
+**Invariants:** preserve private-read authorization, scoring correctness, account
+isolation, historical snapshots, offline drafts and administrator-managed teams.
+Do not weaken correctness checks or change runtime behavior to improve a metric.
 
-**Goal and scope:** ensure a distinct return arriving during an earlier refresh
-results in a fresh session/authority pass after that pending work. Keep this
-inside the shared return-invalidation boundary and focused lifecycle tests.
-Preserve bounded coalescing of concurrent signals and a healthy EventSource;
-avoid an unbounded refresh loop or new polling.
-**Invariants:** revalidate identity before private reads; never revive a previous
-account's data; preserve private projection clearing, device drafts, pending
-verification, ordinary score-event invalidation and server mutation authority.
-Retain local entry during pending recovery, with delivery/confirmation restrictions
-unchanged. Once return verification settles, the editable view must reflect fresh
-authority rather than responses captured before the second return.
-**Validation:** turn the opt-in reproducer green without adding a pre-freeze wait
-or weakening its read-only/no-edit/hole-selection assertions. Cover overlapping
-return ordering, concurrent deduplication, expiry/account switch and failed reads
-in unit tests. Repeat the original frozen-page case and run the complete return
-browser suite plus the frontend ladder, with mobile/desktop evidence.
-**Stop:** this return-refresh defect only; no queue, scoring, provider, backend,
-performance or wider security redesign.
+**Validation:** retain reproducible commands and workload descriptions; distinguish
+cold/warm runs and synthetic/local results from production evidence. Repeat key
+measurements sufficiently to expose variability. Review findings against current
+source and record unavailable measurements and their blockers.
 
-Reproducer command (currently expected to fail):
-
-```bash
-cd frontend
-GOLF_RETURN_ORDERING_REPRO=1 npm run test:browser:lifecycle -- returnOrdering.browser.ts
-```
+**Stop:** publish the baseline and prioritized findings with a bounded next-step
+proposal. Do not implement optimizations or expand into the security review.
 
 ## Later queue
 
-1. **Performance work:** measure representative workloads before scoping changes,
-   including the existing frontend bundle warning and bounded match-card reads.
+1. **Performance repairs:** select one bounded change from measured findings.
 2. **Security review:** perform the separately scoped wider application/operational
-   review after the above correctness repairs.
+   review after the performance investigation and agreed repairs.
 
 No automatic opponents/byes/brackets, team match play, extra holes, new scoring
 rules, public match sharing, cold offline launch or background sync is included.
