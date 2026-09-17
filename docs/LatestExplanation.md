@@ -1,98 +1,80 @@
-# Hide private results after authoritative denial
+# Make signed-minimum handicap allocation safe
 
-M2 removes cached private result data after a refresh returns HTTP 401, 403 or
-404. Direct scorecards, player history, round/tournament standings and delegated
-read-only match views now hide denied names, scores and links. Recovery requires
-fresh authorized reads, including after retry, remount or metric changes.
+L1 repairs the generic hole allocator at `i32::MIN` without changing current
+stored handicap inputs or their scoring results. The negative branch previously
+cast unsigned magnitude 2,147,483,648 back to i32, wrapping it negative. One-hole
+allocation could panic in debug builds, and multi-hole allocations could return
+the wrong sign and total.
 
-For example, a direct card displayed gross score 7. Previously a denied refresh
-could leave that card visible beside a background-error message while SSE stayed
-connected. The denied projection is now erased, its dependent reads are cancelled,
-and only the error/retry state remains. A later 500 or offline error cannot revive
-7. A successful authorized refresh can display the current card again.
+The allocator now widens the negative handicap to i64 before taking its magnitude,
+keeps division/remainder arithmetic wide, and checks the final signed result back
+to i32 with the existing `ArithmeticOverflow` error mapping. For valid arguments,
+every per-hole result fits: magnitude is at most 2^31 and the signed allocation
+lies between i32::MIN and zero. The positive branch is unchanged. Hole count and
+stroke index validation still precede arithmetic.
 
-## Boundaries and review repairs
+For example, i32::MIN over 18 holes gives −119,304,647 on indexes 1–16 and
+−119,304,648 on indexes 17–18, totaling −2,147,483,648. On one hole it gives
+exactly i32::MIN. Ordinary plus-handicap strokes still go to high indexes;
+positive extra strokes still go to low indexes. No rounding policy changed.
 
-A focused query wrapper catches typed authority errors before query-library retry
-handling. Cleanup cancels the source and affected sibling reads with snapshot
-reversion disabled, then clears their data and retains invalidated error state.
-Cancelling only siblings was insufficient: review reproduced an observer unmount
-restoring the source's old snapshot. The final implementation and a dedicated
-regression cover that race as well.
+## Regression evidence
 
-Scope matching uses canonical account/target keys and decoded IDs. Weak query-owned
-associations retain IDs only, so clearing metadata does not lose a known target.
-Unidentifiable same-account round read projections are conservatively cleared;
-unrelated reads with a usable round-to-tournament association remain intact.
-Missing associations can cause extra clearing even for another tournament; those
-reads recover through fresh authorization. Mutable query metadata is not
-used for this boundary because other consumers can replace shared query options.
-The tournament leaderboard loader separately protects its nested rounds request
-and observes cancellation between fetch stages. Superseded responses cannot
-repopulate denied data or clear a newer authorized response.
+Four new allocator tests cover:
 
-Read-only match rendering uses the same protections, including its round metadata.
-Writable match/scoring queries, H1 transient intent, durable queues and server
-contracts are unchanged. The existing match-only tournament-selector finding L3
-is still queued. HTTP 500/network failures without a prior denial retain the
-existing permitted-data behavior. No broad authentication or SSE redesign was
-introduced, and no private projections were moved out of TanStack Query.
+- Exact signed-minimum allocations over one, nine and eighteen holes, signed
+  maximum boundaries and adjacent values.
+- Sum conservation using an i64 sum, correct sign, nonincreasing allocation order
+  and at most one stroke difference between holes for representative extremes
+  and ordinary handicaps.
+- Every one of the 65,536 possible stored i16 handicaps across one, nine and
+  eighteen holes, comparing all 1,835,008 hole allocations to the previous valid
+  allocation policy and checking their totals.
+- Invalid nonpositive hole counts and out-of-range indexes, plus first/last
+  indexes of a valid i32::MAX-sized course without materializing a huge vector.
 
-## Validation
+Before repair, three new tests failed with overflow; the exhaustive current-
+snapshot compatibility test passed. After repair, all **13 scoring-domain tests**
+passed in both debug and optimized release builds, including the same exact
+boundary assertions and compatibility checks. Independent read-only review found
+no source or regression-test issues.
 
-Before repair, four route regressions failed for cached cards after 401/403/404
-and denied round metadata; the transient 500/offline control passed. The focused
-suite now passes **17 tests**, including history/results denial, read-only match
-metadata, source-observer unmount, sibling metrics, pending and superseded reads,
-missing metadata, nested-loader cancellation and account/known-trip isolation.
+Full affected validation passed:
 
-The complete frontend suite passed **602 tests in 106 files**. Type checking,
-ESLint and production build passed. The existing bundle warning remains:
-JavaScript 781.26 kB (222.30 kB gzip), CSS 84.12 kB (14.31 kB gzip).
-Independent read-only source review found no remaining material issues.
+- `cargo fmt --all -- --check` and strict all-targets/all-features Clippy.
+- Workspace/all-targets backend tests: **208 passed**.
+- PostgreSQL-enabled workspace/all-targets tests: **572 passed**, including those
+  208 non-database cases and the legacy, four-ball, Stableford and match format
+  regressions. Two test threads per target used fresh SQLx test databases.
+- Existing migration and seed binaries against fresh disposable
+  `golf_l1_validation` on PostgreSQL 17.11. Direct reads confirmed **32 successful
+  migrations**, eight seeded players and five rounds.
+- `git diff --check`; the changed production module has 127 substantive lines
+  excluding tests, comments and blank lines.
 
-The three M2 Chrome scenarios passed: direct-card 401, player-history 403 and
-round-results 404, each with a real native SSE connection verified OPEN and no
-error or reconnect during denial. They cover preceding transient 500 retention,
-post-denial 500/retry suppression, erased names/links and successful recovery.
-The first test iterations corrected endpoint URLs and waited for the real stream
-to open after its initial keepalive; final assertions preserve the healthy-stream
-requirement. Checks and inspected screenshots cover 320x600, 390x844 and 1280x900,
-long content, no horizontal overflow and at least 44px usable controls.
+Source and documentation reviews found no remaining issues.
+Evidence logs: `/tmp/l1-red.log`, `/tmp/l1-green.log`, `/tmp/l1-release.log`,
+`/tmp/l1-fmt.log`, `/tmp/l1-backend.log`, `/tmp/l1-clippy.log`,
+`/tmp/l1-database.log`, `/tmp/l1-migrate.log` and `/tmp/l1-seed.log`.
+Logs are disposable; the committed tests preserve the regression proof.
 
-The existing 44-case Chrome matrix initially passed. The final frozen-source run
-passed **43/44**: the existing offline/frozen-page return test timed out waiting
-five seconds for its read-only state. The unchanged exact test then passed
-**3/3 isolated repeats**. This is recorded as an intermittent validation limitation,
-not a clean final sweep. Review traced that fixture to `/score`, where the changed
-M2 result components do not execute. Overlap between its online refresh and later
-page-return event is a plausible existing ordering race, not a proven cause.
-A separate follow-up is queued; no lifecycle code or assertion was weakened.
+## Scope and limits
 
-Browser fixtures use the current local API and a fresh isolated PostgreSQL 17.11
-database with all 32 existing migrations applied. No production data is used.
+The change is confined to the generic allocator and direct tests. Historical
+snapshots, team ownership, round locks, audits, persistence schemas and API/UI
+contracts are unchanged. Arbitrary-i32 net-score subtraction is a separate
+arithmetic boundary and was not broadened by this repair; production snapshots
+remain i16. No claim is made that all scoring arithmetic accepts arbitrary i32
+inputs.
 
-Evidence logs are disposable local files: `/tmp/m2-red.log`,
-`/tmp/m2-focus-final.log`, `/tmp/m2-test.log`, `/tmp/m2-types.log`,
-`/tmp/m2-lint.log`, `/tmp/m2-build.log`, `/tmp/m2-browser4.log` and
-`/tmp/m2-final-regression-browser.log`, `/tmp/m2-regression-browser.log` and
-`/tmp/m2-return-repeat.log`. Screenshots use
-`/tmp/golf-offline-m2-{denied,recovered}-{320,390,1280}.png`.
-Committed tests preserve the regression scenarios.
+Frontend tests, browser layout checks and production deployment were not rerun:
+there is no frontend or user-facing contract change, and the exhaustive snapshot
+comparison preserves current allocations. Backend/PostgreSQL format regressions
+exercise affected score projections and lifecycle behavior.
 
-Backend, PostgreSQL test/seed and production-deployment ladders were not rerun:
-backend contracts, migrations and deployment sources are unchanged. The API was
-built from the current checkout and existing migrations were applied for browser
-validation. Frontend checks and actual API/browser evidence validate this scope.
+L2 (format-specific course errors), L3 (match-only tournament selection), the
+intermittent frozen-page validation follow-up and later performance/security work
+remain queued in [PLANS.md](PLANS.md).
 
-## Remaining work
-
-L1 (signed-minimum allocator), L2 (format-specific course errors) and L3
-(match-only tournament selection) remain separate candidates in
-[PLANS.md](PLANS.md). Performance measurement and the wider security review
-remain later work.
-
-**READY WITH KNOWN LIMITATIONS for M2.** Source and documentation review,
-frontend checks and new privacy scenarios passed. The intermittent existing
-frozen-page return check, conservative cache clearing and existing bundle warning
-are recorded above. This is not a broader application-security certification.
+**READY for L1.** The bounded allocator repair, regression proof, debug/release
+parity, affected validation ladders and documentation are complete.

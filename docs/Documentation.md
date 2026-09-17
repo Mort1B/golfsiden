@@ -187,6 +187,11 @@ signed integer `handicap_strokes`. Positive values are strokes received; negativ
 values are strokes given back. Allocation is available before a score exists and
 uses the same preserved player/team playing handicap and stroke index as net
 scoring. A restricted nine-hole view still uses the full 18-hole round allocation.
+Extra received strokes are assigned from the lowest stroke index upward;
+plus-handicap strokes are given back from the highest index downward. Across
+the configured course, allocated strokes sum to the preserved Playing Handicap.
+The internal allocator also handles the signed 32-bit minimum safely; this does
+not broaden accepted handicap inputs or change stored handicap snapshots.
 Deploy the updated backend before or alongside this frontend: the runtime decoder
 rejects older scorecard responses that omit the field. No migration is required.
 

@@ -104,10 +104,13 @@ pub fn handicap_strokes_for_hole(
         let remainder = playing_handicap % number_of_holes;
         Ok(base + i32::from(stroke_index <= remainder))
     } else {
-        let absolute = playing_handicap.unsigned_abs() as i32;
-        let base = absolute / number_of_holes;
-        let remainder = absolute % number_of_holes;
-        Ok(-(base + i32::from(stroke_index > number_of_holes - remainder)))
+        // i32::MIN's magnitude needs one more bit than a positive i32.
+        let absolute = i64::from(playing_handicap).abs();
+        let holes = i64::from(number_of_holes);
+        let base = absolute / holes;
+        let remainder = absolute % holes;
+        let strokes = -(base + i64::from(i64::from(stroke_index) > holes - remainder));
+        i32::try_from(strokes).map_err(|_| ScoringError::ArithmeticOverflow)
     }
 }
 
@@ -198,6 +201,119 @@ mod tests {
         assert_eq!(handicap_strokes_for_hole(20, 3, 18), Ok(1));
         assert_eq!(hole_net_score(6, 20, 1, 18), Ok(4));
         assert_eq!(handicap_strokes_for_hole(-2, 18, 18), Ok(-1));
+    }
+
+    #[test]
+    fn handicap_allocation_signed_minimum_is_exact() {
+        assert_eq!(handicap_strokes_for_hole(i32::MIN, 1, 1), Ok(i32::MIN));
+        assert_eq!(handicap_strokes_for_hole(i32::MIN, 1, 9), Ok(-238_609_294));
+        assert_eq!(handicap_strokes_for_hole(i32::MIN, 8, 9), Ok(-238_609_295));
+        assert_eq!(
+            handicap_strokes_for_hole(i32::MIN, 18, 18),
+            Ok(-119_304_648)
+        );
+        assert_eq!(
+            handicap_strokes_for_hole(i32::MIN, 16, 18),
+            Ok(-119_304_647)
+        );
+    }
+
+    #[test]
+    fn handicap_allocation_preserves_signed_extreme_totals_and_order() {
+        for handicap in [
+            i32::MIN,
+            i32::MIN + 1,
+            -37,
+            -20,
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            20,
+            37,
+            i32::MAX - 1,
+            i32::MAX,
+        ] {
+            for holes in [1, 9, 18] {
+                let strokes: Vec<i32> = (1..=holes)
+                    .map(|index| handicap_strokes_for_hole(handicap, index, holes).unwrap())
+                    .collect();
+                assert_eq!(
+                    strokes.iter().map(|&value| i64::from(value)).sum::<i64>(),
+                    i64::from(handicap)
+                );
+                assert!(strokes.iter().all(|&value| if handicap < 0 {
+                    value <= 0
+                } else {
+                    value >= 0
+                }));
+                // Positive extras go to low indexes; negative extras to high
+                // indexes. Both produce a nonincreasing allocation sequence.
+                assert!(strokes.windows(2).all(|pair| pair[0] >= pair[1]));
+                let spread = i64::from(*strokes.iter().max().unwrap())
+                    - i64::from(*strokes.iter().min().unwrap());
+                assert!(spread <= 1);
+            }
+        }
+        assert_eq!(handicap_strokes_for_hole(i32::MAX, 1, 1), Ok(i32::MAX));
+        assert_eq!(handicap_strokes_for_hole(i32::MAX, 1, 18), Ok(119_304_648));
+        assert_eq!(handicap_strokes_for_hole(i32::MAX, 2, 18), Ok(119_304_647));
+    }
+
+    #[test]
+    fn handicap_allocation_preserves_every_current_snapshot() {
+        // Reference the prior valid i16 policy for every stored handicap and
+        // every hole, rather than changing snapshot inputs to suit the repair.
+        for handicap in i32::from(i16::MIN)..=i32::from(i16::MAX) {
+            for holes in [1, 9, 18] {
+                let magnitude = handicap.abs();
+                let mut total = 0_i64;
+                for index in 1..=holes {
+                    let extra = if handicap < 0 {
+                        index > holes - magnitude % holes
+                    } else {
+                        index <= magnitude % holes
+                    };
+                    let expected = handicap.signum() * (magnitude / holes + i32::from(extra));
+                    let actual = handicap_strokes_for_hole(handicap, index, holes).unwrap();
+                    assert_eq!(actual, expected);
+                    total += i64::from(actual);
+                }
+                assert_eq!(total, i64::from(handicap));
+            }
+        }
+    }
+
+    #[test]
+    fn handicap_allocation_validates_holes_before_arithmetic() {
+        for handicap in [i32::MIN, 0, i32::MAX] {
+            for (index, holes) in [
+                (1, i32::MIN),
+                (1, -1),
+                (1, 0),
+                (0, 18),
+                (-1, 18),
+                (i32::MIN, 18),
+                (19, 18),
+                (i32::MAX, 18),
+            ] {
+                assert_eq!(
+                    handicap_strokes_for_hole(handicap, index, holes),
+                    Err(ScoringError::InvalidHole)
+                );
+            }
+        }
+        // Large valid hole counts must not overflow the index threshold either.
+        assert_eq!(handicap_strokes_for_hole(i32::MIN, 1, i32::MAX), Ok(-1));
+        assert_eq!(
+            handicap_strokes_for_hole(i32::MIN, i32::MAX, i32::MAX),
+            Ok(-2)
+        );
+        assert_eq!(
+            handicap_strokes_for_hole(i32::MAX, i32::MAX, i32::MAX),
+            Ok(1)
+        );
     }
 
     #[test]

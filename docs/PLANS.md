@@ -5,37 +5,19 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The next candidate is **L1 — make the generic allocator safe at the signed
-minimum**, awaiting a new implementation instruction. L2/L3 remain queued.
+None. The next candidate is **L2 — report the correct 18-hole course requirement**,
+awaiting a new implementation instruction. L3 and later follow-ups remain queued.
 
 ## Priorities
 
 | Priority | ID | Finding | Repair order |
 | --- | --- | --- | --- |
-| Low | L1 | Generic handicap allocator mishandles `i32::MIN` | 1 |
-| Low | L2 | Course selection reports an incorrect or generic format error | 2 |
-| Low | L3 | Match-only results remove tournament selection | 3 |
+| Low | L2 | Course selection reports an incorrect or generic format error | 1 |
+| Low | L3 | Match-only results remove tournament selection | 2 |
 
 Low means a bounded domain edge outside current snapshot inputs or recoverable
 UX/error quality. Severity reflects demonstrated impact, not the amount of code
 to change.
-
-## Low — L1: make the generic allocator safe at the signed minimum
-
-**Evidence:** `backend/src/domain/scoring.rs:107` casts `unsigned_abs()` back to
-i32. For `i32::MIN`, 18 allocations sum to +2,147,483,646 instead of −2,147,483,648;
-one-hole debug allocation panics. All 65,536 i16 handicaps conserved their expected
-18-hole sum in the review probe, and production snapshots use i16. This is a
-latent helper-contract defect, not an observed current score-result failure.
-
-**Scope and repair:** retain a widened/unsigned magnitude until the signed result
-is representable, or return a typed overflow error. Preserve allocation order and
-legacy signed-rounding behavior. Do not change historical snapshots or broaden
-this into general handicap-policy work.
-**Validation:** test i32 minimum/maximum, ordinary plus handicaps, 1/9/18-hole
-allocation, invalid arguments, sum conservation and debug/release parity. Run the
-backend ladder and relevant scoring-format regressions.
-**Stop:** allocator boundary and direct tests only.
 
 ## Low — L2: report the correct 18-hole course requirement
 

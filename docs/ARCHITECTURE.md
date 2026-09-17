@@ -317,6 +317,12 @@ and reapplies runtime grants before the API is started.
   derives and freezes each eligible owner's Course and Playing Handicap from
   that selected tee; net scoring allocates received strokes from the preserved
   Playing Handicap through the revision's unique hole stroke indexes.
+  The generic hole allocator accepts the full signed i32 handicap range and
+  validates a positive hole count and stroke index before arithmetic. Negative
+  magnitudes stay in i64 until the signed per-hole result is checked back to i32,
+  including i32::MIN on one hole. Positive remainder strokes go to low indexes;
+  negative remainder strokes go to high indexes. The complete allocation sums
+  to the original signed handicap; current i16 snapshots remain unchanged.
 - Draft-round course configuration is a conditional `PUT` with the current
   round `updated_at` as a required optimistic token. A short repeatable-read
   preflight proves exact tournament-admin scope and draft state before request
