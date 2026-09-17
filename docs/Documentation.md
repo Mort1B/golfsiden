@@ -509,8 +509,15 @@ silently for an unrelated navigation click.
 While live progress is being recovered, an already loaded writable card remains
 available for local hole entry. The owner temporarily reads **Valgt scorekort**,
 and completion-dependent selectors wait for fresh metadata. The browser does not
-restore cleared progress or hidden result data. Actual access denial and round
-locking remove write access; retained device edits cannot bypass those rules.
+restore cleared progress or hidden result data. Fresh access-denial or locked-round
+metadata removes write access; retained device edits cannot bypass those rules.
+
+Known return-refresh limitation: if a page freezes while a previous reconnect
+refresh is still pending, a subsequent return can share that older refresh
+without requesting authority again. A lock that happened between its authority
+reads and the return may therefore leave cached scoring controls visible. This
+client freshness defect is queued for repair; the investigation did not exercise
+or establish a bypass of server-side mutation checks.
 
 **Lokale scoreendringer** shows a compact count/status disclosure on Score and a
 link from other private workspace pages when edits need attention. It remains

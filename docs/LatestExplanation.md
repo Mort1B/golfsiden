@@ -1,62 +1,78 @@
-# Keep tournament switching available for match-only results
+# Reproduce the overlapping page-return freshness defect
 
-L3 restores the **Turnering** selector on global **Resultater** when the selected
-trip contains only match play. Previously that branch returned the match-results
-page before rendering the shared controls, forcing a user with several tournaments
-to leave results to switch trips.
+The offline/frozen-page investigation reproduced the intermittent failure and
+identified a production refresh-ordering gap, now queued as **M3 — Medium**.
+The approved investigation stops before production lifecycle changes. No runtime
+source or original browser assertion was changed.
 
-The existing native tournament select is now a shared component. The global
-match-only branch supplies it to `MatchResults` through an optional composition
-slot, visible above populated, loading, error and empty match results. Dedicated
-tournament match/history routes retain their existing navigation and mixed trips
-retain the link back to gross/net overall results.
+The original test assumes that an enabled score button proves reconnect recovery
+has finished. It does not: cached scoring controls deliberately remain available
+for local entry while private reads refresh. However, simply waiting longer in
+that test would exclude a valid overlap and hide the discovered production case.
 
-Switching uses the existing leaderboard URL builder, clearing the old round and
-player selection. Gross/net routes continue to canonicalize with replacement,
-so Back restores the previous match URL, including a private player filter.
-The match-only branch remains before that canonicalization and still avoids
-inapplicable gross/net queries. No query keys, authorization, scoring rules,
-backend contracts or database schema changed.
+`refreshOnReturn` in `frontend/src/api/liveInvalidation.ts` keeps one pending
+promise per user/client, covering session validation and all private-query reads.
+A later return reuses it without scheduling a subsequent pass. The reproducer
+establishes this ordering:
 
-For example, an account viewing one player's match history through `/leaderboard`
-can choose a mixed trip, inspect its round or overall results, and use Back to
-return to the same player's match results. Selecting the match-only trip anew
-shows its full permitted table without carrying over another trip's player ID.
+1. Reconnect reads return an open round, open completion state and writable owner.
+   Their response bodies are checked and their transfers have completed.
+2. A scoring response captured before the lock remains held. Cached input is
+   enabled and the live connection has recovered.
+3. Chrome freezes the page; the fixture changes the round/access state to locked.
+4. On activation, persisted `pageshow` shares the earlier pending refresh.
+   Authentication-read count remains unchanged, and no new authority reads occur.
+5. The older scoring response is released. The expected read-only notice does
+   not appear; the prior editable view remains.
 
-## Validation
+This proves a client freshness defect. The fixture does not attempt a score
+mutation, so this investigation establishes neither unauthorized server writes
+nor lost durable drafts. A healthy live stream need not reopen on return and
+therefore cannot be relied on to trigger another refresh.
 
-- Regression proof: four new tests failed against the original selector-free
-  branch; the dedicated-route control passed. All five now pass, along with all
-  nine existing private-result regression tests. The tests cover switching,
-  canonicalization/history, player filtering, loading/error/empty availability,
-  match-only query suppression and the unchanged dedicated mixed-results link.
-- Full frontend suite: **613 tests across 107 files passed**. Strict type checking,
-  ESLint and the production build passed. The existing 500 kB bundle-size warning
-  remains in the performance queue.
-- Real Chrome: **two scenarios passed**, each across 320×600, 390×844 and
-  1280×900. A real account belongs to match-only and mixed tournaments. Checks
-  cover direct entry, switching both ways, Back/Forward, previous round/player
-  removal, private-player restoration, both result scopes, dedicated mixed links,
-  long names, no horizontal overflow, and reachable 44-pixel tournament controls.
-  The second scenario verifies switching during loading, error and empty states.
-  Screenshots were inspected. No unexpected console/network failures or
-  match-only gross/net requests were observed.
-- The browser loading/error/empty states use intercepted match-table responses;
-  normal navigation, membership, rounds and results use the disposable real API.
-  Initial test-only failures were corrected: Testing Library role-option types,
-  exact existing overall heading names and awaited delayed-route cleanup.
-- Read-only strategy and final source review found no issues. `git diff --check`
-  passed; all affected production files remain below the 400-line limit.
-- Backend/PostgreSQL ladders were not rerun: this step changes frontend composition
-  only, with no backend or migration edits. Real browser flows used the existing
-  disposable local API/database. No production environment was modified.
+## Retained regression and evidence
 
-Evidence logs: `/tmp/l3-red.log`, `/tmp/l3-green.log`,
-`/tmp/l3-frontend-full.log`, `/tmp/l3-navigation-final.log`,
-`/tmp/l3-typecheck.log`, `/tmp/l3-lint.log`, `/tmp/l3-build.log`,
-`/tmp/l3-browser.log` (initial test failures) and `/tmp/l3-browser-final.log`.
-Screenshots use `/tmp/l3-<state>-<width>.png`.
+`frontend/e2e/returnOrdering.browser.ts` is an opt-in regression test with real
+Chrome freeze/activation, the existing mocked workspace and a native local SSE
+server. It retains the expected read-only notice, disappearance of edit controls
+and selected-hole assertions. It captures only endpoint labels and fixture-state
+markers, attaches the request ordering, releases held responses and detaches CDP
+in cleanup. Response-time fixture state is distinguished from captured authority.
 
-**READY.** L3 is complete. The next candidate is the existing intermittent
-frozen-page/offline-return validation investigation. Performance measurements
-and the wider security review remain later work.
+Run against the local Vite frontend:
+
+```bash
+cd frontend
+GOLF_RETURN_ORDERING_REPRO=1 npm run test:browser:lifecycle -- returnOrdering.browser.ts
+```
+
+The test currently fails and must turn green in M3; it is not marked as an
+expected success. Without that explicit flag, only this new reproducer is skipped.
+The original intermittent case remains enabled and unchanged.
+
+- Five unchanged baseline repeats: **four passed, one failed** at the read-only
+  assertion (`/tmp/return-baseline.log`).
+- Initial controlled trace reproduced the same missing refresh
+  (`/tmp/return-ordering-proof.log`). After adding explicit completed-authority
+  checks and cleanup, **all three repetitions failed at the read-only assertion**
+  (`/tmp/return-ordering-final.log`). This is unresolved regression evidence.
+- Complete existing return suite: **eight passed**, with the opt-in reproducer
+  skipped (`/tmp/return-suite.log`). These passing timings do not resolve M3.
+  Existing checks exercise 320/390/1280-pixel layouts, native stream restart,
+  delayed/failed recovery, retained device edits, session expiry, restricted or
+  revoked reads, history/reload selection and the original frozen-page case.
+- Full frontend ladder: **613 tests across 107 files passed**, strict type checking,
+  lint and production build passed. Logs: `/tmp/return-frontend-full.log`,
+  `/tmp/return-typecheck.log`, `/tmp/return-lint.log`, `/tmp/return-build.log`.
+  The existing bundle-size warning remains queued separately.
+- Read-only review confirmed the ordering, Medium severity, diagnostic scope and
+  retained assertions. `git diff --check` passed. Backend/PostgreSQL checks were
+  not rerun because no backend/schema/runtime code changed; no production service
+  was touched. The synthetic lock and held response isolate the client ordering,
+  rather than claiming a real database lock or server-mutation test.
+
+**Investigation complete; M3 production repair NOT READY.** The next approved
+candidate must preserve identity checks and bounded concurrent coalescing while
+ensuring the second return receives fresh authority after pending work. The plan
+records its scope, invariants and validation; performance and security work remain
+later in the queue.

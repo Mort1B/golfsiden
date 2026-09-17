@@ -7,26 +7,50 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 None. The next bounded candidate below awaits an implementation instruction.
 
-## Next candidate — investigate the intermittent offline-return browser check
+## Priorities
 
-**Evidence:** the existing `returnLoading.browser.ts` offline/frozen-page return
-case timed out before read-only display in one full run; three unchanged isolated
-repeats passed. Its cached enabled-input assertion may precede completion of the
-online refresh, allowing a subsequent return to coalesce with it. That cause is
-not yet confirmed.
+| Priority | ID | Finding | Repair order |
+| --- | --- | --- | --- |
+| Medium | M3 | A page return can be lost behind an unfinished earlier refresh | 1 |
 
-**Goal and scope:** reproduce and identify the ordering behind this specific
-failure. Inspect lifecycle events, in-flight reads and the test's freeze/return
-barriers. If evidence proves a test synchronization issue, repair that barrier
-without weakening the user-visible assertions. Record a separately bounded repair
-if a production lifecycle defect is found.
-**Invariants:** preserve pending verification, read-only behavior before fresh
-success, offline draft durability, query deduplication and private-data clearing.
-**Validation:** capture the failing ordering where reproducible; rerun the focused
-case and affected return/lifecycle browser coverage, plus the frontend ladder for
-any test changes. Record exact evidence and any remaining reproduction limit.
-**Stop:** this one validation investigation and any demonstrated test-only repair;
-no speculative production lifecycle changes or broader performance work.
+## Medium — M3: refresh authority after overlapping page returns
+
+**Evidence:** `frontend/src/api/liveInvalidation.ts:11-18` returns the pending
+per-user promise for another `resume`, with no later refresh. An enabled score
+button can still represent cached authority. The original frozen-page browser
+case failed once in five unchanged repeats. The controlled
+`returnOrdering.browser.ts` reproducer failed three of three runs: rounds,
+completion and score-access responses completed as open; a scoring read stayed
+pending; the page froze, the fixture locked the round, and persisted `pageshow`
+shared the old refresh. Releasing the captured scoring response caused no fresh
+authority requests, leaving editable controls instead of the read-only card.
+No unauthorized server write or lost durable draft was demonstrated.
+
+**Goal and scope:** ensure a distinct return arriving during an earlier refresh
+results in a fresh session/authority pass after that pending work. Keep this
+inside the shared return-invalidation boundary and focused lifecycle tests.
+Preserve bounded coalescing of concurrent signals and a healthy EventSource;
+avoid an unbounded refresh loop or new polling.
+**Invariants:** revalidate identity before private reads; never revive a previous
+account's data; preserve private projection clearing, device drafts, pending
+verification, ordinary score-event invalidation and server mutation authority.
+Retain local entry during pending recovery, with delivery/confirmation restrictions
+unchanged. Once return verification settles, the editable view must reflect fresh
+authority rather than responses captured before the second return.
+**Validation:** turn the opt-in reproducer green without adding a pre-freeze wait
+or weakening its read-only/no-edit/hole-selection assertions. Cover overlapping
+return ordering, concurrent deduplication, expiry/account switch and failed reads
+in unit tests. Repeat the original frozen-page case and run the complete return
+browser suite plus the frontend ladder, with mobile/desktop evidence.
+**Stop:** this return-refresh defect only; no queue, scoring, provider, backend,
+performance or wider security redesign.
+
+Reproducer command (currently expected to fail):
+
+```bash
+cd frontend
+GOLF_RETURN_ORDERING_REPRO=1 npm run test:browser:lifecycle -- returnOrdering.browser.ts
+```
 
 ## Later queue
 

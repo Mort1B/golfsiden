@@ -585,6 +585,12 @@ and reapplies runtime grants before the API is started.
   before private-query refresh, and checks the resulting identity again. Ordinary
   SSE events still do not invalidate authentication. No timer or polling loop is
   introduced, and a return never itself grants score access.
+  Current limitation: a second return while that full refresh is pending shares
+  its existing promise without scheduling a later pass. If authority responses
+  were captured before a freeze but another private read remains pending, a
+  persisted return after a lock can retain the old editable projection. The
+  opt-in `returnOrdering.browser.ts` reproduces this ordering; the bounded
+  trailing-refresh repair is tracked in `PLANS.md`.
 - Target-bearing frontend DTOs are decoded against the requested tournament,
   round, player, owner, metric, invitation predecessor, and course-configuration
   identities before cache insertion. Roster, round, team, pairing, invitation,
