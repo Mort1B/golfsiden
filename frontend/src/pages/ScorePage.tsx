@@ -1,3 +1,5 @@
+import { useScoreDrafts } from '../features/scoring/recovery/context'
+import { ScoreRecovery } from '../features/scoring/recovery/ScoreRecovery'
 import { MatchRound } from '../features/matchPlay/MatchRound'
 import { StablefordExperience } from '../features/scoring/stableford/StablefordExperience'
 import { FourBallExperience } from '../features/scoring/fourBall/FourBallExperience'
@@ -24,6 +26,7 @@ export function ScorePage() {
 }
 
 function ScoreWorkspace({ resume }: { resume: boolean }) {
+  const { drafts } = useScoreDrafts()
   const [searchParams, setSearchParams] = useSearchParams()
   const { tournamentsQuery, tournaments, tournament, roundsQuery, eligibleRounds, round,
     completionQuery, accessQuery, progressOwners, writableOwners, owner, effectiveRoundStatus,
@@ -37,6 +40,13 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
   const navigate = (selection: ScoreSelection, action: ScoreHistoryAction) => {
     setSearchParams(scoringSearch(selection), { replace: replaceScoreHistory(action) })
   }
+
+  if (drafts.length > 0 && (drafts.some(draft => draft.recovery) || effectiveRoundStatus === 'locked'
+    || deniedError || terminalScoringError || tournamentsQuery.error || roundsQuery.error
+    || completionQuery.error || accessQuery.error || cardQuery.error || !cardQuery.data || !owner || !canWrite
+    || drafts.some(draft => draft.target.roundId !== round?.id || draft.target.tournamentId !== tournament?.id
+      || (draft.kind === 'four_ball' ? draft.target.sideId : draft.target.owner.id) !== owner.owner.id
+      || (draft.kind === 'four_ball' ? 'team' : draft.target.owner.type) !== owner.owner.type || draft.target.holeId !== hole?.hole_id))) return <ScoreRecovery />
 
   if (round?.scoring_format === 'singles_match_play') return <section className="page match-page"><h1>Score · matchspill</h1><label>Velg turnering<select value={tournament?.id ?? ''} onChange={e => setSearchParams({ tournament: e.target.value })}>{tournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label><label>Velg runde<select value={round.id} onChange={e => setSearchParams({ tournament: round.tournament_id, round: e.target.value })}>{eligibleRounds.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></label><MatchRound roundId={round.id} /></section>
 

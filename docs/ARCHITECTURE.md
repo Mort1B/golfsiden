@@ -694,6 +694,21 @@ and reapplies runtime grants before the API is started.
   An acknowledgment bases a successor on the predecessor's applied revision,
   never on a newly observed unrelated score. Canonical card refetches supply
   current server values; acknowledgment data never replaces a scorecard.
+- Failed or in-flight legacy, four-ball and Stableford device writes retain
+  transient intent in an account-owned store above the CSRF-keyed queue runtime.
+  It stores target IDs, hole number, stable partner slot, numeric/pickup input and
+  the original conditional expectation/observed queue head, never canonical
+  names, cards, handicaps or results. Scorer unmount and same-account CSRF rotation
+  preserve it; account change, authentication teardown and full reload end it.
+  Persistence errors therefore remain explicitly nondurable and navigation guarded.
+- Loss of write access, locking, failed metadata or a changed target replaces the
+  scorer with local-only recovery. Recovery is sticky until explicit discard or
+  durable retention. Entering recovery aborts an in-flight ordinary IndexedDB
+  transaction before commit. A retry can retain a device copy offline in the
+  existing conflict phase, requiring fresh authorized canonical review before
+  delivery. It cannot replace an existing queued head or bypass a confirmation
+  lease. Ordinary retries preserve their original expectation and reject an
+  unrelated observed head; later local input cannot be erased by an older save.
 - The private workspace queue runner is fenced to current account/CSRF identity,
   retries with bounded requests/backoff and wakes on reconnect/page return.
   Logout pauses delivery while preserving same-account pending edits. Other
@@ -701,8 +716,9 @@ and reapplies runtime grants before the API is started.
   score payloads; IndexedDB transactions arbitrate claims and exact-generation
   discard/resolution. Conflict review fetches an authorized current score and
   requires an explicit choice; choosing local creates a new conditional operation.
-- Navigation guards cover uncommitted device writes and confirmation, while
-  durable queued edits survive navigation/reload. Confirmation stays online-only,
+- Navigation guards register independently for uncommitted device writes and
+  confirmation, so one consumer unmount cannot release another consumer. Durable
+  queued edits survive navigation/reload. Confirmation stays online-only,
   with an empty-card-queue lease and fresh authorized read before the existing
   server-current-card POST. No service worker, full-card persistence, cold offline
   app shell, queued confirmation or background synchronization is introduced.

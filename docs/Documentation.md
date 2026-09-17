@@ -502,6 +502,26 @@ You can then move between holes without waiting for the server. Pending values
 are distinct from server-confirmed score/net values; storage failure keeps an
 explicit unsaved error and navigation guard instead of claiming durability.
 
+If a round locks, scoring access disappears or required metadata fails while a
+legacy, four-ball or Stableford edit is still unsaved, **Ta vare på ulagrede
+scorer** preserves the local input. It shows only the entered numeric score or
+pickup and its hole/card slot, without retaining private server names, handicap
+values or results. Both four-ball partners keep separate, stable slots. Navigation,
+logout and page unloading remain guarded while a nondurable edit exists.
+
+**Lagre lokal kopi** can retry device persistence offline. After this recovery
+transition, a successful copy requires **Sammenlign scorer** and fresh authorized
+server data before an explicit delivery choice; it never starts automatic replay.
+The original score expectation is preserved. A different queued edit or an active
+confirmation in another tab prevents replacement. **Forkast ulagret endring**
+explicitly removes only the unsaved input.
+
+Unsaved recovery survives scoring-screen replacement and same-account session
+refresh. It is still memory-only until device persistence succeeds: forcing a
+reload, authentication teardown or changing account ends that transient copy.
+Another account cannot see it. The unload warning does not guarantee recovery
+after the browser closes; save a local copy before leaving when possible.
+
 Delivery runs while the private workspace is open, with bounded requests,
 automatic retries/backoff, and reconnect/tab-return wakeups. Several tabs coordinate
 through local transactions and leases. A persisted request is immutable; rapid

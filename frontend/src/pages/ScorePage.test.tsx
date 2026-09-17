@@ -253,3 +253,38 @@ it('clears identity selections synchronously without remounting onboarding recei
   view.rerender(tree(auth))
   expect(screen.getByRole('status').textContent).toBe('empty')
 })
+
+
+describe('H1 nondurable recovery', () => {
+  it.each(['lock', '403', 'metadata', 'access-revoked'] as const)('retains local 5 after %s replaces the scorer', async transition => {
+    vi.mocked(api.scorecardScoring).mockResolvedValue(card([1]))
+    vi.spyOn(queueDatabase, 'enqueue').mockRejectedValue(new Error('Device storage unavailable'))
+    const { client, router } = mount(explicit(1))
+    await expectHole(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Legg til ett slag' }))
+    await screen.findByText('Device storage unavailable')
+    if (transition === 'lock') {
+      vi.mocked(api.rounds).mockResolvedValue([{ ...round, status: 'locked' }])
+      vi.mocked(api.completionValidation).mockResolvedValue(completion('locked'))
+      vi.spyOn(api, 'scorecardRead').mockRejectedValue(new ApiHttpError(403, 'forbidden', 'Denied'))
+    } else if (transition === 'access-revoked') {
+      vi.mocked(api.scoreAccess).mockResolvedValue({ round_id: round.id, writable_owners: [] })
+      vi.spyOn(api, 'scorecardRead').mockResolvedValue({ ...card([1]), projection: 'read', visible_hole_count: 18, visibility: { mode: 'full' } })
+    } else if (transition === '403') {
+      vi.mocked(api.scorecardScoring).mockRejectedValue(new ApiHttpError(403, 'forbidden', 'Denied'))
+      vi.mocked(api.scoreAccess).mockRejectedValue(new ApiHttpError(403, 'forbidden', 'Denied'))
+    } else {
+      vi.mocked(api.completionValidation).mockRejectedValue(new Error('Metadata unavailable'))
+      await act(() => handleTournamentLiveSignal(client, session.user_id, 'error'))
+    }
+    await act(async () => { await client.invalidateQueries() })
+    const recovery = await screen.findByRole('region', { name: 'Ulagrede scoreendringer' })
+    expect(recovery.textContent).toContain('5 slag')
+    expect(screen.queryByText('Spiller med et langt navn')).toBeNull()
+    await act(() => router.navigate('/elsewhere'))
+    expect(router.state.location.pathname).toBe('/score')
+    fireEvent.click(screen.getByRole('button', { name: 'Forkast ulagret endring' }))
+    await act(() => router.navigate('/elsewhere'))
+    expect(router.state.location.pathname).toBe('/elsewhere')
+  })
+})

@@ -1,23 +1,38 @@
 import { expect, type Page } from '@playwright/test'
-import { decodeObject } from '../src/api/decoder'
+import { decodeObject, decodeString, decodeUuid } from '../src/api/decoder'
 import { decodeAuthSession } from '../src/api/auth'
 import { decodeRound, decodeTournament, decodeTournamentRounds } from '../src/api/tournaments/decoders'
 import { decodeScoringScorecard } from '../src/api/scorecards'
 
-export async function offlineFixture(page: Page) {
+export async function offlineFixture(page: Page, format: 'individual_stroke_play' | 'team_scramble' | 'two_player_foursomes' = 'individual_stroke_play') {
   const stamp = `${Date.now()}_${Math.floor(Math.random() * 10000)}`
   const username = `offline_${stamp}`; const password = 'offline-browser-password'
   const day = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
   const response = await page.request.post('/api/onboarding/tournaments', { data: {
     creator: { account: { username, password }, player: { display_name: 'Spiller med et svært langt navn som fører score uten forbindelse', handicap_index: 12 } },
     tournament: { name: `Golfturnering ${stamp}`, description: '', start_date: day, end_date: day, counted_rounds: 1, mandatory_round_number: null },
-    rounds: [{ round_number: 1, name: 'Runden med et langt navn', round_date: day, scoring_format: 'individual_stroke_play' }],
+    rounds: [{ round_number: 1, name: 'Runden med et langt navn', round_date: day, scoring_format: format }],
   } })
   expect(response.status()).toBe(201)
   const body = decodeObject(await response.json(), 'onboarding')
   const tournament = decodeTournament(body.tournament); const auth = decodeAuthSession(body.session)
   const rounds = decodeTournamentRounds(await (await page.request.get(`/api/tournaments/${tournament.id}/rounds`)).json(), tournament.id)
   const first = rounds[0]; if (!first || !auth.player_id) throw new Error('Missing fixture round/player')
+  const members = [{ player_id: auth.player_id }]
+  const teamId = crypto.randomUUID()
+  if (format !== 'individual_stroke_play') {
+    const browser = page.context().browser(); if (!browser) throw new Error('Browser missing')
+    const context = await browser.newContext()
+    try {
+      const invitation = decodeObject(body.invitation, 'invitation')
+      const result = await context.request.post(`http://127.0.0.1:5173/api/invitations/${decodeUuid(invitation.id, 'id')}/register`, { data: {
+        token: decodeString(invitation.token, 'token'), account: { username: `teammate_${stamp}`, password },
+        player: { display_name: 'Partner med et langt navn', handicap_index: 10 },
+      } })
+      expect(result.status()).toBe(201)
+      members.push({ player_id: decodeUuid(decodeObject(await result.json(), 'registration').player_id, 'player') })
+    } finally { await context.close() }
+  }
   async function mutate(path: string, data: unknown = {}, method = 'POST') {
     const result = await page.request.fetch(path, { method, data, headers: { 'x-csrf-token': auth.csrf_token } })
     expect(result.ok(), `Fixture mutation status ${result.status()}`).toBe(true)
@@ -27,12 +42,12 @@ export async function offlineFixture(page: Page) {
     expected_round_updated_at: first.updated_at, selection: { source: 'manual', course_name: 'Testbane', location: null,
       tee: { category: 'male', name: 'Gul', course_rating: 72, slope_rating: 113, holes: Array.from({ length: 18 }, (_, index) => ({ par: 4, stroke_index: index + 1, distance: null })) } },
   }, 'PUT')).json())
-  await mutate(`/api/rounds/${round.id}/pairings`, { expected_round_updated_at: round.updated_at, teams: [], flights: [{ id: crypto.randomUUID(), name: 'Flight 1', starting_hole: 1, tee_time: null, members: [{ player_id: auth.player_id }] }], legacy_conversions: [] }, 'PUT')
+  await mutate(`/api/rounds/${round.id}/pairings`, { expected_round_updated_at: round.updated_at, teams: format === 'individual_stroke_play' ? [] : [{ id: teamId, name: 'Lag med et langt navn', members, schedule_flight_id: null }], flights: [{ id: crypto.randomUUID(), name: 'Flight 1', starting_hole: 1, tee_time: null, members }], legacy_conversions: [] }, 'PUT')
   const fresh = decodeTournament(await (await page.request.get(`/api/tournaments/${tournament.id}`)).json())
   await mutate(`/api/tournaments/${tournament.id}/start`, { expected_tournament_updated_at: fresh.updated_at })
   await mutate(`/api/rounds/${round.id}/open`)
-  const owner = { type: 'player' as const, id: auth.player_id }
-  const read = async () => decodeScoringScorecard(await (await page.request.get(`/api/rounds/${round.id}/scorecards/player/${owner.id}/scoring`)).json(), round.id, owner)
+  const owner = format === 'individual_stroke_play' ? { type: 'player' as const, id: auth.player_id } : { type: 'team' as const, id: teamId }
+  const read = async () => decodeScoringScorecard(await (await page.request.get(`/api/rounds/${round.id}/scorecards/${owner.type}/${owner.id}/scoring`)).json(), round.id, owner)
   const card = await read()
   const save = async (number: number, gross_strokes: number) => {
     const hole = card.holes[number - 1]; if (!hole) throw new Error('Missing fixture hole')

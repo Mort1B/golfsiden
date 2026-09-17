@@ -24,10 +24,20 @@ function open(): Promise<IDBDatabase> {
     req.onblocked = () => reject(new Error(STORAGE_ERROR))
   })
 }
-async function transaction<T>(action: (pending: IDBObjectStore, confirmations: IDBObjectStore) => Promise<T>): Promise<T> {
+export interface PersistenceGuard {
+  expectedHead: string | null
+  written: (requestId: string) => void
+  allowed: () => boolean
+  subscribe: (listener: () => void) => () => void
+}
+async function transaction<T>(action: (pending: IDBObjectStore, confirmations: IDBObjectStore) => Promise<T>, guard?: PersistenceGuard): Promise<T> {
   const db = await open().catch(() => { throw new Error(STORAGE_ERROR) })
   try {
+    if (guard && !guard.allowed()) throw new Error(STORAGE_ERROR)
     const tx = db.transaction(['pending', 'confirmations'], 'readwrite')
+    const unsubscribe = guard?.subscribe(() => {
+      if (!guard.allowed()) { try { tx.abort() } catch { /* Already committed. */ } }
+    })
     const committed = new Promise<void>((resolve, reject) => {
       tx.oncomplete = () => resolve(); tx.onabort = () => reject(new Error(STORAGE_ERROR)); tx.onerror = () => reject(new Error(STORAGE_ERROR))
     })
@@ -39,7 +49,7 @@ async function transaction<T>(action: (pending: IDBObjectStore, confirmations: I
       try { tx.abort() } catch { /* Already completed/aborted. */ }
       await committed.catch(() => undefined)
       throw error
-    }
+    } finally { unsubscribe?.() }
   } catch (error) {
     if (error instanceof DOMException) throw new Error(STORAGE_ERROR)
     throw error
@@ -57,28 +67,46 @@ function write(store: IDBObjectStore, key: string, item: PendingScore | null): v
   if (item === null) store.delete(key); else store.put(item)
 }
 export const queueDatabase = {
+  retainForReview: (item: PendingScore): Promise<void> => transaction(async (pending, confirmations) => {
+    const lock = await confirmation(confirmations, item.cardKey)
+    if (lock && lock.until > Date.now()) throw new Error('Scorekortet bekreftes i en annen fane. Prøv igjen om litt.')
+    if (await get(pending, item.key)) throw new Error('En lagret endring finnes allerede for dette hullet. Se gjennom den før du prøver igjen.')
+    write(pending, item.key, { ...item, phase: 'conflict' })
+  }),
   list: (accountId: string): Promise<PendingScore[]> => transaction(async pending => {
     const values: unknown[] = await request(pending.index('account').getAll(accountId))
     return values.map(decodePending)
   }),
-  enqueue: (target: QueueTarget, desired: number, expected: ExpectedScore): Promise<void> => transaction(async (pending, confirmations) => {
+  enqueue: (target: QueueTarget, desired: number, expected: ExpectedScore, guard?: PersistenceGuard): Promise<void> => transaction(async (pending, confirmations) => {
     const lock = await confirmation(confirmations, cardKey(target))
     if (lock && lock.until > Date.now()) throw new Error('Scorekortet bekreftes i en annen fane. Prøv igjen om litt.')
     const key = queueKey(target)
-    write(pending, key, enqueue(await get(pending, key), target, desired, expected))
-  }),
-  enqueueFourBall: (target: FourBallTarget, desired: FourBallInput, expected: ExpectedScore): Promise<void> => transaction(async (pending, confirmations) => {
+    const current = await get(pending, key)
+    if (guard && current && current.head.request_id !== guard.expectedHead) throw new Error(STALE_ERROR)
+    const next = enqueue(current, target, desired, expected)
+    write(pending, key, next)
+    guard?.written(next.head.request_id)
+  }, guard),
+  enqueueFourBall: (target: FourBallTarget, desired: FourBallInput, expected: ExpectedScore, guard?: PersistenceGuard): Promise<void> => transaction(async (pending, confirmations) => {
     const lock = await confirmation(confirmations, cardKey(target))
     if (lock && lock.until > Date.now()) throw new Error('Scorekortet bekreftes i en annen fane. Prøv igjen om litt.')
     const key = queueKey(target)
-    write(pending, key, enqueueFourBall(await get(pending, key), target, desired, expected))
-  }),
-  enqueueStableford: (target: StablefordTarget, desired: FourBallInput, expected: ExpectedScore): Promise<void> => transaction(async (pending, confirmations) => {
+    const current = await get(pending, key)
+    if (guard && current && current.head.request_id !== guard.expectedHead) throw new Error(STALE_ERROR)
+    const next = enqueueFourBall(current, target, desired, expected)
+    write(pending, key, next)
+    guard?.written(next.head.request_id)
+  }, guard),
+  enqueueStableford: (target: StablefordTarget, desired: FourBallInput, expected: ExpectedScore, guard?: PersistenceGuard): Promise<void> => transaction(async (pending, confirmations) => {
     const lock = await confirmation(confirmations, cardKey(target))
     if (lock && lock.until > Date.now()) throw new Error('Scorekortet bekreftes i en annen fane. Prøv igjen om litt.')
     const key = queueKey(target)
-    write(pending, key, enqueueStableford(await get(pending, key), target, desired, expected))
-  }),
+    const current = await get(pending, key)
+    if (guard && current && current.head.request_id !== guard.expectedHead) throw new Error(STALE_ERROR)
+    const next = enqueueStableford(current, target, desired, expected)
+    write(pending, key, next)
+    guard?.written(next.head.request_id)
+  }, guard),
   claim: (key: string, leaseId: string): Promise<PendingScore | null> => transaction(async pending => {
     const item = await get(pending, key)
     if (!item || item.phase !== 'queued' || hasLease(item) || item.retryAt > Date.now()) return null

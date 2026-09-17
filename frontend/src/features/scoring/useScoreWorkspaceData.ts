@@ -92,7 +92,7 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
     retry: false,
   })
   const terminalScoringError = canWrite && cardQuery.error instanceof ApiHttpError
-    && (cardQuery.error.status === 401 || cardQuery.error.status === 403
+    && (cardQuery.error.status === 401 || cardQuery.error.status === 403 || cardQuery.error.status === 404
       || cardQuery.error.code === 'round_not_editable')
   const retainingScorer = recoveringOwner !== undefined && cardQuery.data?.projection === 'scoring'
     && !terminalScoringError && cardQuery.data.holes.some(item => item.hole_number === parseHoleNumber(searchParams.get('hole')))

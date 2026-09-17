@@ -49,7 +49,7 @@ function PendingRow({ item }: { item: PendingScore }) {
     owner: pendingOwner(item), holeNumber: item.holeNumber, view: 'hole' }).toString()}`
   return <li>
     <div className="pending-score-title"><Link to={href}>Hull {item.holeNumber} · {item.owner.type === 'team' ? 'lagkort' : 'spillerkort'}</Link><strong>Lokalt: {pendingLabel(item)}</strong></div>
-    <p role="status">{active ? 'Sender til serveren …' : item.phase === 'conflict' ? 'En annen score er lagret på serveren. Velg hvilken du vil beholde.'
+    <p role="status">{active ? 'Sender til serveren …' : item.phase === 'conflict' ? 'Endringen krever gjennomgang. Hent gjeldende serverscore og velg hvilken du vil beholde.'
       : item.phase === 'blocked' ? 'Kan ikke leveres med gjeldende tilgang eller rundestatus. Den lokale endringen beholdes.'
         : item.attempts > 0 ? 'Lagret på denne enheten. Levering mislyktes; prøver automatisk igjen.' : 'Lagret på denne enheten. Venter på levering.'}</p>
     {mutation.error && <p role="alert">{mutation.error.message}</p>}

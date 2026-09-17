@@ -5,71 +5,23 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The application review is complete. **H1 is the next repair candidate**;
-implement one finding at a time after instruction to proceed. Findings and
-reproduction evidence are recorded in [LatestExplanation.md](LatestExplanation.md).
+None. The next candidate is **M1 — recheck session validity before legacy
+commits**, awaiting a new implementation instruction. M2 and L1–L3 remain queued.
 
 ## Priorities
 
 | Priority | ID | Finding | Repair order |
 | --- | --- | --- | --- |
-| High | H1 | Unsaved scoring input disappears after lock or access denial | 1 |
-| Medium | M1 | Legacy score save/confirmation can commit after session expiry | 2 |
-| Medium | M2 | Cached private results remain visible after a denied refresh | 3 |
-| Low | L1 | Generic handicap allocator mishandles `i32::MIN` | 4 |
-| Low | L2 | Course selection reports an incorrect or generic format error | 5 |
-| Low | L3 | Match-only results remove tournament selection | 6 |
+| Medium | M1 | Legacy score save/confirmation can commit after session expiry | 1 |
+| Medium | M2 | Cached private results remain visible after a denied refresh | 2 |
+| Low | L1 | Generic handicap allocator mishandles `i32::MIN` | 3 |
+| Low | L2 | Course selection reports an incorrect or generic format error | 4 |
+| Low | L3 | Match-only results remove tournament selection | 5 |
 
-High means loss of the only local copy of user input. Medium means an authority
-or private-display contract fails under a concrete transition. Low means a
+Medium means an authority or private-display contract fails under a concrete
+transition. Low means a
 bounded domain edge outside current snapshot inputs or recoverable UX/error
 quality. Severity reflects demonstrated impact, not the amount of code to change.
-
-## High — H1: preserve unsaved scoring input through authority changes
-
-**Goal:** preserve the only copy of a failed local score edit until the user
-explicitly discards it or it is safely stored as a clearly pending device copy.
-
-**Trigger and evidence:** a device-storage failure leaves a correction only in
-component state. An external lock changes the scoring/read query or an access
-error replaces the scoring screen. The editable component unmounts, losing the
-value and clearing its navigation guard. Reproduced in Chrome with a completed
-individual stroke card: server 4, failed local correction 5, empty durable queue,
-then external lock removed recovery and enabled logout. Shared source paths affect
-individual stroke, scramble, foursomes, four-ball and Stableford.
-
-**Scope:** `frontend/src/features/scoring/useScoreWorkspaceData.ts`,
-`frontend/src/pages/ScorePage.tsx`, the legacy/four-ball/Stableford sync hooks and
-their editable experience/recovery components. Keep match recovery compatible.
-No backend contract or stored queue-protocol rewrite.
-
-**Required behavior:** retain account/round/owner/player/hole-scoped unsaved numeric
-or pickup intent through lock, scoring denial and background metadata failures.
-When authority is denied, show only the local intent and recovery controls;
-do not keep unauthorized canonical score data visible. Keep navigation guarded
-until explicit discard or a valid durable save. Retrying failed device persistence
-may work offline with the same account, target and original conditional expectation;
-it must not invent authority or silently rebase. After an explicit lock or denial,
-keep local-only recovery. Resuming server delivery requires fresh authorization
-and canonical conflict review; never replay automatically into a locked round or
-silently overwrite another scorer. Preserve failed values independently for both
-four-ball partners. Real account changes must not expose the previous account's
-intent. Ordinary logout remains guarded while nondurable data exists.
-
-**Invariants:** exclusive score ownership; preserved historical handicap snapshots;
-locked-round integrity; no match ledger changes; immutable existing queue heads,
-receipt identities and account isolation; no false claim of device durability.
-
-**Validation:** add failing regression tests before repair for failed IndexedDB
-write followed by external lock, scoring 403 and background metadata failure.
-Cover the legacy shared scorer plus four-ball and Stableford numeric/pickup paths;
-verify offline retry of local persistence, recovery and explicit discard,
-navigation guards, account isolation and absence of unauthorized server data. Run the complete frontend ladder and
-real Chrome at 320x600, 390x844 and desktop widths. Re-run affected existing offline
-and match recovery cases against the isolated API. Update affected documentation.
-
-**Stop:** publish only H1 after review and validation; do not include M1/M2 or a
-queue redesign. Any newly found concern returns to this queue.
 
 ## Medium — M1: recheck session validity before legacy commits
 
