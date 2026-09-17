@@ -1,5 +1,6 @@
 import type { ManualCourseSelection, TeeCategory } from '../../api/courses'
 import { ApiHttpError } from '../../api/http'
+import type { ScoringFormat } from '../../api/types'
 
 export interface ManualHoleDraft { par: string; strokeIndex: string; distance: string }
 export interface ManualCourseDraft {
@@ -159,8 +160,28 @@ export function configurationFailure(error: Error | null): ConfigurationFailure 
   return 'retryable'
 }
 
+export function courseLayoutErrorCode(format: ScoringFormat): string | null {
+  switch (format) {
+    case 'four_ball_stroke_play': return 'four_ball_requires_18_holes'
+    case 'individual_stableford': return 'stableford_requires_18_holes'
+    case 'singles_match_play': return 'singles_match_requires_18_holes'
+    case 'individual_stroke_play':
+    case 'team_scramble':
+    case 'two_player_foursomes': return null
+  }
+}
+
 export function configurationErrorMessage(error: Error | null): string | null {
-  if (error instanceof ApiHttpError && ['four_ball_requires_18_holes', 'format_requires_18_holes', 'stableford_requires_18_holes'].includes(error.code ?? '')) return 'Formatet krever nøyaktig 18 hull. Velg et utslagssted med 18 hull.'
+  if (error instanceof ApiHttpError) {
+    const labels: Record<string, string> = {
+      four_ball_requires_18_holes: 'Four-ball',
+      stableford_requires_18_holes: 'Stableford',
+      singles_match_requires_18_holes: 'Matchspill (singel)',
+      format_requires_18_holes: 'Formatet',
+    }
+    const label = labels[error.code ?? '']
+    if (label) return `${label} krever nøyaktig 18 hull. Velg et utslagssted med 18 hull.`
+  }
   switch (configurationFailure(error)) {
     case 'stale': return 'Runden ble endret et annet sted. Oppdaterte rundefakta er hentet; kontroller valgene og prøv igjen.'
     case 'not-draft': return 'Runden er ikke lenger et utkast og kan ikke endres.'

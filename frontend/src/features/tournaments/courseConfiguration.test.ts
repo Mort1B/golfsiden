@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ApiHttpError } from '../../api/http'
 import {
   configurationFailure,
+  configurationErrorMessage,
   createManualDraft,
   resizeManualDraft,
   validateCatalogSearch,
@@ -81,5 +82,18 @@ describe('configuration failures', () => {
     ['course_provider_tee_stale', 'tee-stale'], ['forbidden', 'access'],
   ] as const)('classifies %s', (code, expected) => {
     expect(configurationFailure(new ApiHttpError(code === 'forbidden' ? 403 : 409, code, 'failed'))).toBe(expected)
+  })
+})
+
+
+describe('format-specific course errors', () => {
+  it.each([
+    ['four_ball_requires_18_holes', 'Four-ball'],
+    ['stableford_requires_18_holes', 'Stableford'],
+    ['singles_match_requires_18_holes', 'Matchspill (singel)'],
+  ])('names the format for %s and keeps correction available', (code, label) => {
+    const error = new ApiHttpError(409, code, 'requires 18 holes')
+    expect(configurationErrorMessage(error)).toBe(`${label} krever nøyaktig 18 hull. Velg et utslagssted med 18 hull.`)
+    expect(configurationFailure(error)).toBe('retryable')
   })
 })

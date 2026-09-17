@@ -1168,14 +1168,25 @@ server-side.
 The endpoint checks session, CSRF, exact membership, draft state, and the
 optimistic timestamp before provider quota can be spent. It never holds a
 database transaction across provider I/O. Its final transaction locks and
-reauthorizes the round, repeats the draft/version checks, inserts the immutable
-revision, and attaches its course/tee IDs, copied names, and hole count. It
+reauthorizes the round, repeats the draft/version checks, and checks the selected
+layout against the scoring format before inserting any immutable revision. It
+then attaches the revision's course/tee IDs, copied names, and hole count. It
 returns the updated private/non-cacheable round and publishes one round
 invalidation only after commit. Concurrent saves use
 `round_configuration_stale`; opened rounds use `round_not_draft`; a disappeared
 provider tee uses `course_provider_tee_stale`. Invalid, stale, unauthorized,
 provider-failed, or attachment-failed requests create no revision and emit no
 event. Requests must be JSON and are capped at 32 KiB.
+
+Four-ball, Stableford and singles match require exactly 18 holes. An incompatible
+manual, saved-course or provider tee selection returns HTTP 409 with the format's
+specific code: `four_ball_requires_18_holes`, `stableford_requires_18_holes`, or
+`singles_match_requires_18_holes`. The error names that format; no revision is
+inserted, and existing round facts and timestamps remain unchanged. The browser
+also checks manual/saved facts locally and tells the administrator to choose an
+18-hole tee while retaining the selection for correction. The manual form fixes
+these formats at 18 holes. Individual stroke play, team scramble and two-player
+foursomes continue to accept nine-hole layouts.
 
 The Courses section shows every round's preserved course/tee summary and allows
 only one draft-round editor to be expanded. Its private catalog search accepts

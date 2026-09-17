@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::{
     domain::{
         course_revisions::ValidatedCourseRevision,
-        models::{Round, RoundStatus},
+        models::{Round, RoundStatus, ScoringFormat},
     },
     repositories::{
         course_revisions::{self, CourseRevisionRepositoryError},
@@ -22,8 +22,12 @@ pub enum RoundConfigurationError {
     Authorization(#[from] AuthorizationError),
     #[error("round is not draft")]
     NotDraft,
-    #[error("this format requires 18 holes")]
+    #[error("four-ball requires 18 holes")]
     InvalidFourBallLayout,
+    #[error("Stableford requires 18 holes")]
+    InvalidStablefordLayout,
+    #[error("singles match play requires 18 holes")]
+    InvalidSinglesMatchLayout,
     #[error("round configuration has changed")]
     Stale,
     #[error("database operation failed")]
@@ -34,7 +38,7 @@ pub enum RoundConfigurationError {
 
 #[derive(sqlx::FromRow)]
 struct RoundPreflight {
-    scoring_format: crate::domain::models::ScoringFormat,
+    scoring_format: ScoringFormat,
     tournament_id: Uuid,
     status: RoundStatus,
     updated_at: DateTime<Utc>,
@@ -81,15 +85,23 @@ pub async fn configure(
     let round = load_preflight(&mut transaction, round_id).await?;
     check_round(&round, expected_updated_at)?;
 
-    let inserted = course_revisions::insert_in_transaction(&mut transaction, revision).await?;
-    if matches!(
-        round.scoring_format,
-        crate::domain::models::ScoringFormat::FourBallStrokePlay
-            | crate::domain::models::ScoringFormat::IndividualStableford
-    ) && inserted.tee.holes.len() != 18
-    {
-        return Err(RoundConfigurationError::InvalidFourBallLayout);
+    if revision.tee.holes.len() != 18 {
+        match round.scoring_format {
+            ScoringFormat::FourBallStrokePlay => {
+                return Err(RoundConfigurationError::InvalidFourBallLayout);
+            }
+            ScoringFormat::IndividualStableford => {
+                return Err(RoundConfigurationError::InvalidStablefordLayout);
+            }
+            ScoringFormat::SinglesMatchPlay => {
+                return Err(RoundConfigurationError::InvalidSinglesMatchLayout);
+            }
+            ScoringFormat::IndividualStrokePlay
+            | ScoringFormat::TeamScramble
+            | ScoringFormat::TwoPlayerFoursomes => {}
+        }
     }
+    let inserted = course_revisions::insert_in_transaction(&mut transaction, revision).await?;
     let updated = sqlx::query_as::<_, Round>(&format!(
         "UPDATE rounds
          SET course_id = $2, course_name = $3, tee_id = $4, tee_name = $5,

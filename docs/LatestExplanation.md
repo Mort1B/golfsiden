@@ -1,80 +1,79 @@
-# Make signed-minimum handicap allocation safe
+# Name the correct course-layout requirement
 
-L1 repairs the generic hole allocator at `i32::MIN` without changing current
-stored handicap inputs or their scoring results. The negative branch previously
-cast unsigned magnitude 2,147,483,648 back to i32, wrapping it negative. One-hole
-allocation could panic in debug builds, and multi-hole allocations could return
-the wrong sign and total.
+L2 repairs course-configuration errors for formats requiring 18 holes. Previously,
+Stableford returned a four-ball error, while singles match reached a generic
+PostgreSQL constraint error. Four-ball and Stableford also attempted to insert a
+course revision before rejecting the layout and rolling the transaction back.
 
-The allocator now widens the negative handicap to i64 before taking its magnitude,
-keeps division/remainder arithmetic wide, and checks the final signed result back
-to i32 with the existing `ArithmeticOverflow` error mapping. For valid arguments,
-every per-hole result fits: magnitude is at most 2^31 and the signed allocation
-lies between i32::MIN and zero. The positive branch is unchanged. Hole count and
-stroke index validation still precede arithmetic.
+The repository now rejects incompatible validated tee facts before insertion,
+after locked session/admin authorization and draft/version checks. Its three
+typed errors map to private HTTP 409 responses:
 
-For example, i32::MIN over 18 holes gives −119,304,647 on indexes 1–16 and
-−119,304,648 on indexes 17–18, totaling −2,147,483,648. On one hole it gives
-exactly i32::MIN. Ordinary plus-handicap strokes still go to high indexes;
-positive extra strokes still go to low indexes. No rounding policy changed.
+| Format | Error code |
+| --- | --- |
+| Four-ball | `four_ball_requires_18_holes` |
+| Stableford | `stableford_requires_18_holes` |
+| Singles match | `singles_match_requires_18_holes` |
 
-## Regression evidence
+Manual, saved-course and provider facts share this boundary. Rejection preserves
+round configuration, timestamps and the full course/tee/hole hierarchy and emits
+no SSE. Individual stroke play, scramble and foursomes still accept nine holes.
+There is no schema or scoring-policy change.
 
-Four new allocator tests cover:
+The browser uses these same codes for local manual/saved checks and displays
+Norwegian guidance naming the format. For example, selecting a nine-hole saved
+tee for Stableford explains that Stableford requires exactly 18 holes and asks
+the administrator to choose an 18-hole tee. The choice stays selected; correcting
+it saves normally and restores focus to the round's edit button. The manual form
+continues to hold restricted formats at 18 holes.
 
-- Exact signed-minimum allocations over one, nine and eighteen holes, signed
-  maximum boundaries and adjacent values.
-- Sum conservation using an i64 sum, correct sign, nonincreasing allocation order
-  and at most one stroke difference between holes for representative extremes
-  and ordinary handicaps.
-- Every one of the 65,536 possible stored i16 handicaps across one, nine and
-  eighteen holes, comparing all 1,835,008 hole allocations to the previous valid
-  allocation policy and checking their totals.
-- Invalid nonpositive hole counts and out-of-range indexes, plus first/last
-  indexes of a valid i32::MAX-sized course without materializing a huge vector.
+## Validation
 
-Before repair, three new tests failed with overflow; the exhaustive current-
-snapshot compatibility test passed. After repair, all **13 scoring-domain tests**
-passed in both debug and optimized release builds, including the same exact
-boundary assertions and compatibility checks. Independent read-only review found
-no source or regression-test issues.
+- Backend regression proof: five failures before the fix, with the legacy control
+  passing. A nontransactional sequence probe proves rejection happens before an
+  attempted course INSERT, rather than merely relying on rollback. The focused
+  configuration suite passes all 16 tests after repair.
+- Frontend regression proof: six new assertions failed before the fix; all 18
+  focused tests pass afterward, including correct codes/messages, no request for
+  invalid local facts, and successful correction.
+- Backend ladder: formatting, all 208 tests and Clippy with all targets/features
+  and warnings denied passed. PostgreSQL 17 validation passed all 578 tests with
+  database tests enabled. Migration application and reapplication succeeded;
+  all 32 migrations are marked successful. Seed created eight players/five rounds.
+- Frontend ladder: all 608 tests, strict type checking, lint and production build
+  passed. The existing 500 kB bundle-size warning remains queued separately.
+- Chrome: three new format scenarios and both existing saved-course scenarios
+  passed. New scenarios verify real API 409 responses and unchanged rounds,
+  locally rejected saved selections, successful 18-hole saves, receipt/focus,
+  fixed manual hole counts, error text, long names, no horizontal overflow and
+  reachable 44-pixel controls at 320×600, 390×844 and 1280×900. Existing scenarios
+  cover loading, empty, failure/retry and populated states. Screenshots were
+  inspected; checks reported no unexpected console errors or failed requests.
+- The initial browser run exposed an incorrect test locator, corrected to the
+  select's accessible role/name. Type checking also caught an untyped viewport
+  tuple in the new test; the corrected final checks pass.
+- Read-only backend and frontend review found no issues. `git diff --check`
+  passed. Modified production files remain below the 400-line limit.
 
-Full affected validation passed:
+Evidence logs: `/tmp/l2-backend-red.log`, `/tmp/l2-backend-green.log`,
+`/tmp/l2-backend-full.log`, `/tmp/l2-clippy.log`, `/tmp/l2-pg-full.log`,
+`/tmp/l2-migrate.log`, `/tmp/l2-migrate-reapply.log`, `/tmp/l2-seed.log`,
+`/tmp/l2-frontend-red.log`, `/tmp/l2-frontend-green.log`,
+`/tmp/l2-frontend-full.log`, `/tmp/l2-typecheck.log`, `/tmp/l2-lint.log`,
+`/tmp/l2-frontend-build.log`, `/tmp/l2-browser.log` (existing scenarios) and
+`/tmp/l2-browser-final.log` (new scenarios). Screenshots use
+`/tmp/l2-course-<format>-<width>.png`.
 
-- `cargo fmt --all -- --check` and strict all-targets/all-features Clippy.
-- Workspace/all-targets backend tests: **208 passed**.
-- PostgreSQL-enabled workspace/all-targets tests: **572 passed**, including those
-  208 non-database cases and the legacy, four-ball, Stableford and match format
-  regressions. Two test threads per target used fresh SQLx test databases.
-- Existing migration and seed binaries against fresh disposable
-  `golf_l1_validation` on PostgreSQL 17.11. Direct reads confirmed **32 successful
-  migrations**, eight seeded players and five rounds.
-- `git diff --check`; the changed production module has 127 substantive lines
-  excluding tests, comments and blank lines.
+## Limits and readiness
 
-Source and documentation reviews found no remaining issues.
-Evidence logs: `/tmp/l1-red.log`, `/tmp/l1-green.log`, `/tmp/l1-release.log`,
-`/tmp/l1-fmt.log`, `/tmp/l1-backend.log`, `/tmp/l1-clippy.log`,
-`/tmp/l1-database.log`, `/tmp/l1-migrate.log` and `/tmp/l1-seed.log`.
-Logs are disposable; the committed tests preserve the regression proof.
+**READY WITH KNOWN LIMITATIONS.** Live provider HTTP configuration was not
+exercised: the bundled catalog has no usable provider rows. Provider adapter to
+real PostgreSQL repository rejection/acceptance was verified for all three
+formats, and the existing provider API suites passed. Browser nine-hole saved
+facts are an explicitly intercepted read fixture; all rejected direct API writes
+and successful corrected writes use the real backend. No production service or
+external provider was changed.
 
-## Scope and limits
-
-The change is confined to the generic allocator and direct tests. Historical
-snapshots, team ownership, round locks, audits, persistence schemas and API/UI
-contracts are unchanged. Arbitrary-i32 net-score subtraction is a separate
-arithmetic boundary and was not broadened by this repair; production snapshots
-remain i16. No claim is made that all scoring arithmetic accepts arbitrary i32
-inputs.
-
-Frontend tests, browser layout checks and production deployment were not rerun:
-there is no frontend or user-facing contract change, and the exhaustive snapshot
-comparison preserves current allocations. Backend/PostgreSQL format regressions
-exercise affected score projections and lifecycle behavior.
-
-L2 (format-specific course errors), L3 (match-only tournament selection), the
-intermittent frozen-page validation follow-up and later performance/security work
-remain queued in [PLANS.md](PLANS.md).
-
-**READY for L1.** The bounded allocator repair, regression proof, debug/release
-parity, affected validation ladders and documentation are complete.
+L2 is complete. L3 tournament selection in match-only results remains next;
+queued lifecycle-test investigation, performance measurements and wider security
+review are unchanged.

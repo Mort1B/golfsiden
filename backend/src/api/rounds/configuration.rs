@@ -254,6 +254,14 @@ impl IntoResponse for ConfigurationApiError {
             Self::Repository(RoundConfigurationError::InvalidFourBallLayout) => {
                 conflict("four_ball_requires_18_holes", "four-ball requires 18 holes")
             }
+            Self::Repository(RoundConfigurationError::InvalidStablefordLayout) => conflict(
+                "stableford_requires_18_holes",
+                "Stableford requires 18 holes",
+            ),
+            Self::Repository(RoundConfigurationError::InvalidSinglesMatchLayout) => conflict(
+                "singles_match_requires_18_holes",
+                "singles match play requires 18 holes",
+            ),
             Self::Repository(RoundConfigurationError::NotDraft) => {
                 conflict("round_not_draft", "round must be draft")
             }

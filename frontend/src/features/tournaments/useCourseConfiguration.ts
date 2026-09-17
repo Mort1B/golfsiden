@@ -6,7 +6,7 @@ import { courseApi, courseKeys } from '../../api/courses'
 import { tournamentKeys } from '../../api/tournaments'
 import type { Round } from '../../api/types'
 import { useAuth } from '../auth/authContext'
-import { configurationFailure, validateCatalogSearch } from './courseConfiguration'
+import { configurationFailure, courseLayoutErrorCode, validateCatalogSearch } from './courseConfiguration'
 import type { ConfigurationFailure } from './courseConfiguration'
 
 interface Input {
@@ -45,7 +45,10 @@ export function useCourseConfiguration({ tournamentId, round, providerCourseId, 
     mutationFn: (selection: CourseSelection) => {
       const csrfToken = auth.session?.csrf_token
       if (!csrfToken) throw new Error('Økten mangler. Logg inn på nytt.')
-      if ((round.scoring_format === 'singles_match_play' || round.scoring_format === 'four_ball_stroke_play' || round.scoring_format === 'individual_stableford') && selection.source === 'manual' && selection.tee.holes.length !== 18) throw new ApiHttpError(400, 'format_requires_18_holes', 'Formatet krever 18 hull.')
+      const layoutCode = courseLayoutErrorCode(round.scoring_format)
+      if (layoutCode && selection.source === 'manual' && selection.tee.holes.length !== 18) {
+        throw new ApiHttpError(409, layoutCode, 'The selected format requires 18 holes.')
+      }
       return courseApi.configure(round.id, tournamentId, round.updated_at, selection, csrfToken)
     },
   })

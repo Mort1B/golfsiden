@@ -5,36 +5,16 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The next candidate is **L2 — report the correct 18-hole course requirement**,
-awaiting a new implementation instruction. L3 and later follow-ups remain queued.
+None. The next bounded candidate is L3 below; implementation awaits approval.
 
 ## Priorities
 
 | Priority | ID | Finding | Repair order |
 | --- | --- | --- | --- |
-| Low | L2 | Course selection reports an incorrect or generic format error | 1 |
-| Low | L3 | Match-only results remove tournament selection | 2 |
+| Low | L3 | Match-only results remove tournament selection | 1 |
 
-Low means a bounded domain edge outside current snapshot inputs or recoverable
-UX/error quality. Severity reflects demonstrated impact, not the amount of code
-to change.
-
-## Low — L2: report the correct 18-hole course requirement
-
-**Evidence:** `backend/src/repositories/round_configuration.rs:85` returns
-`InvalidFourBallLayout` for Stableford too; the API reports “four-ball requires
-18 holes.” Match play is absent from that explicit validation and reaches a
-generic constraint response. PostgreSQL still rejects invalid layouts.
-
-**Scope and repair:** introduce a format-aware layout error across the repository,
-API mapping and affected frontend error mapping. Reject non-18-hole selections
-for four-ball, Stableford and singles before attempting round configuration;
-preserve transaction rollback and permitted 9-hole legacy formats.
-**Validation:** submit nine-hole manual and relevant saved/provider tee selections
-for each supported 18-hole format, assert actionable correct errors and unchanged
-round/course configuration. Run affected backend/PostgreSQL ladders; run frontend
-checks/browser validation if user-facing mapping changes.
-**Stop:** format-specific validation/error quality only; no course-provider expansion.
+Low means a recoverable UX/error-quality issue. Severity reflects demonstrated
+impact, not the amount of code to change.
 
 ## Low — L3: retain tournament selection in match-only results
 

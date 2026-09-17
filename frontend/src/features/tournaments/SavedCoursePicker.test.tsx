@@ -74,3 +74,19 @@ it('does not reinsert cleared private data when a successful save resolves after
   expect(await pending).toEqual({ configured: null, failure: null })
   expect(client.getQueriesData({ queryKey: privateWorkspaceKeys.root })).toEqual([])
 })
+
+it.each([
+  ['four_ball_stroke_play', 'four_ball_requires_18_holes'],
+  ['individual_stableford', 'stableford_requires_18_holes'],
+  ['singles_match_play', 'singles_match_requires_18_holes'],
+] as const)('rejects nine-hole manual or saved facts for %s before sending, then accepts correction', async (scoring_format, code) => {
+  const configured = { ...round, scoring_format }
+  vi.spyOn(courseApi, 'configure').mockResolvedValue(configured)
+  const hook = renderHook(() => useCourseConfiguration({ tournamentId: tournament.id, round: configured, providerCourseId: '', catalogQuery: '', expanded: false }), { wrapper: Wrapper })
+  const nine = { ...first.selection, tee: { ...first.selection.tee, holes: first.selection.tee.holes.slice(0, 9) } }
+  await act(async () => { expect(await hook.result.current.save(nine)).toEqual({ configured: null, failure: 'retryable' }) })
+  await waitFor(() => expect(hook.result.current.mutation.error).toMatchObject({ status: 409, code }))
+  expect(courseApi.configure).not.toHaveBeenCalled()
+  await act(async () => { expect((await hook.result.current.save(first.selection)).configured).toEqual(configured) })
+  expect(courseApi.configure).toHaveBeenCalledExactlyOnceWith(round.id, tournament.id, round.updated_at, first.selection, session.csrf_token)
+})

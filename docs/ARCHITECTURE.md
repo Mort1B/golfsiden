@@ -328,8 +328,11 @@ and reapplies runtime grants before the API is started.
   preflight proves exact tournament-admin scope and draft state before request
   decoding or provider quota use. Provider detail is fetched with no database
   transaction open. The final transaction locks the round, reauthorizes the
-  active session and membership, rechecks status and version, inserts the
-  immutable revision, and attaches its UUIDs before commit. This round-first lock
+  active session and membership, rechecks status and version, then rejects
+  non-18-hole selections for four-ball, Stableford and singles match before any
+  revision insertion. Typed format errors map to distinct HTTP 409 codes. Legacy
+  stroke play, scramble and foursomes retain nine-hole support. It then inserts
+  the immutable revision and attaches its UUIDs before commit. This round-first lock
   order matches lifecycle mutations. Only a successful commit publishes one
   identifier-free round invalidation; every conflict or failure rolls back the new
   hierarchy.
