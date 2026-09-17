@@ -6,7 +6,10 @@ use crate::{
         models::RoundStatus,
         scorecards::{ScoreEntry, ScoreOwner, ScorecardSummary},
     },
-    repositories::score_authorization::{self, ScoreAuthorizationError},
+    repositories::{
+        auth,
+        score_authorization::{self, ScoreAuthorizationError},
+    },
 };
 
 use super::{
@@ -85,6 +88,9 @@ pub async fn save_authenticated(
         submitted_by,
     )
     .await?;
+    auth::lock_active_session(&mut transaction, input.session_id)
+        .await?
+        .ok_or(ScorecardError::Unauthenticated)?;
     transaction.commit().await?;
     Ok(result)
 }
@@ -175,6 +181,9 @@ pub async fn confirm_authenticated(
     .await
     .map_err(map_authorization_error)?;
     let result = confirm_with_actor(&mut transaction, &context, owner, confirmed_by).await?;
+    auth::lock_active_session(&mut transaction, session_id)
+        .await?
+        .ok_or(ScorecardError::Unauthenticated)?;
     transaction.commit().await?;
     Ok(result)
 }

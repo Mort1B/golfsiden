@@ -5,45 +5,21 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The next candidate is **M1 — recheck session validity before legacy
-commits**, awaiting a new implementation instruction. M2 and L1–L3 remain queued.
+None. The next candidate is **M2 — hide private projections after authoritative
+denial**, awaiting a new implementation instruction. L1–L3 remain queued.
 
 ## Priorities
 
 | Priority | ID | Finding | Repair order |
 | --- | --- | --- | --- |
-| Medium | M1 | Legacy score save/confirmation can commit after session expiry | 1 |
-| Medium | M2 | Cached private results remain visible after a denied refresh | 2 |
-| Low | L1 | Generic handicap allocator mishandles `i32::MIN` | 3 |
-| Low | L2 | Course selection reports an incorrect or generic format error | 4 |
-| Low | L3 | Match-only results remove tournament selection | 5 |
+| Medium | M2 | Cached private results remain visible after a denied refresh | 1 |
+| Low | L1 | Generic handicap allocator mishandles `i32::MIN` | 2 |
+| Low | L2 | Course selection reports an incorrect or generic format error | 3 |
+| Low | L3 | Match-only results remove tournament selection | 4 |
 
 Medium means an authority or private-display contract fails under a concrete
-transition. Low means a
-bounded domain edge outside current snapshot inputs or recoverable UX/error
+transition. Low means a bounded domain edge outside current snapshot inputs or recoverable UX/error
 quality. Severity reflects demonstrated impact, not the amount of code to change.
-
-## Medium — M1: recheck session validity before legacy commits
-
-**Trigger:** compatible `PUT /api/rounds/{id}/scores` and scorecard `POST /confirm`
-check the session before waiting for a membership lock. They then mutate and
-commit without checking wall-clock expiry again. Both operations were reproduced
-against PostgreSQL/API: a session expired after 1.5 seconds, the membership gate
-held for four seconds, and the request returned 200 with persisted effects.
-
-**Scope and repair:** `backend/src/repositories/scorecards/mutations.rs` and its
-focused API/repository tests. Recheck the live session immediately before commit
-for both authenticated paths, including no-op responses, using established error
-mapping and transaction boundaries. Preserve the compatibility endpoints, ordinary
-score revisions, audit/confirmation behavior and newer receipt replay contracts.
-
-**Validation:** adapt the conditional-delivery membership-wait regression to
-legacy save and confirmation. Hold the membership row, begin while valid, release
-after expiry; expect 401 and zero new score/audit/confirmation effects or SSE event.
-Cover unchanged-value save and repeat confirmation, valid sessions and the existing
-conditional/four-ball/Stableford/match paths. Run backend and PostgreSQL ladders.
-**Stop:** only these legacy commit checks and their tests/docs are in this step;
-a wider authentication audit remains separately queued.
 
 ## Medium — M2: hide private projections after authoritative denial
 

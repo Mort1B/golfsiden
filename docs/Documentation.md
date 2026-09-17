@@ -203,6 +203,13 @@ session actor as `confirmed_by` plus `confirmed_at`. Confirmation records repres
 stroke changes remain historically audited, but superseded confirmation states
 are not retained as a separate event history.
 
+Legacy numeric save and confirmation recheck the active session immediately before
+commit, including same-value saves and repeated confirmations. If the session
+expires while the request waits for a membership lock, the response is
+`401 unauthenticated`: no score, revision, audit or confirmation change is committed,
+and no live-update event is published. An existing confirmation survives a rejected
+correction. Valid-session requests retain their usual changed/no-op behavior.
+
 ## Conditional score delivery
 
 `PUT /api/rounds/{round_id}/scores/conditional` requires the current session and

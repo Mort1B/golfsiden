@@ -1,92 +1,85 @@
-# Preserve unsaved scoring input through authority changes
+# Recheck session expiry before legacy score commits
 
-H1 preserves failed device writes when the scoring screen is replaced by a lock,
-access denial or metadata failure. It covers individual stroke play, scramble,
-foursomes, four-ball and Stableford; match play retains its existing recovery path.
+M1 closes an expiry gap in legacy numeric score saves and scorecard confirmation.
+A request could pass session validation, wait on a tournament-membership lock,
+and then commit after the session expired. Both changed and unchanged operations
+now recheck the active session immediately before their transaction commits.
 
-For example, a completed card has server score 4 and the user corrects it to 5.
-If IndexedDB fails and an administrator then locks the round, 5 now remains in
-local-only recovery. The user can explicitly discard it or save a device copy,
-including offline. That copy requires fresh authorized canonical comparison and
-an explicit choice before delivery. It cannot automatically alter the locked 4.
+For example, a confirmed card contains 4 strokes. A correction to 5 begins while
+the session is valid but waits for membership access. If the session expires
+before the lock is released, the API now returns `401 unauthenticated`; the score
+stays 4 with its original revision, audit rows and confirmation. No SSE event is
+published. The same rule applies to first and repeated confirmation requests.
 
-## Boundaries and decisions
+## Implementation and boundaries
 
-An account-owned transient store sits above the scorer and the CSRF-keyed queue
-runtime. It retains only target identity, hole/partner slot, entered numeric or
-pickup value and the original conditional expectation/observed queue head.
-Canonical cards, names, handicap values and results remain in TanStack Query and
-are not displayed by recovery. Both four-ball partners retain independent intent
-and stable ordinal labels even when the second partner was edited first.
+`repositories/scorecards/mutations.rs` calls the existing central
+`auth::lock_active_session` predicate immediately before `save_authenticated` and
+`confirm_authenticated` commit. That predicate uses PostgreSQL `clock_timestamp()`
+rather than transaction-start time. The transaction already holds session/user
+share locks, so the added checks preserve the established lock order and reuse
+revocation and credential-generation rules.
 
-Recovery starts on lock, denied scoring, failed required metadata, successful
-removal of write access or a changed target. It remains active until the draft is
-discarded or durably retained. A pending normal IndexedDB transaction is aborted
-when recovery begins; durable recovery uses the existing conflict phase. It
-rejects an existing operation or active confirmation lease rather than replacing
-it. Normal retries keep the original conditional expectation and refuse an
-unrelated queue head. A disappeared head still uses the original expectation,
-letting server conflict checks decide rather than silently rebasing.
+Checks run after the existing mutation helpers, which also return on no-op paths.
+A failed check drops the transaction, rolling back any tentative score, audit,
+revision or confirmation change. API error mapping and post-commit SSE behavior
+are unchanged. Internal actor-based helpers, newer conditional receipts,
+four-ball, Stableford and match ledger contracts are unchanged.
 
-Navigation guards register separately, so an unmounting scorer cannot release
-another active guard. Older save completion cannot erase newer local intent.
-Same-account CSRF rotation preserves drafts. A real account change or authentication
-teardown replaces the transient store; another account cannot see its contents.
-Full reload/browser closure can still lose a draft that never became durable.
-The unload guard warns about that boundary; it does not promise crash recovery.
+This is a final application-level session check before commit, following the
+existing conditional-delivery contract. It does not introduce a database-wide
+expiry constraint or a new authentication policy. Round ownership, preserved
+handicaps, locked-round rejection and administrator-managed teams are unaffected.
 
-No backend contract, database schema, stored queue protocol, immutable receipt,
-match ledger, team assignment or handicap calculation changed. Locked rounds still
-reject ordinary writes. Server delivery and conflict review remain authorized.
+## Regression evidence
 
-## Validation
+The new PostgreSQL/API suite covers five operations with an expiring session and
+five matching valid-session controls: new score, correction of a confirmed card,
+unchanged score on a confirmed card, first confirmation and repeated confirmation.
+Each request is observed waiting on the exact membership-lock holder while its
+session is still valid. Expiry is verified using PostgreSQL wall-clock time before
+releasing that lock. Tests compare complete score, audit and confirmation rows,
+including IDs, actor, timestamps and revision, and check the live-event receiver.
 
-Failing route regressions were captured before repair: failed local correction 5
-was lost after lock, scoring 403 or metadata failure. The same cases now pass.
-Focused storage/provider coverage includes atomic abort during a device write,
-original expectation across canonical changes, other-tab collisions, disappeared
-heads, late completion/newer input, confirmation leases, partner isolation,
-same-account CSRF refresh, account changes and independent navigation guards.
+Before repair, all five expiry cases returned 200 instead of 401; all five valid
+controls passed. After repair, **all ten focused cases passed**. Rejected requests
+leave every captured row unchanged and emit no SSE. Valid changed operations emit
+one event; valid no-ops preserve all rows and emit none.
 
-- Complete frontend suite: **587 tests in 104 files passed**.
-- H1 Chrome matrix: **6 passed**, covering all three legacy formats after external
-  lock, four-ball numeric/pickup recovery after 403 and Stableford numeric/pickup
-  recovery after metadata 500. Offline retention stayed in conflict and server
-  scores remained unchanged. Explicit discard released navigation/logout guards.
-- Recovery layout checked at **320x600, 390x844 and 1280x900**, with long account
-  text, button trial clicks, at least 44px controls and no horizontal overflow.
-  Expected fault-injection HTTP failures were distinguished from console and
-  unexpected network errors. Mobile and desktop screenshots were inspected.
-- Independent read-only review approved the final source boundaries and fixes.
-  Every changed production source file remains below the 400-line limit.
+Independent read-only review found no source, regression-test or documentation
+issues. Completed validation:
 
-Frontend type checking, lint and production build passed. The existing bundle
-warning remains: JavaScript 777.41 kB (221.69 kB gzip), CSS 84.12 kB (14.31 kB gzip).
-A separate phone clearance check passed with every recovery button entirely above
-the fixed navigation after scrolling. The existing offline/match Chrome matrix
-passed **30/30** (4.1 minutes), including lost acknowledgments, multiple tabs,
-account isolation, blocked delivery, conflict review and match recovery. Together
-with H1, **36 browser scenarios passed**, plus the separate phone clearance check.
+- `cargo fmt --all -- --check`: passed.
+- `cargo test --workspace --all-targets`: **204 passed**.
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings`: passed.
+- Full PostgreSQL feature-enabled workspace/all-targets suite: **568 passed**
+  (including the 204 non-database cases), with two test threads per target.
+  Conditional delivery, four-ball, Stableford, match, authorization and lifecycle
+  regression targets all passed, including the ten new M1 cases.
+- Existing migration and seed binaries passed against fresh disposable
+  `golf_m1_validation` on PostgreSQL 17.11: **32 successful migrations**, eight
+  seeded players and five rounds confirmed by direct reads.
+- `git diff --check`: passed. The only changed production file has 250
+  nonblank/noncomment lines, within the repository limit.
 
-Evidence logs are local, disposable artifacts: `/tmp/h1-red.log`,
-`/tmp/h1-final-{tests,typecheck,lint,build}.log`, `/tmp/h1-browser-final.log` and
-`/tmp/h1-legacy-match-browser.log`. Recovery screenshots use
-`/tmp/golf-offline-h1-recovery-{320,390,1280}.png` and the scrolled phone-controls
-capture `/tmp/golf-h1-recovery-controls-320.png`.
+The initial unprivileged backend run could not bind the local mock HTTP servers
+used by course-provider tests. The complete rerun with local-listener permissions
+passed; no test or configuration was weakened.
 
-Browser scenarios used the local API and a fresh isolated PostgreSQL 17.11
-container with all 32 existing migrations applied. The backend test/Clippy ladder,
-database test/seed ladder and production deployment were not rerun: backend,
-schema and deployment sources were unchanged. These browser checks are not a
-production deployment certification.
+Evidence logs: `/tmp/m1-red.log`, `/tmp/m1-green.log`, `/tmp/m1-backend.log`,
+`/tmp/m1-clippy.log`, `/tmp/m1-database.log`, `/tmp/m1-migrate.log` and
+`/tmp/m1-seed.log`. These are disposable local artifacts; committed regression
+tests preserve the reproduction.
 
-## Remaining work
+## Remaining scope
 
-M1 (legacy session-expiry commit checks), M2 (denied private-result refresh) and
-L1–L3 remain separate queued findings in [PLANS.md](PLANS.md). This iteration
-addresses H1 only. The broader security review and performance measurement remain
-later work.
+M2 (hide private projections after denied refresh), L1–L3, performance measurement
+and the wider security review remain queued independently in [PLANS.md](PLANS.md).
+No frontend or migration source changed. Frontend tests and Chrome layout checks
+were not rerun because this repair changes transaction authorization only; the
+HTTP/status, persistence and event behavior are exercised against PostgreSQL.
+Production deployment was not run.
 
-**READY WITH KNOWN LIMITATIONS for H1.** The repair passed its affected checks and
-review. Memory-only drafts still end at authentication teardown or forced reload,
-and the existing bundle warning and separately queued findings remain unresolved.
+**READY for M1.** The bounded repair, regression proof, full affected validation
+ladders and documentation review are complete. Remaining findings above are not
+part of this readiness verdict.

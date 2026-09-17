@@ -1508,3 +1508,6 @@ async fn concurrent_score_writes_apply_in_round_lock_order(pool: PgPool) {
 
 #[path = "scorecards/conditional.rs"]
 mod conditional;
+
+#[path = "scorecards/session_expiry.rs"]
+mod session_expiry;

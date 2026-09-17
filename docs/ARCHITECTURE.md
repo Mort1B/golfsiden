@@ -379,6 +379,12 @@ and reapplies runtime grants before the API is started.
   members retain the empty authorized result. Save and confirm invoke the same
   resolver under the existing round, session, and membership locks, retaining
   the session user as audit actor and preventing listing/mutation policy drift.
+  Authenticated legacy save and confirmation also recheck the central active
+  session predicate immediately before commit, including unchanged-value saves
+  and repeated confirmations. The existing session/user share locks protect
+  revocation and credential generation; `clock_timestamp()` rechecks expiry after
+  membership waits. Failure rolls back scores, revisions, audits and confirmation
+  changes, and returns before any SSE publication.
 - A PostgreSQL two-tournament acceptance fixture reuses one global account/player
   with independent tournament handicaps and round snapshots, then combines an A
   player card with a B-only two-player foursomes team. It guards roster, flight,
