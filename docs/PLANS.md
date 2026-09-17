@@ -5,43 +5,20 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The next candidate is **M2 — hide private projections after authoritative
-denial**, awaiting a new implementation instruction. L1–L3 remain queued.
+None. The next candidate is **L1 — make the generic allocator safe at the signed
+minimum**, awaiting a new implementation instruction. L2/L3 remain queued.
 
 ## Priorities
 
 | Priority | ID | Finding | Repair order |
 | --- | --- | --- | --- |
-| Medium | M2 | Cached private results remain visible after a denied refresh | 1 |
-| Low | L1 | Generic handicap allocator mishandles `i32::MIN` | 2 |
-| Low | L2 | Course selection reports an incorrect or generic format error | 3 |
-| Low | L3 | Match-only results remove tournament selection | 4 |
+| Low | L1 | Generic handicap allocator mishandles `i32::MIN` | 1 |
+| Low | L2 | Course selection reports an incorrect or generic format error | 2 |
+| Low | L3 | Match-only results remove tournament selection | 3 |
 
-Medium means an authority or private-display contract fails under a concrete
-transition. Low means a bounded domain edge outside current snapshot inputs or recoverable UX/error
-quality. Severity reflects demonstrated impact, not the amount of code to change.
-
-## Medium — M2: hide private projections after authoritative denial
-
-**Trigger:** direct scorecards, player history and round results keep cached data
-when a refetch returns 401/403/404. A healthy SSE connection need not immediately
-clear the cache. Chrome reproduced a direct card still displaying gross 7 after
-its card endpoint returned 403.
-
-**Scope and repair:** `frontend/src/pages/DirectScorecardPage.tsx`,
-`PlayerHistoryPage.tsx`, `LeaderboardPage.tsx` and focused private-query/error
-helpers. Distinguish authority denial from transient network/server failures.
-Immediately suppress and invalidate/remove affected private projections on denial;
-a retry may render data only after current authorization succeeds. Preserve
-permitted transient-error recovery and H1 local-only input recovery. Inspect the
-same shared rendering helper's consumers without broad UI refactoring.
-
-**Validation:** successful card/history/round-result read → denied background
-refetch while SSE stays healthy; prior names, scores and links disappear. Exercise
-401/403/404 separately, successful recovery and transient 500/offline behavior.
-Keep hidden-final and same-user session refresh behavior intact. Run the frontend
-ladder and representative mobile/desktop Chrome privacy cases.
-**Stop:** fail-closed private rendering only; no new public scope or SSE redesign.
+Low means a bounded domain edge outside current snapshot inputs or recoverable
+UX/error quality. Severity reflects demonstrated impact, not the amount of code
+to change.
 
 ## Low — L1: make the generic allocator safe at the signed minimum
 
@@ -93,6 +70,13 @@ at mobile and desktop widths. Run the frontend ladder and focused Chrome checks.
 **Stop:** selector/discovery repair only, with no standings redesign.
 
 ## Later queue
+
+- **Validation follow-up:** investigate the intermittent existing
+  `returnLoading.browser.ts` offline/frozen-page return case. One full run timed
+  out before read-only display; three unchanged isolated repeats passed. Its
+  cached enabled-input assertion may precede completion of the online refresh,
+  allowing a subsequent return to coalesce with it. Confirm the cause before
+  changing lifecycle behavior or tightening the test's recovery barrier.
 
 1. **Performance work:** measure representative workloads before scoping changes,
    including the existing frontend bundle warning and bounded match-card reads.

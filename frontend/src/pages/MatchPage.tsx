@@ -1,3 +1,4 @@
+import { MatchReadWorkspace } from '../features/matchPlay/MatchReadWorkspace'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { matchApi, matchKeys, type MatchCard, type MatchScoringCard } from '../api/matchPlay'
@@ -15,6 +16,7 @@ import { useMatchQueue } from '../features/matchPlay/offline/context'
 export function MatchPage({ scoring = false }: { scoring?: boolean }) {
   const { roundId = '', matchId } = useParams(), { session } = useAuth()
   if (!isCanonicalUuid(roundId) || matchId && !isCanonicalUuid(matchId)) return <section className="page"><ErrorState error={new Error('Ugyldig matchadresse.')} /></section>
+  if (!scoring) return <MatchReadWorkspace key={`${session?.user_id}:${roundId}:${matchId}`} roundId={roundId} matchId={matchId} />
   return <MatchWorkspace key={`${session?.user_id}:${session?.csrf_token}:${roundId}:${matchId}:${scoring}`} roundId={roundId} matchId={matchId} scoring={scoring} />
 }
 function MatchWorkspace({ roundId, matchId, scoring }: { roundId: string; matchId?: string; scoring: boolean }) {

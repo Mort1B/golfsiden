@@ -657,6 +657,20 @@ score owners. It proves that rosters, pairings, teams, writable owners,
 scorecards, gross/net results, rejected mutations, and identifier-free live events
 remain bound to the exact target.
 
+Private result pages immediately hide prior names, scores and drilldown links
+when a refresh returns `401`, `403` or `404`. This applies to direct scorecards,
+player history, round/tournament results and their read-only match views, even
+while the live connection remains healthy. A retry shows results only after
+fresh authorized reads succeed. Switching metric, returning to the page or a
+later server/network failure cannot restore a denied cached projection.
+
+A temporary server error or lost connection without a prior denial may retain
+previously permitted results with the existing error/retry state. Denial clears
+affected result dependencies and stops their pending reads. If a read's round
+can no longer be associated with a tournament, the browser also clears that
+uncertain read for the current account. Writable score drafts and device queues
+remain governed by their separate local-only recovery rules.
+
 The strict frontend boundary independently verifies every target-bearing
 tournament detail, roster, round list/detail, team, pairing, leaderboard,
 handicap correction, counted-round, start, final visibility, course-configuration, and invitation

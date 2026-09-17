@@ -78,3 +78,20 @@ describe('tournament leaderboard lifecycle coordination', () => {
     expect(queryClient.getQueryData(roundsQueryKey)).toEqual([refreshed])
   })
 })
+
+it('the nested rounds request clears private projections even when its parent was cancelled', async () => {
+  const { ApiHttpError } = await import('../../api/http')
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const key = ['private-workspace', 'user', 'tournaments', tournamentId, 'rounds'] as const
+  const cardKey = ['private-workspace', 'user', 'rounds', roundId, 'scorecards', 'read', 'player', 'player'] as const
+  client.setQueryData(key, [round('open')]); client.setQueryData(cardKey, { round_id: roundId, private: 'card' })
+  const controller = new AbortController()
+  let fail: (error: unknown) => void = () => undefined
+  const pending = new Promise<Round[]>((_resolve, reject) => { fail = reject })
+  const request = loadTournamentLeaderboardAfterRounds({ queryClient: client, roundsQueryKey: key, signal: controller.signal,
+    loadRounds: () => pending, loadLeaderboard: async () => leaderboard(roundId, []) })
+  controller.abort(); fail(new ApiHttpError(403, 'forbidden', 'Access denied'))
+  await expect(request).rejects.toThrow()
+  expect(client.getQueryState(key)?.error).toMatchObject({ status: 403 })
+  expect(client.getQueryData(cardKey)).toBeUndefined()
+})

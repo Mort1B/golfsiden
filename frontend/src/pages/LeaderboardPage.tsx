@@ -1,7 +1,8 @@
+import { usePrivateResultQuery } from '../features/leaderboards/usePrivateResultQuery'
 import { MatchResults } from './MatchResultsPage'
 import { MatchRound } from '../features/matchPlay/MatchRound'
 import { Link } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { leaderboardKeys } from '../api/leaderboards'
@@ -26,7 +27,7 @@ export function LeaderboardPage() {
   const auth = useAuth()
   const queryClient = useQueryClient()
   const userId = auth.session?.user_id ?? ''
-  const tournamentsQuery = useQuery({ queryKey: tournamentKeys.list(userId), queryFn: api.tournaments })
+  const tournamentsQuery = usePrivateResultQuery({ userId }, { queryKey: tournamentKeys.list(userId), queryFn: api.tournaments })
   const tournaments = tournamentsQuery.data ?? []
   const requestedTournamentId = searchParams.get('tournament')
   const selectedTournament = tournaments.find((item) => item.id === requestedTournamentId)
@@ -37,7 +38,7 @@ export function LeaderboardPage() {
   const scope = parseScope(searchParams.get('scope'))
   const metric = parseMetric(searchParams.get('metric'))
 
-  const roundsQuery = useQuery({
+  const roundsQuery = usePrivateResultQuery({ userId, tournamentId }, {
     queryKey: tournamentKeys.rounds(userId, tournamentId),
     queryFn: () => api.rounds(tournamentId),
     enabled: tournamentId.length > 0,
@@ -47,14 +48,15 @@ export function LeaderboardPage() {
   const requestedRoundId = searchParams.get('round')
   const selectedRound = rounds.find((round) => round.id === requestedRoundId) ?? preferredRound(rounds)
 
-  const roundLeaderboardQuery = useQuery({
+  const roundLeaderboardQuery = usePrivateResultQuery({ userId, tournamentId }, {
     queryKey: leaderboardKeys.round(userId, selectedRound?.id ?? '', metric),
     queryFn: () => api.roundLeaderboard(selectedRound?.id ?? '', tournamentId, metric),
     enabled: scope === 'round' && selectedRound !== undefined && selectedRound.scoring_format !== 'singles_match_play',
   })
-  const tournamentLeaderboardQuery = useQuery({
+  const tournamentLeaderboardQuery = usePrivateResultQuery({ userId, tournamentId }, {
     queryKey: leaderboardKeys.tournament(userId, tournamentId, metric),
-    queryFn: () => loadTournamentLeaderboardAfterRounds({
+    queryFn: ({ signal }) => loadTournamentLeaderboardAfterRounds({
+      signal,
       queryClient,
       roundsQueryKey,
       loadRounds: () => api.rounds(tournamentId),

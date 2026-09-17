@@ -664,6 +664,25 @@ and reapplies runtime grants before the API is started.
   so explicit mutation invalidation, SSE, logout, and identity changes address
   the same cached facts. No drilldown requests score access, completion,
   `/scoring`, confirmation, or mutation endpoints.
+- Private result queries classify HTTP 401/403/404 as authoritative denial. The
+  failing source and affected same-account result dependencies are cancelled
+  before their data is erased, with snapshot reversion disabled. Sibling metrics,
+  round metadata, actor-free cards and delegated match reads cannot reuse denied
+  projections during retry, remount or a later transient failure. Error state and
+  invalidation remain available for deliberate recovery through fresh reads.
+- Denial scope uses canonical keys, decoded target IDs and weak query-owned ID
+  associations rather than mutable query metadata. If a round read cannot be
+  associated after metadata erasure, it is conservatively cleared within that
+  account. Unrelated reads with a usable round-to-tournament association remain
+  intact; missing associations can cause conservative extra clearing. The nested tournament
+  leaderboard loader protects its own rounds request and checks cancellation
+  between stages; late success or denial from a superseded read cannot restore
+  or erase newer authorized data. No server projection is copied into this index.
+- These result protections also cover read-only match cards and match tables.
+  Writable scoring keys, local intent and durable delivery queues remain separate.
+  Ordinary 500/network failures may retain previously permitted results, but
+  cannot revive data erased after denial. This boundary does not depend on SSE
+  closing or on a session identity change.
 - The score route likewise owns tournament, round, tagged owner, hole, and view
   selection in canonical URL parameters. Completion validation is its owner
   authority, and exact runtime decoders protect scorecard state before caching.

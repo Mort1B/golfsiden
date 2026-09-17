@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { usePrivateResultQuery } from '../features/leaderboards/usePrivateResultQuery'
 import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { useEffect } from 'react'
 import { stablefordApi, type StablefordReadCard } from '../api/stableford'
@@ -31,13 +31,13 @@ export function DirectScorecardPage() {
     window.scrollTo({ top: 0 })
   }, [ownerId, ownerTypeParam, roundId, tournamentId])
 
-  const roundsQuery = useQuery({
+  const roundsQuery = usePrivateResultQuery({ userId, tournamentId }, {
     queryKey: tournamentKeys.rounds(userId, tournamentId),
     queryFn: () => api.rounds(tournamentId),
     enabled: tournamentId !== '' && roundId !== '' && targetOwner !== null,
   })
   const round = matchingRound(roundsQuery.data ?? [], tournamentId, roundId)
-  const leaderboardQuery = useQuery({
+  const leaderboardQuery = usePrivateResultQuery({ userId, tournamentId }, {
     queryKey: leaderboardKeys.round(userId, roundId, metric),
     queryFn: () => api.roundLeaderboard(roundId, tournamentId, metric),
     enabled: round !== null && targetOwner !== null,
@@ -46,7 +46,7 @@ export function DirectScorecardPage() {
   const ownerEntry = targetOwner === null || leaderboardQuery.data === undefined
     ? null
     : projectedOwner(leaderboardQuery.data, tournamentId, roundId, targetOwner)
-  const cardQuery = useQuery<ReadScorecard | FourBallReadCard | StablefordReadCard>({
+  const cardQuery = usePrivateResultQuery<ReadScorecard | FourBallReadCard | StablefordReadCard>({ userId, tournamentId, roundId }, {
     queryKey: scoringKeys.read(userId, roundId, targetOwner ?? { type: 'player', id: '' }),
     queryFn: () => {
       if (ownerEntry === null) throw new Error('Scorekortmålet er ikke synlig i runden.')

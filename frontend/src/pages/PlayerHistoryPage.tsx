@@ -1,5 +1,6 @@
+import { usePrivateResultQuery } from '../features/leaderboards/usePrivateResultQuery'
 import { MatchResults } from './MatchResultsPage'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { useEffect } from 'react'
 import { api } from '../api/client'
@@ -24,10 +25,11 @@ export function PlayerHistoryPage() {
     window.scrollTo({ top: 0 })
   }, [playerId, tournamentId])
   const roundsKey = tournamentKeys.rounds(userId, tournamentId)
-  const roundsQuery = useQuery({ queryKey: roundsKey, queryFn: () => api.rounds(tournamentId), enabled: tournamentId !== '' })
-  const leaderboardQuery = useQuery({
+  const roundsQuery = usePrivateResultQuery({ userId, tournamentId }, { queryKey: roundsKey, queryFn: () => api.rounds(tournamentId), enabled: tournamentId !== '' })
+  const leaderboardQuery = usePrivateResultQuery({ userId, tournamentId }, {
     queryKey: leaderboardKeys.tournament(userId, tournamentId, metric),
-    queryFn: () => loadTournamentLeaderboardAfterRounds({
+    queryFn: ({ signal }) => loadTournamentLeaderboardAfterRounds({
+      signal,
       queryClient,
       roundsQueryKey: roundsKey,
       loadRounds: () => api.rounds(tournamentId),

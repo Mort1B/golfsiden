@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { usePrivateResultQuery } from '../features/leaderboards/usePrivateResultQuery'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { matchApi, matchKeys } from '../api/matchPlay'
@@ -15,8 +15,8 @@ export function MatchResultsPage() {
 export function MatchResults({ tournamentId, selectedPlayerId }: { tournamentId: string; selectedPlayerId?: string }) {
   const user = useAuth().session?.user_id ?? '', [search] = useSearchParams(), playerId = selectedPlayerId ?? search.get('player') ?? undefined
   useTournamentLive(tournamentId)
-  const rounds = useQuery({ queryKey: tournamentKeys.rounds(user, tournamentId), queryFn: () => api.rounds(tournamentId) })
-  const table = useQuery({ queryKey: matchKeys.table(user, tournamentId), queryFn: () => matchApi.table(tournamentId), retry: false })
+  const rounds = usePrivateResultQuery({ userId: user, tournamentId }, { queryKey: tournamentKeys.rounds(user, tournamentId), queryFn: () => api.rounds(tournamentId) })
+  const table = usePrivateResultQuery({ userId: user, tournamentId }, { queryKey: matchKeys.table(user, tournamentId), queryFn: () => matchApi.table(tournamentId), retry: false })
   const error = rounds.error ?? table.error
   if (error) return <section className="page match-page"><ErrorState error={error} onRetry={() => { void rounds.refetch(); void table.refetch() }} /></section>
   if (!rounds.data || !table.data) return <section className="page match-page"><LoadingState /></section>
