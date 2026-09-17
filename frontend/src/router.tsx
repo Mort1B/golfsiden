@@ -1,24 +1,29 @@
-import { MatchPage } from './pages/MatchPage'
-import { MatchResultsPage } from './pages/MatchResultsPage'
-import { SharedResultsPage } from './pages/SharedResultsPage'
+import type { ReactNode } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 import { AppShell } from './ui/AppShell'
-import { RoundPage } from './pages/RoundPage'
-import { TournamentPage } from './pages/TournamentPage'
-import { TournamentsPage } from './pages/TournamentsPage'
-import { LeaderboardPage } from './pages/LeaderboardPage'
-import { ScorePage } from './pages/ScorePage'
-import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { SignInPage } from './pages/SignInPage'
 import { RequireSession } from './features/auth/RequireSession'
 import { HomePage } from './pages/HomePage'
-import { TournamentOnboardingPage } from './pages/TournamentOnboardingPage'
-import { JoinPage } from './pages/JoinPage'
-import { InvitationAdminPage } from './pages/InvitationAdminPage'
-import { TournamentManagementPage } from './pages/TournamentManagementPage'
-import { PlayerHistoryPage } from './pages/PlayerHistoryPage'
-import { DirectScorecardPage } from './pages/DirectScorecardPage'
-import { ProfilePage } from './pages/ProfilePage'
+import { lazyPage } from './routing/lazyPage'
+
+const MatchPage = lazyPage(async () => (await import('./pages/MatchPage')).MatchPage)
+const MatchResultsPage = lazyPage(async () => (await import('./pages/MatchResultsPage')).MatchResultsPage)
+const SharedResultsPage = lazyPage(async () => (await import('./pages/SharedResultsPage')).SharedResultsPage)
+const RoundPage = lazyPage(async () => (await import('./pages/RoundPage')).RoundPage)
+const TournamentPage = lazyPage(async () => (await import('./pages/TournamentPage')).TournamentPage)
+const TournamentsPage = lazyPage(async () => (await import('./pages/TournamentsPage')).TournamentsPage)
+const LeaderboardPage = lazyPage(async () => (await import('./pages/LeaderboardPage')).LeaderboardPage)
+const ScorePage = lazyPage(async () => (await import('./pages/ScorePage')).ScorePage)
+const ResetPasswordPage = lazyPage(async () => (await import('./pages/ResetPasswordPage')).ResetPasswordPage)
+const TournamentOnboardingPage = lazyPage(async () => (await import('./pages/TournamentOnboardingPage')).TournamentOnboardingPage)
+const JoinPage = lazyPage(async () => (await import('./pages/JoinPage')).JoinPage)
+const InvitationAdminPage = lazyPage(async () => (await import('./pages/InvitationAdminPage')).InvitationAdminPage)
+const TournamentManagementPage = lazyPage(async () => (await import('./pages/TournamentManagementPage')).TournamentManagementPage)
+const PlayerHistoryPage = lazyPage(async () => (await import('./pages/PlayerHistoryPage')).PlayerHistoryPage)
+const DirectScorecardPage = lazyPage(async () => (await import('./pages/DirectScorecardPage')).DirectScorecardPage)
+const ProfilePage = lazyPage(async () => (await import('./pages/ProfilePage')).ProfilePage)
+
+const privatePage = (children: ReactNode) => <RequireSession>{children}</RequireSession>
 
 export const router = createBrowserRouter([
   { path: '/', element: <HomePage /> },
@@ -30,20 +35,20 @@ export const router = createBrowserRouter([
   {
     element: <AppShell />,
     children: [
-      { path: '/profile', element: <RequireSession><ProfilePage /></RequireSession> },
-      { path: '/tournaments', element: <RequireSession><TournamentsPage /></RequireSession> },
-      { path: '/tournaments/:tournamentId', element: <RequireSession><TournamentPage /></RequireSession> },
-      { path: '/tournaments/:tournamentId/invitations', element: <RequireSession><InvitationAdminPage /></RequireSession> },
-      { path: '/manage/tournaments/:tournamentId', element: <RequireSession><TournamentManagementPage /></RequireSession> },
-      { path: '/rounds/:roundId', element: <RequireSession><RoundPage /></RequireSession> },
-      { path: '/rounds/:roundId/matches', element: <RequireSession><MatchPage /></RequireSession> },
-      { path: '/rounds/:roundId/matches/:matchId', element: <RequireSession><MatchPage /></RequireSession> },
-      { path: '/rounds/:roundId/matches/:matchId/score', element: <RequireSession><MatchPage scoring /></RequireSession> },
-      { path: '/tournaments/:tournamentId/match-results', element: <RequireSession><MatchResultsPage /></RequireSession> },
-      { path: '/score', element: <RequireSession><ScorePage /></RequireSession> },
-      { path: '/leaderboard', element: <RequireSession><LeaderboardPage /></RequireSession> },
-      { path: '/tournaments/:tournamentId/results/players/:playerId', element: <RequireSession><PlayerHistoryPage /></RequireSession> },
-      { path: '/tournaments/:tournamentId/rounds/:roundId/scorecards/:ownerType/:ownerId', element: <RequireSession><DirectScorecardPage /></RequireSession> },
+      { path: '/profile', element: privatePage(<ProfilePage />) },
+      { path: '/tournaments', element: privatePage(<TournamentsPage />) },
+      { path: '/tournaments/:tournamentId', element: privatePage(<TournamentPage />) },
+      { path: '/tournaments/:tournamentId/invitations', element: privatePage(<InvitationAdminPage />) },
+      { path: '/manage/tournaments/:tournamentId', element: privatePage(<TournamentManagementPage />) },
+      { path: '/rounds/:roundId', element: privatePage(<RoundPage />) },
+      { path: '/rounds/:roundId/matches', element: privatePage(<MatchPage />) },
+      { path: '/rounds/:roundId/matches/:matchId', element: privatePage(<MatchPage />) },
+      { path: '/rounds/:roundId/matches/:matchId/score', element: privatePage(<MatchPage scoring />) },
+      { path: '/tournaments/:tournamentId/match-results', element: privatePage(<MatchResultsPage />) },
+      { path: '/score', element: privatePage(<ScorePage />) },
+      { path: '/leaderboard', element: privatePage(<LeaderboardPage />) },
+      { path: '/tournaments/:tournamentId/results/players/:playerId', element: privatePage(<PlayerHistoryPage />) },
+      { path: '/tournaments/:tournamentId/rounds/:roundId/scorecards/:ownerType/:ownerId', element: privatePage(<DirectScorecardPage />) },
     ],
   },
 ])

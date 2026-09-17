@@ -10,6 +10,28 @@
 
 Backend request handling is split into `api`, `repositories`, and `domain`. Handlers own HTTP validation and response mapping, repositories own SQL and transaction mechanics, and pure handicap/scoring/lifecycle behavior stays in `domain`. Authentication and score authorization are isolated modules rather than handler-local policy.
 
+## Browser route module boundary
+
+The router keeps home and sign-in eager and defers other page modules through
+`routing/lazyPage.ts`. Private modules mount and begin importing only after the
+existing `RequireSession` gate allows them. Route paths, page props, account
+boundaries and the providers above the router retain their existing ownership.
+The application shell stays mounted while a child page module loads.
+
+The loader caches only the import promise and component function, never props,
+rendered elements or account data. Each mounted instance receives current props;
+unmounted instances ignore late completion. HTTP server state remains in TanStack
+Query. The explicit asynchronous loader avoids adding a Suspense fallback delay
+to warm full navigations.
+
+Only rejected imports/preloads render `RouteLoadError`. Its deliberate full-page
+reload preserves the URL and is disabled while the scoring guard is blocked;
+there is no automatic reload or retry loop. JavaScript and route stylesheet
+failures share this path. Page render errors continue through existing route
+boundaries: treating them as chunk failures could unmount a scorer, release its
+guard and expose an unsafe reload. Durable score queues and transient edit guards
+remain owned by the existing providers and scoring features.
+
 ## Production delivery boundary
 
 The portable production topology is one same-origin HTTPS boundary. Caddy serves

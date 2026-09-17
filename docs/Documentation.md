@@ -1906,10 +1906,24 @@ The [2026-09-17 performance baseline](performance/README.md) includes reproducib
 production-bundle attribution, throttled Chrome workloads, repeated cold/warm
 samples and match-list request counts. It uses synthetic HTTP data; its browser
 timings do not measure real API/PostgreSQL latency or establish production service
-levels. The current frontend eagerly loads one JavaScript entry chunk, and
-player-specific match history fetches full round listings before filtering. The
-baseline proposes route-level splitting as one separate next step; it implements
-no runtime optimization.
+levels. The [route-splitting comparison](performance/route-splitting/README.md)
+records the subsequent startup-byte and cold/warm timing changes across every
+loaded JavaScript chunk. Player-specific match history still fetches full round
+listings before filtering; API and live-refresh behavior are unchanged.
+
+Home and sign-in remain available from the entry module. Other page modules load
+when their route is opened, with the existing session gate applied first on
+private routes. Navigation and account/offline providers remain mounted during
+loading. A failed JavaScript or route stylesheet download displays an explicit
+“Last siden på nytt” action; it never reloads automatically. Reload retains the
+current URL, including query and fragment. Existing unsaved-score guards still
+block unsafe navigation/reload, and durable device drafts survive a deliberate
+reload. Ordinary page rendering errors retain the existing error handling.
+
+Run `npm --prefix frontend run build` followed by
+`npm --prefix frontend run test:browser:routes` for the production-build route
+loading, recovery, account isolation, scoring-guard and browser-return checks.
+This suite requires local Google Chrome and a free loopback port 4179.
 
 ## Known limitations
 

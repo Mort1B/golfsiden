@@ -1,70 +1,66 @@
-# Performance baseline before optimization
+# Route-level JavaScript splitting
 
-**The investigation is complete — READY WITH KNOWN LIMITATIONS.** It measures
-the production frontend build and synthetic populated/long-content browser
-workloads, traces match-list database work, and proposes one bounded next repair.
-No runtime, dependency, API, schema, scoring or authorization behavior changed.
+**Completed — READY WITH KNOWN LIMITATIONS.** Route-only page modules now load
+when opened. Home and sign-in stay eager; private pages retain their session gate.
+Shared authentication, query, scoring-guard and offline providers keep their
+existing lifetime. No backend, API, schema, dependency or scoring rules changed.
 
-The [baseline report](performance/README.md) retains reproducible scripts, asset
-hashes, every timing sample, request/byte counts, workload definitions and explicit
-measurement limits. Source examined was `7fe6bcb1ffd6751d6621aba19293a801a885e81f`.
+The [comparison report](performance/route-splitting/README.md) retains build
+hashes, all 62 production-browser timing samples and measurement conditions.
+Initial gzip JavaScript falls from 222,606 to 138,922 bytes for login (**37.6%**)
+and to 143,807 bytes across all five chunks used by measured match-result pages
+(**35.4%**). The entry is 452,821 uncompressed bytes; the former Vite size warning
+is gone. Further routes download their own modules as needed.
 
-The production frontend has one 782,064-byte JavaScript entry chunk, 222,606 bytes
-gzipped. Login loads it too. Under the fixed 100 ms/1.6 Mbps/4× CPU Chrome profile,
-390px median cold readiness was 1.73 seconds for login, 2.37 seconds for 12 match
-cards and 2.50 seconds for 72 cards across three rounds. These are synthetic
-navigation metrics, not field Core Web Vitals or production service-level claims.
+Under the unchanged synthetic 100 ms/1.6 Mbps/4× CPU profile, login's median cold
+ready time falls from 1,731 to 1,236 ms. The 72-card, three-round mobile workload
+falls from 2,500 to 2,160 ms. Every measured cold median improves by 296–495 ms;
+warm median increases are at most 32 ms (3.2%). Warm stress timing also improves,
+but stream-open scheduling changes request counts, so it does not establish a
+repair to API read amplification. API/query/SSE policies are unchanged.
 
-For example, selecting one player's history displays three cards but still fetches
-and decodes all 72 cards. The long workload issued three to nine list requests;
-the stream-opening control consistently issued three when opening was delayed
-beyond the observation window. Initial stream recovery must continue to clear
-private projections and refresh authority. This finding does not authorize
-removing freshness checks or accepting stale results.
+## Loading and recovery
 
-Backend source tracing found `5 + 17M` SELECTs per fully authorized administrator
-list request, including HTTP authentication. Privileged opponent checks also
-materialize `2MP` snapshot owner IDs (M matches, P players); 100 two-player matches
-mean 1,705 SELECTs and 40,000 authorization rows. These are source-derived counts.
-Real SQL timing, pool contention and production impact were not measured.
+The small explicit module loader caches code only, forwards current props and
+ignores resolution after unmount. This keeps account state out of the module
+cache and avoids adding a Suspense fallback delay to warm full navigations.
+The application shell and its navigation stay available during child loading.
 
-The first proposed repair is route-level JavaScript splitting. It can address
-the measured startup payload while keeping shared auth/offline providers intact.
-The plan defines comparison and regression gates, including chunk-load recovery.
-Database authorization reuse, compact/player-scoped listings and stream-refresh
-coalescing remain separate candidates. No high-severity production defect was
-established; findings are prioritized medium/low with their evidence limits.
+Failed JavaScript or route stylesheet imports show an accessible error with
+“Last siden på nytt”. Recovery requires a deliberate action, retains the URL's
+query/fragment and honors the existing scoring guard. Rendering failures retain
+existing route error handling; they are not classified as chunk download failures.
 
-## Validation and review
+For example, a golfer can queue a durable score, navigate to Profile, encounter a
+failed module download, reload deliberately and return to the same local score.
+A score that could not be stored on the device, or an unsaved match note, continues
+to block navigation/logout until resolved or discarded. Late module resolution
+after logout cannot restore the former account's page data.
 
-- `npm --prefix frontend run build` passed with the existing bundle warning.
-  A fresh in-memory attribution build matched every emitted file byte-for-byte;
-  browser asset SHA-256 hashes matched the recorded bundle.
-- The reviewed browser run passed 62 navigations: five cold/warm pairs per 390px
-  workload and three pairs for long content at both 320 and 1280 pixels. A separate
-  six-navigation delayed-stream control passed. Every final table/card count was
-  correct, every sample ended with zero pending non-SSE requests, and console,
-  page errors, HTTP failures, unexpected fixture requests and horizontal overflow
-  checks were clear.
-- Mobile and desktop screenshots were inspected; long names wrap. This is a
-  performance/layout sample, not a new interaction/accessibility acceptance suite.
-  Full request artifacts and screenshots are in `/tmp/golf-performance-final/`
-  and `/tmp/golf-performance-delayed-stream/`; essential samples and conditions
-  are retained under `docs/performance/`.
-- Read-only specialist review checked the SQL trace and measurement design.
-  Settled-content/pending-request assertions and build-provenance checks were
-  added after its findings, then the baseline was rerun. Highly compressible
-  fixtures, optimistic warm static caching, desktop throttling and custom timing
-  metrics are explicitly documented. Final read-only review independently checked
-  all 68 retained samples and the SQL trace; no actionable findings remained.
-- Script syntax checks and `git diff --check` passed. The production build includes
-  TypeScript compilation. Frontend unit/lint and backend/database ladders were not
-  rerun: only documentation and measurement scripts changed, with no product code
-  or dependency changes.
+## Validation and limits
 
-Real API/PostgreSQL measurements were unavailable: no local PostgreSQL binaries
-were found, Docker socket access was denied, and passwordless sudo was unavailable.
-No shared or production database was used. Physical phones, production delivery,
-hidden-final/revocation behavior, mixed formats and sustained live-event load are
-outside this measurement. Browser fixtures cannot validate backend privacy or
-authorization. The next step remains unstarted pending the user's instruction.
+- Full frontend ladder passed: **626 tests / 109 files**, typecheck, lint and build.
+  Browser-specific TypeScript and lint checks also passed.
+- **27 production Chrome tests passed**, including existing return-loading and
+  ordering regressions plus new route/direct-link/history, account replacement,
+  durable/nondurable scoring, API error, and JavaScript/CSS recovery checks.
+- Mobile 320/390px and desktop 1280px checks include delayed, error, empty,
+  populated and long-content states. Screenshots were inspected; keyboard reload,
+  44px reload height, overflow and unexpected console/network failures are checked.
+- All **62 performance navigations passed** final content and zero-pending-request
+  assertions. The fresh attribution build matched emitted assets byte-for-byte;
+  browser hashes match the retained bundle. Source status records that measurement
+  used the implementation worktree on parent `ac5f9d7`, not the unmodified parent.
+- Independent read-only review found no blocking findings. Script syntax checks
+  and `git diff --check` passed. No backend/database ladder ran because those
+  layers and contracts did not change.
+
+Timings use highly compressible synthetic API data and optimistic immutable
+static caching, not production Caddy delivery or real API/PostgreSQL latency.
+Physical phones, production deployment, sustained live load and backend privacy
+are outside these browser fixtures. The earlier PostgreSQL measurement blocker
+remains recorded in the baseline. These limits prevent a production performance
+claim but do not block the measured frontend change.
+
+The completed step is closed. The plan proposes one investigation of remaining
+match-list startup amplification; no further repair or security review has begun.

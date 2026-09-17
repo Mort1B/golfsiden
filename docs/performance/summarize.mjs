@@ -16,6 +16,8 @@ const rows = input.samples.map(s => {
     listEncodedBytes: sum(p => p.endsWith('/matches'), 'encodedBytes'),
     listDecodedBytes: sum(p => p.endsWith('/matches'), 'decodedBytes'),
     jsTransferBytes: sum(p => p.endsWith('.js'), 'transferBytes'),
+    jsEncodedBytes: sum(p => p.endsWith('.js'), 'encodedBytes'),
+    jsRequests: s.requests.filter(p => p.endsWith('.js')).length,
     cssTransferBytes: sum(p => p.endsWith('.css'), 'transferBytes'),
     domNodes: s.domNodes, overflow: s.overflow, finalCards: s.finalCards, finalRows: s.finalRows,
     pendingRequests: s.pendingPaths.length,
@@ -32,7 +34,7 @@ function distribution(values) {
 }
 const summary = Object.fromEntries([...groups].map(([key, values]) => [key, {
   samples: values.length,
-  ...Object.fromEntries(['readyMs', 'fcpMs', 'lcpObservedMs', 'tbtProxyMs', 'apiRequests', 'liveRequests', 'listRequests', 'listEncodedBytes', 'listDecodedBytes', 'domNodes'].map(field => [field, distribution(values.map(v => v[field]))])),
+  ...Object.fromEntries(['readyMs', 'fcpMs', 'lcpObservedMs', 'tbtProxyMs', 'apiRequests', 'liveRequests', 'listRequests', 'listEncodedBytes', 'listDecodedBytes', 'jsTransferBytes', 'jsEncodedBytes', 'jsRequests', 'domNodes'].map(field => [field, distribution(values.map(v => v[field]))])),
 }]))
 const { samples: _samples, ...metadata } = input
 writeFileSync(resolve(destination, 'summary.json'), JSON.stringify({ ...metadata, summary }, null, 2) + '\n')

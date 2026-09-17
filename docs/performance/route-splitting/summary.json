@@ -1,0 +1,1034 @@
+{
+  "sourceCommit": "ac5f9d7110bf7f4a3ca273961e22ea8196179436",
+  "sourceStatus": "M frontend/package.json\n M frontend/src/router.tsx\n M frontend/tsconfig.browser.json\n?? frontend/e2e/routeSplitting.browser.ts\n?? frontend/e2e/routeSplittingSupport.ts\n?? frontend/playwright.routes.config.ts\n?? frontend/src/routing/\n?? frontend/src/ui/RouteLoadState.tsx",
+  "assetHashes": {
+    "DirectScorecardPage-CgLUUsTO.js": "05b17b4ee91504f7c12932f3c08f6f4ca15845253477d6da2d7f2d94a7677b66",
+    "InvitationAdminPage-Cx2o_CQd.js": "b429bf926b09c8e7c43e73d1e2942ab158bd2d9839c06988b3aaeb30fb729687",
+    "JoinPage-Ck1-43l-.js": "8b2e1d39ad66c9ffd38c50d4ab17e401525ff606dce76df1b2d6888053e84a52",
+    "LeaderboardPage-BaaKD3WQ.js": "4459f69b79351e79ab99b7f97b83d9ddea1de31efd68ecec56a07eacd3ed7baa",
+    "MatchPage-DyQ1ShY2.js": "49060d950ee35cb973710e566e09de2670af77d5da7e77bb7935cbab522611d2",
+    "MatchResultsPage-DQ7t4vsE.js": "167a9b0e419c3a7b0e2ce1be84b9cccb5dd86c2906c16f9cfd2ee5a4be7a9ecd",
+    "MatchRound-D6bFIq0L.js": "286a09167cb833569b0eb11b8f1f34836be27cb169f6267f7f55104785a54740",
+    "PlayerHistoryPage-DDRxQ2z2.js": "6bdcbaed0a9e26d365a77e0fbd793eddebf776bb31e5236ba82085eb7b7fede7",
+    "ProfilePage-0ILpLUhR.css": "1ac770b7c3b10b9426ccea73fe73996948353eda4b6b0f6ae16c1609f110f4e1",
+    "ProfilePage-CUGMTJmw.js": "c67c81ec43bf4ebb1a6f12ead730e3f96f894441143ed539e9e7b74e7e832cf3",
+    "ResetPasswordPage-Dxz9ZFMB.js": "d9f64093c6aba36f7d6ccbbc3383a438601e7af49ad2419deb9e07d344a4b00f",
+    "RoundPage-BixWI_Wz.js": "cccc7eb42344d61866dbc35f596ac00e2677349cb2cb825e6197aacbf6e3b605",
+    "RoundPage-wcT7C6DS.css": "7d943d76a1cd100be1df6ff9d5f6e65e9057284fcd4c0173d95f8e4d9162e247",
+    "ScorePage-Bn_dJ-7A.js": "e4628f41851fc36c4fe886310f8d4f3128e9b1817d7a94a393e3bddf7b7af3fa",
+    "ScorecardSummaryView-Cm61qMlr.js": "8fb6eed25560d0ee7f6a0e1315ac11d3a3c8ffe795ccafc53a6aa61fdd46b127",
+    "ScorecardSummaryView-PzQW966n.css": "9136c7ba92cb6e779ef31b022b76008744834e9ac8624b657cdf221542410cfc",
+    "SharedResultsPage-Cr49Pvr7.js": "16d889cd1c17e5192f4ce1f18bc4520b9e1b07f80a6d9cc2ec26dfaeecf9ed4e",
+    "StatusBadge-MpwEoE6-.js": "847dd5ddb8c6f087abca1e883a035905de341c1263485925b646428d3b1524e5",
+    "TournamentManagementPage-B9lmyHXB.js": "e917ccd15eb0ee6e48415ca18431b3f0594d892a5d6d125ed64df51604cc19d3",
+    "TournamentManagementPage-q76c0ZwO.css": "c6caec5912f71f16e3db8cb6bcb99129ddcce8ba94c939ddb211fb9ab7abafd4",
+    "TournamentOnboardingPage-DS_U5o7t.js": "9a24b9c4f4effa86df51a796199f1c34cf212817f3ccfab5744fcb8cb0cb2246",
+    "TournamentPage-BudYivhz.js": "4cca81c98eb270301675565c690fea8200f3a7ae2dd8e68063d3a41866fce8b8",
+    "TournamentsPage-By3L3DFO.css": "f8e40ddce29545f9bcf096a483aa836d2361f5f25f629ec706c40b87ad71d3ce",
+    "TournamentsPage-ChUtQ6uE.js": "80fc0555a445e6c6749d89566485ec7348235b6c660d4627979be50ad25029c5",
+    "calendar-days-Ba5E_ugM.js": "9d765d4e2c62b5f001501f51f00fd8c7719587eba1a285b86be8487334e5d58a",
+    "check-BbW_TM96.js": "36d1c52ac5fd09e2abf4c351141b4ccfb384702ce5b6ec84c61844923bba6589",
+    "chevron-left-BajqiPAP.js": "06f4f55c26e0a57c4157f55fe504ca26d70979020d87c69bc35f474aa397ca76",
+    "chevron-right-Br1FEudm.js": "e873afb6213a6047261dca7e69de24c42888944175bb32a77e125ea1fe3bd32f",
+    "circle-check-BIJ239_W.js": "acd3a39bc5e2e14ef2c7a1efdba387be3fec78a0eda90185c27fdfb1f1f3ca43",
+    "drilldownRoutes-RBLfWGPT.js": "78f61af75f0e5b9da6e465e6ddfb168d04aa2bb617acaf2e4de812457e02736f",
+    "finalRoundExplanation-DIiFCWmu.js": "7c5a2e314acee153fa5a78562909aaea74af26b3ca9f519fd07e7d9ab0076e66",
+    "flag-DbsZ13PU.js": "7ee19a08d890fc4dc623c29b0b1474e1147fcd5dd2d30701c96803b5c9a39630",
+    "format-BJysboft.js": "37d88a3c07e3c5314bd7a85081307e5dedf8bae6583e8ccfa54d8d8f561e1fe4",
+    "format-CAgFkmGX.js": "9467c78489961e83fbf20235edd86e17a27bf3534f87e9769f63563a728104e8",
+    "index-0aHMVMv8.js": "d1146c8ea2dfbd49e7f26ac47d1351b03f25222ceedfa1c884a7000dc0b9f778",
+    "index-li1Y9gAN.css": "7f6c7436f983eac856144582b5b8390e608e864942973d4af4c0963813aeaf1b",
+    "invitations-__5xMiqd.js": "9378f5240550fe194ce24508f7e45caaf8bf3905630941ebd2a3cf686de50152",
+    "map-pin-BZHJw7ze.js": "9b33bf32343205def1cc58851f5c14b18f11fe2404174b9adc566174fce696ec",
+    "messages-Ca7V6U1r.js": "8f0992b2317dcdc5447f5a5e76554385a342ab6d36cc22a322a3cef80aae9919",
+    "overallConfiguration-Dw7nnRZ2.js": "5c1ffb0be4e15f940c0708ed2769129833f4d6244781f08d575e7fd67d79cc7f",
+    "pairings-8xJs8FQ9.js": "4b1614f33be63303368326061fbba19a1636101191df31b9f961db4bbe097a0a",
+    "password-CbC00kx7.js": "d35a4b7d62a48ee7788899020ffb42eff401111ff27ddbe7a9327ba886501cae",
+    "plus-wAaTnFZ2.js": "4fbfc9757213f8891375110635dce90f79b9701fa5f0715f6612e7a570596606",
+    "refresh-cw-BY0beyrC.js": "7a16ab1210fede8ea754fb9fc17030611dae1cd7dcee3e4bbc3e0b17a834a77d",
+    "resultExplanations-vi8djnSL.js": "19ab54a7e0913b112a8f2467e06ae0a94d90cc687fed995739679d2b014e906e",
+    "resultSharing-BXTnhsUo.css": "82dae238a0bd18c120b85a00e1f7cd21378513d07db9f06fe403f4a2db9317a9",
+    "resultSharing-Uycdw0v9.js": "47d88d75ad1a9cce2a938e26bb54171e8508d3c3509edc713e6ce37ab18c64c3",
+    "selection-CPPOa36Y.js": "29fa13d42df7cd32af7e6c67f7632829fe51b56a5650f70dfcc7646e2ddb1efb",
+    "tieBreakExplanation-BDPa7Azd.js": "eb4d722329e3d82546b11ba8c6c1ed879e497c9c302bd31d7cbfa9d6624a1e33",
+    "tournamentLoader-B-tpf49t.js": "95110d2f8aafcd05a8a06928f804d51ffdc097c665125ff470b1969b7e5b0966",
+    "trash-2-DM_QkjeZ.js": "7e10ad7e0867da1b480a988359db6cab7e3c2fda677a098edaf6454d42dd01af",
+    "usePrivateResultQuery-BgaJKgAM.js": "37095c920d3b172d3023dd18afdb660e3c70b22696273e0eaa9ddceff849cc57",
+    "useTournamentLive-BPdSSV4B.js": "23ef8509f414bfd1aad0d9c949c113ecf0b5f39fa0da2a9926d8620145914674",
+    "users-DLsrt5xP.js": "7874ef30fa7a113427bea24c4711c4a56e44528be3728927e96a127385a1809a",
+    "x-DFIXcjjM.js": "87d0f92d8dadf3ed446064559cb4b4fd71a52131b295fb1cca33790937a14c81"
+  },
+  "browser": "153.0.8010.36",
+  "node": "v22.22.2",
+  "cpu": "11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz",
+  "logicalCpus": 8,
+  "memoryGiB": 15.313995361328125,
+  "conditions": {
+    "latencyMs": 100,
+    "downloadBytesPerSecond": 200000,
+    "uploadBytesPerSecond": 93750,
+    "cpuSlowdown": 4,
+    "gzip": true,
+    "streamDelayMs": 0,
+    "api": "HTTP synthetic fixtures; no backend/database latency",
+    "cold": "fresh browser context, empty HTTP cache",
+    "warm": "same-context full navigation, cached immutable assets, new JS/query cache",
+    "observeAfterReadyMs": 700
+  },
+  "errors": [],
+  "unexpected": [],
+  "summary": {
+    "login-390-cold": {
+      "samples": 5,
+      "readyMs": {
+        "min": 1221,
+        "median": 1236,
+        "max": 1239
+      },
+      "fcpMs": {
+        "min": 1208,
+        "median": 1212,
+        "max": 1220
+      },
+      "lcpObservedMs": {
+        "min": 1208,
+        "median": 1212,
+        "max": 1220
+      },
+      "tbtProxyMs": {
+        "min": 35,
+        "median": 39,
+        "max": 42
+      },
+      "apiRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "liveRequests": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "listRequests": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "listEncodedBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "listDecodedBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "jsTransferBytes": {
+        "min": 139222,
+        "median": 139222,
+        "max": 139222
+      },
+      "jsEncodedBytes": {
+        "min": 138922,
+        "median": 138922,
+        "max": 138922
+      },
+      "jsRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "domNodes": {
+        "min": 32,
+        "median": 32,
+        "max": 32
+      }
+    },
+    "login-390-warm": {
+      "samples": 5,
+      "readyMs": {
+        "min": 236,
+        "median": 239,
+        "max": 256
+      },
+      "fcpMs": {
+        "min": 224,
+        "median": 224,
+        "max": 228
+      },
+      "lcpObservedMs": {
+        "min": 224,
+        "median": 224,
+        "max": 228
+      },
+      "tbtProxyMs": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "apiRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "liveRequests": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "listRequests": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "listEncodedBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "listDecodedBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "jsTransferBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "jsEncodedBytes": {
+        "min": 138922,
+        "median": 138922,
+        "max": 138922
+      },
+      "jsRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "domNodes": {
+        "min": 32,
+        "median": 32,
+        "max": 32
+      }
+    },
+    "populated-390-cold": {
+      "samples": 5,
+      "readyMs": {
+        "min": 1957,
+        "median": 2015,
+        "max": 2016
+      },
+      "fcpMs": {
+        "min": 1208,
+        "median": 1208,
+        "max": 1216
+      },
+      "lcpObservedMs": {
+        "min": 1760,
+        "median": 1800,
+        "max": 1804
+      },
+      "tbtProxyMs": {
+        "min": 37,
+        "median": 37,
+        "max": 40
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 8,
+        "max": 8
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 3,
+        "max": 3
+      },
+      "listEncodedBytes": {
+        "min": 8169,
+        "median": 8169,
+        "max": 8169
+      },
+      "listDecodedBytes": {
+        "min": 248091,
+        "median": 248091,
+        "max": 248091
+      },
+      "jsTransferBytes": {
+        "min": 145307,
+        "median": 145307,
+        "max": 145307
+      },
+      "jsEncodedBytes": {
+        "min": 143807,
+        "median": 143807,
+        "max": 143807
+      },
+      "jsRequests": {
+        "min": 5,
+        "median": 5,
+        "max": 5
+      },
+      "domNodes": {
+        "min": 281,
+        "median": 281,
+        "max": 281
+      }
+    },
+    "populated-390-warm": {
+      "samples": 5,
+      "readyMs": {
+        "min": 868,
+        "median": 870,
+        "max": 870
+      },
+      "fcpMs": {
+        "min": 236,
+        "median": 240,
+        "max": 240
+      },
+      "lcpObservedMs": {
+        "min": 640,
+        "median": 660,
+        "max": 664
+      },
+      "tbtProxyMs": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 8,
+        "max": 8
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 3,
+        "max": 3
+      },
+      "listEncodedBytes": {
+        "min": 8169,
+        "median": 8169,
+        "max": 8169
+      },
+      "listDecodedBytes": {
+        "min": 248091,
+        "median": 248091,
+        "max": 248091
+      },
+      "jsTransferBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "jsEncodedBytes": {
+        "min": 143807,
+        "median": 143807,
+        "max": 143807
+      },
+      "jsRequests": {
+        "min": 5,
+        "median": 5,
+        "max": 5
+      },
+      "domNodes": {
+        "min": 281,
+        "median": 281,
+        "max": 281
+      }
+    },
+    "long-390-cold": {
+      "samples": 5,
+      "readyMs": {
+        "min": 2043,
+        "median": 2160,
+        "max": 2185
+      },
+      "fcpMs": {
+        "min": 1200,
+        "median": 1212,
+        "max": 1228
+      },
+      "lcpObservedMs": {
+        "min": 1780,
+        "median": 1860,
+        "max": 1872
+      },
+      "tbtProxyMs": {
+        "min": 35,
+        "median": 37,
+        "max": 38
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 14571,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 503583,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "jsTransferBytes": {
+        "min": 145307,
+        "median": 145307,
+        "max": 145307
+      },
+      "jsEncodedBytes": {
+        "min": 143807,
+        "median": 143807,
+        "max": 143807
+      },
+      "jsRequests": {
+        "min": 5,
+        "median": 5,
+        "max": 5
+      },
+      "domNodes": {
+        "min": 887,
+        "median": 887,
+        "max": 887
+      }
+    },
+    "long-390-warm": {
+      "samples": 5,
+      "readyMs": {
+        "min": 1003,
+        "median": 1037,
+        "max": 1103
+      },
+      "fcpMs": {
+        "min": 240,
+        "median": 244,
+        "max": 272
+      },
+      "lcpObservedMs": {
+        "min": 700,
+        "median": 724,
+        "max": 732
+      },
+      "tbtProxyMs": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "apiRequests": {
+        "min": 14,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 9,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 43713,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 1510749,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "jsTransferBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "jsEncodedBytes": {
+        "min": 143807,
+        "median": 143807,
+        "max": 143807
+      },
+      "jsRequests": {
+        "min": 5,
+        "median": 5,
+        "max": 5
+      },
+      "domNodes": {
+        "min": 887,
+        "median": 887,
+        "max": 887
+      }
+    },
+    "history-390-cold": {
+      "samples": 5,
+      "readyMs": {
+        "min": 2012,
+        "median": 2116,
+        "max": 2122
+      },
+      "fcpMs": {
+        "min": 1204,
+        "median": 1208,
+        "max": 1220
+      },
+      "lcpObservedMs": {
+        "min": 1784,
+        "median": 1812,
+        "max": 1816
+      },
+      "tbtProxyMs": {
+        "min": 36,
+        "median": 37,
+        "max": 41
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 14571,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 503583,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "jsTransferBytes": {
+        "min": 145307,
+        "median": 145307,
+        "max": 145307
+      },
+      "jsEncodedBytes": {
+        "min": 143807,
+        "median": 143807,
+        "max": 143807
+      },
+      "jsRequests": {
+        "min": 5,
+        "median": 5,
+        "max": 5
+      },
+      "domNodes": {
+        "min": 100,
+        "median": 100,
+        "max": 100
+      }
+    },
+    "history-390-warm": {
+      "samples": 5,
+      "readyMs": {
+        "min": 969,
+        "median": 970,
+        "max": 984
+      },
+      "fcpMs": {
+        "min": 224,
+        "median": 240,
+        "max": 240
+      },
+      "lcpObservedMs": {
+        "min": 656,
+        "median": 660,
+        "max": 668
+      },
+      "tbtProxyMs": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "apiRequests": {
+        "min": 14,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 9,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 43713,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 1510749,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "jsTransferBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "jsEncodedBytes": {
+        "min": 143807,
+        "median": 143807,
+        "max": 143807
+      },
+      "jsRequests": {
+        "min": 5,
+        "median": 5,
+        "max": 5
+      },
+      "domNodes": {
+        "min": 100,
+        "median": 100,
+        "max": 100
+      }
+    },
+    "stress-390-cold": {
+      "samples": 5,
+      "readyMs": {
+        "min": 2533,
+        "median": 2559,
+        "max": 2568
+      },
+      "fcpMs": {
+        "min": 1204,
+        "median": 1208,
+        "max": 1212
+      },
+      "lcpObservedMs": {
+        "min": 1896,
+        "median": 1912,
+        "max": 1920
+      },
+      "tbtProxyMs": {
+        "min": 108,
+        "median": 154,
+        "max": 164
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 8,
+        "max": 8
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 3,
+        "max": 3
+      },
+      "listEncodedBytes": {
+        "min": 53530,
+        "median": 53530,
+        "max": 53530
+      },
+      "listDecodedBytes": {
+        "min": 2097834,
+        "median": 2097834,
+        "max": 2097834
+      },
+      "jsTransferBytes": {
+        "min": 145307,
+        "median": 145307,
+        "max": 145307
+      },
+      "jsEncodedBytes": {
+        "min": 143807,
+        "median": 143807,
+        "max": 143807
+      },
+      "jsRequests": {
+        "min": 5,
+        "median": 5,
+        "max": 5
+      },
+      "domNodes": {
+        "min": 3471,
+        "median": 3471,
+        "max": 3471
+      }
+    },
+    "stress-390-warm": {
+      "samples": 5,
+      "readyMs": {
+        "min": 1386,
+        "median": 1411,
+        "max": 1455
+      },
+      "fcpMs": {
+        "min": 240,
+        "median": 256,
+        "max": 292
+      },
+      "lcpObservedMs": {
+        "min": 772,
+        "median": 804,
+        "max": 812
+      },
+      "tbtProxyMs": {
+        "min": 66,
+        "median": 104,
+        "max": 130
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 8,
+        "max": 8
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 3,
+        "max": 3
+      },
+      "listEncodedBytes": {
+        "min": 53530,
+        "median": 53530,
+        "max": 53530
+      },
+      "listDecodedBytes": {
+        "min": 2097834,
+        "median": 2097834,
+        "max": 2097834
+      },
+      "jsTransferBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "jsEncodedBytes": {
+        "min": 143807,
+        "median": 143807,
+        "max": 143807
+      },
+      "jsRequests": {
+        "min": 5,
+        "median": 5,
+        "max": 5
+      },
+      "domNodes": {
+        "min": 3471,
+        "median": 3471,
+        "max": 3471
+      }
+    },
+    "long-320-cold": {
+      "samples": 3,
+      "readyMs": {
+        "min": 2112,
+        "median": 2148,
+        "max": 2180
+      },
+      "fcpMs": {
+        "min": 1208,
+        "median": 1208,
+        "max": 1220
+      },
+      "lcpObservedMs": {
+        "min": 1832,
+        "median": 1844,
+        "max": 1856
+      },
+      "tbtProxyMs": {
+        "min": 35,
+        "median": 37,
+        "max": 37
+      },
+      "apiRequests": {
+        "min": 14,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 9,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 43713,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 1510749,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "jsTransferBytes": {
+        "min": 145307,
+        "median": 145307,
+        "max": 145307
+      },
+      "jsEncodedBytes": {
+        "min": 143807,
+        "median": 143807,
+        "max": 143807
+      },
+      "jsRequests": {
+        "min": 5,
+        "median": 5,
+        "max": 5
+      },
+      "domNodes": {
+        "min": 887,
+        "median": 887,
+        "max": 887
+      }
+    },
+    "long-320-warm": {
+      "samples": 3,
+      "readyMs": {
+        "min": 1002,
+        "median": 1035,
+        "max": 1054
+      },
+      "fcpMs": {
+        "min": 244,
+        "median": 244,
+        "max": 256
+      },
+      "lcpObservedMs": {
+        "min": 704,
+        "median": 704,
+        "max": 744
+      },
+      "tbtProxyMs": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "apiRequests": {
+        "min": 14,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 9,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 43713,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 1510749,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "jsTransferBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "jsEncodedBytes": {
+        "min": 143807,
+        "median": 143807,
+        "max": 143807
+      },
+      "jsRequests": {
+        "min": 5,
+        "median": 5,
+        "max": 5
+      },
+      "domNodes": {
+        "min": 887,
+        "median": 887,
+        "max": 887
+      }
+    },
+    "long-1280-cold": {
+      "samples": 3,
+      "readyMs": {
+        "min": 2103,
+        "median": 2125,
+        "max": 2196
+      },
+      "fcpMs": {
+        "min": 1224,
+        "median": 1228,
+        "max": 1232
+      },
+      "lcpObservedMs": {
+        "min": 1820,
+        "median": 1836,
+        "max": 1872
+      },
+      "tbtProxyMs": {
+        "min": 35,
+        "median": 37,
+        "max": 46
+      },
+      "apiRequests": {
+        "min": 8,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 3,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 14571,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 503583,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "jsTransferBytes": {
+        "min": 145307,
+        "median": 145307,
+        "max": 145307
+      },
+      "jsEncodedBytes": {
+        "min": 143807,
+        "median": 143807,
+        "max": 143807
+      },
+      "jsRequests": {
+        "min": 5,
+        "median": 5,
+        "max": 5
+      },
+      "domNodes": {
+        "min": 887,
+        "median": 887,
+        "max": 887
+      }
+    },
+    "long-1280-warm": {
+      "samples": 3,
+      "readyMs": {
+        "min": 1004,
+        "median": 1037,
+        "max": 1055
+      },
+      "fcpMs": {
+        "min": 244,
+        "median": 244,
+        "max": 260
+      },
+      "lcpObservedMs": {
+        "min": 708,
+        "median": 728,
+        "max": 744
+      },
+      "tbtProxyMs": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "apiRequests": {
+        "min": 14,
+        "median": 14,
+        "max": 14
+      },
+      "liveRequests": {
+        "min": 1,
+        "median": 1,
+        "max": 1
+      },
+      "listRequests": {
+        "min": 9,
+        "median": 9,
+        "max": 9
+      },
+      "listEncodedBytes": {
+        "min": 43713,
+        "median": 43713,
+        "max": 43713
+      },
+      "listDecodedBytes": {
+        "min": 1510749,
+        "median": 1510749,
+        "max": 1510749
+      },
+      "jsTransferBytes": {
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "jsEncodedBytes": {
+        "min": 143807,
+        "median": 143807,
+        "max": 143807
+      },
+      "jsRequests": {
+        "min": 5,
+        "median": 5,
+        "max": 5
+      },
+      "domNodes": {
+        "min": 887,
+        "median": 887,
+        "max": 887
+      }
+    }
+  }
+}

@@ -17,6 +17,7 @@
     "test:browser:creation": "playwright test --config playwright.lifecycle.config.ts tournamentCreation.browser.ts",
     "test:browser:leaderboards": "playwright test --config playwright.lifecycle.config.ts leaderboardLive.browser.ts",
     "test:browser:profile": "playwright test --config playwright.lifecycle.config.ts profile.browser.ts",
+    "test:browser:routes": "playwright test --config playwright.routes.config.ts",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview"
   },

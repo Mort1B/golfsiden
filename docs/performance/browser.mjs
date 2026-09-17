@@ -135,6 +135,7 @@ try {
   await new Promise(resolve => server.close(resolve))
   writeFileSync(resolve(out, 'browser.json'), JSON.stringify({
     sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+    sourceStatus: execFileSync('git', ['status', '--short', '--', 'frontend'], { cwd: root, encoding: 'utf8' }).trim(),
     assetHashes: Object.fromEntries(readdirSync(resolve(root, 'frontend/dist/assets')).map(name => [name, createHash('sha256').update(readFileSync(resolve(root, 'frontend/dist/assets', name))).digest('hex')])),
     browser: version, node: process.version, cpu: cpus()[0].model, logicalCpus: cpus().length, memoryGiB: totalmem() / 2 ** 30,
     conditions: { latencyMs: 100, downloadBytesPerSecond: 200000, uploadBytesPerSecond: 93750, cpuSlowdown: 4, gzip: true, streamDelayMs, api: 'HTTP synthetic fixtures; no backend/database latency', cold: 'fresh browser context, empty HTTP cache', warm: 'same-context full navigation, cached immutable assets, new JS/query cache', observeAfterReadyMs: 700 },

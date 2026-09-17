@@ -5,6 +5,10 @@ No runtime, dependency, API, migration, authorization or scoring change is inclu
 The baseline is **READY WITH KNOWN LIMITATIONS**: production-build browser evidence
 and source-derived database work are available; real API/PostgreSQL timings are not.
 
+This is the preserved pre-optimization snapshot. The subsequent
+[route-splitting comparison](route-splitting/README.md) records the current build;
+the baseline findings and samples below have not been rewritten.
+
 ## Reproduce
 
 From the repository root, with installed frontend dependencies and Google Chrome:
