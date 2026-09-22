@@ -4,9 +4,11 @@ import { matchApi, matchKeys, type MatchCard } from '../../api/matchPlay'
 import { useAuth } from '../auth/authContext'
 import { EmptyState, ErrorState, LoadingState } from '../../ui/AsyncState'
 import { eventLabel, matchResult, matchUrl, pointsLabel, tableUrl } from './format'
-export function MatchRound({ roundId, playerId }: { roundId: string; playerId?: string }) {
+export function MatchRound({ roundId, playerId, ready = true }: { roundId: string; playerId?: string; ready?: boolean }) {
   const user = useAuth().session?.user_id ?? ''
-  const query = usePrivateResultQuery({ userId: user, roundId }, { queryKey: matchKeys.list(user, roundId), queryFn: ({ signal }) => matchApi.list(roundId, signal), retry: false })
+  const query = usePrivateResultQuery({ userId: user, roundId }, { queryKey: matchKeys.list(user, roundId), queryFn: ({ signal }) => matchApi.list(roundId, signal), retry: false, enabled: ready })
+  // Retain the observer, but never publish private content through a closed parent gate.
+  if (!ready) return null
   if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />
   if (!query.data) return <LoadingState />
   const cards = query.data.matches.filter(m => !playerId || m.opponents.some(p => p.player_id === playerId))

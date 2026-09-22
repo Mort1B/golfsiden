@@ -1928,14 +1928,18 @@ point one route-owned subscription: the direct wrapper, history parent or global
 results parent. Shared result loading, errors and remounts retain that owner.
 Settled match refreshes no longer start the duplicate list/table generation.
 Browser-return session refreshes still coalesce; required authority checks,
-projection clearing and the remaining table-loading list remounts are unchanged.
+projection clearing and account isolation remain unchanged.
 
-The [remount investigation](performance/remounts/README.md) isolates the remaining
-list generation cancelled while match-table loading removes its list children.
-Visibility and reconnect still clear private projections before recovery; denied
-reads cannot restore them. A possible readiness-gated observer repair is proposed,
-with conditional savings under the existing 20-second freshness window. It is
-not implemented in this investigation and changes no current product behavior.
+The [remount investigation](performance/remounts/README.md) identified list reads
+cancelled by table-loading unmounts. The
+[gated-observer repair](performance/gated-observers/README.md) keeps current-round
+list observers mounted while their table loads. Loading still removes all private
+round headings, cards, results and links from the DOM. Initial list reads wait for
+the table, and fresh restricted-final payloads replace old full results before
+presentation resumes. Errors, missing rounds and scope changes remove old owners.
+Other match-list views retain their existing behavior. Requests already started
+may complete while hidden; if the table remains pending beyond the unchanged
+20-second freshness window, reopening can still start another list read.
 
 Home and sign-in remain available from the entry module. Other page modules load
 when their route is opened, with the existing session gate applied first on

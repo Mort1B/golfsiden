@@ -55,7 +55,7 @@ export async function routeWorkspace(page: Page) {
     }
     return route.fallback()
   })
-  return { state, paths, errors, allowedChunks, score, async close() { expect(errors).toEqual([]); await live.close() } }
+  return { state, paths, errors, allowedChunks, score, live, async close() { expect(errors).toEqual([]); await live.close() } }
 }
 
 export async function routeLayout(page: Page, name: string) {

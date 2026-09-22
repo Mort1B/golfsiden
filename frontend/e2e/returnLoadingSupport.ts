@@ -36,6 +36,7 @@ export async function liveServer() {
   return {
     url: `http://127.0.0.1:${address.port}/live`,
     get connections() { return connections },
+    emit(type: string) { for (const res of streams) res.write(`event: ${type}\ndata: {}\n\n`) },
     stop() { stopped = true; for (const res of streams) res.end() },
     resume() { stopped = false },
     async close() {

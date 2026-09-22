@@ -629,16 +629,17 @@ and reapplies runtime grants before the API is started.
   the repaired duplicate refetches from remaining list-remount work. Synchronous
   projection erasure, reconnect authority refresh, account isolation and the
   queued return drain remain unchanged.
-- Match-result table loading currently removes its list-owning children after
-  projection erasure. The required live refresh can start list reads before that
-  removal, and losing the last signal-consuming observer cancels them; table
-  recovery remounts fresh list reads. The
-  [remount investigation](performance/remounts/README.md) traces this separately
-  from subscription ownership. A disabled-observer/presentation-gate proposal is
-  unimplemented. Disabling an observer does not cancel its in-flight read, but
-  re-enabling a completed stale query can refetch under the unchanged 20-second
-  application freshness window. Any repair must keep current authority gates and
-  no private DOM during loading; observer lifetime alone cannot authorize output.
+- Match-result children derive only from current rounds and retain their query
+  observers during table-only loading. `MatchRound` readiness gates both query
+  enablement and all private presentation; the parent gates round headings and
+  table content. No initial list read starts before table readiness. An existing
+  read may finish while disabled, without publishing DOM. Parent errors, missing
+  rounds and account/tournament/round removal still remove owners. Other callers
+  default to ready. No copied server data or historical admission state is kept.
+  The [gated-observer comparison](performance/gated-observers/README.md) measures
+  the repair identified by the [remount investigation](performance/remounts/README.md).
+  Re-enabling a completed stale query can still refetch under the unchanged
+  20-second freshness window; observer lifetime never authorizes private output.
 - Target-bearing frontend DTOs are decoded against the requested tournament,
   round, player, owner, metric, invitation predecessor, and course-configuration
   identities before cache insertion. Roster, round, team, pairing, invitation,
@@ -756,10 +757,10 @@ and reapplies runtime grants before the API is started.
   with a signal; a protected-origin read remains active while another observer
   needs it. Final-observer cancellation can abort that read. The
   [cancellation comparison](performance/cancellation/README.md) records the boundary.
-  Stream `open` still erases private projections and refreshes authority. Clearing
-  the match table can unmount its list children, cancelling a newly started list
-  generation before a fresh table remounts them. Do not remove the authority
-  refresh or retain private data to reduce those requests.
+  Stream `open` still erases private projections and refreshes authority. Table-only
+  loading now retains disabled list observers behind a presentation gate; errors
+  and removed scopes still remove owners. Authority refresh and projection erasure
+  remain required even when retained observers avoid a cancelled generation.
 - The score route likewise owns tournament, round, tagged owner, hole, and view
   selection in canonical URL parameters. Completion validation is its owner
   authority, and exact runtime decoders protect scorecard state before caching.

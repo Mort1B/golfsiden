@@ -1,5 +1,9 @@
 # Transient match-list remount investigation — 2026-09-22
 
+Historical baseline: the proposal below is now implemented and measured in the
+[gated-observer repair](../gated-observers/README.md). This report and its original
+artifacts retain the pre-repair behavior.
+
 **READY WITH KNOWN LIMITATIONS.** The remaining extra list generation comes from
 removing list observers while the table reloads. Evidence supports a bounded
 proposal to retain disabled observers during table-only pending state, with all
