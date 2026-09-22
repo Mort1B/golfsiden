@@ -10,6 +10,28 @@
 
 Backend request handling is split into `api`, `repositories`, and `domain`. Handlers own HTTP validation and response mapping, repositories own SQL and transaction mechanics, and pure handicap/scoring/lifecycle behavior stays in `domain`. Authentication and score authorization are isolated modules rather than handler-local policy.
 
+## Transaction initialization and cancellation
+
+Cargo pins the SQLx 0.8.6 PostgreSQL driver through the local
+`vendor/sqlx-postgres` override, which backports upstream PR #4394. The driver
+records transaction depth after queuing BEGIN but before awaiting the server;
+cancelling that await therefore queues rollback in protocol order. Nested starts
+roll back their savepoint and preserve the outer transaction. A failed BEGIN
+that never enters a transaction unwinds the provisional depth.
+
+Repository transaction ownership and isolation levels remain unchanged. SQLx
+drains rollback before returning a healthy connection to the pool; successful
+requests add no cleanup query or extra connection. Authority remains local to
+each request, with existing live-session and membership locks and expiry checks.
+HTTP cancellation may drop the pending request future; browser refreshes need
+no cancellation suppression or error masking.
+
+The vendored directory is preserved third-party source, outside workspace
+membership, with provenance and removal criteria in `vendor/sqlx-postgres/PATCH.md`.
+Only transaction initialization differs from its upstream release. Application
+source limits and layer ownership remain unchanged. The production image copies
+the same dependency, so local and container builds use the same repair.
+
 ## Browser route module boundary
 
 The router keeps home and sign-in eager and defers other page modules through

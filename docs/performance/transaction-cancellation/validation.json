@@ -1,0 +1,104 @@
+{
+  "date": "2026-09-22",
+  "verdict": "READY",
+  "base_commit": "ae454866b9929c3d64b968e6677c2b037573ccce",
+  "source_sha256": {
+    "Cargo.toml": "25a92c5a0b129d7bda8755cb3c4f45ca7c942cea166b17afc51f94f8409fb7fe",
+    "Cargo.lock": "1953f8a2f4a576551c3ac9c4cd0096b7428ee832f739886cb5f2220ab49dc214",
+    "backend/Dockerfile.production": "3d4e32aeee56feaf154e64441a5ffc38f1ad3e94b042ee38a14fee4121d20986",
+    "vendor/sqlx-postgres/src/transaction.rs": "9479f8001aae13eae24c9b0d8d450233aaae817cb4be107c45c394e79a6fc20e",
+    "backend/tests/transaction_cancellation.rs": "cb0efa59b6a0f2a15e9c4f4ab7fd17818a1b0b74142fe3924ccd76c6567c88c9",
+    "backend/tests/transaction_cancellation/proxy.rs": "10aa71fe5e556add993463b4a0964acab1ad30d06943828fc4fc866d30c15e04",
+    "backend/tests/singles_match/transaction_cancellation.rs": "b2b26bb46681c0b7e06fe1d0b7d373b07c3dbefa00e807bcd60325d2125a4816"
+  },
+  "regression_controls": {
+    "original_0_8_6": {
+      "ordinary_begin": "fails with SQLSTATE 25001 on same backend PID",
+      "savepoint": "fails: committed markers [2], expected [1, 2]",
+      "http_disconnect": "fails: zero rollback commands, expected one",
+      "other_controls_passed": 3
+    },
+    "patched": {
+      "transaction_tests_passed": 5,
+      "http_disconnect_test_passed": true,
+      "match_suite_passed": 32
+    }
+  },
+  "ladders": {
+    "format": "passed",
+    "ordinary": {
+      "passed": 208,
+      "failed": 0,
+      "ignored": 0
+    },
+    "database_feature": {
+      "passed": 593,
+      "failed": 0,
+      "ignored": 3
+    },
+    "database_feature_count_includes_ordinary": true,
+    "postgresql_integration_passed": 385,
+    "clippy_all_targets_all_features_deny_warnings": "passed",
+    "migrate": "passed",
+    "seed": "passed",
+    "production_container_build": "passed",
+    "driver_warnings": "Existing upstream deprecated try_next and dead Flush warnings remain; application Clippy gate passes.",
+    "application_diff_check": "passed; preserved upstream vendor files contain 20 pre-existing trailing-whitespace lines"
+  },
+  "browser": {
+    "passed": 37,
+    "failed": 0,
+    "actual_api_cases": 11,
+    "mocked_api_cases": 26,
+    "widths": [
+      320,
+      390,
+      1280
+    ],
+    "backend": "production image golf-tx-repair-check; development configuration; one pooled connection; exclusive PostgreSQL 17",
+    "suites": [
+      "matchPlay",
+      "matchPlayerHistory",
+      "matchCancellation",
+      "matchResultGate",
+      "returnLoading",
+      "returnOrdering"
+    ],
+    "screenshots_inspected": [
+      "filter-real-released-320.png",
+      "filter-real-hidden-1280.png",
+      "filter-real-released-1280.png",
+      "golf-return-refresh-error-320.png"
+    ],
+    "transaction_25001_in_api_log": 0
+  },
+  "successful_path_overhead": {
+    "cycles_each_version": 100,
+    "begin_commands": 100,
+    "commit_commands": 100,
+    "rollback_commands": 0,
+    "same_backend_pid": true,
+    "additional_queries": 0,
+    "additional_connections": 0,
+    "latency_claim": null
+  },
+  "review": "Independent read-only source and test review found no correctness or security findings.",
+  "not_run": [
+    {
+      "check": "Frontend unit/type/lint/build ladder",
+      "reason": "No frontend source, contracts, dependencies or browser test files changed; existing Chrome suites ran against Vite."
+    },
+    {
+      "check": "Three ignored authorization release benchmarks",
+      "reason": "Unrelated listing latency measurement; successful-path query and pool overhead are covered directly by protocol audit."
+    },
+    {
+      "check": "Physical devices, Safari, complete production Caddy deployment",
+      "reason": "Scope uses real desktop Chrome emulated widths plus production API container and controlled real HTTP server."
+    }
+  ],
+  "limits": [
+    "The historical desktop event sequence was not retained and cannot be reconstructed exactly. The causal HTTP cancellation mechanism is independently reproduced.",
+    "Vendored driver must be retained until a compatible upstream release including the fix passes the cancellation regressions."
+  ]
+}

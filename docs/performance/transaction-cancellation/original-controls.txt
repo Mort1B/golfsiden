@@ -1,0 +1,26 @@
+running 5 tests
+
+thread 'ordinary_begin_cancellation_returns_clean_connection' (173275) panicked at backend/tests/transaction_cancellation.rs:35:10:
+called `Result::unwrap()` on an `Err` value: Database(PgDatabaseError { severity: Error, code: "25001", message: "SET TRANSACTION ISOLATION LEVEL must be called before any query", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("guc.c"), line: Some(6979), routine: Some("call_enum_check_hook") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test ordinary_begin_cancellation_returns_clean_connection ... FAILED
+
+thread 'cancelled_savepoint_preserves_outer_transaction' (173273) panicked at backend/tests/transaction_cancellation.rs:87:5:
+assertion `left == right` failed
+  left: [2]
+ right: [1, 2]
+test cancelled_savepoint_preserves_outer_transaction ... FAILED
+test failed_and_successful_begins_preserve_modes_and_reuse ... ok
+test cancelled_request_work_rolls_back_writes_settings_and_locks ... ok
+100 reused-connection transactions: 97.114598ms; 100 BEGIN, 100 COMMIT, 0 ROLLBACK
+test successful_pool_reuse_adds_no_rollback_queries ... ok
+
+failures:
+
+failures:
+    cancelled_savepoint_preserves_outer_transaction
+    ordinary_begin_cancellation_returns_clean_connection
+
+test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
+
+error: test failed, to rerun pass `-p golf-api --test transaction_cancellation`

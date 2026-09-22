@@ -14,6 +14,7 @@ mod singles_match {
     mod overall;
     mod privacy;
     mod setup;
+    mod transaction_cancellation;
     mod upgrade;
     use fixture::*;
     use golf_api::{

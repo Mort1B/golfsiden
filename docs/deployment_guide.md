@@ -20,6 +20,14 @@ are expected to survive loss of that host.
 - A deployment checkout of this repository. Rust and Node are not required on
   the host because the images build them.
 
+Keep `vendor/sqlx-postgres` in the build context. Cargo and the production
+Dockerfile use this pinned SQLx 0.8.6 transaction-cancellation backport. Deploying
+the repaired API replaces its pool and connections; there is no schema migration
+for this change. Rolling back to an older binary also restores the known
+transaction-initialization defect. Remove the override only after adopting an
+upstream release with the fix and passing the retained cancellation regressions;
+see `vendor/sqlx-postgres/PATCH.md`.
+
 Caddy obtains and renews public certificates automatically. `SITE_ADDRESS` must
 be a hostname only: no scheme, path, query, fragment, or port. The web container
 refuses invalid values. `localhost` is suitable only for a local acceptance run.

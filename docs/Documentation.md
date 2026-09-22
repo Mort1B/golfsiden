@@ -56,6 +56,14 @@ Admins can deliberately share limited overall standings through a revocable
 
 ## Production and operator behavior
 
+Interrupted SQLx transaction initialization queues rollback before the connection
+can be reused, including when a disconnected HTTP client cancels a private read.
+The application carries a narrow PostgreSQL-driver backport; build from the full
+checkout including `vendor/sqlx-postgres`. Successful requests retain their query
+counts and pool reuse. Private refreshes, repeatable-read isolation, membership
+checks and wall-clock session expiry keep their existing behavior. See the
+[cancellation validation report](performance/transaction-cancellation/README.md).
+
 The supported production baseline is a single-host Docker Compose deployment:
 HTTPS Caddy serves the built Vite output and proxies same-origin `/api` and SSE
 traffic to the Rust release binary; PostgreSQL is reachable only on an internal

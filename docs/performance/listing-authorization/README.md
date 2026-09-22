@@ -128,6 +128,11 @@ passed initially. Screenshots and layout/interaction assertions were checked.
 
 ## Known transaction-start cancellation issue
 
+**Subsequent repair:** the [transaction-cancellation report](../transaction-cancellation/README.md)
+records the ordinary-BEGIN and HTTP-disconnect reproducers and the driver
+backport. The account below preserves this listing iteration's original evidence
+and limitation; its passing rerun was not itself a repair.
+
 One desktop return-refresh check encountered SQLSTATE 25001 (`SET TRANSACTION
 ISOLATION LEVEL must be called before any query`) before listing authorization
 began. This is consistent with an independently reproduced SQLx 0.8.6

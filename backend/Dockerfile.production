@@ -2,6 +2,7 @@ FROM rust:1.88-bookworm AS builder
 
 WORKDIR /source
 COPY Cargo.toml Cargo.lock ./
+COPY vendor/sqlx-postgres vendor/sqlx-postgres
 COPY backend/Cargo.toml backend/Cargo.toml
 COPY migrations migrations
 COPY backend backend

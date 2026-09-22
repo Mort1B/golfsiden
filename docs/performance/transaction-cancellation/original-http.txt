@@ -1,0 +1,17 @@
+running 1 test
+
+thread 'singles_match::transaction_cancellation::http_disconnect_during_begin_reuses_clean_authorized_connection' (177518) panicked at backend/tests/singles_match/transaction_cancellation.rs:75:5:
+assertion `left == right` failed
+  left: 0
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test singles_match::transaction_cancellation::http_disconnect_during_begin_reuses_clean_authorized_connection ... FAILED
+
+failures:
+
+failures:
+    singles_match::transaction_cancellation::http_disconnect_during_begin_reuses_clean_authorized_connection
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 31 filtered out; finished in 0.36s
+
+error: test failed, to rerun pass `-p golf-api --test singles_match`

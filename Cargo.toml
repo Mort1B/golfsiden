@@ -1,6 +1,10 @@
 [workspace]
 members = ["backend"]
+exclude = ["vendor/sqlx-postgres"]
 resolver = "2"
+
+[patch.crates-io]
+sqlx-postgres = { path = "vendor/sqlx-postgres" }
 
 [workspace.package]
 edition = "2024"
