@@ -1,12 +1,14 @@
 import { usePrivateResultQuery } from '../leaderboards/usePrivateResultQuery'
 import { Link } from 'react-router-dom'
 import { matchApi, matchKeys, type MatchCard } from '../../api/matchPlay'
+import { isCanonicalUuid } from '../../api/decoder'
 import { useAuth } from '../auth/authContext'
 import { EmptyState, ErrorState, LoadingState } from '../../ui/AsyncState'
 import { eventLabel, matchResult, matchUrl, pointsLabel, tableUrl } from './format'
 export function MatchRound({ roundId, playerId, ready = true }: { roundId: string; playerId?: string; ready?: boolean }) {
   const user = useAuth().session?.user_id ?? ''
-  const query = usePrivateResultQuery({ userId: user, roundId }, { queryKey: matchKeys.list(user, roundId), queryFn: ({ signal }) => matchApi.list(roundId, signal), retry: false, enabled: ready })
+  const selectedPlayer = playerId && isCanonicalUuid(playerId) && playerId === playerId.toLowerCase() ? playerId : undefined
+  const query = usePrivateResultQuery({ userId: user, roundId }, { queryKey: selectedPlayer ? matchKeys.listForPlayer(user, roundId, selectedPlayer) : matchKeys.list(user, roundId), queryFn: ({ signal }) => selectedPlayer ? matchApi.listForPlayer(roundId, selectedPlayer, signal) : matchApi.list(roundId, signal), retry: false, enabled: ready })
   // Retain the observer, but never publish private content through a closed parent gate.
   if (!ready) return null
   if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />

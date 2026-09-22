@@ -16,9 +16,9 @@ function setup() {
 }
 it('erases read projections across formats and metrics, preserves other accounts/trips and scoring state', () => {
   const client = setup(), owner = { type: 'player' as const, id: 'player' }
-  const erased = [leaderboardKeys.round('user','round','gross'), leaderboardKeys.round('user','round','net'), leaderboardKeys.tournament('user','trip','gross'), scoringKeys.read('user','round',owner), matchKeys.table('user','trip'), matchKeys.list('user','round'), matchKeys.read('user','round','match')]
+  const erased = [leaderboardKeys.round('user','round','gross'), leaderboardKeys.round('user','round','net'), leaderboardKeys.tournament('user','trip','gross'), scoringKeys.read('user','round',owner), matchKeys.table('user','trip'), matchKeys.list('user','round'), matchKeys.listForPlayer('user','round','first'), matchKeys.listForPlayer('user','round','second'), matchKeys.read('user','round','match')]
   client.setQueryData(tournamentKeys.rounds('user', 'other'), [{ id: 'other-round', tournament_id: 'other' }])
-  const preserved = [leaderboardKeys.round('user','other-round','gross'), scoringKeys.read('user','other-round',owner), leaderboardKeys.round('other','round','gross'), leaderboardKeys.tournament('user','other','gross'), scoringKeys.scoring('user','round',owner), matchKeys.scoring('user','round','match')]
+  const preserved = [matchKeys.listForPlayer('other','round','first'), matchKeys.listForPlayer('user','other-round','first'), leaderboardKeys.round('user','other-round','gross'), scoringKeys.read('user','other-round',owner), leaderboardKeys.round('other','round','gross'), leaderboardKeys.tournament('user','other','gross'), scoringKeys.scoring('user','round',owner), matchKeys.scoring('user','round','match')]
   for (const key of [...erased, ...preserved]) client.setQueryData(key, { private: 'retained' })
   denyPrivateResults(client, scope, source, denied)
   for (const key of erased) expect(client.getQueryData(key)).toBeUndefined()

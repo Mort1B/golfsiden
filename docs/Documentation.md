@@ -1941,12 +1941,24 @@ Other match-list views retain their existing behavior. Requests already started
 may complete while hidden; if the table remains pending beyond the unchanged
 20-second freshness window, reopening can still start another list read.
 
-The [history payload investigation](performance/history-payload/README.md) confirms
-that player-selected match history still transfers and validates every card in each
-round before filtering. History renders fewer cards but shares the existing full
-listing cache. A measured player-subset experiment supports a future separately
-keyed, player-filtered full-card read; it is not implemented. Current permissions,
-restricted-final filtering, table reads and refresh behavior remain unchanged.
+Player-selected match history now requests only that player's full match card in
+each round. The optional `player_id` query on the round match-list endpoint is a
+UUID; filtered responses echo the requested round/player and return at most one
+card, with the matching writable-ID subset. A valid player with no match returns
+an empty list. Invalid or duplicate API filter parameters return the structured
+400 error. Authentication, membership, private/no-store responses, historical
+handicaps and restricted-final visibility apply identically to both list forms.
+
+History uses separate account/round/player cache entries. The full list remains
+available to management and all-results views, and the tournament match table
+remains a full read. Opening an uncached player can therefore add one request per
+round even while the full list is fresh; revisiting a fresh filter reuses it.
+Full-card evidence validation, final release, scoring permissions, cancellation,
+return/SSE refreshes and the 20-second freshness window remain unchanged.
+Malformed, uppercase and compact URL player text retain their prior exact-match
+behavior rather than being silently normalized. Empty URL player text still shows
+all players. The [validation and measurements](performance/history-filter/README.md)
+describe the savings and navigation tradeoff.
 
 Home and sign-in remain available from the entry module. Other page modules load
 when their route is opened, with the existing session gate applied first on

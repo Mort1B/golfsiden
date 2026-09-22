@@ -1,5 +1,5 @@
-import { decodeCompletion, decodeListing, decodeTable } from './matchPlay/decoders'
-export { decodeCompletion, decodeListing, decodeTable } from './matchPlay/decoders'
+import { decodeCompletion, decodeListing, decodePlayerListing, decodeTable } from './matchPlay/decoders'
+export { decodeCompletion, decodeListing, decodePlayerListing, decodeTable } from './matchPlay/decoders'
 import { decodeObject, invalidData } from './decoder'
 import { jsonRequest, requestDecoded } from './http'
 import { privateWorkspaceKeys } from './privateWorkspace'
@@ -12,6 +12,7 @@ export type * from './matchPlay/contracts'
 export { decodeCard } from './matchPlay/cardDecoder'
 export const matchKeys = {
   list: (user: string, round: string) => [...privateWorkspaceKeys.user(user), 'rounds', round, 'match-play', 'read-list'] as const,
+  listForPlayer: (user: string, round: string, player: string) => [...matchKeys.list(user, round), 'player', player] as const,
   read: (user: string, round: string, match: string) => [...privateWorkspaceKeys.user(user), 'rounds', round, 'match-play', 'read', match] as const,
   scoring: (user: string, round: string, match: string) => [...privateWorkspaceKeys.user(user), 'rounds', round, 'match-play', 'scoring', match] as const,
   completion: (user: string, round: string) => [...privateWorkspaceKeys.user(user), 'rounds', round, 'match-play', 'completion'] as const,
@@ -20,6 +21,7 @@ export const matchKeys = {
 const base = (round: string) => `/api/rounds/${round}/match-play`
 export const matchApi = {
   list: (round: string, signal?: AbortSignal) => requestDecoded(`${base(round)}/matches`, v => decodeListing(v, round), { signal }),
+  listForPlayer: (round: string, player: string, signal?: AbortSignal) => requestDecoded(`${base(round)}/matches?${new URLSearchParams({ player_id: player })}`, v => decodePlayerListing(v, round, player), { signal }),
   read: (round: string, match: string, signal?: AbortSignal) => requestDecoded(`${base(round)}/matches/${match}`, v => decodeCard(v, round, match), { signal }),
   scoring: (round: string, match: string, signal?: AbortSignal) => requestDecoded(`${base(round)}/matches/${match}/scoring`, v => decodeCard(v, round, match, true), { signal }),
   completion: (round: string) => requestDecoded(`${base(round)}/completion`, v => decodeCompletion(v, round)),

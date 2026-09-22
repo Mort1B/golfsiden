@@ -11,7 +11,10 @@ use crate::{
 };
 use axum::{
     Json, Router,
-    extract::{Path, State, rejection::JsonRejection},
+    extract::{
+        Path, Query, State,
+        rejection::{JsonRejection, QueryRejection},
+    },
     http::{HeaderValue, header::CACHE_CONTROL},
     response::Response,
     routing::{get, post, put},
@@ -81,15 +84,31 @@ async fn scoring(
         .map(Json)
         .map_err(map_error)
 }
+#[derive(serde::Deserialize)]
+struct ListQuery {
+    player_id: Option<Uuid>,
+}
 async fn list(
     State(state): State<Arc<AppState>>,
     auth: AuthenticatedSession,
     Path(round): Path<Uuid>,
+    query: Result<Query<ListQuery>, QueryRejection>,
 ) -> ApiResult<Json<Listing>> {
-    match_play::reads::list(&state.pool, auth.principal.session_id, round)
-        .await
-        .map(Json)
-        .map_err(map_error)
+    let Query(query) =
+        query.map_err(|_| ApiError::BadRequest("invalid match player filter".into()))?;
+    let listing = match query.player_id {
+        Some(player) => {
+            match_play::reads::list_for_player(
+                &state.pool,
+                auth.principal.session_id,
+                round,
+                player,
+            )
+            .await
+        }
+        None => match_play::reads::list(&state.pool, auth.principal.session_id, round).await,
+    };
+    listing.map(Json).map_err(map_error)
 }
 async fn assign(
     State(state): State<Arc<AppState>>,

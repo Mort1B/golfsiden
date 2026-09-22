@@ -1,13 +1,20 @@
 import { decodeArray, decodeInteger, decodeObject, decodeString, decodeUuid, invalidData } from '../decoder'
 import { decodeCard, nullableBoolean, status } from './cardDecoder'
 import { exact } from './eventDecoder'
-import type { MatchCompletion, MatchListing, MatchTable } from './contracts'
+import type { MatchCompletion, MatchListing, MatchPlayerListing, MatchTable } from './contracts'
 export function decodeListing(value: unknown, round: string): MatchListing {
   const d = decodeObject(value, 'listing'); exact(d, ['round_id', 'matches', 'writable_match_ids'])
   const matches = decodeArray(d.matches, 'matches', v => decodeCard(v, round, decodeUuid(decodeObject(v, 'match').match_id, 'match_id')))
   const writable = decodeArray(d.writable_match_ids, 'writable', decodeUuid)
   if (d.round_id !== round || new Set(matches.map(m => m.match_id)).size !== matches.length || new Set(writable).size !== writable.length || writable.some(id => !matches.some(m => m.match_id === id))) invalidData('matchdata', 'listing.identity')
   return { round_id: round, matches, writable_match_ids: writable }
+}
+export function decodePlayerListing(value: unknown, round: string, player: string): MatchPlayerListing {
+  const d = decodeObject(value, 'player listing'); exact(d, ['round_id', 'player_id', 'matches', 'writable_match_ids'])
+  if (decodeUuid(d.player_id, 'player') !== player) invalidData('matchdata', 'listing.player')
+  const listing = decodeListing({ round_id: d.round_id, matches: d.matches, writable_match_ids: d.writable_match_ids }, round)
+  if (listing.matches.length > 1 || listing.matches.some(card => !card.opponents.some(p => p.player_id === player))) invalidData('matchdata', 'listing.player matches')
+  return { ...listing, player_id: player }
 }
 export function decodeCompletion(value: unknown, round: string): MatchCompletion {
   const d = decodeObject(value, 'completion'); exact(d, ['format', 'round_id', 'status', 'matches', 'ready_to_complete', 'ready_to_lock'])

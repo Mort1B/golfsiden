@@ -5,7 +5,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { api } from '../api/client'
 import { ApiHttpError } from '../api/http'
-import { matchApi, matchKeys, type MatchListing, type MatchTable } from '../api/matchPlay'
+import { matchApi, matchKeys, type MatchPlayerListing, type MatchTable } from '../api/matchPlay'
 import { matchFixture, matchIds } from '../api/matchPlay/fixtures'
 import { tournamentKeys } from '../api/tournaments'
 import { AuthContext, type AuthContextValue } from '../features/auth/authContext'
@@ -26,7 +26,7 @@ class Source extends EventTarget {
 const trip = { ...tournament, id: matchIds.tournament, counted_rounds: null }
 const matchRound = { ...round, id: matchIds.round, tournament_id: trip.id, status: 'open' as const, scoring_format: 'singles_match_play' as const }
 const table: MatchTable = { tournament_id: trip.id, entries: [{ player_id: matchIds.first, display_name: 'Private table name', position: null, half_points: 0, played: 0, wins: 0, draws: 0, losses: 0 }] }
-const listing: MatchListing = { round_id: matchRound.id, matches: [matchFixture()], writable_match_ids: [matchIds.match] }
+const listing: MatchPlayerListing = { round_id: matchRound.id, player_id: matchIds.first, matches: [matchFixture()], writable_match_ids: [matchIds.match] }
 const paths = [
   `/tournaments/${trip.id}/match-results`,
   `/tournaments/${trip.id}/results/players/${matchIds.first}?metric=net`,
@@ -69,31 +69,35 @@ beforeEach(() => {
   vi.spyOn(api, 'rounds').mockResolvedValue([matchRound])
   vi.spyOn(matchApi, 'table').mockResolvedValue(table)
   vi.spyOn(matchApi, 'list').mockResolvedValue(listing)
+  vi.spyOn(matchApi, 'listForPlayer').mockResolvedValue(listing)
 })
 afterEach(async () => { cleanup(); client?.clear(); await Promise.resolve(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
+
+function read(path: string) { return path.includes('/results/players/') ? vi.mocked(matchApi.listForPlayer) : vi.mocked(matchApi.list) }
+function listKey(path: string) { return path.includes('/results/players/') ? matchKeys.listForPlayer(session.user_id, matchRound.id, matchIds.first) : matchKeys.list(session.user_id, matchRound.id) }
 
 for (const path of paths) {
   it(`does not fetch or expose lists before initial table readiness: ${path}`, async () => {
     const pending = deferred<MatchTable>(); vi.mocked(matchApi.table).mockReturnValue(pending.promise)
     mount(path)
     await waitFor(() => expect(client.getQueryData(tournamentKeys.rounds(session.user_id, trip.id))).toBeDefined())
-    await waitFor(() => expect(client.getQueryCache().find({ queryKey: matchKeys.list(session.user_id, matchRound.id), exact: true })?.getObserversCount()).toBe(1))
-    expect(client.getQueryCache().find({ queryKey: matchKeys.list(session.user_id, matchRound.id), exact: true })?.isActive()).toBe(false)
-    expect(matchApi.list).not.toHaveBeenCalled(); noPrivateDom()
+    await waitFor(() => expect(client.getQueryCache().find({ queryKey: listKey(path), exact: true })?.getObserversCount()).toBe(1))
+    expect(client.getQueryCache().find({ queryKey: listKey(path), exact: true })?.isActive()).toBe(false)
+    expect(read(path)).not.toHaveBeenCalled(); noPrivateDom()
     await act(async () => { pending.resolve(table) }); await populated()
-    expect(matchApi.list).toHaveBeenCalledOnce()
+    expect(read(path)).toHaveBeenCalledOnce()
   })
 
   it.each(['table-first', 'list-first', 'stale-list-first'] as const)(`retains refresh with %s response ordering: ${path}`, async order => {
     mount(path); await populated()
-    const nextTable = deferred<MatchTable>(), nextList = deferred<MatchListing>()
+    const nextTable = deferred<MatchTable>(), nextList = deferred<MatchPlayerListing>()
     let signal: AbortSignal | undefined
     vi.mocked(matchApi.table).mockReturnValueOnce(nextTable.promise)
-    vi.mocked(matchApi.list).mockClear().mockImplementationOnce((_id, value) => { signal = value; return nextList.promise })
+    read(path).mockClear().mockImplementationOnce((_id: string, value?: string | AbortSignal, playerSignal?: AbortSignal) => { signal = typeof value === 'string' ? playerSignal : value; return nextList.promise })
     await emit('visibility'); await waitFor(noPrivateDom)
-    const query = client.getQueryCache().find({ queryKey: matchKeys.list(session.user_id, matchRound.id), exact: true })
+    const query = client.getQueryCache().find({ queryKey: listKey(path), exact: true })
     expect(query?.getObserversCount()).toBe(1); expect(signal?.aborted).toBe(false)
-    expect(matchApi.list).toHaveBeenCalledOnce()
+    expect(read(path)).toHaveBeenCalledOnce()
     if (order === 'table-first') {
       await act(async () => { nextTable.resolve(table) })
       expect(screen.queryByRole('heading', { name: /Andreas.*Bjørn/ })).toBeNull()
@@ -105,19 +109,19 @@ for (const path of paths) {
     }
     await populated()
     expect(signal?.aborted).toBe(false)
-    expect(matchApi.list).toHaveBeenCalledTimes(order === 'stale-list-first' ? 2 : 1)
+    expect(read(path)).toHaveBeenCalledTimes(order === 'stale-list-first' ? 2 : 1)
   })
 
   it(`only presents restricted-final data after the parent reopens: ${path}`, async () => {
     const full = { ...matchFixture(), finish: { type: 'draw' as const }, resolved_holes: 18, confirmed: true, half_points: [1, 1] as [number, number] }
-    vi.mocked(matchApi.list).mockResolvedValue({ ...listing, matches: [full] })
+    read(path).mockResolvedValue({ ...listing, matches: [full] })
     mount(path); await screen.findByText('Bekreftet resultat')
     const pending = deferred<MatchTable>()
     vi.mocked(matchApi.table).mockReturnValueOnce(pending.promise)
     const restricted = { ...full, holes: full.holes.slice(0, 9), visibility: { mode: 'front_nine' as const }, finish: null, confirmed: null, correction_pending: null, half_points: null, resolved_holes: 0 }
-    vi.mocked(matchApi.list).mockResolvedValue({ ...listing, matches: [restricted], writable_match_ids: [] })
+    read(path).mockResolvedValue({ ...listing, matches: [restricted], writable_match_ids: [] })
     await emit('visibility'); await waitFor(noPrivateDom)
-    await waitFor(() => expect(client.getQueryData(matchKeys.list(session.user_id, matchRound.id))).toEqual({ ...listing, matches: [restricted], writable_match_ids: [] }))
+    await waitFor(() => expect(client.getQueryData(listKey(path))).toEqual({ ...listing, matches: [restricted], writable_match_ids: [] }))
     noPrivateDom()
     await act(async () => { pending.resolve(table) })
     await screen.findByText('Fullføring og poeng er skjult til finalen frigis.')
@@ -126,26 +130,27 @@ for (const path of paths) {
   })
 }
 
-for (const dependency of ['rounds', 'table', 'list'] as const) it.each([401, 403, 404])(`fails closed on fresh ${dependency} %s while gated`, async status => {
-  mount(); await populated()
+for (const path of paths.slice(0, 2)) {
+for (const dependency of ['rounds', 'table', 'list'] as const) it.each([401, 403, 404])(`fails closed on fresh ${dependency} %s while gated: ${path}`, async status => {
+  mount(path); await populated()
   const pending = deferred<MatchTable>()
   vi.mocked(matchApi.table).mockReturnValueOnce(pending.promise)
   const error = new ApiHttpError(status, 'denied', 'Access denied')
   if (dependency === 'rounds') vi.mocked(api.rounds).mockRejectedValueOnce(error)
   if (dependency === 'table') pending.reject(error)
-  if (dependency === 'list') vi.mocked(matchApi.list).mockRejectedValueOnce(error)
+  if (dependency === 'list') read(path).mockRejectedValueOnce(error)
   await emit('visibility')
   await screen.findByText('Access denied'); noPrivateDom()
-  expect(client.getQueryData(matchKeys.list(session.user_id, matchRound.id))).toBeUndefined()
+  expect(client.getQueryData(listKey(path))).toBeUndefined()
   if (dependency !== 'table') { await act(async () => { pending.resolve(table) }); noPrivateDom() }
 })
 
-it.each(['success', 'denial'] as const)('ignores late gated %s after another visibility refresh', async outcome => {
-  mount(); await populated()
-  const oldTable = deferred<MatchTable>(), oldList = deferred<MatchListing>()
+it.each(['success', 'denial'] as const)(`ignores late gated %s after another visibility refresh: ${path}`, async outcome => {
+  mount(path); await populated()
+  const oldTable = deferred<MatchTable>(), oldList = deferred<MatchPlayerListing>()
   let oldSignal: AbortSignal | undefined
   vi.mocked(matchApi.table).mockReturnValueOnce(oldTable.promise)
-  vi.mocked(matchApi.list).mockImplementationOnce((_id, signal) => { oldSignal = signal; return oldList.promise })
+  read(path).mockImplementationOnce((_id: string, value?: string | AbortSignal, playerSignal?: AbortSignal) => { oldSignal = typeof value === 'string' ? playerSignal : value; return oldList.promise })
   await emit('visibility'); await waitFor(noPrivateDom)
   await emit('visibility'); await populated()
   expect(oldSignal?.aborted).toBe(true)
@@ -157,32 +162,34 @@ it.each(['success', 'denial'] as const)('ignores late gated %s after another vis
   await populated(); expect(screen.queryByText('Late denial')).toBeNull()
 })
 
-it.each(['round', 'account', 'tournament'] as const)('removes gated ownership on %s change', async change => {
-  const view = mount(); await populated()
-  const oldList = deferred<MatchListing>(), oldTable = deferred<MatchTable>()
+it.each(['round', 'account', 'tournament'] as const)(`removes gated ownership on %s change: ${path}`, async change => {
+  const view = mount(path); await populated()
+  const oldList = deferred<MatchPlayerListing>(), oldTable = deferred<MatchTable>()
   let signal: AbortSignal | undefined
   vi.mocked(matchApi.table).mockReturnValueOnce(oldTable.promise)
-  vi.mocked(matchApi.list).mockImplementationOnce((_id, value) => { signal = value; return oldList.promise })
+  read(path).mockImplementationOnce((_id: string, value?: string | AbortSignal, playerSignal?: AbortSignal) => { signal = typeof value === 'string' ? playerSignal : value; return oldList.promise })
   await emit('visibility'); await waitFor(noPrivateDom)
   if (change === 'round') await act(async () => { client.setQueryData(tournamentKeys.rounds(session.user_id, trip.id), []) })
   else if (change === 'account') await act(async () => { view.replaceAccount() })
   else await act(() => view.router.navigate('/tournaments/replacement-trip/match-results'))
   await waitFor(() => expect(signal?.aborted).toBe(true))
-  const oldQuery = client.getQueryCache().find({ queryKey: matchKeys.list(session.user_id, matchRound.id), exact: true })
+  const oldQuery = client.getQueryCache().find({ queryKey: listKey(path), exact: true })
   if (change !== 'tournament') expect(oldQuery?.getObserversCount() ?? 0).toBe(0)
   await act(async () => { oldTable.resolve(table); oldList.resolve({ ...listing, matches: [] }) })
   expect(screen.queryByText('Ingen matcher er satt opp for dette valget.')).toBeNull()
 })
 
-it('removes retained owners when the table fails with an ordinary error', async () => {
-  mount(); await populated()
-  const pending = deferred<MatchListing>(); let signal: AbortSignal | undefined
-  vi.mocked(matchApi.list).mockImplementationOnce((_id, value) => { signal = value; return pending.promise })
+it(`removes retained owners when the table fails with an ordinary error: ${path}`, async () => {
+  mount(path); await populated()
+  const pending = deferred<MatchPlayerListing>(); let signal: AbortSignal | undefined
+  read(path).mockImplementationOnce((_id: string, value?: string | AbortSignal, playerSignal?: AbortSignal) => { signal = typeof value === 'string' ? playerSignal : value; return pending.promise })
   vi.mocked(matchApi.table).mockRejectedValueOnce(new ApiHttpError(503, 'unavailable', 'Table unavailable'))
   await emit('visibility'); await screen.findByText('Table unavailable'); noPrivateDom()
   await waitFor(() => expect(signal?.aborted).toBe(true))
   await act(async () => { pending.resolve(listing) }); noPrivateDom()
 })
+
+}
 
 it('keeps standalone MatchRound callers enabled and visible by default', async () => {
   mount('/round-list'); await populated()

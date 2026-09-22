@@ -32,6 +32,7 @@ export interface MatchCard {
 }
 export interface MatchScoringCard extends MatchCard { revision: string; accepted_events: { id: string; event: MatchEvent }[] }
 export interface MatchListing { round_id: string; matches: MatchCard[]; writable_match_ids: string[] }
+export interface MatchPlayerListing extends MatchListing { player_id: string }
 export interface MatchCompletion {
   format: 'singles_match_play'; round_id: string; status: RoundStatus
   matches: { match_id: string; terminal: boolean | null; confirmed: boolean | null }[]

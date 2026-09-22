@@ -5,7 +5,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { api } from '../api/client'
 import { ApiHttpError } from '../api/http'
-import { matchApi, matchKeys, type MatchTable, type MatchListing } from '../api/matchPlay'
+import { matchApi, matchKeys, type MatchTable, type MatchPlayerListing } from '../api/matchPlay'
 import { matchFixture, matchIds } from '../api/matchPlay/fixtures'
 import * as invalidation from '../api/liveInvalidation'
 import { privateWorkspaceKeys } from '../api/privateWorkspace'
@@ -78,8 +78,12 @@ beforeEach(() => {
   vi.spyOn(api, 'rounds').mockImplementation(async id => [{ ...matchRound, tournament_id: id }])
   vi.spyOn(matchApi, 'table').mockImplementation(async id => table(id))
   vi.spyOn(matchApi, 'list').mockResolvedValue({ round_id: matchRound.id, matches: [matchFixture()], writable_match_ids: [] })
+  vi.spyOn(matchApi, 'listForPlayer').mockResolvedValue({ round_id: matchRound.id, player_id: matchIds.first, matches: [matchFixture()], writable_match_ids: [] })
 })
 afterEach(async () => { cleanup(); client?.clear(); await Promise.resolve(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
+
+function read(entry: Entry) { return entry === 'filtered' || entry === 'history' ? vi.mocked(matchApi.listForPlayer) : vi.mocked(matchApi.list) }
+function listKey(entry: Entry) { return entry === 'filtered' || entry === 'history' ? matchKeys.listForPlayer(session.user_id, matchRound.id, matchIds.first) : matchKeys.list(session.user_id, matchRound.id) }
 
 for (const entry of routes) {
   it.each(['early', 'settled'] as const)(`${entry} keeps one owner through %s open, refresh, clearing and remount`, async timing => {
@@ -92,15 +96,15 @@ for (const entry of routes) {
     await act(async () => { source.emit('open'); held.resolve(table()) })
     await populated()
     expect(invalidation.handleTournamentLiveSignal).toHaveBeenCalledExactlyOnceWith(client, session.user_id, 'open')
-    vi.mocked(matchApi.table).mockClear(); vi.mocked(matchApi.list).mockClear()
+    vi.mocked(matchApi.table).mockClear(); read(entry).mockClear()
     vi.mocked(invalidation.handleTournamentLiveSignal).mockClear()
-    const matchTable = deferred<MatchTable>(), matchList = deferred<MatchListing>()
+    const matchTable = deferred<MatchTable>(), matchList = deferred<MatchPlayerListing>()
     vi.mocked(matchApi.table).mockReturnValueOnce(matchTable.promise)
-    vi.mocked(matchApi.list).mockReturnValueOnce(matchList.promise)
+    read(entry).mockReturnValueOnce(matchList.promise)
     await act(async () => { source.emit('match') })
-    expect(matchApi.table).toHaveBeenCalledTimes(1); expect(matchApi.list).toHaveBeenCalledTimes(1)
+    expect(matchApi.table).toHaveBeenCalledTimes(1); expect(read(entry)).toHaveBeenCalledTimes(1)
     expect(invalidation.handleTournamentLiveSignal).toHaveBeenCalledExactlyOnceWith(client, session.user_id, 'match')
-    await act(async () => { matchTable.resolve(table()); matchList.resolve({ round_id: matchRound.id, matches: [matchFixture()], writable_match_ids: [] }) }); await populated()
+    await act(async () => { matchTable.resolve(table()); matchList.resolve({ round_id: matchRound.id, player_id: matchIds.first, matches: [matchFixture()], writable_match_ids: [] }) }); await populated()
     const refreshing = deferred<MatchTable>()
     vi.mocked(matchApi.table).mockReturnValueOnce(refreshing.promise)
     await act(async () => {
@@ -111,7 +115,7 @@ for (const entry of routes) {
     await act(async () => { refreshing.resolve(table()) }); await populated()
     await act(async () => { source.emit('error') })
     expect(client.getQueryData(matchKeys.table(session.user_id, trip.id))).toBeUndefined()
-    expect(client.getQueryData(matchKeys.list(session.user_id, matchRound.id))).toBeUndefined()
+    expect(client.getQueryData(listKey(entry))).toBeUndefined()
     await act(async () => { source.emit('open') }); await populated()
     expect(Source.instances).toHaveLength(1); expect(source.close).not.toHaveBeenCalled()
   })
@@ -121,7 +125,7 @@ for (const entry of routes) {
     mount(entry); const source = await currentSource()
     await screen.findByText('Results unavailable'); await settled()
     vi.mocked(matchApi.table).mockResolvedValueOnce({ ...table(), entries: [] })
-    vi.mocked(matchApi.list).mockResolvedValueOnce({ round_id: matchRound.id, matches: [], writable_match_ids: [] })
+    read(entry).mockResolvedValueOnce({ round_id: matchRound.id, player_id: matchIds.first, matches: [], writable_match_ids: [] })
     await act(async () => { source.emit('open') }); await settled()
     await screen.findByText('Ingen spillere er registrert.')
     await act(async () => { source.emit('match') }); await populated()
@@ -134,7 +138,7 @@ for (const entry of routes) {
     await act(async () => { source.emit('match') }); await settled()
     await waitFor(() => expect(screen.queryByText('– · Authorized player')).toBeNull())
     expect(client.getQueryData(matchKeys.table(session.user_id, trip.id))).toBeUndefined()
-    expect(client.getQueryData(matchKeys.list(session.user_id, matchRound.id))).toBeUndefined()
+    expect(client.getQueryData(listKey(entry))).toBeUndefined()
     expect(Source.instances).toHaveLength(1)
   })
 

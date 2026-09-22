@@ -1,64 +1,64 @@
-# Match history still pays for full round payloads
+# Match history reads only the selected player's cards
 
-**Completed — READY WITH KNOWN LIMITATIONS.** The investigation confirms a
-remaining payload/decoder cost after the lifecycle repairs. Production code and
-contracts are unchanged at `d1e3d32`. The
-[report and evidence](performance/history-payload/README.md) support a separately
-approved player-filtered full-card read as the next bounded step.
+**Completed — READY WITH KNOWN LIMITATIONS.** Canonical player-selected match
+results/history now uses a filtered full-card round listing. In the synthetic
+24-match, three-round scenario, history transfers and validates three cards instead
+of 72: **2,643 versus 21,491 gzip bytes, an 87.7% reduction**. Warmed strict decoder
+median at 4x CPU slowdown is **0.31ms versus 7.46ms**. The
+[report and retained evidence](performance/history-filter/README.md) distinguish
+these browser measurements from real PostgreSQL/API correctness checks.
 
-In a populated synthetic three-round tournament with 24 matches per round, player
-history displays three cards but transfers and strictly decodes all 72. The current
-list payload totals 504,591 raw bytes or 21,491 gzip bytes. An offline subset using
-the same full-card format is 21,267 raw bytes or 2,634 gzip bytes: **87.7% less gzip
-body data**. Under 4x browser CPU throttling, warmed strict decoding has a median
-of **7.57ms for the full collection versus 0.30ms for the subset**. Full JSON parsing
-is measured separately at 2.95ms. These are potential byte/decoder savings, not
-an implemented endpoint or demonstrated production latency improvement.
+The backend accepts an optional typed `player_id`, checks the same membership and
+selects matching IDs before constructing cards. Existing visibility, historical
+handicap and writable authority remain authoritative. Filtered responses echo the
+round/player; the frontend checks that identity, opponent membership, at most one
+card, writable subsets and all existing event/score coherence rules. Hidden final
+metadata remains null until release. No schema change or compact summary is used.
 
-All-results and player-history routes currently transfer identical listings.
-History already reduces rendered output: the populated match page has 45 DOM
-descendants versus 832 for all results. Browser timings include network, parsing,
-decoding, query notification and rendering; the report labels post-response tails
-rather than calling them pure rendering time. Reducing cards after decoding does
-not remove the transfer/decoder work.
+Each account/round/player has a separate cache key under the private read-list
+prefix. Management and all-results views keep the full listing. This avoids
+publishing a partial pairing list through the management cache, but opening a new
+player adds one read per round even if all results are fresh. Browser navigation
+measured three added reads for three rounds, both all→player and player→another
+uncached player; revisiting either filter or all results added none. The latter
+direct player transition was driven through the client URL because the view has
+no direct other-player link. The full tournament match table remains unchanged.
 
-The safest proposed slice preserves full-card coherence validation. Holes, notes
-and event evidence verify the displayed result even when the list does not show
-those details. A compact summary would need a separate validation contract.
-Player-selected reads should instead use a distinct account+round+player cache
-identity and leave unfiltered listings, management, assignment responses, table,
-detail, scoring and recovery unchanged. Reusing the unfiltered key for a partial
-list could give management incomplete pairings. Backend parity and current
-membership/writable/final-visibility rules remain mandatory.
+Readiness gates, cancellation/late-denial guards, private erasure, return/SSE and
+mutation invalidation, and the 20-second freshness window are preserved. Invalid
+or noncanonical URL text keeps its previous exact-match behavior; valid absent
+players return empty cards. Detail, scoring, recovery and assignment PUT remain
+unchanged.
 
-This introduces a navigation tradeoff: all-results and history currently can reuse
-the same fresh full-list cache; a separate filtered key can need another request.
-The next step must preserve malformed/noncanonical filter behavior, empty player
-results, readiness gates, account isolation, cancellation, denials, freshness and
-required live refreshes. It needs disposable PostgreSQL validation before being
-called complete. Authorization-query optimization remains separate.
+## Validation
 
-## Validation and limits
+- PostgreSQL feature suite: **581 tests passed**. Migrate and seed passed on the
+  task-owned disposable PostgreSQL 17 database. Listing parity covers roles, states,
+  both opponent positions, missing players, hidden/released/corrected results,
+  frozen handicaps, writable subsets and removed membership.
+- Backend ordinary suite: **208 tests passed**; formatting and all-feature Clippy
+  passed. The API regression fails against the previous unfiltered handler
+  (two cards instead of one), then passes after candidate restoration.
+- Full frontend suite: **735 tests passed** before ten additional filtered transport
+  cases. The final transport/cache run passed **38 tests**, including all 30
+  transport cases. TypeScript, browser TypeScript, lint and production build pass.
+- **42 route-browser cases** and **11 real-API match cases** passed. The three
+  filtered-history cases at 320/390/1280px also passed with persisted `pageshow`
+  refresh checks. Hidden/released wire payloads, SSE updates, long names, layout,
+  overflow and interactions were checked; screenshots inspected.
+- **54 native measurement cases** passed with 144 list and 54 table refreshes.
+  Filter queries, wire cardinality, completion and body bytes are asserted.
+  Three navigation cases and four real-decoder paired probes passed.
+- Read-only production and artifact review found no remaining blocker. All 55
+  measured asset hashes and production source hashes match current files;
+  source-file limits, documentation and diff checks passed.
 
-- Fresh production build, including TypeScript, passed. All **55 asset hashes**
-  match the previous build and measured browser assets; production source is clean.
-- **54 browser measurement cases** passed: four collection scenarios, all/direct
-  filtered/delegated history routes, three repetitions, with the populated case at
-  320/390/1280px. The measured refreshes completed **144 list and 54 table reads**.
-  Browser raw/gzip body counts match the fixture server. No unexpected errors or
-  horizontal overflow occurred.
-- Four isolated real-decoder pairs passed exact selected-card/writable-ID parity,
-  including the restricted final. Seven alternating batches of 20 iterations follow
-  warmup; individual timings and ranges are retained.
-- **94 focused tests across seven files passed**, covering decoders, cancellation,
-  shared reads, private denials, live ownership and readiness/privacy/freshness.
-- Independent read-only source/contract/harness review, artifact audit, script
-  syntax, local links and diff checks passed. Phone/desktop screenshots and a
-  supplemental restricted-final bottom-of-page pass were inspected.
+The initial sandboxed ordinary backend run could not bind its local HTTP mocks;
+its complete loopback-enabled rerun passed. An earlier database run ended without
+a final result and is not counted. All owned local services are cleaned up after
+validation. Nothing was tested against production.
 
-No production repair was made. Full frontend unit/lint and backend/PostgreSQL
-ladders were not repeated for this standalone documentation/measurement step.
-Synthetic native HTTP/SSE, warmed probes and desktop viewport emulation establish
-neither production speedup nor server/database authorization, latency, physical
-phone or BFCache behavior. The table remains a full tournament read. The broader
-database and security work remains queued.
+Synthetic transfer/probe timings do not establish production latency or database
+speedup. Warmed decoding and viewport emulation do not cover cold JIT, physical
+phones or actual BFCache restoration. Database authorization measurements and the
+broader security review remain separately queued.

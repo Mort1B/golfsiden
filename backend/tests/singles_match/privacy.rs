@@ -57,6 +57,7 @@ async fn hidden_correction_noninterference_and_scoring_scope(pool: PgPool) {
     assert!(before.get("accepted_events").is_none());
     assert!(before["finish"].is_null());
     assert!(before["confirmed"].is_null());
+    let filtered_before = super::listing::assert_parity(&pool, viewer, id(11)).await;
     let table_before = serde_json::to_value(
         match_play::reads::table(&pool, viewer, id(2))
             .await
@@ -102,6 +103,10 @@ async fn hidden_correction_noninterference_and_scoring_scope(pool: PgPool) {
                 .unwrap()
         )
         .unwrap()
+    );
+    assert_eq!(
+        filtered_before,
+        super::listing::assert_parity(&pool, viewer, id(11)).await
     );
     assert!(matches!(
         match_play::reads::get(&pool, viewer, id(5), m, true).await,

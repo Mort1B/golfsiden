@@ -640,15 +640,24 @@ and reapplies runtime grants before the API is started.
   the repair identified by the [remount investigation](performance/remounts/README.md).
   Re-enabling a completed stale query can still refetch under the unchanged
   20-second freshness window; observer lifetime never authorizes private output.
-- Match history currently fetches and strictly decodes complete round match lists,
-  then selects the player's cards. That exact account+round cache is also used by
-  management and ordinary list views. Holes, notes and events support decoder
-  coherence checks even when the list UI does not show them. The
-  [history payload investigation](performance/history-payload/README.md) supports
-  a separate player-scoped full-card read as a future repair, with distinct cache
-  identity and unchanged membership, projection, writable and cancellation rules.
-  A partial listing must never populate the unfiltered key; compact summaries
-  would require a separate validation contract. No filtered endpoint exists yet.
+- Canonical lowercase player-selected match results/history use a full-card
+  `GET /api/rounds/{round_id}/match-play/matches?player_id={player_id}` read.
+  The repeatable-read membership check precedes ordered matching-ID selection;
+  existing card construction, visibility and independent writable checks remain
+  authoritative. Filtered responses echo `round_id` and `player_id`; valid absent
+  players return empty cards and writable IDs. Unfiltered GET and assignment PUT
+  omit `player_id` and retain their contracts.
+  The frontend key appends `player`, player UUID beneath the account+round
+  `read-list` prefix, preserving scope erasure and live/mutation invalidation.
+  The decoder validates target identity, at most one card, opponent membership,
+  writable subsets and every existing full-card evidence invariant. A filtered
+  response never populates the shared unfiltered management/list cache.
+  Noncanonical URL text retains legacy unfiltered-read/exact-match behavior;
+  empty text retains all-results behavior. The 20-second freshness window,
+  readiness gate and cancelled late-response protections remain unchanged.
+  Separate keys add a read when moving to an uncached player even when the full
+  list is fresh; revisits reuse each fresh key. The complete table is unchanged.
+  See the [filtered history validation](performance/history-filter/README.md).
 - Target-bearing frontend DTOs are decoded against the requested tournament,
   round, player, owner, metric, invitation predecessor, and course-configuration
   identities before cache insertion. Roster, round, team, pairing, invitation,
@@ -879,7 +888,7 @@ Implemented resources:
 | `GET` | `/api/rounds/{round_id}/stableford/scorecards/{player_id}/scoring` | Read a full Stableford card with current scoring authority and revisions |
 | `POST` | `/api/rounds/{round_id}/stableford/scorecards/{player_id}/confirm` | Confirm 18 explicitly resolved player holes |
 | `PUT` | `/api/rounds/{round_id}/match-play/settings` | Set draft official gross/net mode with expected round version; fixed 100% allowance |
-| `GET` | `/api/rounds/{round_id}/match-play/matches` | Read permitted match cards and currently writable match IDs |
+| `GET` | `/api/rounds/{round_id}/match-play/matches` | Read permitted match cards and currently writable match IDs; optional typed `player_id` selects one player and echoes that identity |
 | `PUT` | `/api/rounds/{round_id}/match-play/matches` | Atomically replace manual same-flight opponents while draft |
 | `GET` | `/api/rounds/{round_id}/match-play/matches/{match_id}` | Read a private visibility-projected match |
 | `GET` | `/api/rounds/{round_id}/match-play/matches/{match_id}/scoring` | Read current match revision and accepted event IDs after scoring authorization |
@@ -1659,10 +1668,12 @@ listing performs `5 + 17M` SELECTs including HTTP authentication, and resolves a
 P snapshot owner IDs twice per match (`2MP` returned authorization rows). These
 are source-derived counts, not database timings. The assignment endpoint also
 has a 32,768-byte body limit, independent of the repository's 500-pair bound.
-Private match results fetch one full listing for every match round and filter
-player history only after runtime decoding. Initial live-stream opening clears
-projections and can repeat list reads depending on response order. Those privacy
-and freshness boundaries remain required when selecting a later optimization.
+Unfiltered private match results fetch the complete listing for every match round.
+Canonical player history selects at most one matching full card on the server
+before construction and validates its echoed identity and full evidence in the
+browser; legacy noncanonical URL filters retain client filtering. Initial
+live-stream opening clears projections and can repeat list reads depending on
+response order. These privacy and freshness boundaries remain required.
 
 Match-only private overall reads return
 `{type: "not_applicable", reason: "match_only", tournament_id, metric}` after the

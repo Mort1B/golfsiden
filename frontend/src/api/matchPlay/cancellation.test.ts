@@ -11,6 +11,8 @@ const table = { tournament_id: matchIds.tournament, entries: [] }
 const endpoints = [
   { name: 'list', key: matchKeys.list(matchIds.user, matchIds.round), value: listing,
     load: (signal?: AbortSignal): Promise<unknown> => matchApi.list(matchIds.round, signal) },
+  { name: 'player list', key: matchKeys.listForPlayer(matchIds.user, matchIds.round, matchIds.first), value: { ...listing, player_id: matchIds.first },
+    load: (signal?: AbortSignal): Promise<unknown> => matchApi.listForPlayer(matchIds.round, matchIds.first, signal) },
   { name: 'table', key: matchKeys.table(matchIds.user, matchIds.tournament), value: table,
     load: (signal?: AbortSignal): Promise<unknown> => matchApi.table(matchIds.tournament, signal) },
 ]

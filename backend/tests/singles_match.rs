@@ -8,6 +8,8 @@ mod singles_match {
     #[allow(dead_code)]
     mod fixture;
     mod guards;
+    mod listing;
+    mod listing_api;
     mod overall;
     mod privacy;
     mod setup;

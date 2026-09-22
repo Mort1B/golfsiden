@@ -1,0 +1,314 @@
+[
+  {
+    "width": 320,
+    "rows": [
+      {
+        "name": "all to first player",
+        "requests": [
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000100/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010000",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 882,
+            "finished": true,
+            "aborted": false
+          },
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000101/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010000",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 881,
+            "finished": true,
+            "aborted": false
+          },
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000102/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010000",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 880,
+            "finished": true,
+            "aborted": false
+          }
+        ],
+        "cards": 3
+      },
+      {
+        "name": "player to uncached different player via URL transition",
+        "requests": [
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000100/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010002",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 879,
+            "finished": true,
+            "aborted": false
+          },
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000101/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010002",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 885,
+            "finished": true,
+            "aborted": false
+          },
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000102/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010002",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 888,
+            "finished": true,
+            "aborted": false
+          }
+        ],
+        "cards": 3
+      },
+      {
+        "name": "player to fresh all",
+        "requests": [],
+        "cards": 72
+      },
+      {
+        "name": "all to fresh different player",
+        "requests": [],
+        "cards": 3
+      },
+      {
+        "name": "different player to fresh all",
+        "requests": [],
+        "cards": 72
+      },
+      {
+        "name": "all to fresh first player",
+        "requests": [],
+        "cards": 3
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 390,
+    "rows": [
+      {
+        "name": "all to first player",
+        "requests": [
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000100/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010000",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 882,
+            "finished": true,
+            "aborted": false
+          },
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000101/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010000",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 881,
+            "finished": true,
+            "aborted": false
+          },
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000102/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010000",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 880,
+            "finished": true,
+            "aborted": false
+          }
+        ],
+        "cards": 3
+      },
+      {
+        "name": "player to uncached different player via URL transition",
+        "requests": [
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000100/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010002",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 879,
+            "finished": true,
+            "aborted": false
+          },
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000101/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010002",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 885,
+            "finished": true,
+            "aborted": false
+          },
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000102/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010002",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 888,
+            "finished": true,
+            "aborted": false
+          }
+        ],
+        "cards": 3
+      },
+      {
+        "name": "player to fresh all",
+        "requests": [],
+        "cards": 72
+      },
+      {
+        "name": "all to fresh different player",
+        "requests": [],
+        "cards": 3
+      },
+      {
+        "name": "different player to fresh all",
+        "requests": [],
+        "cards": 72
+      },
+      {
+        "name": "all to fresh first player",
+        "requests": [],
+        "cards": 3
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1280,
+    "rows": [
+      {
+        "name": "all to first player",
+        "requests": [
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000100/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010000",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 882,
+            "finished": true,
+            "aborted": false
+          },
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000101/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010000",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 881,
+            "finished": true,
+            "aborted": false
+          },
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000102/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010000",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 880,
+            "finished": true,
+            "aborted": false
+          }
+        ],
+        "cards": 3
+      },
+      {
+        "name": "player to uncached different player via URL transition",
+        "requests": [
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000100/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010002",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 879,
+            "finished": true,
+            "aborted": false
+          },
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000101/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010002",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 885,
+            "finished": true,
+            "aborted": false
+          },
+          {
+            "path": "/api/rounds/10000000-0000-4000-8000-000000000102/match-play/matches",
+            "query": "?player_id=10000000-0000-4000-8000-000000010002",
+            "cards": 1,
+            "phase": "open",
+            "epoch": 1,
+            "rawBytes": 7140,
+            "gzipBytes": 888,
+            "finished": true,
+            "aborted": false
+          }
+        ],
+        "cards": 3
+      },
+      {
+        "name": "player to fresh all",
+        "requests": [],
+        "cards": 72
+      },
+      {
+        "name": "all to fresh different player",
+        "requests": [],
+        "cards": 3
+      },
+      {
+        "name": "different player to fresh all",
+        "requests": [],
+        "cards": 72
+      },
+      {
+        "name": "all to fresh first player",
+        "requests": [],
+        "cards": 3
+      }
+    ],
+    "errors": []
+  }
+]

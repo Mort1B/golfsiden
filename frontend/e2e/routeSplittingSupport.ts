@@ -13,6 +13,13 @@ export const matchListUrl = `/rounds/${matchRound.id}/matches`
 export const matchScoreUrl = `${matchListUrl}/${matchCard.match_id}/score`
 export const profileChunk = /\/assets\/ProfilePage-[^/]+\.js$/
 
+export function selectPlayerListing<T extends { match_id: string; opponents: readonly { player_id: string }[] }>(listing: { round_id: string; matches: T[]; writable_match_ids: string[] }, url: string) {
+  const player = new URL(url).searchParams.get('player_id')
+  if (player === null) return listing
+  const matches = listing.matches.filter(card => card.opponents.some(p => p.player_id === player))
+  return { ...listing, player_id: player, matches, writable_match_ids: listing.writable_match_ids.filter(id => matches.some(card => card.match_id === id)) }
+}
+
 export async function routeWorkspace(page: Page) {
   const live = await liveServer()
   const score = await mockWorkspace(page, live.url)
@@ -44,8 +51,9 @@ export async function routeWorkspace(page: Page) {
     if (path === `/api/tournaments/${trip.id}/rounds`) return route.fulfill({ json: state.emptyRounds ? [] : [round] })
     if (path === `/api/tournaments/${trip.id}/result-share`) return route.fulfill({ json: { tournament_id: trip.id, grant: null } })
     if (path === `/api/rounds/${matchRound.id}`) return route.fulfill({ json: matchRound })
-    const readCard = Object.fromEntries(Object.entries(matchCard).filter(([key]) => !['revision', 'accepted_events'].includes(key)))
-    if (path === `/api/rounds/${matchRound.id}/match-play/matches`) return route.fulfill({ json: { round_id: matchRound.id, matches: [readCard], writable_match_ids: [matchCard.match_id] } })
+    const { revision: _revision, accepted_events: _events, ...readCard } = matchCard
+    void _revision; void _events
+    if (path === `/api/rounds/${matchRound.id}/match-play/matches`) return route.fulfill({ json: selectPlayerListing({ round_id: matchRound.id, matches: [readCard], writable_match_ids: [matchCard.match_id] }, route.request().url()) })
     if (path === `/api/rounds/${matchRound.id}/match-play/matches/${matchCard.match_id}`) return route.fulfill({ json: readCard })
     if (path === `/api/rounds/${matchRound.id}/match-play/matches/${matchCard.match_id}/scoring`) return route.fulfill({ json: matchCard })
     if (path === `/api/public/results/${shareId}`) {

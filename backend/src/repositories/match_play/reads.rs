@@ -156,21 +156,44 @@ pub(super) async fn build(
 #[derive(Serialize)]
 pub struct Listing {
     pub round_id: Uuid,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub player_id: Option<Uuid>,
     pub matches: Vec<Card>,
     pub writable_match_ids: Vec<Uuid>,
 }
 pub async fn list(pool: &PgPool, session: Uuid, round: Uuid) -> Result<Listing, Error> {
+    list_selected(pool, session, round, None).await
+}
+pub async fn list_for_player(
+    pool: &PgPool,
+    session: Uuid,
+    round: Uuid,
+    player: Uuid,
+) -> Result<Listing, Error> {
+    list_selected(pool, session, round, Some(player)).await
+}
+async fn list_selected(
+    pool: &PgPool,
+    session: Uuid,
+    round: Uuid,
+    player: Option<Uuid>,
+) -> Result<Listing, Error> {
     let mut tx = pool.begin().await?;
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
         .execute(&mut *tx)
         .await?;
     let c = context(&mut tx, round, false).await?;
     let (_, role) = member(&mut tx, session, c.tournament_id).await?;
-    let ids=sqlx::query_scalar::<_,Uuid>("SELECT id FROM singles_matches WHERE round_id=$1 ORDER BY first_player_id,second_player_id,id").bind(round).fetch_all(&mut *tx).await?;
+    let ids = match player {
+        Some(player) => sqlx::query_scalar::<_, Uuid>("SELECT id FROM singles_matches WHERE round_id=$1 AND (first_player_id=$2 OR second_player_id=$2) ORDER BY first_player_id,second_player_id,id")
+            .bind(round).bind(player).fetch_all(&mut *tx).await?,
+        None => sqlx::query_scalar::<_, Uuid>("SELECT id FROM singles_matches WHERE round_id=$1 ORDER BY first_player_id,second_player_id,id")
+            .bind(round).fetch_all(&mut *tx).await?,
+    };
     let mut matches = Vec::new();
     let mut writable = Vec::new();
     // Deliberate N+1 for full card discovery, capped by 500 manual assignments per round.
-    // Reuses the privacy projection; revisit with compact bulk summaries before raising the cap.
+    // Player filtering selects at most one card before construction; all reads reuse the same privacy projection.
     for id in ids {
         let m = aggregate(&mut tx, round, id, false).await?;
         match authority(&mut tx, session, &c, &m).await {
@@ -189,6 +212,7 @@ pub async fn list(pool: &PgPool, session: Uuid, round: Uuid) -> Result<Listing, 
     tx.commit().await?;
     Ok(Listing {
         round_id: round,
+        player_id: player,
         matches,
         writable_match_ids: writable,
     })

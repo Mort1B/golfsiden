@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { routeWorkspace, routeLayout, trip, matchRound, matchCard } from './routeSplittingSupport'
+import { routeWorkspace, routeLayout, selectPlayerListing, trip, matchRound, matchCard } from './routeSplittingSupport'
 
 const listPath = `/api/rounds/${matchRound.id}/match-play/matches`
 const tablePath = `/api/tournaments/${trip.id}/match-table`
@@ -44,7 +44,7 @@ for (const [name, path] of Object.entries(paths)) for (const width of [320, 390,
         const full = { ...card, resolved_holes: 9, events: [...front, { type: 'concession', conceding_player_id: card.opponents[1].player_id, communicated: true, after_hole: 9 }],
           finish: { type: 'conceded', winner: 'first' }, confirmed: true, half_points: [2, 0] }
         const hidden = { ...card, events: front, resolved_holes: 9, holes: card.holes.slice(0, 9), visibility: { mode: 'front_nine' }, confirmed: null, correction_pending: null }
-        return route.fulfill({ json: { round_id: matchRound.id, matches: empty ? [] : [restricted ? hidden : full], writable_match_ids: restricted || empty ? [] : [card.match_id] } })
+        return route.fulfill({ json: selectPlayerListing({ round_id: matchRound.id, matches: empty ? [] : [restricted ? hidden : full], writable_match_ids: restricted || empty ? [] : [card.match_id] }, route.request().url()) })
       }
       return route.fallback()
     })
