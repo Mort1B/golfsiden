@@ -1958,7 +1958,11 @@ return/SSE refreshes and the 20-second freshness window remain unchanged.
 Malformed, uppercase and compact URL player text retain their prior exact-match
 behavior rather than being silently normalized. Empty URL player text still shows
 all players. The [validation and measurements](performance/history-filter/README.md)
-describe the savings and navigation tradeoff.
+describe the savings and navigation tradeoff. The subsequent
+[database authorization report](performance/database-authorization/README.md)
+measures unchanged listing authorization on disposable PostgreSQL. It records
+repeated owner-set queries and proposes a separately scoped listing repair; it
+does not change current permissions, queries or operator procedures.
 
 Home and sign-in remain available from the entry module. Other page modules load
 when their route is opened, with the existing session gate applied first on

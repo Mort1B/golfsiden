@@ -1666,7 +1666,10 @@ The [performance baseline](performance/README.md) traces the additional cost of
 reusing mutation authorization during discovery: a fully authorized admin/scorer
 listing performs `5 + 17M` SELECTs including HTTP authentication, and resolves all
 P snapshot owner IDs twice per match (`2MP` returned authorization rows). These
-are source-derived counts, not database timings. The assignment endpoint also
+were initially source-derived. The [database authorization measurement](performance/database-authorization/README.md)
+now checks repository SELECT/owner-row counts against PostgreSQL, separating
+repository elapsed time from SQL execution and HTTP/browser work. No authorization
+repair is included in that measurement. The assignment endpoint also
 has a 32,768-byte body limit, independent of the repository's 500-pair bound.
 Unfiltered private match results fetch the complete listing for every match round.
 Canonical player history selects at most one matching full card on the server
