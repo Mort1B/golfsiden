@@ -618,15 +618,17 @@ and reapplies runtime grants before the API is started.
   queued passes, and map cleanup occurs synchronously when the drain finishes.
   `returnOrdering.browser.ts` covers authority changing while an earlier read is
   pending, at mobile and desktop sizes.
-- Sharing a tournament EventSource does not deduplicate application invalidation.
-  Every live-hook listener handles each delivered event. Match-only player history
-  and global results currently retain both their parent live hook and the shared
-  `MatchResults` child hook; direct match results have only the child hook.
-  The [subscriber investigation](performance/subscribers/README.md) distinguishes
-  duplicate synchronous refetches from later list remounts and native reconnects.
-  A proposed route-owned subscription boundary is unimplemented. Any repair must
-  preserve each route's authority refresh during child loading/errors, synchronous
-  projection erasure, account isolation and the existing queued return drain.
+- Sharing a tournament EventSource does not deduplicate application invalidation:
+  every live-hook listener handles each event. Match-result subscriptions are
+  therefore route-owned. `MatchResultsPage` owns the direct route;
+  `PlayerHistoryPage` and `LeaderboardPage` retain their own subscriptions when
+  delegating to shared `MatchResults`, which owns queries/rendering only. New
+  callers of that shared view must provide a route-level live owner. Each owner
+  survives child loading/errors/remounts without adding a second invalidation.
+  The [ownership comparison](performance/live-ownership/README.md) distinguishes
+  the repaired duplicate refetches from remaining list-remount work. Synchronous
+  projection erasure, reconnect authority refresh, account isolation and the
+  queued return drain remain unchanged.
 - Target-bearing frontend DTOs are decoded against the requested tournament,
   round, player, owner, metric, invitation predecessor, and course-configuration
   identities before cache insertion. Roster, round, team, pairing, invitation,

@@ -11,11 +11,12 @@ import { MatchRound } from '../features/matchPlay/MatchRound'
 import { pointsLabel, tableUrl } from '../features/matchPlay/format'
 export function MatchResultsPage() {
   const { tournamentId = '' } = useParams()
+  useTournamentLive(tournamentId)
   return <MatchResults tournamentId={tournamentId} />
 }
+// The containing route owns live authority throughout this view’s loading states.
 export function MatchResults({ tournamentId, selectedPlayerId, tournamentSelector }: { tournamentId: string; selectedPlayerId?: string; tournamentSelector?: ReactNode }) {
   const user = useAuth().session?.user_id ?? '', [search] = useSearchParams(), playerId = selectedPlayerId ?? search.get('player') ?? undefined
-  useTournamentLive(tournamentId)
   const rounds = usePrivateResultQuery({ userId: user, tournamentId }, { queryKey: tournamentKeys.rounds(user, tournamentId), queryFn: () => api.rounds(tournamentId) })
   const table = usePrivateResultQuery({ userId: user, tournamentId }, { queryKey: matchKeys.table(user, tournamentId), queryFn: ({ signal }) => matchApi.table(tournamentId, signal), retry: false })
   const error = rounds.error ?? table.error

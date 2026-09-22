@@ -7,45 +7,40 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 None. The next candidate requires the user's instruction to proceed.
 
-## Next candidate — one live owner per match-results route
+## Next candidate — investigate transient match-list remounts
 
-**Goal:** remove duplicated live invalidation on delegated match-only results,
-using the [investigation evidence](performance/subscribers/README.md).
+**Goal:** establish whether the remaining list fetches cancelled by table-loading
+remounts can be reduced safely after the route-ownership repair.
 
-**Scope and exact behavior:** move `useTournamentLive(tournamentId)` from shared
-`MatchResults` into the direct `MatchResultsPage` wrapper in the same file. Keep
-`PlayerHistoryPage` and `LeaderboardPage` parent subscriptions unchanged. Direct
-and delegated routes each retain one live owner while shared result queries
-load, fail or remount. Add ownership/regression tests and update affected docs.
-No global event deduplication or production changes outside this boundary.
+**Scope and behavior:** trace the match-results table/list observer lifecycle on
+direct and delegated routes during initial open, visibility clearing and
+reconnect. Compare populated and pending reads with the retained ownership
+baseline; separate required authority work, cancelled refreshes and remount
+fetches. Retain production-build mobile/desktop request/content evidence and
+propose one bounded repair only if safe. Investigation and documentation only:
+do not change production rendering, query subscriptions, fetching or freshness.
 
-**Invariants:** preserve every required authority refresh, score/match target,
-synchronous disconnect/visibility projection erasure, account isolation,
-transport cancellation, late-denial suppression, queued browser-return drain and
-shared management-read ownership. Preserve writable intent and all sporting
-rules; no API, schema, backend, query-key, retry or freshness change.
+**Invariants:** private projections must disappear synchronously when required.
+An observer kept alive is not permission to display stale data. Preserve all
+required authority refreshes, account isolation, cancellation/late-denial guards,
+queued returns, one route-owned live subscriber, shared management-read ownership,
+writable intent, historical handicap snapshots and administrator-managed teams.
 
-**Validation:** use the real hook and controlled EventSource in tests of direct,
-filtered history, delegated history and global results. Cover early/delayed open,
-match/visibility events, child loading/error/remount, tournament switching,
-disconnect/reconnect and logout/account replacement. Assert fresh denial clears
-related projections while cancelled success/denial cannot affect newer data.
-Run the frontend ladder, existing queued-return/denial/cancellation checks and
-production mobile/desktop browser suites. Replay the retained subscriber harness:
-compare starts, aborts, completions and fresh final content. Initial effect timing
-can change; demonstrate one owner and fewer settled-event starts without demanding
-identical total navigation counts. Record remaining remount work and limitations.
+**Validation:** measure starts, aborts and completions alongside transient content
+and observer ownership. Cover held old responses, fresh denials, disconnect,
+account change and return ordering. Review any proposal against existing
+privacy/cancellation/return tests; record synthetic, finite-window and unavailable
+PostgreSQL timing limits. No latency or SQL-saving claim from request counts alone.
 
-**Stop:** publish the validated ownership repair and evidence. Do not redesign
-parent loading, transport sharing or the return drain; do not start history-payload,
-PostgreSQL authorization or security work.
+**Stop:** publish evidence plus one bounded implementation proposal, or explain
+why no safe reduction is established. Do not implement the proposal or broaden
+into full-card payload, database authorization or security work.
 
 ## Later queue
 
-1. **Remaining performance findings:** separately reassess transient list remount
-   fetch starts and full-card history reads. Acquire disposable PostgreSQL
-   measurements before any list-authorization repair. Preserve authority refresh
-   and fail-closed behavior in every proposal.
+1. **Remaining performance findings:** separately assess full-card history reads.
+   Acquire disposable PostgreSQL measurements before any list-authorization
+   repair. Preserve authority refresh and fail-closed behavior in every proposal.
 2. **Security review:** perform the separately scoped wider application/operational
    review after agreed performance repairs.
 

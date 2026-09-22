@@ -9,6 +9,10 @@ This step changes documentation and an observation harness only. Application
 source remains at `72f8aa968232095b2d43f76c15a3fa551f0ca3bf`. No subscription,
 query policy, privacy guard, API, scoring rule or backend behavior is changed.
 
+This is the preserved pre-repair snapshot. The subsequent
+[ownership comparison](../live-ownership/README.md) records the implemented
+repair; the original measurements and proposal below remain historical evidence.
+
 ## Ownership established by source
 
 | Entry point | Live owners once results are mounted | Visible fixture |

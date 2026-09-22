@@ -1921,13 +1921,14 @@ Management keeps its existing read lifecycle; a request shared with an active
 observer is not cancelled just because the result page leaves. A pending request
 originally started by management retains its original transport behavior.
 
-The [live-subscriber investigation](performance/subscribers/README.md) confirms
-that match-only player history and global results currently invoke invalidation
-from both parent and child subscribers on one shared stream. A settled match
-event starts duplicate list/table reads, with obsolete reads cancelled. Direct
-results have one subscriber; browser-return session refreshes already coalesce.
-This investigation changes no application behavior. A route-ownership repair is
-proposed separately from the remaining transient list-remount work.
+The [live-subscriber investigation](performance/subscribers/README.md) identified
+parent/child duplicate invalidation on match-only history and global results.
+The [ownership repair](performance/live-ownership/README.md) gives each entry
+point one route-owned subscription: the direct wrapper, history parent or global
+results parent. Shared result loading, errors and remounts retain that owner.
+Settled match refreshes no longer start the duplicate list/table generation.
+Browser-return session refreshes still coalesce; required authority checks,
+projection clearing and the remaining table-loading list remounts are unchanged.
 
 Home and sign-in remain available from the entry module. Other page modules load
 when their route is opened, with the existing session gate applied first on

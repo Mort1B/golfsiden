@@ -1,66 +1,57 @@
-# Duplicate match-result live invalidation investigation
+# One live owner per match-results route
 
-**Completed — READY WITH KNOWN LIMITATIONS.** Delegated match-only player history
-and global results have two live subscribers on one shared EventSource. A settled
-match event therefore starts six list reads and two table reads, compared with
-three and one on direct results. The obsolete half aborts. This step documents the
-cause and one bounded repair; it changes no production application behavior.
+**Completed — READY WITH KNOWN LIMITATIONS.** Direct match results now own their
+live subscription in the route wrapper. Match-only history and global results
+keep their existing parent subscriptions; shared `MatchResults` owns queries and
+rendering. This removes duplicate invalidation while keeping live authority
+through child loading, errors and remounts.
 
-The [investigation report](performance/subscribers/README.md) retains the harness,
-per-phase counts, native HTTP/SSE and transient DOM timelines, source commit and
-asset hashes. It compares direct full results, direct filtered history, delegated
-history and global results at 320, 390 and 1280px, twice each: **24 navigations**.
-Direct filtered history controls for the smaller displayed player selection.
+The production edit moves one hook within `MatchResultsPage.tsx`. No event fan-out,
+query key, retry/freshness policy, projection clearing, cancellation/denial guard,
+return drain, API, backend, schema, dependency, style or sporting rule changes.
+New consumers of shared `MatchResults` must supply a route-level live owner.
 
-Source tracing establishes two hook owners on delegated routes. Native callback
-instrumentation shows the extra match-event fetches start synchronously within
-one transport callback. There is no second connection or intervening content
-unmount in that phase. Opening the stream also causes a separate table-loading
-transition that unmounts and remounts lists: direct pages start six list reads,
-delegated pages nine. That remaining remount cost is outside the proposed repair.
+The [comparison report](performance/live-ownership/README.md) replays the unchanged
+24-case investigation harness at 320, 390 and 1280px. For one settled match event,
+delegated views now start three lists and one table, all completing, compared
+with six lists and two tables before, half of which were cancelled. Direct views
+retain their three-plus-one refresh. Native callback attribution separates this
+reduction from later loading-state remounts.
 
-Every replay ends with fresh epoch-7 content, no older epoch after the checked
-open/disconnect/account-clearing transitions, and no pending non-SSE requests,
-unexpected errors or overflow. All 279 server-observed held responses close before
-body release without finishing. Native reconnect reuses the first EventSource
-instance; account change closes it and creates a replacement. Same-account and
-changed-account returns each perform one session read, confirming the existing
-return drain already coalesces subscriber callbacks.
-
-The next candidate moves the live hook from shared `MatchResults` into the direct
-`MatchResultsPage` wrapper. History and global results keep their existing parent
-hooks. This gives each route one live owner throughout loading/error/remounts,
-without changing event fan-out, query freshness, projection erasure, cancellation,
-private-result denial guards or queued return ordering. The proposal is not
-implemented; initial effect timing and all entry points require regression tests.
+The separate list-remount cost remains: delayed opening starts six list reads,
+three cancelled when table loading temporarily unmounts their observers. Required
+refreshes, fail-closed disconnect/reconnect and account-clearing behavior remain.
+Same-account return still makes one session read; the shared return drain and its
+queued follow-up are unchanged. Account replacement closes the old live source;
+native reconnect reuses the current one.
 
 ## Validation and limits
 
-- Production build passed, including TypeScript compilation. A fresh attribution
-  build and the observed browser assets agree; frontend source is clean at
-  `72f8aa968232095b2d43f76c15a3fa551f0ca3bf`.
-- **51 focused tests across seven files passed:** private-result denial,
-  invalidation targets, queued return drain, shared transport, match mutation
-  separation, list/table cancellation and shared management-read ownership.
-- **24 production-browser investigation navigations passed**, covering delayed
-  open, ordinary match, held match/error/native reconnect, same-account return and
-  changed-account return. Mobile and desktop screenshots were inspected.
-- **11 existing production-browser return-loading/return-order tests passed**,
-  including frozen overlapping returns at mobile and desktop widths. Independent
-  source/harness and final retained-evidence review passed with no blockers. The
-  final review independently verified all 24 cases, 279 held cancellations,
-  synchronous dispatch counts, account clearing and 55 matching asset hashes.
-- Script syntax, document links and diff checks passed. Full frontend unit/lint
-  suites were not repeated for a documentation/harness-only change. Backend and
-  PostgreSQL ladders were not run because those layers are unchanged and real
-  database timing is outside this step.
+- Full frontend ladder passed: **677 tests across 112 files**, typecheck, lint
+  and production build. Browser TypeScript compilation also passed.
+- **28 new route tests** use the real live hook, source-sharing and invalidation.
+  They cover four entry points, early/settled opening, held match refresh,
+  visibility clearing, child loading/error/empty/remount recovery, fresh
+  401/403/404 denial, tournament switching, old-source suppression and logout/new
+  account. The previous source fails the two delegated regression cases while
+  both direct controls pass; the repaired source passes all 28.
+- **33 production-browser tests passed**, including shared management reads,
+  logout cancellation, route recovery and frozen overlapping browser returns.
+- **24 comparison navigations passed** using the unchanged harness. All 192 held
+  obsolete responses aborted before release, with fresh final content and no
+  unexpected errors or overflow. Mobile/desktop screenshots were inspected.
+  Fresh bundle attribution and 55 browser asset hashes match. The candidate is a
+  modified frontend on parent `36248ba`, with status recorded explicitly.
+- Independent source/test and final evidence reviews passed with no blockers.
+  The final audit verified all 24 cases, 192 held cancellations, native dispatch
+  counts, baseline comparison, account clearing and 55 matching asset hashes.
+  Script syntax, local links and diff checks passed.
+- Backend/PostgreSQL ladders did not run because these layers and HTTP contracts
+  are unchanged. No real database performance is claimed.
 
-Measurements use synthetic data, instrumented native callbacks, throttled desktop
-Chrome and a finite settling window. DOM observations are not physical display
-frames; explicit persisted `pageshow` is not an actual BFCache restoration. No
-production latency, database authorization/cancellation, physical phone, Caddy or
-sustained live-load improvement is established. The existing return-order suite
-separately exercises a frozen browser. The proposed repair has not been benchmarked.
-
-The investigation is closed; the ownership repair and later performance/security
-work remain unstarted.
+The replay uses synthetic compressible data, desktop Chrome viewports, explicit
+persisted `pageshow`, shortened SSE retry and finite DOM observation. It establishes
+controlled request-work reduction, not production latency, actual BFCache,
+physical-phone, server authorization, SQL cancellation or sustained-load results.
+Remaining remount work, history payloads and PostgreSQL authorization timing are
+separate. The next plan step is investigation only.
