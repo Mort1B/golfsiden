@@ -1930,6 +1930,13 @@ Settled match refreshes no longer start the duplicate list/table generation.
 Browser-return session refreshes still coalesce; required authority checks,
 projection clearing and the remaining table-loading list remounts are unchanged.
 
+The [remount investigation](performance/remounts/README.md) isolates the remaining
+list generation cancelled while match-table loading removes its list children.
+Visibility and reconnect still clear private projections before recovery; denied
+reads cannot restore them. A possible readiness-gated observer repair is proposed,
+with conditional savings under the existing 20-second freshness window. It is
+not implemented in this investigation and changes no current product behavior.
+
 Home and sign-in remain available from the entry module. Other page modules load
 when their route is opened, with the existing session gate applied first on
 private routes. Navigation and account/offline providers remain mounted during

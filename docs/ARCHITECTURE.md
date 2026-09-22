@@ -629,6 +629,16 @@ and reapplies runtime grants before the API is started.
   the repaired duplicate refetches from remaining list-remount work. Synchronous
   projection erasure, reconnect authority refresh, account isolation and the
   queued return drain remain unchanged.
+- Match-result table loading currently removes its list-owning children after
+  projection erasure. The required live refresh can start list reads before that
+  removal, and losing the last signal-consuming observer cancels them; table
+  recovery remounts fresh list reads. The
+  [remount investigation](performance/remounts/README.md) traces this separately
+  from subscription ownership. A disabled-observer/presentation-gate proposal is
+  unimplemented. Disabling an observer does not cancel its in-flight read, but
+  re-enabling a completed stale query can refetch under the unchanged 20-second
+  application freshness window. Any repair must keep current authority gates and
+  no private DOM during loading; observer lifetime alone cannot authorize output.
 - Target-bearing frontend DTOs are decoded against the requested tournament,
   round, player, owner, metric, invitation predecessor, and course-configuration
   identities before cache insertion. Roster, round, team, pairing, invitation,

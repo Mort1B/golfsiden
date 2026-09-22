@@ -7,34 +7,42 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 None. The next candidate requires the user's instruction to proceed.
 
-## Next candidate — investigate transient match-list remounts
+## Next candidate — retain gated match-list observers during table loading
 
-**Goal:** establish whether the remaining list fetches cancelled by table-loading
-remounts can be reduced safely after the route-ownership repair.
+**Goal:** avoid cancelling an already-started list refresh solely because its
+table temporarily renders loading, with the conditional benefit documented in
+[the investigation](performance/remounts/README.md).
 
-**Scope and behavior:** trace the match-results table/list observer lifecycle on
-direct and delegated routes during initial open, visibility clearing and
-reconnect. Compare populated and pending reads with the retained ownership
-baseline; separate required authority work, cancelled refreshes and remount
-fetches. Retain production-build mobile/desktop request/content evidence and
-propose one bounded repair only if safe. Investigation and documentation only:
-do not change production rendering, query subscriptions, fetching or freshness.
+**Scope and exact behavior:** adjust `MatchResults` composition and add an explicit,
+default-preserving readiness option to its `MatchRound` children. Derive children
+only from current rounds data and retain their observers during table-only pending
+state. Readiness controls query enablement and every private presentation: start
+no initial list read before table readiness, and render no round headings, names,
+cards, links or private messages while gated. Existing in-flight reads may finish
+while disabled. Parent errors, missing rounds and account/tournament/round removal
+still remove old owners. Other callers retain existing behavior. Add tests/docs.
 
-**Invariants:** private projections must disappear synchronously when required.
-An observer kept alive is not permission to display stale data. Preserve all
-required authority refreshes, account isolation, cancellation/late-denial guards,
-queued returns, one route-owned live subscriber, shared management-read ownership,
-writable intent, historical handicap snapshots and administrator-managed teams.
+**Invariants:** preserve current authority checks, synchronous projection erasure,
+fresh-denial scope and cancelled-response guards, account keys, abort forwarding,
+one route-owned live subscriber, queued return drain and shared management reads.
+Do not retain server data/descriptors or a prior-authority/admission-history flag.
+Do not hide private markup with CSS. Keep the existing 20-second freshness,
+retry policies, query keys, API/backend/schema, writable intent, handicap snapshots
+and sporting rules unchanged.
 
-**Validation:** measure starts, aborts and completions alongside transient content
-and observer ownership. Cover held old responses, fresh denials, disconnect,
-account change and return ordering. Review any proposal against existing
-privacy/cancellation/return tests; record synthetic, finite-window and unavailable
-PostgreSQL timing limits. No latency or SQL-saving claim from request counts alone.
+**Validation:** test initial pending table, table-first/list-first completion within
+and beyond freshness, old held responses, rounds/table/list denials, actual
+restricted-final payload changes, disconnect/return, account/tournament/round
+changes, other `MatchRound` callers and shared management ownership. Run the frontend
+ladder, privacy/cancellation/return regressions and production mobile/desktop
+comparison. Count starts, aborts and completions plus absence of private DOM while
+gated. Include prolonged table holds: re-enabling a stale completed list may still
+refetch, leaving extra completed hidden work. Do not claim a universal reduction.
 
-**Stop:** publish evidence plus one bounded implementation proposal, or explain
-why no safe reduction is established. Do not implement the proposal or broaden
-into full-card payload, database authorization or security work.
+**Stop:** publish the bounded repair only after conditional request savings and
+unchanged privacy/freshness are demonstrated, or record insufficient benefit.
+Do not change freshness, add lifecycle history state or redesign invalidation to
+force a three-request result. Do not begin payload/database/security work.
 
 ## Later queue
 

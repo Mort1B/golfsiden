@@ -1,0 +1,69 @@
+{
+  "description": "Isolated QueryObserver lifecycle model using installed library; logical clock advance, no browser/network or production change",
+  "coldGate": {
+    "startsBeforeReady": 0,
+    "startsAfterReady": 1
+  },
+  "rows": [
+    {
+      "ownership": "unmount",
+      "order": "table-first",
+      "simulatedElapsedMs": 0,
+      "staleTimeMs": 20000,
+      "starts": 2,
+      "aborts": 1,
+      "completed": 1,
+      "observersWhilePending": 0
+    },
+    {
+      "ownership": "unmount",
+      "order": "list-first-fresh",
+      "simulatedElapsedMs": 0,
+      "staleTimeMs": 20000,
+      "starts": 2,
+      "aborts": 1,
+      "completed": 1,
+      "observersWhilePending": 0
+    },
+    {
+      "ownership": "unmount",
+      "order": "list-first-stale",
+      "simulatedElapsedMs": 21000,
+      "staleTimeMs": 20000,
+      "starts": 2,
+      "aborts": 1,
+      "completed": 1,
+      "observersWhilePending": 0
+    },
+    {
+      "ownership": "disabled-observer",
+      "order": "table-first",
+      "simulatedElapsedMs": 0,
+      "staleTimeMs": 20000,
+      "starts": 1,
+      "aborts": 0,
+      "completed": 1,
+      "observersWhilePending": 1
+    },
+    {
+      "ownership": "disabled-observer",
+      "order": "list-first-fresh",
+      "simulatedElapsedMs": 0,
+      "staleTimeMs": 20000,
+      "starts": 1,
+      "aborts": 0,
+      "completed": 1,
+      "observersWhilePending": 1
+    },
+    {
+      "ownership": "disabled-observer",
+      "order": "list-first-stale",
+      "simulatedElapsedMs": 21000,
+      "staleTimeMs": 20000,
+      "starts": 2,
+      "aborts": 0,
+      "completed": 2,
+      "observersWhilePending": 1
+    }
+  ]
+}
