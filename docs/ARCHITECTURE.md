@@ -618,6 +618,15 @@ and reapplies runtime grants before the API is started.
   queued passes, and map cleanup occurs synchronously when the drain finishes.
   `returnOrdering.browser.ts` covers authority changing while an earlier read is
   pending, at mobile and desktop sizes.
+- Sharing a tournament EventSource does not deduplicate application invalidation.
+  Every live-hook listener handles each delivered event. Match-only player history
+  and global results currently retain both their parent live hook and the shared
+  `MatchResults` child hook; direct match results have only the child hook.
+  The [subscriber investigation](performance/subscribers/README.md) distinguishes
+  duplicate synchronous refetches from later list remounts and native reconnects.
+  A proposed route-owned subscription boundary is unimplemented. Any repair must
+  preserve each route's authority refresh during child loading/errors, synchronous
+  projection erasure, account isolation and the existing queued return drain.
 - Target-bearing frontend DTOs are decoded against the requested tournament,
   round, player, owner, metric, invitation predecessor, and course-configuration
   identities before cache insertion. Roster, round, team, pairing, invitation,

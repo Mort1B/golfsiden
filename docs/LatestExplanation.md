@@ -1,69 +1,66 @@
-# Cancel superseded match-result HTTP reads
+# Duplicate match-result live invalidation investigation
 
-**Completed — READY WITH KNOWN LIMITATIONS.** Protected match-list/table reads now
-forward their existing query signal into `fetch`. Obsolete delayed HTTP reads
-abort while independent generation/denial guards and required authority refreshes
-remain intact. The implementation is four forwarding edits in three production
-files; no backend, schema, scoring, authorization, dependency or style change.
+**Completed — READY WITH KNOWN LIMITATIONS.** Delegated match-only player history
+and global results have two live subscribers on one shared EventSource. A settled
+match event therefore starts six list reads and two table reads, compared with
+three and one on direct results. The obsolete half aborts. This step documents the
+cause and one bounded repair; it changes no production application behavior.
 
-The [comparison report](performance/cancellation/README.md) retains all 48 replay
-samples, native HTTP/SSE and DOM timelines, observed body bytes and asset hashes.
-The unchanged workload covers cold/warm initial open, late open, overlapping reads
-and reconnect at 320/390/1280px. All samples end with 72 fresh cards and 48 fresh
-table rows, no transient old epoch after the checked transitions, and no pending
-ordinary requests or unexpected errors.
+The [investigation report](performance/subscribers/README.md) retains the harness,
+per-phase counts, native HTTP/SSE and transient DOM timelines, source commit and
+asset hashes. It compares direct full results, direct filtered history, delegated
+history and global results at 320, 390 and 1280px, twice each: **24 navigations**.
+Direct filtered history controls for the smaller displayed player selection.
 
-The replay records **264 list aborts and 12 table aborts**. All **84 deliberately
-held old responses** close before their bodies are released; all completed in the
-baseline. For the controlled overlap case, only three lists finish per navigation,
-compared with nine before, while fresh content remains correct. Browser-reported
-compressed list-body totals fall from 43,822 to 14,607 bytes in that case. Aborted
-resource timing can omit partial transport, so this is not an exact wire-savings
-claim or a claim that server SQL was cancelled.
+Source tracing establishes two hook owners on delegated routes. Native callback
+instrumentation shows the extra match-event fetches start synchronously within
+one transport callback. There is no second connection or intervening content
+unmount in that phase. Opening the stream also causes a separate table-loading
+transition that unmounts and remounts lists: direct pages start six list reads,
+delegated pages nine. That remaining remount cost is outside the proposed repair.
 
-Request starts remain governed by the existing lifecycle: 480 list requests start
-in this run versus 468 in the earlier sample, due to initial stream timing. The
-repair stops superseded work instead of suppressing required refreshes. Initial
-opening still erases private projections and requests fresh authority; reconnect
-and queued browser-return behavior are unchanged.
+Every replay ends with fresh epoch-7 content, no older epoch after the checked
+open/disconnect/account-clearing transitions, and no pending non-SSE requests,
+unexpected errors or overflow. All 279 server-observed held responses close before
+body release without finishing. Native reconnect reuses the first EventSource
+instance; account change closes it and creates a replacement. Same-account and
+changed-account returns each perform one session read, confirming the existing
+return drain already coalesces subscriber callbacks.
 
-Management keeps its existing ordinary consumer. A protected-origin request stays
-active while another observer needs the key, and can abort when its last observer
-leaves. A management-origin pending request reused by results retains its original
-transport behavior. Optional adapter arguments preserve that compatibility.
+The next candidate moves the live hook from shared `MatchResults` into the direct
+`MatchResultsPage` wrapper. History and global results keep their existing parent
+hooks. This gives each route one live owner throughout loading/error/remounts,
+without changing event fan-out, query freshness, projection erasure, cancellation,
+private-result denial guards or queued return ordering. The proposal is not
+implemented; initial effect timing and all entry points require regression tests.
 
 ## Validation and limits
 
-- Full frontend ladder passed: **649 tests / 111 files**, typecheck, lint and build.
-  Browser-specific TypeScript and lint checks passed.
-- 23 new unit tests cover transport signals, omitted signals, independent guards
-  against superseded success/401/403/404, fresh denial ordering, ordinary errors,
-  remaining/final observers and management/protected request origins.
-- **33 production browser tests passed**, including six new cases for both pending
-  management/result navigation directions at all three widths, logout/account
-  replacement and recoverable list/table errors. Existing return-order, offline
-  scoring guards and chunk recovery also pass.
-- **48 native HTTP replay navigations passed**. All 600 protected list/table calls
-  receive a signal; 324 complete and 276 abort. Representative mobile/desktop
-  management and results screenshots were inspected.
-- Fresh attribution output matches emitted production assets and the browser
-  hashes. Measurements identify the modified worktree on parent `42d813d`, with
-  its source status recorded explicitly, rather than claiming the parent is the
-  candidate build.
-- Independent source/test review found no production blocker and identified a
-  cumulative browser-abort assertion; it now requires a new abort after each
-  navigation/logout baseline. Final retained-evidence review passed with no
-  blockers, independently confirming request totals, held-response cancellation,
-  asset hashes and documented limits. Artifact/link consistency, script syntax
-  and diff checks passed.
-- No backend/PostgreSQL ladder ran because those layers and HTTP payload contracts
-  did not change. No database or production deployment performance is claimed.
+- Production build passed, including TypeScript compilation. A fresh attribution
+  build and the observed browser assets agree; frontend source is clean at
+  `72f8aa968232095b2d43f76c15a3fa551f0ca3bf`.
+- **51 focused tests across seven files passed:** private-result denial,
+  invalidation targets, queued return drain, shared transport, match mutation
+  separation, list/table cancellation and shared management-read ownership.
+- **24 production-browser investigation navigations passed**, covering delayed
+  open, ordinary match, held match/error/native reconnect, same-account return and
+  changed-account return. Mobile and desktop screenshots were inspected.
+- **11 existing production-browser return-loading/return-order tests passed**,
+  including frozen overlapping returns at mobile and desktop widths. Independent
+  source/harness and final retained-evidence review passed with no blockers. The
+  final review independently verified all 24 cases, 279 held cancellations,
+  synchronous dispatch counts, account clearing and 55 matching asset hashes.
+- Script syntax, document links and diff checks passed. Full frontend unit/lint
+  suites were not repeated for a documentation/harness-only change. Backend and
+  PostgreSQL ladders were not run because those layers are unchanged and real
+  database timing is outside this step.
 
-The measurements use synthetic, highly compressible data, optimistic immutable
-caching, throttled desktop Chrome and shortened SSE retry timing. They do not
-validate backend membership/hidden-final enforcement, physical phones, Caddy,
-sustained live load or cancellation of already-started SQL. Observation can affect
-scheduling and only covers a finite settling window.
+Measurements use synthetic data, instrumented native callbacks, throttled desktop
+Chrome and a finite settling window. DOM observations are not physical display
+frames; explicit persisted `pageshow` is not an actual BFCache restoration. No
+production latency, database authorization/cancellation, physical phone, Caddy or
+sustained live-load improvement is established. The existing return-order suite
+separately exercises a frozen browser. The proposed repair has not been benchmarked.
 
-The step is closed. The plan proposes an investigation of duplicate invalidation
-by shared-stream subscribers; that investigation and further repairs are unstarted.
+The investigation is closed; the ownership repair and later performance/security
+work remain unstarted.

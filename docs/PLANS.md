@@ -7,35 +7,38 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 None. The next candidate requires the user's instruction to proceed.
 
-## Next candidate — investigate duplicate live invalidation subscribers
+## Next candidate — one live owner per match-results route
 
-**Goal:** establish whether delegated match-result pages repeat authority
-invalidation for a single shared-stream event, and whether one narrowly scoped
-repair can remove duplicate work while preserving privacy and freshness.
+**Goal:** remove duplicated live invalidation on delegated match-only results,
+using the [investigation evidence](performance/subscribers/README.md).
 
-**Scope and behavior:** investigate match-only player history and global results,
-where both parent and `MatchResults` child subscribe to the same tournament stream.
-Compare them with the direct match-results route using initial open, match events,
-disconnect/reconnect and account transitions. Trace subscriber/event/request
-ownership and retain browser evidence. This step is investigation and
-documentation only; do not change production subscriptions, fetching, query
-freshness, projection erasure, scoring, API contracts or backend code.
+**Scope and exact behavior:** move `useTournamentLive(tournamentId)` from shared
+`MatchResults` into the direct `MatchResultsPage` wrapper in the same file. Keep
+`PlayerHistoryPage` and `LeaderboardPage` parent subscriptions unchanged. Direct
+and delegated routes each retain one live owner while shared result queries
+load, fail or remount. Add ownership/regression tests and update affected docs.
+No global event deduplication or production changes outside this boundary.
 
-**Invariants:** each relevant event must still perform required authority refresh.
-Disconnect/visibility transitions continue to erase private projections; stale
-success or denial cannot restore or erase newer authorized data. Preserve queued
-browser-return revalidation, account isolation, writable score intent, historical
-handicap snapshots and administrator-managed teams.
+**Invariants:** preserve every required authority refresh, score/match target,
+synchronous disconnect/visibility projection erasure, account isolation,
+transport cancellation, late-denial suppression, queued browser-return drain and
+shared management-read ownership. Preserve writable intent and all sporting
+rules; no API, schema, backend, query-key, retry or freshness change.
 
-**Validation:** use production-build mobile/desktop browser cases with request
-starts, aborts, completions and fresh final content. Distinguish multiple
-subscribers from transient parent remounts and native reconnects. Review any
-proposed deduplication boundary against existing live/denial/return-order tests;
-record synthetic/finite-window and unavailable database timing limits.
+**Validation:** use the real hook and controlled EventSource in tests of direct,
+filtered history, delegated history and global results. Cover early/delayed open,
+match/visibility events, child loading/error/remount, tournament switching,
+disconnect/reconnect and logout/account replacement. Assert fresh denial clears
+related projections while cancelled success/denial cannot affect newer data.
+Run the frontend ladder, existing queued-return/denial/cancellation checks and
+production mobile/desktop browser suites. Replay the retained subscriber harness:
+compare starts, aborts, completions and fresh final content. Initial effect timing
+can change; demonstrate one owner and fewer settled-event starts without demanding
+identical total navigation counts. Record remaining remount work and limitations.
 
-**Stop:** publish evidence and one bounded implementation proposal, or record
-that no safe reduction is established. Do not implement a proposal, redesign
-parent loading or begin the wider security review in this step.
+**Stop:** publish the validated ownership repair and evidence. Do not redesign
+parent loading, transport sharing or the return drain; do not start history-payload,
+PostgreSQL authorization or security work.
 
 ## Later queue
 
