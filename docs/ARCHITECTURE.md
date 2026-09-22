@@ -726,11 +726,15 @@ and reapplies runtime grants before the API is started.
   cannot revive data erased after denial. This boundary does not depend on SSE
   closing or on a session identity change.
 - Query cancellation and HTTP cancellation are separate boundaries. Protected
-  match-list/table queries consume and check their query-generation signal, but
-  the current `matchApi.list`/`table` adapters do not forward it into `fetch`.
-  Superseded results therefore cannot publish through the protected loader while
-  their HTTP responses can still finish. The [startup investigation](performance/startup/README.md)
-  records this gap; forwarding the signal is a separate proposed implementation.
+  match-list/table queries forward their existing query-generation signal through
+  `matchApi.list`/`table` into `fetch`, while retaining the protected loader's
+  pre/post-load checks and late-denial suppression. Superseded protected-origin
+  requests can abort transport as well as lose permission to publish results.
+  Optional signals preserve the ordinary management consumer's lifecycle. An
+  existing management-origin read reused by protected results is not retrofitted
+  with a signal; a protected-origin read remains active while another observer
+  needs it. Final-observer cancellation can abort that read. The
+  [cancellation comparison](performance/cancellation/README.md) records the boundary.
   Stream `open` still erases private projections and refreshes authority. Clearing
   the match table can unmount its list children, cancelling a newly started list
   generation before a fresh table remounts them. Do not remove the authority

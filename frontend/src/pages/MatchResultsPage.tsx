@@ -17,7 +17,7 @@ export function MatchResults({ tournamentId, selectedPlayerId, tournamentSelecto
   const user = useAuth().session?.user_id ?? '', [search] = useSearchParams(), playerId = selectedPlayerId ?? search.get('player') ?? undefined
   useTournamentLive(tournamentId)
   const rounds = usePrivateResultQuery({ userId: user, tournamentId }, { queryKey: tournamentKeys.rounds(user, tournamentId), queryFn: () => api.rounds(tournamentId) })
-  const table = usePrivateResultQuery({ userId: user, tournamentId }, { queryKey: matchKeys.table(user, tournamentId), queryFn: () => matchApi.table(tournamentId), retry: false })
+  const table = usePrivateResultQuery({ userId: user, tournamentId }, { queryKey: matchKeys.table(user, tournamentId), queryFn: ({ signal }) => matchApi.table(tournamentId, signal), retry: false })
   const error = rounds.error ?? table.error
   if (error) return <section className="page match-page">{tournamentSelector}<ErrorState error={error} onRetry={() => { void rounds.refetch(); void table.refetch() }} /></section>
   if (!rounds.data || !table.data) return <section className="page match-page">{tournamentSelector}<LoadingState /></section>

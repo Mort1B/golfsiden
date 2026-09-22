@@ -8,6 +8,10 @@ Investigation only, against application commit
 policy, dependency, API or schema change is included. The next implementation
 candidate is to forward existing query cancellation into list/table HTTP reads.
 
+This is the preserved pre-repair investigation. The subsequent
+[cancellation comparison](../cancellation/README.md) records the implemented
+transport forwarding; the samples and source findings below describe the baseline.
+
 ## What the source establishes
 
 The protected result loader already consumes a TanStack query signal, checks it

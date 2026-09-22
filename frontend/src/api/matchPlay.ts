@@ -19,11 +19,11 @@ export const matchKeys = {
 }
 const base = (round: string) => `/api/rounds/${round}/match-play`
 export const matchApi = {
-  list: (round: string) => requestDecoded(`${base(round)}/matches`, v => decodeListing(v, round)),
+  list: (round: string, signal?: AbortSignal) => requestDecoded(`${base(round)}/matches`, v => decodeListing(v, round), { signal }),
   read: (round: string, match: string, signal?: AbortSignal) => requestDecoded(`${base(round)}/matches/${match}`, v => decodeCard(v, round, match), { signal }),
   scoring: (round: string, match: string, signal?: AbortSignal) => requestDecoded(`${base(round)}/matches/${match}/scoring`, v => decodeCard(v, round, match, true), { signal }),
   completion: (round: string) => requestDecoded(`${base(round)}/completion`, v => decodeCompletion(v, round)),
-  table: (tournament: string) => requestDecoded(`/api/tournaments/${tournament}/match-table`, v => decodeTable(v, tournament)),
+  table: (tournament: string, signal?: AbortSignal) => requestDecoded(`/api/tournaments/${tournament}/match-table`, v => decodeTable(v, tournament), { signal }),
   settings: (round: string, expected: string, enabled: boolean, csrf: string) => requestDecoded(`${base(round)}/settings`, v => decodeExpectedRound(v, round), jsonRequest('PUT', { expected_round_updated_at: expected, handicap_enabled: enabled }, csrf)),
   assign: (round: string, expected: string, matches: MatchPair[], csrf: string) => requestDecoded(`${base(round)}/matches`, v => decodeListing(v, round), jsonRequest('PUT', { expected_round_updated_at: expected, matches }, csrf)),
   command: (round: string, match: string, request: MatchRequest, csrf: string, signal?: AbortSignal): Promise<MatchAcknowledgement> => requestDecoded(`${base(round)}/matches/${match}/commands`, v => {

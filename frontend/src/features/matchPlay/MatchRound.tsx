@@ -6,7 +6,7 @@ import { EmptyState, ErrorState, LoadingState } from '../../ui/AsyncState'
 import { eventLabel, matchResult, matchUrl, pointsLabel, tableUrl } from './format'
 export function MatchRound({ roundId, playerId }: { roundId: string; playerId?: string }) {
   const user = useAuth().session?.user_id ?? ''
-  const query = usePrivateResultQuery({ userId: user, roundId }, { queryKey: matchKeys.list(user, roundId), queryFn: () => matchApi.list(roundId), retry: false })
+  const query = usePrivateResultQuery({ userId: user, roundId }, { queryKey: matchKeys.list(user, roundId), queryFn: ({ signal }) => matchApi.list(roundId, signal), retry: false })
   if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />
   if (!query.data) return <LoadingState />
   const cards = query.data.matches.filter(m => !playerId || m.opponents.some(p => p.player_id === playerId))

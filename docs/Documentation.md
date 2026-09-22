@@ -1912,12 +1912,14 @@ loaded JavaScript chunk. Player-specific match history still fetches full round
 listings before filtering; API and live-refresh behavior are unchanged.
 
 The [match-list startup investigation](performance/startup/README.md) traces
-initial stream opening, overlapping reads and reconnects in the production build.
-Cancelled protected list/table queries reject obsolete results, but their HTTP
-reads currently continue because those API adapters do not forward the query's
-cancellation signal. The investigation proposes a separate transport repair;
-it does not change refresh policy or runtime behavior. The report includes the
-reproduction commands and per-request evidence.
+initial stream opening, overlapping reads and reconnects. The subsequent
+[cancellation comparison](performance/cancellation/README.md) records the repair:
+list/table reads started by protected result consumers now abort when their query
+generation is cancelled. Independent guards still reject obsolete successes and
+denials. Required authority refreshes and projection clearing are unchanged.
+Management keeps its existing read lifecycle; a request shared with an active
+observer is not cancelled just because the result page leaves. A pending request
+originally started by management retains its original transport behavior.
 
 Home and sign-in remain available from the entry module. Other page modules load
 when their route is opened, with the existing session gate applied first on
