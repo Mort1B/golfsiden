@@ -1911,6 +1911,14 @@ records the subsequent startup-byte and cold/warm timing changes across every
 loaded JavaScript chunk. Player-specific match history still fetches full round
 listings before filtering; API and live-refresh behavior are unchanged.
 
+The [match-list startup investigation](performance/startup/README.md) traces
+initial stream opening, overlapping reads and reconnects in the production build.
+Cancelled protected list/table queries reject obsolete results, but their HTTP
+reads currently continue because those API adapters do not forward the query's
+cancellation signal. The investigation proposes a separate transport repair;
+it does not change refresh policy or runtime behavior. The report includes the
+reproduction commands and per-request evidence.
+
 Home and sign-in remain available from the entry module. Other page modules load
 when their route is opened, with the existing session gate applied first on
 private routes. Navigation and account/offline providers remain mounted during

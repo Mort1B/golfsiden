@@ -725,6 +725,16 @@ and reapplies runtime grants before the API is started.
   Ordinary 500/network failures may retain previously permitted results, but
   cannot revive data erased after denial. This boundary does not depend on SSE
   closing or on a session identity change.
+- Query cancellation and HTTP cancellation are separate boundaries. Protected
+  match-list/table queries consume and check their query-generation signal, but
+  the current `matchApi.list`/`table` adapters do not forward it into `fetch`.
+  Superseded results therefore cannot publish through the protected loader while
+  their HTTP responses can still finish. The [startup investigation](performance/startup/README.md)
+  records this gap; forwarding the signal is a separate proposed implementation.
+  Stream `open` still erases private projections and refreshes authority. Clearing
+  the match table can unmount its list children, cancelling a newly started list
+  generation before a fresh table remounts them. Do not remove the authority
+  refresh or retain private data to reduce those requests.
 - The score route likewise owns tournament, round, tagged owner, hole, and view
   selection in canonical URL parameters. Completion validation is its owner
   authority, and exact runtime decoders protect scorecard state before caching.

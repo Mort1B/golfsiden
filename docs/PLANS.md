@@ -5,43 +5,52 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The completed route-level splitting is documented in
-[LatestExplanation.md](LatestExplanation.md) and the
-[comparison report](performance/route-splitting/README.md).
+None. The next candidate requires the user's instruction to proceed.
 
-## Next candidate — investigate match-list startup amplification
+## Next candidate — cancel superseded match-result HTTP reads
 
-**Goal:** identify which repeated match-list HTTP reads are necessary authority
-refreshes and which, if any, are superseded work that can safely be avoided.
+**Goal:** stop browser transfer/processing of delayed match-list/table requests
+whose query generations are already cancelled, using the
+[startup investigation](performance/startup/README.md) as the baseline.
 
-**Scope and behavior:** trace the existing match-result startup waterfall and
-query/SSE lifecycle. Reproduce initial stream opening, delayed reads and reconnect
-with request timing and cancellation evidence. Produce one bounded repair
-proposal only if the evidence supports it; this candidate is investigation and
-documentation only. Do not change runtime fetching, authorization, projection
-clearing, query staleness, scoring or database code in this step.
+**Scope and behavior:** add optional `AbortSignal` parameters to `matchApi.list`
+and `matchApi.table`, forward them through the existing HTTP decoder, and pass the
+query context signal from the protected `MatchRound` list and `MatchResults` table
+consumers. Keep the existing pre/post-load cancellation and late-denial checks.
+Include focused transport/private-result tests, production browser evidence and
+affected documentation. The ordinary management `MatchSetup` caller retains its
+current lifecycle; validate navigation across the shared list key.
 
-**Invariants:** private projections remain erased on relevant visibility and
-connection transitions until fresh authority succeeds. Superseded success or
-failure cannot restore old private data or erase newer authorized data. Writable
-score intent and account isolation stay separate from read-only result caches.
-Preserve historical handicaps and administrator-managed teams.
+Do not change query keys, freshness, retry rules, SSE opening/reconnect refresh,
+projection erasure, subscriber fan-out, parent loading composition, API payloads,
+backend authorization, schema or scoring. Do not suppress required fresh reads or
+change the queued browser-return drain.
 
-**Validation:** repeat relevant production-build browser workloads at mobile and
-desktop widths. Retain request start/finish/abort evidence, final correct content
-and error counts; distinguish cold/warm and initial/reconnect cases. Review any
-proposed cancellation/coalescing boundary against existing denial and return-order
-regressions. State the synthetic API/PostgreSQL and observation-window limits.
+**Invariants:** private projections stay erased until fresh authority succeeds;
+superseded success or denial cannot overwrite newer authority. Account isolation,
+writable score intent, historical handicap snapshots and administrator-managed
+teams remain unchanged.
 
-**Stop:** publish evidence and one precisely bounded next proposal, or record that
-no safe reduction is established. Do not implement the proposal or begin the
-wider security review without a subsequent instruction.
+**Validation:** prove both signals reach `fetch`; cover cancellation followed by
+replacement success and 401/403/404 denial ordering. Replay cold/warm initial-open,
+overlap and reconnect cases at 320/390/1280px, retaining starts, aborts,
+completions, bytes and correct fresh content. Re-run existing private-result,
+live/return-order regressions and the full frontend ladder. Check account changes,
+result-to-management navigation and ordinary uncancelled errors.
+
+**Stop:** publish observable aborts of delayed superseded list/table HTTP reads,
+with fresh replacement content and privacy regressions passing. Request-start
+counts may stay unchanged; do not claim cancellation of completed responses or
+already-started server SQL. If the candidate does not satisfy these gates, record
+the limitation and re-bound the plan. Do not begin another performance repair or
+the wider security review.
 
 ## Later queue
 
-1. **Remaining performance findings:** acquire disposable PostgreSQL measurements
-   before choosing any list-authorization repair; separately reassess full-card
-   history reads after the startup investigation.
+1. **Remaining performance findings:** separately examine duplicate subscriber
+   invalidation and transient list remount fetches; reassess full-card history
+   reads. Acquire disposable PostgreSQL measurements before any list-authorization
+   repair. Preserve authority refresh and fail-closed behavior in every proposal.
 2. **Security review:** perform the separately scoped wider application/operational
    review after agreed performance repairs.
 

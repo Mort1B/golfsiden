@@ -1,66 +1,67 @@
-# Route-level JavaScript splitting
+# Match-list startup investigation
 
-**Completed — READY WITH KNOWN LIMITATIONS.** Route-only page modules now load
-when opened. Home and sign-in stay eager; private pages retain their session gate.
-Shared authentication, query, scoring-guard and offline providers keep their
-existing lifetime. No backend, API, schema, dependency or scoring rules changed.
+**Completed — READY WITH KNOWN LIMITATIONS.** The investigation identifies one
+bounded next repair: forward existing query cancellation into match-list/table
+HTTP requests. No production source, dependency, runtime refresh policy, API,
+schema, scoring or authorization behavior changed.
 
-The [comparison report](performance/route-splitting/README.md) retains build
-hashes, all 62 production-browser timing samples and measurement conditions.
-Initial gzip JavaScript falls from 222,606 to 138,922 bytes for login (**37.6%**)
-and to 143,807 bytes across all five chunks used by measured match-result pages
-(**35.4%**). The entry is 452,821 uncompressed bytes; the former Vite size warning
-is gone. Further routes download their own modules as needed.
+The [investigation report](performance/startup/README.md) retains the reproducible
+HTTP/SSE harness, all 48 samples, browser/server request timelines, DOM epoch
+observations, resource bytes and production asset hashes. The application remains
+at `d047830` throughout measurement; browser hashes match the published build.
 
-Under the unchanged synthetic 100 ms/1.6 Mbps/4× CPU profile, login's median cold
-ready time falls from 1,731 to 1,236 ms. The 72-card, three-round mobile workload
-falls from 2,500 to 2,160 ms. Every measured cold median improves by 296–495 ms;
-warm median increases are at most 32 ms (3.2%). Warm stress timing also improves,
-but stream-open scheduling changes request counts, so it does not establish a
-repair to API read amplification. API/query/SSE policies are unchanged.
+Protected result queries already reject superseded successes and suppress late
+denials from cancelled generations. Their list/table adapters do not pass the
+query signal to `fetch`, so HTTP reads continue even after their results lose the
+right to publish. The observed startup sequence is initial read, stream-open
+refresh, then another read when a cleared table remounts its list children.
 
-## Loading and recovery
+Across 48 cold/warm navigations at 320, 390 and 1280px, all **468 list reads and
+120 table reads completed**. None of those 588 fetch calls received a cancellation
+signal. Controlled overlap/reconnect cases included **84 held old responses**
+that completed after their query generations were superseded. Their old content
+did not reappear. Natural startup produced one or three reads per round; delayed
+opening and held initial reads consistently produced three.
 
-The small explicit module loader caches code only, forwards current props and
-ignores resolution after unmount. This keeps account state out of the module
-cache and avoids adding a Suspense fallback delay to warm full navigations.
-The application shell and its navigation stay available during child loading.
+For example, a three-round page had settled content before stream opening at
+2,356 ms. Three replacement list fetches began at 2,363–2,367 ms, the cleared table
+hid its children at 2,384 ms, and three more list fetches began at 2,487–2,494 ms as
+the table returned. All nine lists completed. The trace records DOM/request order;
+the source establishes the parent-unmount cancellation interpretation.
 
-Failed JavaScript or route stylesheet imports show an accessible error with
-“Last siden på nytt”. Recovery requires a deliberate action, retains the URL's
-query/fragment and honors the existing scoring guard. Rendering failures retain
-existing route error handling; they are not classified as chunk download failures.
-
-For example, a golfer can queue a durable score, navigate to Profile, encounter a
-failed module download, reload deliberately and return to the same local score.
-A score that could not be stored on the device, or an unsaved match note, continues
-to block navigation/logout until resolved or discarded. Late module resolution
-after logout cannot restore the former account's page data.
+The next step can attach the existing signal to the protected list/table reads
+without removing initial/reconnect authority verification. Its acceptance is
+observable aborts of superseded delayed requests, preserved fresh content and
+unchanged denial/account/return-order behavior. It need not reduce request starts.
+Management's ordinary list consumer keeps its existing lifecycle, with shared-key
+navigation included in validation. Redesigning refetch ownership, subscriber
+fan-out, history payloads or backend authorization stays outside that step.
 
 ## Validation and limits
 
-- Full frontend ladder passed: **626 tests / 109 files**, typecheck, lint and build.
-  Browser-specific TypeScript and lint checks also passed.
-- **27 production Chrome tests passed**, including existing return-loading and
-  ordering regressions plus new route/direct-link/history, account replacement,
-  durable/nondurable scoring, API error, and JavaScript/CSS recovery checks.
-- Mobile 320/390px and desktop 1280px checks include delayed, error, empty,
-  populated and long-content states. Screenshots were inspected; keyboard reload,
-  44px reload height, overflow and unexpected console/network failures are checked.
-- All **62 performance navigations passed** final content and zero-pending-request
-  assertions. The fresh attribution build matched emitted assets byte-for-byte;
-  browser hashes match the retained bundle. Source status records that measurement
-  used the implementation worktree on parent `ac5f9d7`, not the unmodified parent.
-- Independent read-only review found no blocking findings. Script syntax checks
-  and `git diff --check` passed. No backend/database ladder ran because those
-  layers and contracts did not change.
+- Production build and fresh bundle attribution passed; emitted/browser hashes
+  agree with the unchanged published application.
+- **28 tests across five files passed** for private-result cancellation/denial,
+  live invalidation, queued return refresh, subscriptions and match/scoring keys.
+- **11 existing production browser return-loading/ordering tests passed**,
+  including unfinished returns followed by changed authority at all three widths.
+- **48 investigation navigations passed** correct fresh content, transient epoch,
+  zero-pending-request, console/network error and overflow checks. Representative
+  mobile/desktop screenshots were inspected.
+- Read-only source/harness review added transient-content assertions and actual
+  browser resource timing. Final independent review recomputed the retained
+  counts, byte ranges, transient epoch assertions and timelines, checked all 55
+  asset hashes and found no blocking findings. Script syntax and diff checks passed.
+- Full frontend unit/lint ladders were not repeated because only documentation
+  and observational scripts changed; the build includes TypeScript compilation.
+  Backend/PostgreSQL checks were not applicable and were not run.
 
-Timings use highly compressible synthetic API data and optimistic immutable
-static caching, not production Caddy delivery or real API/PostgreSQL latency.
-Physical phones, production deployment, sustained live load and backend privacy
-are outside these browser fixtures. The earlier PostgreSQL measurement blocker
-remains recorded in the baseline. These limits prevent a production performance
-claim but do not block the measured frontend change.
+Synthetic epochs validate frontend ordering, not backend membership, hidden-final
+or revocation enforcement. Instrumentation affects scheduling; these traces are
+not field latency measurements. The fixture shortens native SSE retry to 200 ms,
+uses optimistic immutable asset caching and compressible data, and observes a
+finite settling window. Browser completion/body bytes are distinguished from
+server socket handoff. No database speedup or cancellation of already-started SQL
+is established. The earlier PostgreSQL blocker was not retried in this step.
 
-The completed step is closed. The plan proposes one investigation of remaining
-match-list startup amplification; no further repair or security review has begun.
+The investigation is closed and the transport repair is planned but unstarted.
