@@ -1,0 +1,909 @@
+{
+  "measuredAt": "2026-09-22T08:14:14.131Z",
+  "sourceCommit": "d1e3d32eaccfc0512c968a2fcf08c99397c99f25",
+  "sourceStatus": "",
+  "browser": "153.0.8010.36",
+  "node": "v22.22.2",
+  "conditions": {
+    "latencyMs": 100,
+    "downloadBytesPerSecond": 200000,
+    "uploadBytesPerSecond": 93750,
+    "cpuSlowdown": 4,
+    "repeats": 3,
+    "api": "native synthetic gzip HTTP and SSE; no backend/database",
+    "timing": "match-event refresh after settled initial and open authority passes; isolated warmed decoder batches separately; no production source modification"
+  },
+  "probeHash": "bd06b078292d725c19d9a66b6635d65d42a8b8542d7bc5cb8a95a44a914245c3",
+  "assetHashes": {
+    "DirectScorecardPage-DvHpOmmN.js": "a0d474d90474f45677fece51b7b9a8ee49b3ca9b3f7805b40f25eb445f68a503",
+    "InvitationAdminPage-DE3kcJsK.js": "965eaff959bf13831396c18e30b1cc2a2b3ca5f88c587928cf21559273f4bc4e",
+    "JoinPage-DeB7d8Y_.js": "dd367b4973ceddd80c6e4c39fe97f6fb62f5a605bce67fcc82f96b4d30b5e6d9",
+    "LeaderboardPage-D5n7XlqA.js": "4df1c4fb390cfcb15d5e39f36a2c8035d040488d61627a318c599c6431000191",
+    "MatchPage-D84yuI3F.js": "f49d524e9446aa7c0035bc6cbd89f6cdae845c033ba3e314aa99470df3797517",
+    "MatchResultsPage-_K2zNoGK.js": "ccb23430487bda19c6964f583390ce429a820a194bfbd2f34e68b4c7b9c1981f",
+    "MatchRound-CfTDy-FK.js": "389903a3a4c26e75bf254784833f51919fee63aa90b38d5b203e486635f6dcfb",
+    "PlayerHistoryPage-DZuxsVjS.js": "5aef5591bb56804848ecb827741fbf13138c102aa6363106444494888792f70e",
+    "ProfilePage-0ILpLUhR.css": "1ac770b7c3b10b9426ccea73fe73996948353eda4b6b0f6ae16c1609f110f4e1",
+    "ProfilePage-C9b4fnKY.js": "de1d681447439b3d2285c8d7ce0d3390945ec10ab07e4c587669e1e200be0126",
+    "ResetPasswordPage-CVMWEnXp.js": "862ca397130e39c15a952ada86a0058529bfc6678890db92808a8eee6e551671",
+    "RoundPage-MVqU_bBD.js": "02b9b79a9535fbc6f9edabe5213974c23ec5afe92aa76e5cdf0714ac9f3f57a5",
+    "RoundPage-wcT7C6DS.css": "7d943d76a1cd100be1df6ff9d5f6e65e9057284fcd4c0173d95f8e4d9162e247",
+    "ScorePage-DlsnCT_X.js": "5ba66dcc35149da04dadb1eceb36b6eb87d20228634f1fe4369121b0eb5100c0",
+    "ScorecardSummaryView-DAoOxJ5_.js": "112169f268d02aca88249a68050159148b750f39910aca2cff4ea80a22fdc9c1",
+    "ScorecardSummaryView-PzQW966n.css": "9136c7ba92cb6e779ef31b022b76008744834e9ac8624b657cdf221542410cfc",
+    "SharedResultsPage-BoTIXjpP.js": "d48c26c7afbe9730de2747abad13c7203040fbcceb4b7a658cf5528ab433c645",
+    "StatusBadge-Dx8s13BA.js": "c0ec82c5c874c11cb9decd404cd4623afffd164aef34e83fdff4e052a2c07cdb",
+    "TournamentManagementPage-o_Aaknwr.js": "cc7b1e70c5f344f4066259fa80d5d1607c44e20038137b8a3f4e2e1d8db09241",
+    "TournamentManagementPage-q76c0ZwO.css": "c6caec5912f71f16e3db8cb6bcb99129ddcce8ba94c939ddb211fb9ab7abafd4",
+    "TournamentOnboardingPage-DWL7uIkM.js": "d38c60da697300a7175fc6786e599a08b5116b3f5fdbdad6479f7e2242484c3d",
+    "TournamentPage-CGtza_21.js": "e53d7f078f585ddcb2aa4e1ce8494e74fc6e54264437aa2ea11459dbf3870387",
+    "TournamentsPage-By3L3DFO.css": "f8e40ddce29545f9bcf096a483aa836d2361f5f25f629ec706c40b87ad71d3ce",
+    "TournamentsPage-D6L0pTcF.js": "c4a2b2ab8debd65a218b304f4e5385736082c5e960fce05dfd4032f5155316b6",
+    "calendar-days-CJaN_1F5.js": "ae3ca64b80d296ff02c314e69ac0d86a44ce00e0c0ae682aff460e4361c7bec9",
+    "check-DG9t_HM7.js": "6ff85e72c31ba929a6557cfd8322c4e1d40565db34005da2cc32017640c1cb07",
+    "chevron-left-C4HkMi0p.js": "424daaccf5c14e4e4f711873f88e099ef5a830dff6cff553b79649d6ad869282",
+    "chevron-right-fFfiFe6W.js": "622a3d57900b03b28153e6b6e5c475471beb83377993992d4245b19864f0d799",
+    "circle-check-Cwc2pD__.js": "de54c0294cbec0c0aae1c23aa1df0de969e43536044b304aae15255b7f9ec8ad",
+    "drilldownRoutes-RBLfWGPT.js": "78f61af75f0e5b9da6e465e6ddfb168d04aa2bb617acaf2e4de812457e02736f",
+    "finalRoundExplanation-DIiFCWmu.js": "7c5a2e314acee153fa5a78562909aaea74af26b3ca9f519fd07e7d9ab0076e66",
+    "flag-B1DWPaKW.js": "ff1a5ef137295e7391905e347007c359981a8f1c278f7f68f6770a8e47fcc780",
+    "format-BJysboft.js": "37d88a3c07e3c5314bd7a85081307e5dedf8bae6583e8ccfa54d8d8f561e1fe4",
+    "format-CAgFkmGX.js": "9467c78489961e83fbf20235edd86e17a27bf3534f87e9769f63563a728104e8",
+    "index-C_dFexPQ.js": "27d5138872a0a0d3aabc96ba9942cbee9537e520b5c8cbbef5a47567e9025f8c",
+    "index-li1Y9gAN.css": "7f6c7436f983eac856144582b5b8390e608e864942973d4af4c0963813aeaf1b",
+    "invitations-DM5FyqIa.js": "34996b20110dfdce225a893fdddcec91337af3ca4b9f32e8d869d73b631fbe0b",
+    "map-pin-nMV1FM6V.js": "d1ebdc9d9a7e174635fd7e908b7aba71edfbc89d692683d0b5ce764a4c049c7e",
+    "messages-WGv5K0X9.js": "2b09c728cfc0c17df846e7ef497568f2fbb01c1fbf8750d9d352fa2405ce2b0f",
+    "overallConfiguration-BWrBcj4S.js": "da33219a4830374eadb566972020dce56fa4fba462607f9f634dca6bf99b4921",
+    "pairings-Cg9eEOC1.js": "50e00378d4ffccf94fdcbfca28fc85108c69ea68387004b736426b4905ee9422",
+    "password-CbC00kx7.js": "d35a4b7d62a48ee7788899020ffb42eff401111ff27ddbe7a9327ba886501cae",
+    "plus-fGF0q8ke.js": "768d8cec916e843b38dfb2f407ce2f92aba908b554219be37a4fda216c577e35",
+    "refresh-cw-CSTKLikl.js": "b8d21e6ef1cf45612da659b9d663e3b1b40391ac796327d3e86d7410451880b4",
+    "resultExplanations-vi8djnSL.js": "19ab54a7e0913b112a8f2467e06ae0a94d90cc687fed995739679d2b014e906e",
+    "resultSharing-BXTnhsUo.css": "82dae238a0bd18c120b85a00e1f7cd21378513d07db9f06fe403f4a2db9317a9",
+    "resultSharing-DcRtwMKc.js": "c0c12986d8adef7c96957c16377d9aa7294b3321124518f056dd9d42caf8e87d",
+    "selection-CPPOa36Y.js": "29fa13d42df7cd32af7e6c67f7632829fe51b56a5650f70dfcc7646e2ddb1efb",
+    "tieBreakExplanation-BDPa7Azd.js": "eb4d722329e3d82546b11ba8c6c1ed879e497c9c302bd31d7cbfa9d6624a1e33",
+    "tournamentLoader-BXAm_Bxn.js": "c444bf6d0661207a0270320146a82b317ffd7525518a9d0b2edf7451ca2ef718",
+    "trash-2-CuUweKPm.js": "29e13f7ffffc563b1409a8a37d7a91924afe404d18a25c5b0997fdd45b4450e7",
+    "usePrivateResultQuery-BkYa92Og.js": "c3534fde1b7da682639966e4726a0a42fad5aedb92ae672b022426243f27f398",
+    "useTournamentLive-BQ89kByJ.js": "f4a37ebda09a08803c1949d09f85d27b76892df8f53640063693fabe9e1a0c1f",
+    "users-DX2djohO.js": "d2b54059a65fa66bda9fb4837ae4dd974c4b0b0acf0cd305ac1ebb8798a6b1c7",
+    "x-rSQuFIZ0.js": "cd3143beb53ac88a0b3d3cc206bb8eb0b0e41c8e7e4676187eac793e55a8edba"
+  },
+  "sampleCount": 54,
+  "payloads": [
+    {
+      "scenario": "typical",
+      "full": {
+        "rawBytes": 84137,
+        "gzipBytes": 3972,
+        "cards": 12
+      },
+      "playerSubset": {
+        "rawBytes": 7089,
+        "gzipBytes": 879,
+        "cards": 1
+      },
+      "table": {
+        "rawBytes": 5195,
+        "gzipBytes": 350
+      },
+      "fixtureHash": "dba31c7505a983e4ac3bd79c54dab3b71c971a6dd3ba28763a387ee5dd5d8748",
+      "detailArraysRawBytes": 74376,
+      "inventoryEpoch": 0,
+      "removedRawPercent": 91.57445594684859,
+      "removedGzipPercent": 77.8700906344411,
+      "detailArrayPercent": 88.39868310018184,
+      "probe": {
+        "full": {
+          "parseMs": {
+            "median": 0.4900000002235174,
+            "min": 0.4600000001490116,
+            "max": 0.5300000000745058
+          },
+          "decodeMs": {
+            "median": 1.6049999997019768,
+            "min": 1.325,
+            "max": 1.805000000074506
+          },
+          "filterMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0.005000000074505806
+          }
+        },
+        "subset": {
+          "parseMs": {
+            "median": 0.039999999850988385,
+            "min": 0.030000000074505807,
+            "max": 0.0649999998509884
+          },
+          "decodeMs": {
+            "median": 0.11500000022351742,
+            "min": 0.09500000029802322,
+            "max": 0.15500000007450582
+          },
+          "filterMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "populated",
+      "full": {
+        "rawBytes": 504591,
+        "gzipBytes": 21491,
+        "cards": 72
+      },
+      "playerSubset": {
+        "rawBytes": 21267,
+        "gzipBytes": 2634,
+        "cards": 3
+      },
+      "table": {
+        "rawBytes": 10331,
+        "gzipBytes": 491
+      },
+      "fixtureHash": "7651e16167e731bcfc929c62dc2bae4dce5ddb94cb9e16334193065bed6ae667",
+      "detailArraysRawBytes": 446256,
+      "inventoryEpoch": 0,
+      "removedRawPercent": 95.7852993810829,
+      "removedGzipPercent": 87.74370666790749,
+      "detailArrayPercent": 88.43915170900789,
+      "probe": {
+        "full": {
+          "parseMs": {
+            "median": 2.95,
+            "min": 2.8,
+            "max": 3.0900000002235175
+          },
+          "decodeMs": {
+            "median": 7.565000000223518,
+            "min": 7.169999999925494,
+            "max": 8.439999999850988
+          },
+          "filterMs": {
+            "median": 0.005000000074505806,
+            "min": 0.005000000074505806,
+            "max": 0.04000000022351742
+          }
+        },
+        "subset": {
+          "parseMs": {
+            "median": 0.1449999999254942,
+            "min": 0.09500000029802322,
+            "max": 0.175
+          },
+          "decodeMs": {
+            "median": 0.3,
+            "min": 0.26999999992549417,
+            "max": 0.30999999977648257
+          },
+          "filterMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0.020000000298023225
+          }
+        }
+      }
+    },
+    {
+      "scenario": "restricted-final",
+      "full": {
+        "rawBytes": 426714,
+        "gzipBytes": 18384,
+        "cards": 72
+      },
+      "playerSubset": {
+        "rawBytes": 18025,
+        "gzipBytes": 2425,
+        "cards": 3
+      },
+      "table": {
+        "rawBytes": 10331,
+        "gzipBytes": 491
+      },
+      "fixtureHash": "d5a0666845456d442565d58df362e22046e377a710e29d57e03879ef018fd79f",
+      "detailArraysRawBytes": 371376,
+      "inventoryEpoch": 0,
+      "removedRawPercent": 95.77585924061549,
+      "removedGzipPercent": 86.809181897302,
+      "detailArrayPercent": 87.03159493243719,
+      "probe": {
+        "full": {
+          "parseMs": {
+            "median": 2.555000000074506,
+            "min": 2.4650000002235175,
+            "max": 2.794999999925494
+          },
+          "decodeMs": {
+            "median": 6.414999999850989,
+            "min": 6.125,
+            "max": 8.309999999776483
+          },
+          "filterMs": {
+            "median": 0.010000000149011612,
+            "min": 0,
+            "max": 0.034999999776482583
+          }
+        },
+        "subset": {
+          "parseMs": {
+            "median": 0.125,
+            "min": 0.0949999999254942,
+            "max": 0.13999999985098838
+          },
+          "decodeMs": {
+            "median": 0.2449999999254942,
+            "min": 0.22000000029802322,
+            "max": 0.2950000002980232
+          },
+          "filterMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0.005000000074505806
+          }
+        }
+      }
+    },
+    {
+      "scenario": "stress",
+      "full": {
+        "rawBytes": 2102034,
+        "gzipBytes": 81445,
+        "cards": 300
+      },
+      "playerSubset": {
+        "rawBytes": 21267,
+        "gzipBytes": 2634,
+        "cards": 3
+      },
+      "table": {
+        "rawBytes": 42960,
+        "gzipBytes": 1394
+      },
+      "fixtureHash": "2a861ad0c65e50fae1dad54b639d51c975c4a1dcabd8d57c5281c229adf5992d",
+      "detailArraysRawBytes": 1859400,
+      "inventoryEpoch": 0,
+      "removedRawPercent": 98.9882656512692,
+      "removedGzipPercent": 96.76591564859721,
+      "detailArrayPercent": 88.45718004561296,
+      "probe": {
+        "full": {
+          "parseMs": {
+            "median": 12.144999999925494,
+            "min": 11.879999999701976,
+            "max": 12.275
+          },
+          "decodeMs": {
+            "median": 33.355000000074504,
+            "min": 29.790000000223518,
+            "max": 36.25
+          },
+          "filterMs": {
+            "median": 0.05,
+            "min": 0.025,
+            "max": 0.1
+          }
+        },
+        "subset": {
+          "parseMs": {
+            "median": 0.1300000000745058,
+            "min": 0.11499999985098838,
+            "max": 0.1449999999254942
+          },
+          "decodeMs": {
+            "median": 0.3,
+            "min": 0.2550000000745058,
+            "max": 0.3350000001490116
+          },
+          "filterMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0.005000000074505806
+          }
+        }
+      }
+    }
+  ],
+  "routes": [
+    {
+      "key": "typical/390/all",
+      "repeats": 3,
+      "cards": 12,
+      "rows": 24,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 145.79999999701977,
+          "min": 145.19999999552965,
+          "max": 156.10000000149012
+        },
+        "responseToDomMs": {
+          "median": 17,
+          "min": 16.700000002980232,
+          "max": 21.200000002980232
+        },
+        "jsonToDomMs": {
+          "median": 13.199999995529652,
+          "min": 12.799999997019768,
+          "max": 13.300000004470348
+        },
+        "matchDomNodes": {
+          "median": 226,
+          "min": 226,
+          "max": 226
+        }
+      },
+      "listEncodedBytes": {
+        "median": 3972,
+        "min": 3972,
+        "max": 3972
+      }
+    },
+    {
+      "key": "typical/390/filtered",
+      "repeats": 3,
+      "cards": 1,
+      "rows": 1,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 144.90000000596046,
+          "min": 144.90000000596046,
+          "max": 148
+        },
+        "responseToDomMs": {
+          "median": 14.5,
+          "min": 12,
+          "max": 14.600000001490116
+        },
+        "jsonToDomMs": {
+          "median": 10.300000004470348,
+          "min": 8.700000002980232,
+          "max": 10.399999998509884
+        },
+        "matchDomNodes": {
+          "median": 23,
+          "min": 23,
+          "max": 23
+        }
+      },
+      "listEncodedBytes": {
+        "median": 3972,
+        "min": 3972,
+        "max": 3972
+      }
+    },
+    {
+      "key": "typical/390/history",
+      "repeats": 3,
+      "cards": 1,
+      "rows": 1,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 146.30000000447035,
+          "min": 142.59999999403954,
+          "max": 146.89999999850988
+        },
+        "responseToDomMs": {
+          "median": 13.299999997019768,
+          "min": 12.299999997019768,
+          "max": 14.100000001490116
+        },
+        "jsonToDomMs": {
+          "median": 9.300000004470348,
+          "min": 8.299999997019768,
+          "max": 9.599999994039536
+        },
+        "matchDomNodes": {
+          "median": 23,
+          "min": 23,
+          "max": 23
+        }
+      },
+      "listEncodedBytes": {
+        "median": 3972,
+        "min": 3972,
+        "max": 3972
+      }
+    },
+    {
+      "key": "populated/320/all",
+      "repeats": 3,
+      "cards": 72,
+      "rows": 48,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 284.5,
+          "min": 281.1000000014901,
+          "max": 289.29999999701977
+        },
+        "responseToDomMs": {
+          "median": 63.399999998509884,
+          "min": 58,
+          "max": 65.20000000298023
+        },
+        "jsonToDomMs": {
+          "median": 28.700000002980232,
+          "min": 28.200000002980232,
+          "max": 31.5
+        },
+        "matchDomNodes": {
+          "median": 832,
+          "min": 832,
+          "max": 832
+        }
+      },
+      "listEncodedBytes": {
+        "median": 21491,
+        "min": 21491,
+        "max": 21491
+      }
+    },
+    {
+      "key": "populated/320/filtered",
+      "repeats": 3,
+      "cards": 3,
+      "rows": 1,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 265.3999999985099,
+          "min": 258,
+          "max": 268.8999999985099
+        },
+        "responseToDomMs": {
+          "median": 39.099999994039536,
+          "min": 36.5,
+          "max": 46.29999999701977
+        },
+        "jsonToDomMs": {
+          "median": 17.599999994039536,
+          "min": 17.100000001490116,
+          "max": 19.69999999552965
+        },
+        "matchDomNodes": {
+          "median": 45,
+          "min": 45,
+          "max": 45
+        }
+      },
+      "listEncodedBytes": {
+        "median": 21491,
+        "min": 21491,
+        "max": 21491
+      }
+    },
+    {
+      "key": "populated/320/history",
+      "repeats": 3,
+      "cards": 3,
+      "rows": 1,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 266.5,
+          "min": 262.59999999403954,
+          "max": 270.5
+        },
+        "responseToDomMs": {
+          "median": 42,
+          "min": 41.20000000298023,
+          "max": 47.29999999701977
+        },
+        "jsonToDomMs": {
+          "median": 16.19999999552965,
+          "min": 15.300000004470348,
+          "max": 20.19999999552965
+        },
+        "matchDomNodes": {
+          "median": 45,
+          "min": 45,
+          "max": 45
+        }
+      },
+      "listEncodedBytes": {
+        "median": 21491,
+        "min": 21491,
+        "max": 21491
+      }
+    },
+    {
+      "key": "populated/390/all",
+      "repeats": 3,
+      "cards": 72,
+      "rows": 48,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 287.19999999552965,
+          "min": 285.79999999701977,
+          "max": 290.5
+        },
+        "responseToDomMs": {
+          "median": 62.79999999701977,
+          "min": 60.600000001490116,
+          "max": 65.60000000149012
+        },
+        "jsonToDomMs": {
+          "median": 30.799999997019768,
+          "min": 28.19999999552965,
+          "max": 32.69999999552965
+        },
+        "matchDomNodes": {
+          "median": 832,
+          "min": 832,
+          "max": 832
+        }
+      },
+      "listEncodedBytes": {
+        "median": 21491,
+        "min": 21491,
+        "max": 21491
+      }
+    },
+    {
+      "key": "populated/390/filtered",
+      "repeats": 3,
+      "cards": 3,
+      "rows": 1,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 263.70000000298023,
+          "min": 261.6000000014901,
+          "max": 265
+        },
+        "responseToDomMs": {
+          "median": 39.399999998509884,
+          "min": 38.399999998509884,
+          "max": 40.80000000447035
+        },
+        "jsonToDomMs": {
+          "median": 16.5,
+          "min": 16.200000002980232,
+          "max": 17.299999997019768
+        },
+        "matchDomNodes": {
+          "median": 45,
+          "min": 45,
+          "max": 45
+        }
+      },
+      "listEncodedBytes": {
+        "median": 21491,
+        "min": 21491,
+        "max": 21491
+      }
+    },
+    {
+      "key": "populated/390/history",
+      "repeats": 3,
+      "cards": 3,
+      "rows": 1,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 262.80000000447035,
+          "min": 257.5,
+          "max": 265.1000000014901
+        },
+        "responseToDomMs": {
+          "median": 39.5,
+          "min": 36.600000001490116,
+          "max": 39.80000000447035
+        },
+        "jsonToDomMs": {
+          "median": 16.100000001490116,
+          "min": 15.5,
+          "max": 17
+        },
+        "matchDomNodes": {
+          "median": 45,
+          "min": 45,
+          "max": 45
+        }
+      },
+      "listEncodedBytes": {
+        "median": 21491,
+        "min": 21491,
+        "max": 21491
+      }
+    },
+    {
+      "key": "populated/1280/all",
+      "repeats": 3,
+      "cards": 72,
+      "rows": 48,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 284.70000000298023,
+          "min": 283.69999999552965,
+          "max": 293.30000000447035
+        },
+        "responseToDomMs": {
+          "median": 63,
+          "min": 60.899999998509884,
+          "max": 65.80000000447035
+        },
+        "jsonToDomMs": {
+          "median": 29.700000002980232,
+          "min": 28.69999999552965,
+          "max": 33.400000005960464
+        },
+        "matchDomNodes": {
+          "median": 832,
+          "min": 832,
+          "max": 832
+        }
+      },
+      "listEncodedBytes": {
+        "median": 21491,
+        "min": 21491,
+        "max": 21491
+      }
+    },
+    {
+      "key": "populated/1280/filtered",
+      "repeats": 3,
+      "cards": 3,
+      "rows": 1,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 258.90000000596046,
+          "min": 257.6000000014901,
+          "max": 264.59999999403954
+        },
+        "responseToDomMs": {
+          "median": 37.400000005960464,
+          "min": 37.29999999701977,
+          "max": 39.099999994039536
+        },
+        "jsonToDomMs": {
+          "median": 17.399999998509884,
+          "min": 16.899999998509884,
+          "max": 17.600000001490116
+        },
+        "matchDomNodes": {
+          "median": 45,
+          "min": 45,
+          "max": 45
+        }
+      },
+      "listEncodedBytes": {
+        "median": 21491,
+        "min": 21491,
+        "max": 21491
+      }
+    },
+    {
+      "key": "populated/1280/history",
+      "repeats": 3,
+      "cards": 3,
+      "rows": 1,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 263.79999999701977,
+          "min": 256.90000000596046,
+          "max": 264
+        },
+        "responseToDomMs": {
+          "median": 40.5,
+          "min": 35.100000001490116,
+          "max": 42.5
+        },
+        "jsonToDomMs": {
+          "median": 17.19999999552965,
+          "min": 16,
+          "max": 17.899999998509884
+        },
+        "matchDomNodes": {
+          "median": 45,
+          "min": 45,
+          "max": 45
+        }
+      },
+      "listEncodedBytes": {
+        "median": 21491,
+        "min": 21491,
+        "max": 21491
+      }
+    },
+    {
+      "key": "restricted-final/390/all",
+      "repeats": 3,
+      "cards": 72,
+      "rows": 48,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 244,
+          "min": 241.39999999850988,
+          "max": 257.1000000014901
+        },
+        "responseToDomMs": {
+          "median": 36.19999999552965,
+          "min": 34,
+          "max": 43.5
+        },
+        "jsonToDomMs": {
+          "median": 17.100000001490116,
+          "min": 15.799999997019768,
+          "max": 22.100000001490116
+        },
+        "matchDomNodes": {
+          "median": 760,
+          "min": 760,
+          "max": 760
+        }
+      },
+      "listEncodedBytes": {
+        "median": 18384,
+        "min": 18384,
+        "max": 18384
+      }
+    },
+    {
+      "key": "restricted-final/390/filtered",
+      "repeats": 3,
+      "cards": 3,
+      "rows": 1,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 233.20000000298023,
+          "min": 231.30000000447035,
+          "max": 238.89999999850988
+        },
+        "responseToDomMs": {
+          "median": 27.899999998509884,
+          "min": 24.30000000447035,
+          "max": 28.799999997019768
+        },
+        "jsonToDomMs": {
+          "median": 10.600000001490116,
+          "min": 10.399999998509884,
+          "max": 13.899999998509884
+        },
+        "matchDomNodes": {
+          "median": 42,
+          "min": 42,
+          "max": 42
+        }
+      },
+      "listEncodedBytes": {
+        "median": 18384,
+        "min": 18384,
+        "max": 18384
+      }
+    },
+    {
+      "key": "restricted-final/390/history",
+      "repeats": 3,
+      "cards": 3,
+      "rows": 1,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 237.10000000149012,
+          "min": 231.79999999701977,
+          "max": 239.60000000149012
+        },
+        "responseToDomMs": {
+          "median": 26,
+          "min": 24.299999997019768,
+          "max": 29.100000001490116
+        },
+        "jsonToDomMs": {
+          "median": 13.699999995529652,
+          "min": 9.5,
+          "max": 15.800000004470348
+        },
+        "matchDomNodes": {
+          "median": 42,
+          "min": 42,
+          "max": 42
+        }
+      },
+      "listEncodedBytes": {
+        "median": 18384,
+        "min": 18384,
+        "max": 18384
+      }
+    },
+    {
+      "key": "stress/390/all",
+      "repeats": 3,
+      "cards": 300,
+      "rows": 200,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 775.1999999955297,
+          "min": 770.7000000029802,
+          "max": 793.3999999985099
+        },
+        "responseToDomMs": {
+          "median": 213.19999999552965,
+          "min": 211.79999999701977,
+          "max": 234.39999999850988
+        },
+        "jsonToDomMs": {
+          "median": 87.5,
+          "min": 85,
+          "max": 91.59999999403954
+        },
+        "matchDomNodes": {
+          "median": 3416,
+          "min": 3416,
+          "max": 3416
+        }
+      },
+      "listEncodedBytes": {
+        "median": 81445,
+        "min": 81445,
+        "max": 81445
+      }
+    },
+    {
+      "key": "stress/390/filtered",
+      "repeats": 3,
+      "cards": 3,
+      "rows": 1,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 688,
+          "min": 687.7999999970198,
+          "max": 702.6000000014901
+        },
+        "responseToDomMs": {
+          "median": 141.20000000298023,
+          "min": 141,
+          "max": 144.19999999552965
+        },
+        "jsonToDomMs": {
+          "median": 34.600000001490116,
+          "min": 33.80000000447035,
+          "max": 37.600000001490116
+        },
+        "matchDomNodes": {
+          "median": 45,
+          "min": 45,
+          "max": 45
+        }
+      },
+      "listEncodedBytes": {
+        "median": 81445,
+        "min": 81445,
+        "max": 81445
+      }
+    },
+    {
+      "key": "stress/390/history",
+      "repeats": 3,
+      "cards": 3,
+      "rows": 1,
+      "metrics": {
+        "eventToDomMs": {
+          "median": 693.2999999970198,
+          "min": 691.8999999985099,
+          "max": 696.5
+        },
+        "responseToDomMs": {
+          "median": 144.70000000298023,
+          "min": 144,
+          "max": 144.89999999850988
+        },
+        "jsonToDomMs": {
+          "median": 35.5,
+          "min": 33.70000000298023,
+          "max": 37.5
+        },
+        "matchDomNodes": {
+          "median": 45,
+          "min": 45,
+          "max": 45
+        }
+      },
+      "listEncodedBytes": {
+        "median": 81445,
+        "min": 81445,
+        "max": 81445
+      }
+    }
+  ]
+}

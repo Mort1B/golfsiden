@@ -1,0 +1,606 @@
+{
+  "assets": [
+    {
+      "name": "DirectScorecardPage-DvHpOmmN.js",
+      "sha256": "a0d474d90474f45677fece51b7b9a8ee49b3ca9b3f7805b40f25eb445f68a503",
+      "bytes": 7606,
+      "gzipBytes": 2654,
+      "brotliBytes": 2409
+    },
+    {
+      "name": "InvitationAdminPage-DE3kcJsK.js",
+      "sha256": "965eaff959bf13831396c18e30b1cc2a2b3ca5f88c587928cf21559273f4bc4e",
+      "bytes": 9164,
+      "gzipBytes": 3292,
+      "brotliBytes": 3001
+    },
+    {
+      "name": "JoinPage-DeB7d8Y_.js",
+      "sha256": "dd367b4973ceddd80c6e4c39fe97f6fb62f5a605bce67fcc82f96b4d30b5e6d9",
+      "bytes": 10706,
+      "gzipBytes": 3496,
+      "brotliBytes": 3193
+    },
+    {
+      "name": "LeaderboardPage-D5n7XlqA.js",
+      "sha256": "4df1c4fb390cfcb15d5e39f36a2c8035d040488d61627a318c599c6431000191",
+      "bytes": 12328,
+      "gzipBytes": 3883,
+      "brotliBytes": 3559
+    },
+    {
+      "name": "MatchPage-D84yuI3F.js",
+      "sha256": "f49d524e9446aa7c0035bc6cbd89f6cdae845c033ba3e314aa99470df3797517",
+      "bytes": 16957,
+      "gzipBytes": 5587,
+      "brotliBytes": 5079
+    },
+    {
+      "name": "MatchResultsPage-_K2zNoGK.js",
+      "sha256": "ccb23430487bda19c6964f583390ce429a820a194bfbd2f34e68b4c7b9c1981f",
+      "bytes": 2672,
+      "gzipBytes": 1220,
+      "brotliBytes": 1119
+    },
+    {
+      "name": "MatchRound-CfTDy-FK.js",
+      "sha256": "389903a3a4c26e75bf254784833f51919fee63aa90b38d5b203e486635f6dcfb",
+      "bytes": 3221,
+      "gzipBytes": 1395,
+      "brotliBytes": 1285
+    },
+    {
+      "name": "PlayerHistoryPage-DZuxsVjS.js",
+      "sha256": "5aef5591bb56804848ecb827741fbf13138c102aa6363106444494888792f70e",
+      "bytes": 6825,
+      "gzipBytes": 2574,
+      "brotliBytes": 2356
+    },
+    {
+      "name": "ProfilePage-0ILpLUhR.css",
+      "sha256": "1ac770b7c3b10b9426ccea73fe73996948353eda4b6b0f6ae16c1609f110f4e1",
+      "bytes": 1271,
+      "gzipBytes": 483,
+      "brotliBytes": 359
+    },
+    {
+      "name": "ProfilePage-C9b4fnKY.js",
+      "sha256": "de1d681447439b3d2285c8d7ce0d3390945ec10ab07e4c587669e1e200be0126",
+      "bytes": 9672,
+      "gzipBytes": 3478,
+      "brotliBytes": 3214
+    },
+    {
+      "name": "ResetPasswordPage-CVMWEnXp.js",
+      "sha256": "862ca397130e39c15a952ada86a0058529bfc6678890db92808a8eee6e551671",
+      "bytes": 4315,
+      "gzipBytes": 1890,
+      "brotliBytes": 1715
+    },
+    {
+      "name": "RoundPage-MVqU_bBD.js",
+      "sha256": "02b9b79a9535fbc6f9edabe5213974c23ec5afe92aa76e5cdf0714ac9f3f57a5",
+      "bytes": 8428,
+      "gzipBytes": 2947,
+      "brotliBytes": 2699
+    },
+    {
+      "name": "RoundPage-wcT7C6DS.css",
+      "sha256": "7d943d76a1cd100be1df6ff9d5f6e65e9057284fcd4c0173d95f8e4d9162e247",
+      "bytes": 826,
+      "gzipBytes": 362,
+      "brotliBytes": 274
+    },
+    {
+      "name": "ScorePage-DlsnCT_X.js",
+      "sha256": "5ba66dcc35149da04dadb1eceb36b6eb87d20228634f1fe4369121b0eb5100c0",
+      "bytes": 48543,
+      "gzipBytes": 11615,
+      "brotliBytes": 10226
+    },
+    {
+      "name": "ScorecardSummaryView-DAoOxJ5_.js",
+      "sha256": "112169f268d02aca88249a68050159148b750f39910aca2cff4ea80a22fdc9c1",
+      "bytes": 9505,
+      "gzipBytes": 2514,
+      "brotliBytes": 2312
+    },
+    {
+      "name": "ScorecardSummaryView-PzQW966n.css",
+      "sha256": "9136c7ba92cb6e779ef31b022b76008744834e9ac8624b657cdf221542410cfc",
+      "bytes": 2747,
+      "gzipBytes": 847,
+      "brotliBytes": 702
+    },
+    {
+      "name": "SharedResultsPage-BoTIXjpP.js",
+      "sha256": "d48c26c7afbe9730de2747abad13c7203040fbcceb4b7a658cf5528ab433c645",
+      "bytes": 5996,
+      "gzipBytes": 2519,
+      "brotliBytes": 2270
+    },
+    {
+      "name": "StatusBadge-Dx8s13BA.js",
+      "sha256": "c0ec82c5c874c11cb9decd404cd4623afffd164aef34e83fdff4e052a2c07cdb",
+      "bytes": 259,
+      "gzipBytes": 232,
+      "brotliBytes": 191
+    },
+    {
+      "name": "TournamentManagementPage-o_Aaknwr.js",
+      "sha256": "cc7b1e70c5f344f4066259fa80d5d1607c44e20038137b8a3f4e2e1d8db09241",
+      "bytes": 115391,
+      "gzipBytes": 31868,
+      "brotliBytes": 28018
+    },
+    {
+      "name": "TournamentManagementPage-q76c0ZwO.css",
+      "sha256": "c6caec5912f71f16e3db8cb6bcb99129ddcce8ba94c939ddb211fb9ab7abafd4",
+      "bytes": 3680,
+      "gzipBytes": 929,
+      "brotliBytes": 735
+    },
+    {
+      "name": "TournamentOnboardingPage-DWL7uIkM.js",
+      "sha256": "d38c60da697300a7175fc6786e599a08b5116b3f5fdbdad6479f7e2242484c3d",
+      "bytes": 28113,
+      "gzipBytes": 8608,
+      "brotliBytes": 7830
+    },
+    {
+      "name": "TournamentPage-CGtza_21.js",
+      "sha256": "e53d7f078f585ddcb2aa4e1ce8494e74fc6e54264437aa2ea11459dbf3870387",
+      "bytes": 11966,
+      "gzipBytes": 4208,
+      "brotliBytes": 3869
+    },
+    {
+      "name": "TournamentsPage-By3L3DFO.css",
+      "sha256": "f8e40ddce29545f9bcf096a483aa836d2361f5f25f629ec706c40b87ad71d3ce",
+      "bytes": 663,
+      "gzipBytes": 364,
+      "brotliBytes": 271
+    },
+    {
+      "name": "TournamentsPage-D6L0pTcF.js",
+      "sha256": "c4a2b2ab8debd65a218b304f4e5385736082c5e960fce05dfd4032f5155316b6",
+      "bytes": 2914,
+      "gzipBytes": 1348,
+      "brotliBytes": 1218
+    },
+    {
+      "name": "calendar-days-CJaN_1F5.js",
+      "sha256": "ae3ca64b80d296ff02c314e69ac0d86a44ce00e0c0ae682aff460e4361c7bec9",
+      "bytes": 495,
+      "gzipBytes": 267,
+      "brotliBytes": 238
+    },
+    {
+      "name": "check-DG9t_HM7.js",
+      "sha256": "6ff85e72c31ba929a6557cfd8322c4e1d40565db34005da2cc32017640c1cb07",
+      "bytes": 125,
+      "gzipBytes": 140,
+      "brotliBytes": 126
+    },
+    {
+      "name": "chevron-left-C4HkMi0p.js",
+      "sha256": "424daaccf5c14e4e4f711873f88e099ef5a830dff6cff553b79649d6ad869282",
+      "bytes": 131,
+      "gzipBytes": 144,
+      "brotliBytes": 128
+    },
+    {
+      "name": "chevron-right-fFfiFe6W.js",
+      "sha256": "622a3d57900b03b28153e6b6e5c475471beb83377993992d4245b19864f0d799",
+      "bytes": 131,
+      "gzipBytes": 141,
+      "brotliBytes": 117
+    },
+    {
+      "name": "circle-check-Cwc2pD__.js",
+      "sha256": "de54c0294cbec0c0aae1c23aa1df0de969e43536044b304aae15255b7f9ec8ad",
+      "bytes": 179,
+      "gzipBytes": 168,
+      "brotliBytes": 151
+    },
+    {
+      "name": "drilldownRoutes-RBLfWGPT.js",
+      "sha256": "78f61af75f0e5b9da6e465e6ddfb168d04aa2bb617acaf2e4de812457e02736f",
+      "bytes": 464,
+      "gzipBytes": 290,
+      "brotliBytes": 257
+    },
+    {
+      "name": "finalRoundExplanation-DIiFCWmu.js",
+      "sha256": "7c5a2e314acee153fa5a78562909aaea74af26b3ca9f519fd07e7d9ab0076e66",
+      "bytes": 272,
+      "gzipBytes": 216,
+      "brotliBytes": 198
+    },
+    {
+      "name": "flag-B1DWPaKW.js",
+      "sha256": "ff1a5ef137295e7391905e347007c359981a8f1c278f7f68f6770a8e47fcc780",
+      "bytes": 255,
+      "gzipBytes": 214,
+      "brotliBytes": 185
+    },
+    {
+      "name": "format-BJysboft.js",
+      "sha256": "37d88a3c07e3c5314bd7a85081307e5dedf8bae6583e8ccfa54d8d8f561e1fe4",
+      "bytes": 1654,
+      "gzipBytes": 810,
+      "brotliBytes": 731
+    },
+    {
+      "name": "format-CAgFkmGX.js",
+      "sha256": "9467c78489961e83fbf20235edd86e17a27bf3534f87e9769f63563a728104e8",
+      "bytes": 473,
+      "gzipBytes": 354,
+      "brotliBytes": 324
+    },
+    {
+      "name": "index-C_dFexPQ.js",
+      "sha256": "27d5138872a0a0d3aabc96ba9942cbee9537e520b5c8cbbef5a47567e9025f8c",
+      "bytes": 452851,
+      "gzipBytes": 138934,
+      "brotliBytes": 119701
+    },
+    {
+      "name": "index-li1Y9gAN.css",
+      "sha256": "7f6c7436f983eac856144582b5b8390e608e864942973d4af4c0963813aeaf1b",
+      "bytes": 71655,
+      "gzipBytes": 12459,
+      "brotliBytes": 10974
+    },
+    {
+      "name": "invitations-DM5FyqIa.js",
+      "sha256": "34996b20110dfdce225a893fdddcec91337af3ca4b9f32e8d869d73b631fbe0b",
+      "bytes": 4169,
+      "gzipBytes": 1215,
+      "brotliBytes": 1090
+    },
+    {
+      "name": "map-pin-nMV1FM6V.js",
+      "sha256": "d1ebdc9d9a7e174635fd7e908b7aba71edfbc89d692683d0b5ce764a4c049c7e",
+      "bytes": 260,
+      "gzipBytes": 225,
+      "brotliBytes": 204
+    },
+    {
+      "name": "messages-WGv5K0X9.js",
+      "sha256": "2b09c728cfc0c17df846e7ef497568f2fbb01c1fbf8750d9d352fa2405ce2b0f",
+      "bytes": 2376,
+      "gzipBytes": 1188,
+      "brotliBytes": 1092
+    },
+    {
+      "name": "overallConfiguration-BWrBcj4S.js",
+      "sha256": "da33219a4830374eadb566972020dce56fa4fba462607f9f634dca6bf99b4921",
+      "bytes": 376,
+      "gzipBytes": 243,
+      "brotliBytes": 206
+    },
+    {
+      "name": "pairings-Cg9eEOC1.js",
+      "sha256": "50e00378d4ffccf94fdcbfca28fc85108c69ea68387004b736426b4905ee9422",
+      "bytes": 5847,
+      "gzipBytes": 2240,
+      "brotliBytes": 2058
+    },
+    {
+      "name": "password-CbC00kx7.js",
+      "sha256": "d35a4b7d62a48ee7788899020ffb42eff401111ff27ddbe7a9327ba886501cae",
+      "bytes": 430,
+      "gzipBytes": 303,
+      "brotliBytes": 287
+    },
+    {
+      "name": "plus-fGF0q8ke.js",
+      "sha256": "768d8cec916e843b38dfb2f407ce2f92aba908b554219be37a4fda216c577e35",
+      "bytes": 154,
+      "gzipBytes": 151,
+      "brotliBytes": 125
+    },
+    {
+      "name": "refresh-cw-CSTKLikl.js",
+      "sha256": "b8d21e6ef1cf45612da659b9d663e3b1b40391ac796327d3e86d7410451880b4",
+      "bytes": 322,
+      "gzipBytes": 230,
+      "brotliBytes": 193
+    },
+    {
+      "name": "resultExplanations-vi8djnSL.js",
+      "sha256": "19ab54a7e0913b112a8f2467e06ae0a94d90cc687fed995739679d2b014e906e",
+      "bytes": 359,
+      "gzipBytes": 251,
+      "brotliBytes": 241
+    },
+    {
+      "name": "resultSharing-BXTnhsUo.css",
+      "sha256": "82dae238a0bd18c120b85a00e1f7cd21378513d07db9f06fe403f4a2db9317a9",
+      "bytes": 3283,
+      "gzipBytes": 1024,
+      "brotliBytes": 832
+    },
+    {
+      "name": "resultSharing-DcRtwMKc.js",
+      "sha256": "c0c12986d8adef7c96957c16377d9aa7294b3321124518f056dd9d42caf8e87d",
+      "bytes": 6389,
+      "gzipBytes": 2419,
+      "brotliBytes": 2169
+    },
+    {
+      "name": "selection-CPPOa36Y.js",
+      "sha256": "29fa13d42df7cd32af7e6c67f7632829fe51b56a5650f70dfcc7646e2ddb1efb",
+      "bytes": 553,
+      "gzipBytes": 289,
+      "brotliBytes": 260
+    },
+    {
+      "name": "tieBreakExplanation-BDPa7Azd.js",
+      "sha256": "eb4d722329e3d82546b11ba8c6c1ed879e497c9c302bd31d7cbfa9d6624a1e33",
+      "bytes": 547,
+      "gzipBytes": 321,
+      "brotliBytes": 301
+    },
+    {
+      "name": "tournamentLoader-BXAm_Bxn.js",
+      "sha256": "c444bf6d0661207a0270320146a82b317ffd7525518a9d0b2edf7451ca2ef718",
+      "bytes": 835,
+      "gzipBytes": 529,
+      "brotliBytes": 468
+    },
+    {
+      "name": "trash-2-CuUweKPm.js",
+      "sha256": "29e13f7ffffc563b1409a8a37d7a91924afe404d18a25c5b0997fdd45b4450e7",
+      "bytes": 329,
+      "gzipBytes": 216,
+      "brotliBytes": 198
+    },
+    {
+      "name": "usePrivateResultQuery-BkYa92Og.js",
+      "sha256": "c3534fde1b7da682639966e4726a0a42fad5aedb92ae672b022426243f27f398",
+      "bytes": 2086,
+      "gzipBytes": 979,
+      "brotliBytes": 906
+    },
+    {
+      "name": "useTournamentLive-BQ89kByJ.js",
+      "sha256": "f4a37ebda09a08803c1949d09f85d27b76892df8f53640063693fabe9e1a0c1f",
+      "bytes": 3071,
+      "gzipBytes": 1371,
+      "brotliBytes": 1228
+    },
+    {
+      "name": "users-DX2djohO.js",
+      "sha256": "d2b54059a65fa66bda9fb4837ae4dd974c4b0b0acf0cd305ac1ebb8798a6b1c7",
+      "bytes": 307,
+      "gzipBytes": 228,
+      "brotliBytes": 204
+    },
+    {
+      "name": "x-rSQuFIZ0.js",
+      "sha256": "cd3143beb53ac88a0b3d3cc206bb8eb0b0e41c8e7e4676187eac793e55a8edba",
+      "bytes": 155,
+      "gzipBytes": 152,
+      "brotliBytes": 129
+    }
+  ],
+  "note": "Rollup renderedLength attribution is before final minification; gzip/Brotli sizes are computed, not production transfer measurements.",
+  "groups": [
+    [
+      "react-dom",
+      561323
+    ],
+    [
+      "react-router",
+      225403
+    ],
+    [
+      "frontend/src/features/tournaments",
+      180632
+    ],
+    [
+      "frontend/src/api",
+      169468
+    ],
+    [
+      "frontend/src/features/scoring",
+      143590
+    ],
+    [
+      "frontend/src/pages",
+      86916
+    ],
+    [
+      "@tanstack/query-core",
+      75737
+    ],
+    [
+      "frontend/src/features/matchPlay",
+      68633
+    ],
+    [
+      "frontend/src/features/onboarding",
+      41920
+    ],
+    [
+      "frontend/src/features/leaderboards",
+      28580
+    ],
+    [
+      "frontend/src/features/invitations",
+      26799
+    ],
+    [
+      "lucide-react",
+      21965
+    ],
+    [
+      "react",
+      20312
+    ],
+    [
+      "frontend/src/features/resultSharing",
+      16278
+    ],
+    [
+      "frontend/src/features/recovery",
+      14779
+    ],
+    [
+      "scheduler",
+      11420
+    ],
+    [
+      "frontend/src/features/profile",
+      9838
+    ],
+    [
+      "frontend/src/features/rounds",
+      9460
+    ],
+    [
+      "@tanstack/react-query",
+      6686
+    ],
+    [
+      "frontend/src/router.tsx",
+      6566
+    ],
+    [
+      "frontend/src/ui",
+      5404
+    ],
+    [
+      "frontend/src/features/auth",
+      4529
+    ],
+    [
+      "other",
+      3185
+    ],
+    [
+      "frontend/src/routing",
+      807
+    ],
+    [
+      "frontend/src/features/handicap",
+      718
+    ],
+    [
+      "frontend/src/main.tsx",
+      634
+    ],
+    [
+      "frontend/src/features/live",
+      619
+    ],
+    [
+      "frontend/src/styles.css",
+      0
+    ]
+  ],
+  "largestModules": [
+    {
+      "path": "frontend/node_modules/react-dom/cjs/react-dom-client.production.js",
+      "renderedBytes": 552879
+    },
+    {
+      "path": "frontend/node_modules/react-router/dist/development/chunk-62JRHF6Z.mjs",
+      "renderedBytes": 225247
+    },
+    {
+      "path": "frontend/node_modules/react/cjs/react.production.js",
+      "renderedBytes": 18321
+    },
+    {
+      "path": "frontend/node_modules/@tanstack/query-core/build/modern/queryObserver.js",
+      "renderedBytes": 16088
+    },
+    {
+      "path": "frontend/src/pages/ScorePage.tsx",
+      "renderedBytes": 13522
+    },
+    {
+      "path": "frontend/node_modules/@tanstack/query-core/build/modern/query.js",
+      "renderedBytes": 12283
+    },
+    {
+      "path": "frontend/src/api/leaderboards/tournamentDecoder.ts",
+      "renderedBytes": 11462
+    },
+    {
+      "path": "frontend/node_modules/scheduler/cjs/scheduler.production.js",
+      "renderedBytes": 11134
+    },
+    {
+      "path": "frontend/src/features/tournaments/TournamentManagementSections.tsx",
+      "renderedBytes": 10524
+    },
+    {
+      "path": "frontend/src/features/tournaments/ProviderCoursePicker.tsx",
+      "renderedBytes": 10245
+    },
+    {
+      "path": "frontend/src/api/tournaments/decoders.ts",
+      "renderedBytes": 9965
+    },
+    {
+      "path": "frontend/src/features/tournaments/pairings/PairingEditor.tsx",
+      "renderedBytes": 9385
+    },
+    {
+      "path": "frontend/src/features/invitations/JoinExperience.tsx",
+      "renderedBytes": 9315
+    },
+    {
+      "path": "frontend/src/pages/LeaderboardPage.tsx",
+      "renderedBytes": 9232
+    },
+    {
+      "path": "frontend/src/features/scoring/fourBall/FourBallExperience.tsx",
+      "renderedBytes": 9180
+    },
+    {
+      "path": "frontend/src/features/tournaments/ManualCourseForm.tsx",
+      "renderedBytes": 9137
+    },
+    {
+      "path": "frontend/src/api/scorecards/cardDecoders.ts",
+      "renderedBytes": 9130
+    },
+    {
+      "path": "frontend/src/features/matchPlay/MatchEventForm.tsx",
+      "renderedBytes": 9093
+    },
+    {
+      "path": "frontend/src/features/scoring/ScoringExperience.tsx",
+      "renderedBytes": 9077
+    },
+    {
+      "path": "frontend/src/features/tournaments/TournamentPlayerSection.tsx",
+      "renderedBytes": 8972
+    },
+    {
+      "path": "frontend/node_modules/@tanstack/query-core/build/modern/queryClient.js",
+      "renderedBytes": 8960
+    },
+    {
+      "path": "frontend/src/features/tournaments/CountedRoundsEditor.tsx",
+      "renderedBytes": 8530
+    },
+    {
+      "path": "frontend/src/features/scoring/offline/database.ts",
+      "renderedBytes": 7864
+    },
+    {
+      "path": "frontend/src/features/scoring/offline/runtime.ts",
+      "renderedBytes": 7729
+    },
+    {
+      "path": "frontend/src/api/fourBall/decoders.ts",
+      "renderedBytes": 7703
+    }
+  ]
+}

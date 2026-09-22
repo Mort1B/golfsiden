@@ -1,61 +1,64 @@
-# Match lists stay subscribed while their table loads
+# Match history still pays for full round payloads
 
-**Completed — READY WITH KNOWN LIMITATIONS.**
+**Completed — READY WITH KNOWN LIMITATIONS.** The investigation confirms a
+remaining payload/decoder cost after the lifecycle repairs. Production code and
+contracts are unchanged at `d1e3d32`. The
+[report and evidence](performance/history-payload/README.md) support a separately
+approved player-filtered full-card read as the next bounded step.
 
-The shared match-results view now keeps current-round list observers mounted
-during table-only loading. Readiness disables new list fetching and removes all
-private list content, links and round headings from the DOM. An already-started
-refresh may finish while hidden. When the table returns while that list is still
-fresh, the same observer can display it without cancelling and replacing a read.
+In a populated synthetic three-round tournament with 24 matches per round, player
+history displays three cards but transfers and strictly decodes all 72. The current
+list payload totals 504,591 raw bytes or 21,491 gzip bytes. An offline subset using
+the same full-card format is 21,267 raw bytes or 2,634 gzip bytes: **87.7% less gzip
+body data**. Under 4x browser CPU throttling, warmed strict decoding has a median
+of **7.57ms for the full collection versus 0.30ms for the subset**. Full JSON parsing
+is measured separately at 2.95ms. These are potential byte/decoder savings, not
+an implemented endpoint or demonstrated production latency improvement.
 
-Initial lists still wait for their table. Parent errors, missing rounds and
-account/tournament/round removal still remove old owners. Other `MatchRound`
-callers remain enabled by default. There is no copied server state, historical
-admission flag, CSS-hidden private markup, changed freshness policy or altered
-live subscription. Authority checks, synchronous projection erasure, stale-denial
-guards, transport cancellation and shared management reads remain in place.
+All-results and player-history routes currently transfer identical listings.
+History already reduces rendered output: the populated match page has 45 DOM
+descendants versus 832 for all results. Browser timings include network, parsing,
+decoding, query notification and rendering; the report labels post-response tails
+rather than calling them pure rendering time. Reducing cards after decoding does
+not remove the transfer/decoder work.
 
-The [comparison report](performance/gated-observers/README.md) retains reproduction,
-request/server/DOM evidence and build provenance. Savings are conditional: a list
-that finishes while its table remains held for 21 seconds is stale when the gate
-reopens, so it is fetched again under the unchanged 20-second freshness rule.
-The real-browser deadline check preserves that behavior. Two reads can complete
-in this case; no universal request reduction or production speedup is claimed.
+The safest proposed slice preserves full-card coherence validation. Holes, notes
+and event evidence verify the displayed result even when the list does not show
+those details. A compact summary would need a separate validation contract.
+Player-selected reads should instead use a distinct account+round+player cache
+identity and leave unfiltered listings, management, assignment responses, table,
+detail, scoring and recovery unchanged. Reusing the unfiltered key for a partial
+list could give management incomplete pairings. Backend parity and current
+membership/writable/final-visibility rules remain mandatory.
 
-A restricted-final browser transition uses nine halved holes followed by a full
-match concession after hole nine. Its restricted response retains those nine hole
-reports, hides the concession and completion metadata, removes scoring permission
-and excludes match points. The decoder accepts the response while the table is
-held, but private DOM appears only after the gate reopens. Phone and desktop
-checks cover loading, populated, long names, restricted results and empty lists.
+This introduces a navigation tradeoff: all-results and history currently can reuse
+the same fresh full-list cache; a separate filtered key can need another request.
+The next step must preserve malformed/noncanonical filter behavior, empty player
+results, readiness gates, account isolation, cancellation, denials, freshness and
+required live refreshes. It needs disposable PostgreSQL validation before being
+called complete. Authorization-query optimization remains separate.
 
-Full-card history analysis, disposable PostgreSQL authorization measurements and
-the wider security review remain queued. Backend, database, API contracts,
-scoring rules and writable intent are unchanged.
+## Validation and limits
 
-## Validation and measured result
+- Fresh production build, including TypeScript, passed. All **55 asset hashes**
+  match the previous build and measured browser assets; production source is clean.
+- **54 browser measurement cases** passed: four collection scenarios, all/direct
+  filtered/delegated history routes, three repetitions, with the populated case at
+  320/390/1280px. The measured refreshes completed **144 list and 54 table reads**.
+  Browser raw/gzip body counts match the fixture server. No unexpected errors or
+  horizontal overflow occurred.
+- Four isolated real-decoder pairs passed exact selected-card/writable-ID parity,
+  including the restricted final. Seven alternating batches of 20 iterations follow
+  warmup; individual timings and ranges are retained.
+- **94 focused tests across seven files passed**, covering decoders, cancellation,
+  shared reads, private denials, live ownership and readiness/privacy/freshness.
+- Independent read-only source/contract/harness review, artifact audit, script
+  syntax, local links and diff checks passed. Phone/desktop screenshots and a
+  supplemental restricted-final bottom-of-page pass were inspected.
 
-- Full frontend ladder passed: **708 tests in 113 files**, TypeScript, ESLint and
-  production build; browser-specific TypeScript passed too.
-- **42 production-browser route tests passed**, plus the final nine gated-result
-  cases rerun with the real deadline, ledger-consistent projection and explicit
-  completed-request counts. Mobile bottom-navigation clearance and screenshots
-  were checked at 320/390px and desktop rendering at 1280px.
-- **18 native HTTP/SSE cases passed** using the unchanged investigation harness.
-  Each visibility/table-release cycle now starts three lists, all completed,
-  instead of six starts with three aborts. Stream open likewise drops from six
-  native starts to three. Reconnect and same-account return retain three reads.
-- All 225 obsolete held responses cancelled before release, 36 current held
-  tables completed and 18 expected denials failed closed. No stale account repaint,
-  unexpected errors, overflow or pending non-SSE requests remained. All 55 emitted
-  asset hashes match the fresh build attribution.
-- Independent read-only review found no production blocker. It strengthened cold
-  disabled-observer assertions and final browser evidence. All nine ordering
-  tests fail against the prior production implementation and pass with this fix.
-
-Backend/PostgreSQL checks are outside this frontend-only step. Synthetic fixtures,
-finite DOM observation and desktop viewport emulation do not establish production
-speedup, database behavior, physical-phone or actual BFCache coverage. The measured
-benefit applies while the returned list remains fresh; prolonged table holds can
-still cause two completed reads. The next candidate is investigation only of
-full-card history payloads; no payload/database/security work started here.
+No production repair was made. Full frontend unit/lint and backend/PostgreSQL
+ladders were not repeated for this standalone documentation/measurement step.
+Synthetic native HTTP/SSE, warmed probes and desktop viewport emulation establish
+neither production speedup nor server/database authorization, latency, physical
+phone or BFCache behavior. The table remains a full tournament read. The broader
+database and security work remains queued.

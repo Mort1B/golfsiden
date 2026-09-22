@@ -5,39 +5,59 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The previous bounded step is complete; await approval before starting the
-next candidate.
+None. The previous bounded investigation is complete; await approval before
+starting the next candidate.
 
 ## Next candidate
 
-Investigate full-card payloads used by match-result history.
+Add a player-filtered full-card listing for selected-player match history.
 
-**Goal:** determine whether returning full round match cards for player-filtered
-history creates a material remaining cost after the lifecycle repairs.
+**Goal:** avoid transferring and decoding other players' cards while preserving
+current history results and full-card coherence validation, as supported by the
+[measurement](performance/history-payload/README.md).
 
-**Scope and behavior:** trace current history/list consumers, response shape,
-decoding and filtering. Use representative synthetic populated data to separate
-transfer, decoding and rendering cost from required authority refreshes. Document
-baseline evidence and, only if supported, propose one bounded follow-up. This is
-an investigation: do not change production queries, API contracts or payloads.
+**Scope and behavior:** add a typed optional player filter to the round listing
+read with explicit round/player response identity. Select matching IDs in existing
+stable order before card construction; retain current membership, visibility,
+frozen-handicap and independent writable checks. Return the same permitted full
+cards and writable-ID intersection as filtering the current listing. A valid
+absent/nonparticipant player yields an empty list. Preserve malformed/noncanonical
+URL-filter behavior deliberately; do not silently normalize it into new results.
 
-**Invariants:** preserve private-result authority, synchronous erasure, account
-isolation, restricted-final projections, cancellation, freshness, writable intent
-and scoring rules. Do not infer server/database savings from browser fixtures.
+Route only selected-player results/history to a separate account+round+player
+query key under the existing private read-list prefix. Validate target identity,
+card membership and writable subsets before caching. Keep unfiltered GET,
+assignment PUT, management, table, detail, scoring and recovery contracts and
+behavior unchanged. Do not populate an unfiltered key from a filtered response.
+No compact-summary DTO or authorization-query optimization is included.
 
-**Validation:** retain reproducible inputs, source/build provenance, request and
-payload counts, browser evidence at mobile/desktop widths and explicit limitations.
-Check affected consumers before proposing a narrower response contract. Run checks
-appropriate to any investigation harness or documentation changes.
+**Invariants:** unchanged strict full-card evidence checks, nullable hidden
+metadata and permitted early finishes, independent scoring authority, ordering,
+readiness gate, account/round/player isolation, synchronous erasure, cancelled
+late-response guards, 20-second freshness and required SSE/return refreshes.
 
-**Stop:** publish findings and a supported bounded proposal, or explicitly record
-insufficient evidence. Do not implement the proposal or start database/security work.
+**Dependencies and validation:** first establish an approved disposable PostgreSQL
+environment. Add repository/API parity tests against filtering the original
+listing for both opponent slots, roles and round states, membership loss, missing
+players, final hiding/release/corrections and writable subsets; verify authenticated
+private/no-store responses and malformed parameters. Run affected backend,
+PostgreSQL and frontend ladders. Cover decoder target rejection, both cache variants,
+player/account changes, empty/loading/error states, shared management, all denials,
+held responses, readiness order and mutation/SSE/return invalidation. Validate actual
+restricted-final payloads at 320/390/1280px and reproduce native byte/decoder savings.
+Measure all-results→player and player→player navigation: separate filtered cache
+keys can add a request where today's unfiltered cache is reused.
+
+**Stop:** publish only this bounded repair after at-most-one-card-per-round
+history, permitted-result/action parity, request/byte evidence and privacy checks
+pass. If database validation is unavailable, record that blocker without claiming
+completion. Do not change freshness or start broader database/security work.
 
 ## Later queue
 
-1. **Database authorization measurements:** acquire an approved disposable
-   PostgreSQL environment and measurements before proposing a list-authorization
-   repair. Preserve authority refresh and fail-closed behavior.
+1. **Database authorization measurements:** acquire approved disposable PostgreSQL
+   measurements before proposing a list-authorization repair. Preserve authority
+   refresh and fail-closed behavior; do not infer timing from browser fixtures.
 2. **Security review:** perform the separately scoped wider application/operational
    review after agreed performance repairs.
 

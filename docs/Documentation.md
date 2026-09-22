@@ -1941,6 +1941,13 @@ Other match-list views retain their existing behavior. Requests already started
 may complete while hidden; if the table remains pending beyond the unchanged
 20-second freshness window, reopening can still start another list read.
 
+The [history payload investigation](performance/history-payload/README.md) confirms
+that player-selected match history still transfers and validates every card in each
+round before filtering. History renders fewer cards but shares the existing full
+listing cache. A measured player-subset experiment supports a future separately
+keyed, player-filtered full-card read; it is not implemented. Current permissions,
+restricted-final filtering, table reads and refresh behavior remain unchanged.
+
 Home and sign-in remain available from the entry module. Other page modules load
 when their route is opened, with the existing session gate applied first on
 private routes. Navigation and account/offline providers remain mounted during

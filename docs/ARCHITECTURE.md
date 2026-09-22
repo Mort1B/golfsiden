@@ -640,6 +640,15 @@ and reapplies runtime grants before the API is started.
   the repair identified by the [remount investigation](performance/remounts/README.md).
   Re-enabling a completed stale query can still refetch under the unchanged
   20-second freshness window; observer lifetime never authorizes private output.
+- Match history currently fetches and strictly decodes complete round match lists,
+  then selects the player's cards. That exact account+round cache is also used by
+  management and ordinary list views. Holes, notes and events support decoder
+  coherence checks even when the list UI does not show them. The
+  [history payload investigation](performance/history-payload/README.md) supports
+  a separate player-scoped full-card read as a future repair, with distinct cache
+  identity and unchanged membership, projection, writable and cancellation rules.
+  A partial listing must never populate the unfiltered key; compact summaries
+  would require a separate validation contract. No filtered endpoint exists yet.
 - Target-bearing frontend DTOs are decoded against the requested tournament,
   round, player, owner, metric, invitation predecessor, and course-configuration
   identities before cache insertion. Roster, round, team, pairing, invitation,
