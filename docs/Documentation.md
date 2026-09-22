@@ -1960,9 +1960,13 @@ behavior rather than being silently normalized. Empty URL player text still show
 all players. The [validation and measurements](performance/history-filter/README.md)
 describe the savings and navigation tradeoff. The subsequent
 [database authorization report](performance/database-authorization/README.md)
-measures unchanged listing authorization on disposable PostgreSQL. It records
-repeated owner-set queries and proposes a separately scoped listing repair; it
-does not change current permissions, queries or operator procedures.
+records the former repeated owner-set queries. The
+[listing authorization repair](performance/listing-authorization/README.md) now
+resolves eligible players once per request, while still requiring both opponents
+and the existing round/role permissions. Session expiry is checked again before
+committing a match-list read, so expiry during a wait or card assembly fails closed,
+including empty filtered results. This changes no setup or operator procedure;
+scoring and mutation authorization remain on their existing paths.
 
 Home and sign-in remain available from the entry module. Other page modules load
 when their route is opened, with the existing session gate applied first on

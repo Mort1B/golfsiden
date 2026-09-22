@@ -1,0 +1,48 @@
+{
+  "backend_unit": {
+    "passed": 208,
+    "failed": 0
+  },
+  "postgresql": {
+    "passed": 587,
+    "failed": 0,
+    "ignored_measurement_tests": 3
+  },
+  "fmt": "passed",
+  "clippy_all_targets_all_features": "passed",
+  "migrate": "passed",
+  "seed": "passed",
+  "negative_control": {
+    "previous_listing_expiry_tests_failed": 2,
+    "candidate_authority_tests_passed": 6
+  },
+  "browser_initial": {
+    "passed": 10,
+    "failed": 1,
+    "failed_case": "filtered real-API final history at 1280px, persisted pageshow",
+    "sqlstate": "25001",
+    "server_message": "SET TRANSACTION ISOLATION LEVEL must be called before any query"
+  },
+  "browser_focused_rerun": {
+    "passed": 3,
+    "failed": 0,
+    "widths": [
+      320,
+      390,
+      1280
+    ]
+  },
+  "independent_sqlx_probe": {
+    "passed": 1,
+    "asserts": "reproduction of existing defect, not correct cleanup",
+    "application_code_invoked": false,
+    "exact_browser_cancellation_sequence_confirmed": false
+  },
+  "frontend_unit_type_build": "not repeated; no frontend source or asset changes",
+  "measurements": {
+    "release_tests_passed": 9,
+    "cases": 72,
+    "warm_samples": 2160,
+    "fresh_connection_samples": 216
+  }
+}

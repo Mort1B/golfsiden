@@ -183,12 +183,24 @@ async fn list_selected(
         .execute(&mut *tx)
         .await?;
     let c = context(&mut tx, round, false).await?;
-    let (_, role) = member(&mut tx, session, c.tournament_id).await?;
+    let authority =
+        score_authorization::MatchListingContext::load(&mut tx, session, c.tournament_id)
+            .await
+            .map_err(list_authority_error)?;
+    let role = authority.role();
     let ids = match player {
         Some(player) => sqlx::query_scalar::<_, Uuid>("SELECT id FROM singles_matches WHERE round_id=$1 AND (first_player_id=$2 OR second_player_id=$2) ORDER BY first_player_id,second_player_id,id")
             .bind(round).bind(player).fetch_all(&mut *tx).await?,
         None => sqlx::query_scalar::<_, Uuid>("SELECT id FROM singles_matches WHERE round_id=$1 ORDER BY first_player_id,second_player_id,id")
             .bind(round).fetch_all(&mut *tx).await?,
+    };
+    let eligible = if ids.is_empty() {
+        std::collections::HashSet::new()
+    } else {
+        authority
+            .players(&mut tx, round)
+            .await
+            .map_err(list_authority_error)?
     };
     let mut matches = Vec::new();
     let mut writable = Vec::new();
@@ -196,19 +208,17 @@ async fn list_selected(
     // Player filtering selects at most one card before construction; all reads reuse the same privacy projection.
     for id in ids {
         let m = aggregate(&mut tx, round, id, false).await?;
-        match authority(&mut tx, session, &c, &m).await {
-            Ok(_)
-                if c.status != RoundStatus::Draft
-                    && (c.status != RoundStatus::Locked || role == TournamentRole::Admin) =>
-            {
-                writable.push(id)
-            }
-            Ok(_) => {}
-            Err(Error::Forbidden) => {}
-            Err(e) => return Err(e),
+        if c.status != RoundStatus::Draft
+            && (c.status != RoundStatus::Locked || role == TournamentRole::Admin)
+            && m.players().iter().all(|player| eligible.contains(player))
+        {
+            writable.push(id);
         }
         matches.push(build(&mut tx, &c, &m, metadata(&c, role), false).await?);
     }
+    // Session/user and membership locks stay held throughout assembly. Unlike
+    // a transaction timestamp, this checks wall-clock expiry after every wait.
+    live(&mut tx, session).await?;
     tx.commit().await?;
     Ok(Listing {
         round_id: round,
@@ -216,6 +226,13 @@ async fn list_selected(
         matches,
         writable_match_ids: writable,
     })
+}
+fn list_authority_error(error: score_authorization::ScoreAuthorizationError) -> Error {
+    match error {
+        score_authorization::ScoreAuthorizationError::Unauthenticated => Error::Unauthenticated,
+        score_authorization::ScoreAuthorizationError::Database(error) => Error::Database(error),
+        _ => Error::Forbidden,
+    }
 }
 #[derive(Serialize)]
 pub struct Table {

@@ -10,6 +10,7 @@ mod singles_match {
     mod guards;
     mod listing;
     mod listing_api;
+    mod listing_authority;
     mod overall;
     mod privacy;
     mod setup;

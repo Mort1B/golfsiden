@@ -1662,14 +1662,20 @@ metadata is null, not a fabricated false or zero. Match listing intentionally
 loads cards per match within the 500 manual assignments per round bound; revisit
 this N+1 boundary before increasing that limit.
 
-The [performance baseline](performance/README.md) traces the additional cost of
-reusing mutation authorization during discovery: a fully authorized admin/scorer
-listing performs `5 + 17M` SELECTs including HTTP authentication, and resolves all
-P snapshot owner IDs twice per match (`2MP` returned authorization rows). These
-were initially source-derived. The [database authorization measurement](performance/database-authorization/README.md)
-now checks repository SELECT/owner-row counts against PostgreSQL, separating
-repository elapsed time from SQL execution and HTTP/browser work. No authorization
-repair is included in that measurement. The assignment endpoint also
+Match listing now creates one request-local authority context inside the existing
+repeatable-read transaction. It locks the active session/user and tournament
+membership, then resolves the unchanged eligible-owner set once for a nonempty
+listing. Both opponents must be eligible; draft and locked-round rules still
+control writable IDs. The context is never cached across transactions and is not
+used by scoring/detail reads or mutations. Before commit, `lock_active_session`
+checks wall-clock expiry again, including empty results and the last card after
+materialization waits. Session/user and membership locks remain held throughout.
+
+The [database baseline](performance/database-authorization/README.md) preserves
+measured per-opponent authorization costs. The
+[listing authorization repair](performance/listing-authorization/README.md) compares
+query counts and local release latency without changing full-card construction.
+The assignment endpoint also
 has a 32,768-byte body limit, independent of the repository's 500-pair bound.
 Unfiltered private match results fetch the complete listing for every match round.
 Canonical player history selects at most one matching full card on the server

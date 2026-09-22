@@ -1,0 +1,2384 @@
+{
+  "samples": 2160,
+  "fresh_connection_samples": 216,
+  "cases": 72,
+  "counts_reproduced": true,
+  "groups": [
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "admin",
+      "filtered": false,
+      "selects": 90.0,
+      "owner_calls": 1.0,
+      "owner_rows": 24.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 8.3099725,
+        "min": 7.475571,
+        "max": 12.822318
+      },
+      "fresh_connection_first_ms": {
+        "median": 21.965544,
+        "min": 19.492279,
+        "max": 24.312544
+      },
+      "server_select_ms": {
+        "median": 1.0285012,
+        "min": 1.0169799,
+        "max": 1.1730450000000001
+      },
+      "owner_server_ms": {
+        "median": 0.0346052,
+        "min": 0.0334413,
+        "max": 0.0407331
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "admin",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 24.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.7653035,
+        "min": 1.336372,
+        "max": 2.5008690000000002
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.705247,
+        "min": 12.646412,
+        "max": 14.702566000000001
+      },
+      "server_select_ms": {
+        "median": 0.2170834,
+        "min": 0.1968112,
+        "max": 0.2172036
+      },
+      "owner_server_ms": {
+        "median": 0.035060400000000005,
+        "min": 0.0325777,
+        "max": 0.036160399999999995
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 24.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.6316745,
+        "min": 1.3364749999999999,
+        "max": 2.2689860000000004
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.416165000000001,
+        "min": 12.550703,
+        "max": 15.783129
+      },
+      "server_select_ms": {
+        "median": 0.200285,
+        "min": 0.19183860000000003,
+        "max": 0.22530639999999996
+      },
+      "owner_server_ms": {
+        "median": 0.0321858,
+        "min": 0.0319372,
+        "max": 0.03799949999999999
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": false,
+      "selects": 90.0,
+      "owner_calls": 1.0,
+      "owner_rows": 24.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 8.719949499999998,
+        "min": 7.006039,
+        "max": 14.326604999999999
+      },
+      "fresh_connection_first_ms": {
+        "median": 21.579411999999998,
+        "min": 21.360425,
+        "max": 22.350448
+      },
+      "server_select_ms": {
+        "median": 1.0365974999999996,
+        "min": 0.9321038000000004,
+        "max": 1.1619018000000003
+      },
+      "owner_server_ms": {
+        "median": 0.0370678,
+        "min": 0.034096600000000005,
+        "max": 0.0397998
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "player",
+      "filtered": false,
+      "selects": 90.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 8.8306595,
+        "min": 7.501214,
+        "max": 10.686782000000001
+      },
+      "fresh_connection_first_ms": {
+        "median": 24.966990000000003,
+        "min": 20.483534000000002,
+        "max": 30.816833
+      },
+      "server_select_ms": {
+        "median": 1.0942212,
+        "min": 1.0572521,
+        "max": 1.116303
+      },
+      "owner_server_ms": {
+        "median": 0.0464778,
+        "min": 0.0453047,
+        "max": 0.0467152
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "player",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.7188915,
+        "min": 1.582654,
+        "max": 2.7298270000000002
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.871906999999998,
+        "min": 13.45349,
+        "max": 14.859505
+      },
+      "server_select_ms": {
+        "median": 0.21344920000000003,
+        "min": 0.1956654,
+        "max": 0.22957
+      },
+      "owner_server_ms": {
+        "median": 0.0406474,
+        "min": 0.036785200000000004,
+        "max": 0.0426859
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": true,
+      "selects": 12.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.2429825,
+        "min": 1.081674,
+        "max": 1.887092
+      },
+      "fresh_connection_first_ms": {
+        "median": 12.451055,
+        "min": 12.229089,
+        "max": 12.621488
+      },
+      "server_select_ms": {
+        "median": 0.16662510000000003,
+        "min": 0.156339,
+        "max": 0.1790141
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": false,
+      "selects": 89.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 7.7711255,
+        "min": 6.406364,
+        "max": 9.977209
+      },
+      "fresh_connection_first_ms": {
+        "median": 21.379912,
+        "min": 21.255772,
+        "max": 23.136763000000002
+      },
+      "server_select_ms": {
+        "median": 1.0377905999999997,
+        "min": 0.9939933,
+        "max": 1.0396018000000002
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "player_other",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.9095404999999999,
+        "min": 1.628176,
+        "max": 2.991864
+      },
+      "fresh_connection_first_ms": {
+        "median": 12.796505,
+        "min": 12.405135,
+        "max": 14.981939
+      },
+      "server_select_ms": {
+        "median": 0.21398730000000002,
+        "min": 0.20372279999999998,
+        "max": 0.22539759999999998
+      },
+      "owner_server_ms": {
+        "median": 0.04195,
+        "min": 0.040793199999999995,
+        "max": 0.043681199999999996
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "admin",
+      "filtered": false,
+      "selects": 90.0,
+      "owner_calls": 1.0,
+      "owner_rows": 24.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 8.1309035,
+        "min": 7.164457,
+        "max": 10.433316
+      },
+      "fresh_connection_first_ms": {
+        "median": 24.35954,
+        "min": 21.691972,
+        "max": 28.376656
+      },
+      "server_select_ms": {
+        "median": 1.0876751,
+        "min": 1.0863882,
+        "max": 1.0898037999999999
+      },
+      "owner_server_ms": {
+        "median": 0.0406121,
+        "min": 0.0373778,
+        "max": 0.0416518
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "admin",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 24.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.7072075,
+        "min": 1.201402,
+        "max": 3.342605
+      },
+      "fresh_connection_first_ms": {
+        "median": 14.973244,
+        "min": 14.725902000000001,
+        "max": 15.185120999999999
+      },
+      "server_select_ms": {
+        "median": 0.2156006,
+        "min": 0.2084889,
+        "max": 0.3064428
+      },
+      "owner_server_ms": {
+        "median": 0.034349000000000005,
+        "min": 0.0324016,
+        "max": 0.053382399999999997
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 24.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.5591255,
+        "min": 1.27674,
+        "max": 2.621632
+      },
+      "fresh_connection_first_ms": {
+        "median": 15.701448999999998,
+        "min": 12.704165999999999,
+        "max": 17.849021
+      },
+      "server_select_ms": {
+        "median": 0.2077501,
+        "min": 0.20162229999999998,
+        "max": 0.245496
+      },
+      "owner_server_ms": {
+        "median": 0.03420929999999999,
+        "min": 0.03271219999999999,
+        "max": 0.042441099999999995
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": false,
+      "selects": 90.0,
+      "owner_calls": 1.0,
+      "owner_rows": 24.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 7.866768,
+        "min": 6.813586,
+        "max": 10.365799
+      },
+      "fresh_connection_first_ms": {
+        "median": 22.164162,
+        "min": 22.078506,
+        "max": 23.486986
+      },
+      "server_select_ms": {
+        "median": 1.0537281,
+        "min": 1.0393131999999998,
+        "max": 1.1233153000000002
+      },
+      "owner_server_ms": {
+        "median": 0.0392157,
+        "min": 0.038257,
+        "max": 0.0412111
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "player",
+      "filtered": false,
+      "selects": 90.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 8.716331,
+        "min": 6.576087,
+        "max": 12.462900000000001
+      },
+      "fresh_connection_first_ms": {
+        "median": 22.49059,
+        "min": 19.574698,
+        "max": 25.055643999999997
+      },
+      "server_select_ms": {
+        "median": 1.0693635000000001,
+        "min": 1.0469464,
+        "max": 1.2642643000000002
+      },
+      "owner_server_ms": {
+        "median": 0.0458828,
+        "min": 0.040753300000000006,
+        "max": 0.053071099999999996
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "player",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.9443959999999998,
+        "min": 1.5358889999999998,
+        "max": 2.9713909999999997
+      },
+      "fresh_connection_first_ms": {
+        "median": 14.592776,
+        "min": 12.449162999999999,
+        "max": 18.244094999999998
+      },
+      "server_select_ms": {
+        "median": 0.2154082,
+        "min": 0.20602990000000002,
+        "max": 0.250473
+      },
+      "owner_server_ms": {
+        "median": 0.039981,
+        "min": 0.038043,
+        "max": 0.050420299999999994
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": true,
+      "selects": 12.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.4570645,
+        "min": 1.1008909999999998,
+        "max": 1.906555
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.756509999999999,
+        "min": 13.277933,
+        "max": 16.680272
+      },
+      "server_select_ms": {
+        "median": 0.1564739,
+        "min": 0.15550239999999999,
+        "max": 0.2310475
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": false,
+      "selects": 89.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 7.5461185,
+        "min": 6.493317,
+        "max": 8.698134
+      },
+      "fresh_connection_first_ms": {
+        "median": 22.037995000000002,
+        "min": 20.727886,
+        "max": 24.051611
+      },
+      "server_select_ms": {
+        "median": 1.0217171,
+        "min": 1.0128949999999999,
+        "max": 1.0619138
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "player_other",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.790326,
+        "min": 1.474294,
+        "max": 3.56907
+      },
+      "fresh_connection_first_ms": {
+        "median": 14.156491,
+        "min": 13.192817000000002,
+        "max": 14.158771
+      },
+      "server_select_ms": {
+        "median": 0.21106100000000003,
+        "min": 0.2040998,
+        "max": 0.2827881
+      },
+      "owner_server_ms": {
+        "median": 0.04037310000000001,
+        "min": 0.0382652,
+        "max": 0.0490103
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "admin",
+      "filtered": false,
+      "selects": 174.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 15.7958345,
+        "min": 14.495486999999999,
+        "max": 21.679813
+      },
+      "fresh_connection_first_ms": {
+        "median": 34.474125,
+        "min": 33.824365,
+        "max": 34.969787000000004
+      },
+      "server_select_ms": {
+        "median": 2.1573778,
+        "min": 2.15523,
+        "max": 2.2892544
+      },
+      "owner_server_ms": {
+        "median": 0.0525667,
+        "min": 0.05119239999999999,
+        "max": 0.05763359999999999
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "admin",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.6415905,
+        "min": 1.398808,
+        "max": 2.4613389999999997
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.487988,
+        "min": 12.432193,
+        "max": 14.854216
+      },
+      "server_select_ms": {
+        "median": 0.2408843,
+        "min": 0.231899,
+        "max": 0.26832890000000004
+      },
+      "owner_server_ms": {
+        "median": 0.0498706,
+        "min": 0.04936440000000001,
+        "max": 0.0583071
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.4798205000000002,
+        "min": 1.35179,
+        "max": 2.5104070000000003
+      },
+      "fresh_connection_first_ms": {
+        "median": 12.783608000000001,
+        "min": 12.393336,
+        "max": 14.931847999999999
+      },
+      "server_select_ms": {
+        "median": 0.23221609999999998,
+        "min": 0.21929849999999998,
+        "max": 0.2423063
+      },
+      "owner_server_ms": {
+        "median": 0.04962209999999999,
+        "min": 0.0482132,
+        "max": 0.05252910000000001
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": false,
+      "selects": 174.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 15.7117305,
+        "min": 13.889324,
+        "max": 21.360015999999998
+      },
+      "fresh_connection_first_ms": {
+        "median": 29.59902,
+        "min": 27.236524000000003,
+        "max": 29.964245000000002
+      },
+      "server_select_ms": {
+        "median": 2.2267736999999994,
+        "min": 2.0872335,
+        "max": 2.3981167999999995
+      },
+      "owner_server_ms": {
+        "median": 0.058738200000000004,
+        "min": 0.05244069999999999,
+        "max": 0.0640889
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "player",
+      "filtered": false,
+      "selects": 174.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 15.0379805,
+        "min": 14.109200000000001,
+        "max": 17.449189
+      },
+      "fresh_connection_first_ms": {
+        "median": 30.895542000000003,
+        "min": 28.904967,
+        "max": 32.067187
+      },
+      "server_select_ms": {
+        "median": 2.041588,
+        "min": 2.0170757999999998,
+        "max": 2.0631088
+      },
+      "owner_server_ms": {
+        "median": 0.0492484,
+        "min": 0.04828,
+        "max": 0.05202709999999999
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "player",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.8805835,
+        "min": 1.5979519999999998,
+        "max": 2.869193
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.368976,
+        "min": 12.466208,
+        "max": 13.609338000000001
+      },
+      "server_select_ms": {
+        "median": 0.21407199999999998,
+        "min": 0.20368499999999998,
+        "max": 0.25260150000000003
+      },
+      "owner_server_ms": {
+        "median": 0.04046609999999999,
+        "min": 0.0404273,
+        "max": 0.050942600000000005
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": true,
+      "selects": 12.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.2011800000000001,
+        "min": 1.1306370000000001,
+        "max": 2.172042
+      },
+      "fresh_connection_first_ms": {
+        "median": 12.08337,
+        "min": 11.756177,
+        "max": 15.232291
+      },
+      "server_select_ms": {
+        "median": 0.190265,
+        "min": 0.18486229999999998,
+        "max": 0.1903092
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": false,
+      "selects": 173.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 15.010364,
+        "min": 13.765585999999999,
+        "max": 18.046019
+      },
+      "fresh_connection_first_ms": {
+        "median": 31.843138,
+        "min": 27.317501,
+        "max": 33.466257999999996
+      },
+      "server_select_ms": {
+        "median": 2.0271067999999994,
+        "min": 1.9668569999999999,
+        "max": 2.0652917999999993
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "player_other",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.7112775,
+        "min": 1.5575350000000001,
+        "max": 2.515699
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.740559,
+        "min": 13.114080999999999,
+        "max": 19.510851
+      },
+      "server_select_ms": {
+        "median": 0.22820999999999997,
+        "min": 0.2258573,
+        "max": 0.23480939999999997
+      },
+      "owner_server_ms": {
+        "median": 0.04341260000000001,
+        "min": 0.04022329999999999,
+        "max": 0.0440468
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "admin",
+      "filtered": false,
+      "selects": 174.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 15.257155,
+        "min": 13.849581,
+        "max": 19.523522
+      },
+      "fresh_connection_first_ms": {
+        "median": 32.048017,
+        "min": 31.730185000000002,
+        "max": 32.100699000000006
+      },
+      "server_select_ms": {
+        "median": 2.1527994,
+        "min": 2.0597676,
+        "max": 2.2386899
+      },
+      "owner_server_ms": {
+        "median": 0.05173660000000001,
+        "min": 0.051447200000000005,
+        "max": 0.05821080000000001
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "admin",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.4351885000000002,
+        "min": 1.3086879999999999,
+        "max": 2.094636
+      },
+      "fresh_connection_first_ms": {
+        "median": 12.782587999999999,
+        "min": 12.567518999999999,
+        "max": 13.887322000000001
+      },
+      "server_select_ms": {
+        "median": 0.23660160000000002,
+        "min": 0.22917420000000002,
+        "max": 0.239194
+      },
+      "owner_server_ms": {
+        "median": 0.047613699999999995,
+        "min": 0.0471444,
+        "max": 0.0507251
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.6805255000000001,
+        "min": 1.360477,
+        "max": 2.3007589999999998
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.672469,
+        "min": 12.610821,
+        "max": 14.290492
+      },
+      "server_select_ms": {
+        "median": 0.2279423,
+        "min": 0.2173651,
+        "max": 0.2323187
+      },
+      "owner_server_ms": {
+        "median": 0.04764499999999999,
+        "min": 0.045887599999999994,
+        "max": 0.050886600000000004
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": false,
+      "selects": 174.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 14.951973500000001,
+        "min": 13.871725,
+        "max": 18.352370999999998
+      },
+      "fresh_connection_first_ms": {
+        "median": 30.608489,
+        "min": 28.146468000000002,
+        "max": 30.933667
+      },
+      "server_select_ms": {
+        "median": 2.1130107000000002,
+        "min": 2.0949564,
+        "max": 2.1591031
+      },
+      "owner_server_ms": {
+        "median": 0.053915599999999994,
+        "min": 0.05236609999999999,
+        "max": 0.0571299
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "player",
+      "filtered": false,
+      "selects": 174.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 15.621047,
+        "min": 14.097649,
+        "max": 18.614327
+      },
+      "fresh_connection_first_ms": {
+        "median": 35.587042,
+        "min": 30.718891000000003,
+        "max": 35.669907
+      },
+      "server_select_ms": {
+        "median": 2.1590789999999993,
+        "min": 2.1248133,
+        "max": 2.1720789999999996
+      },
+      "owner_server_ms": {
+        "median": 0.049175300000000005,
+        "min": 0.048631799999999996,
+        "max": 0.0496589
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "player",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.9571070000000002,
+        "min": 1.507122,
+        "max": 2.604984
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.597894,
+        "min": 12.599772,
+        "max": 13.714374
+      },
+      "server_select_ms": {
+        "median": 0.23309169999999999,
+        "min": 0.2233381,
+        "max": 0.3028363
+      },
+      "owner_server_ms": {
+        "median": 0.0416985,
+        "min": 0.0407032,
+        "max": 0.05557070000000001
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": true,
+      "selects": 12.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.475506,
+        "min": 1.211855,
+        "max": 2.09933
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.26335,
+        "min": 11.704722,
+        "max": 14.33299
+      },
+      "server_select_ms": {
+        "median": 0.17641849999999998,
+        "min": 0.16721809999999998,
+        "max": 0.2024988
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": false,
+      "selects": 173.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 15.118732,
+        "min": 13.780113,
+        "max": 17.841203
+      },
+      "fresh_connection_first_ms": {
+        "median": 30.633086,
+        "min": 25.629794,
+        "max": 33.527376999999994
+      },
+      "server_select_ms": {
+        "median": 2.1469266,
+        "min": 2.0936958999999993,
+        "max": 2.1722868999999987
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "player_other",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.827267,
+        "min": 1.5548039999999999,
+        "max": 2.755433
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.688465,
+        "min": 12.844467,
+        "max": 13.779145
+      },
+      "server_select_ms": {
+        "median": 0.22155529999999998,
+        "min": 0.208129,
+        "max": 0.2251963
+      },
+      "owner_server_ms": {
+        "median": 0.04107840000000001,
+        "min": 0.0375456,
+        "max": 0.0439632
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "admin",
+      "filtered": false,
+      "selects": 174.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 16.0518725,
+        "min": 14.163228,
+        "max": 26.979049
+      },
+      "fresh_connection_first_ms": {
+        "median": 33.056394000000004,
+        "min": 32.027687,
+        "max": 34.40267
+      },
+      "server_select_ms": {
+        "median": 2.2466234,
+        "min": 2.1491002999999997,
+        "max": 2.4380141999999996
+      },
+      "owner_server_ms": {
+        "median": 0.05702310000000001,
+        "min": 0.0522717,
+        "max": 0.06711179999999999
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "admin",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.5156865000000002,
+        "min": 1.3506099999999999,
+        "max": 2.103124
+      },
+      "fresh_connection_first_ms": {
+        "median": 15.02971,
+        "min": 13.315155,
+        "max": 17.976684
+      },
+      "server_select_ms": {
+        "median": 0.2228304,
+        "min": 0.2087234,
+        "max": 0.241011
+      },
+      "owner_server_ms": {
+        "median": 0.0471258,
+        "min": 0.044652700000000003,
+        "max": 0.0510962
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.5332165,
+        "min": 1.333971,
+        "max": 3.4909899999999996
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.883497,
+        "min": 11.446555,
+        "max": 16.335836
+      },
+      "server_select_ms": {
+        "median": 0.2222911,
+        "min": 0.2206794,
+        "max": 0.3240531
+      },
+      "owner_server_ms": {
+        "median": 0.047279,
+        "min": 0.046779799999999996,
+        "max": 0.0709789
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": false,
+      "selects": 174.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 15.072118,
+        "min": 13.906717,
+        "max": 18.481871
+      },
+      "fresh_connection_first_ms": {
+        "median": 31.438478999999997,
+        "min": 31.209293,
+        "max": 31.920077999999997
+      },
+      "server_select_ms": {
+        "median": 2.0383925999999994,
+        "min": 2.029268000000001,
+        "max": 2.1384716000000004
+      },
+      "owner_server_ms": {
+        "median": 0.05237299999999999,
+        "min": 0.05171669999999999,
+        "max": 0.05290170000000001
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "player",
+      "filtered": false,
+      "selects": 174.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 15.4253875,
+        "min": 14.386403000000001,
+        "max": 27.95157
+      },
+      "fresh_connection_first_ms": {
+        "median": 33.781171,
+        "min": 29.430667,
+        "max": 35.919492999999996
+      },
+      "server_select_ms": {
+        "median": 2.1004757000000005,
+        "min": 2.0768962000000006,
+        "max": 2.4040675999999994
+      },
+      "owner_server_ms": {
+        "median": 0.053363499999999994,
+        "min": 0.0466909,
+        "max": 0.05515430000000001
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "player",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.898228,
+        "min": 1.5396450000000002,
+        "max": 2.5946849999999997
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.7972,
+        "min": 13.692719,
+        "max": 15.055515
+      },
+      "server_select_ms": {
+        "median": 0.2215287,
+        "min": 0.2082157,
+        "max": 0.23982580000000003
+      },
+      "owner_server_ms": {
+        "median": 0.0413679,
+        "min": 0.0392382,
+        "max": 0.0457061
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": true,
+      "selects": 12.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.185096,
+        "min": 1.124906,
+        "max": 1.696366
+      },
+      "fresh_connection_first_ms": {
+        "median": 12.173377,
+        "min": 11.256005,
+        "max": 12.328776
+      },
+      "server_select_ms": {
+        "median": 0.1680917,
+        "min": 0.16592420000000002,
+        "max": 0.17680069999999998
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": false,
+      "selects": 173.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 15.215907000000001,
+        "min": 13.468014,
+        "max": 17.729897
+      },
+      "fresh_connection_first_ms": {
+        "median": 32.302409999999995,
+        "min": 29.281681,
+        "max": 33.324921
+      },
+      "server_select_ms": {
+        "median": 2.0459584,
+        "min": 2.0154215999999994,
+        "max": 2.0595844
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "player_other",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 2.3419904999999996,
+        "min": 1.601117,
+        "max": 3.688609
+      },
+      "fresh_connection_first_ms": {
+        "median": 19.362537,
+        "min": 14.203311,
+        "max": 22.400743000000002
+      },
+      "server_select_ms": {
+        "median": 0.2852536,
+        "min": 0.24139919999999998,
+        "max": 0.3486109
+      },
+      "owner_server_ms": {
+        "median": 0.0551425,
+        "min": 0.05193650000000001,
+        "max": 0.0675986
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "admin",
+      "filtered": false,
+      "selects": 174.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 15.7926475,
+        "min": 13.543502,
+        "max": 19.860639
+      },
+      "fresh_connection_first_ms": {
+        "median": 32.253954,
+        "min": 31.591768,
+        "max": 32.566177
+      },
+      "server_select_ms": {
+        "median": 2.2469344000000007,
+        "min": 2.2244846999999996,
+        "max": 2.263099300000001
+      },
+      "owner_server_ms": {
+        "median": 0.053808600000000005,
+        "min": 0.05367620000000001,
+        "max": 0.05749019999999999
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "admin",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.722533,
+        "min": 1.369212,
+        "max": 3.216843
+      },
+      "fresh_connection_first_ms": {
+        "median": 14.037087,
+        "min": 13.524302,
+        "max": 15.614965
+      },
+      "server_select_ms": {
+        "median": 0.23697569999999998,
+        "min": 0.2275773,
+        "max": 0.2685849
+      },
+      "owner_server_ms": {
+        "median": 0.048638100000000004,
+        "min": 0.0469537,
+        "max": 0.059728
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.5781435,
+        "min": 1.385695,
+        "max": 2.2436969999999996
+      },
+      "fresh_connection_first_ms": {
+        "median": 14.812697,
+        "min": 12.537196999999999,
+        "max": 19.351053
+      },
+      "server_select_ms": {
+        "median": 0.23312070000000001,
+        "min": 0.2151522,
+        "max": 0.2469031
+      },
+      "owner_server_ms": {
+        "median": 0.0519787,
+        "min": 0.0468147,
+        "max": 0.0541655
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": false,
+      "selects": 174.0,
+      "owner_calls": 1.0,
+      "owner_rows": 48.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 15.50652,
+        "min": 14.09511,
+        "max": 24.944306
+      },
+      "fresh_connection_first_ms": {
+        "median": 31.465364,
+        "min": 31.234458999999998,
+        "max": 31.678119999999996
+      },
+      "server_select_ms": {
+        "median": 2.2617445,
+        "min": 2.2342009999999997,
+        "max": 2.4397559000000015
+      },
+      "owner_server_ms": {
+        "median": 0.05482669999999999,
+        "min": 0.0543974,
+        "max": 0.06834710000000001
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "player",
+      "filtered": false,
+      "selects": 174.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 15.514478,
+        "min": 13.911073,
+        "max": 18.290463
+      },
+      "fresh_connection_first_ms": {
+        "median": 32.754132999999996,
+        "min": 31.119963000000002,
+        "max": 34.473132
+      },
+      "server_select_ms": {
+        "median": 2.1524882,
+        "min": 2.1416305,
+        "max": 2.1748659999999997
+      },
+      "owner_server_ms": {
+        "median": 0.044881000000000004,
+        "min": 0.044513800000000006,
+        "max": 0.05332340000000001
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "player",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.7765105,
+        "min": 1.540518,
+        "max": 2.989108
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.933311999999999,
+        "min": 13.896818,
+        "max": 14.143953000000002
+      },
+      "server_select_ms": {
+        "median": 0.2280729,
+        "min": 0.2195347,
+        "max": 0.23268819999999998
+      },
+      "owner_server_ms": {
+        "median": 0.04341540000000001,
+        "min": 0.04262880000000001,
+        "max": 0.049189
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": true,
+      "selects": 12.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.4766975000000002,
+        "min": 1.103151,
+        "max": 2.304661
+      },
+      "fresh_connection_first_ms": {
+        "median": 12.188892,
+        "min": 12.027788,
+        "max": 13.164494000000001
+      },
+      "server_select_ms": {
+        "median": 0.1910211,
+        "min": 0.15918859999999999,
+        "max": 0.2341364
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": false,
+      "selects": 173.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 14.528867,
+        "min": 12.956231,
+        "max": 18.09906
+      },
+      "fresh_connection_first_ms": {
+        "median": 30.64616,
+        "min": 30.442490999999997,
+        "max": 30.899486
+      },
+      "server_select_ms": {
+        "median": 2.1204566,
+        "min": 2.0416516,
+        "max": 2.1220808999999994
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "player_other",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.9303715000000001,
+        "min": 1.5570060000000001,
+        "max": 2.400353
+      },
+      "fresh_connection_first_ms": {
+        "median": 17.670513999999997,
+        "min": 12.630194000000001,
+        "max": 18.382829
+      },
+      "server_select_ms": {
+        "median": 0.2399498,
+        "min": 0.2197371,
+        "max": 0.2454729
+      },
+      "owner_server_ms": {
+        "median": 0.045138500000000005,
+        "min": 0.0388624,
+        "max": 0.0493663
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "admin",
+      "filtered": false,
+      "selects": 706.0,
+      "owner_calls": 1.0,
+      "owner_rows": 200.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 64.77308500000001,
+        "min": 51.061749,
+        "max": 74.63929
+      },
+      "fresh_connection_first_ms": {
+        "median": 83.375423,
+        "min": 81.014043,
+        "max": 96.44140399999999
+      },
+      "server_select_ms": {
+        "median": 11.745145399999988,
+        "min": 11.651626099999996,
+        "max": 11.960262600000004
+      },
+      "owner_server_ms": {
+        "median": 0.1657612,
+        "min": 0.15416669999999996,
+        "max": 0.16678189999999998
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "admin",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 200.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.9677345000000002,
+        "min": 1.543397,
+        "max": 3.154993
+      },
+      "fresh_connection_first_ms": {
+        "median": 15.211433,
+        "min": 13.774700000000001,
+        "max": 15.5235
+      },
+      "server_select_ms": {
+        "median": 0.42025110000000004,
+        "min": 0.3750708,
+        "max": 0.5032671000000001
+      },
+      "owner_server_ms": {
+        "median": 0.1701351,
+        "min": 0.1537396,
+        "max": 0.2144464
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 200.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.9028215,
+        "min": 1.480606,
+        "max": 2.629713
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.401173,
+        "min": 11.829633000000001,
+        "max": 17.302474
+      },
+      "server_select_ms": {
+        "median": 0.3625979,
+        "min": 0.3545591,
+        "max": 0.3713432
+      },
+      "owner_server_ms": {
+        "median": 0.15276680000000004,
+        "min": 0.14629949999999997,
+        "max": 0.15380549999999998
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": false,
+      "selects": 706.0,
+      "owner_calls": 1.0,
+      "owner_rows": 200.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 62.413049,
+        "min": 50.959351,
+        "max": 80.488536
+      },
+      "fresh_connection_first_ms": {
+        "median": 83.141221,
+        "min": 74.214392,
+        "max": 84.79610699999999
+      },
+      "server_select_ms": {
+        "median": 11.504759999999996,
+        "min": 11.392290399999998,
+        "max": 11.684358399999999
+      },
+      "owner_server_ms": {
+        "median": 0.18576450000000003,
+        "min": 0.1504673,
+        "max": 0.1891527
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "player",
+      "filtered": false,
+      "selects": 706.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 61.6278535,
+        "min": 50.053486,
+        "max": 74.347679
+      },
+      "fresh_connection_first_ms": {
+        "median": 82.900854,
+        "min": 65.75200600000001,
+        "max": 91.33623
+      },
+      "server_select_ms": {
+        "median": 11.104926599999999,
+        "min": 10.9946871,
+        "max": 11.52098749999999
+      },
+      "owner_server_ms": {
+        "median": 0.0888,
+        "min": 0.08364820000000002,
+        "max": 0.1182202
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "player",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.7117369999999998,
+        "min": 1.630166,
+        "max": 2.6181170000000002
+      },
+      "fresh_connection_first_ms": {
+        "median": 15.23274,
+        "min": 14.633002000000001,
+        "max": 15.348046
+      },
+      "server_select_ms": {
+        "median": 0.2803496,
+        "min": 0.2769718,
+        "max": 0.3139379
+      },
+      "owner_server_ms": {
+        "median": 0.06208019999999999,
+        "min": 0.06104469999999999,
+        "max": 0.1109885
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": true,
+      "selects": 12.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.4869059999999998,
+        "min": 1.078851,
+        "max": 2.01867
+      },
+      "fresh_connection_first_ms": {
+        "median": 12.614593000000001,
+        "min": 12.071461000000001,
+        "max": 13.072531999999999
+      },
+      "server_select_ms": {
+        "median": 0.22055119999999998,
+        "min": 0.21433810000000003,
+        "max": 0.22981879999999996
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": false,
+      "selects": 705.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 60.87526,
+        "min": 48.914739,
+        "max": 78.602232
+      },
+      "fresh_connection_first_ms": {
+        "median": 87.78530599999999,
+        "min": 74.959351,
+        "max": 91.415084
+      },
+      "server_select_ms": {
+        "median": 11.5574282,
+        "min": 11.034355700000003,
+        "max": 11.638064700000005
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "player_other",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.9390275000000001,
+        "min": 1.6180240000000001,
+        "max": 2.6406519999999998
+      },
+      "fresh_connection_first_ms": {
+        "median": 14.398921,
+        "min": 14.258305,
+        "max": 20.656567
+      },
+      "server_select_ms": {
+        "median": 0.29515600000000003,
+        "min": 0.2897978,
+        "max": 0.304073
+      },
+      "owner_server_ms": {
+        "median": 0.06980519999999998,
+        "min": 0.06619969999999999,
+        "max": 0.104253
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "admin",
+      "filtered": false,
+      "selects": 706.0,
+      "owner_calls": 1.0,
+      "owner_rows": 200.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 63.6119395,
+        "min": 49.500337,
+        "max": 79.394541
+      },
+      "fresh_connection_first_ms": {
+        "median": 80.171649,
+        "min": 76.989054,
+        "max": 81.240203
+      },
+      "server_select_ms": {
+        "median": 11.7764995,
+        "min": 11.053919300000004,
+        "max": 11.811614499999996
+      },
+      "owner_server_ms": {
+        "median": 0.1611137,
+        "min": 0.1568565,
+        "max": 0.1679055
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "admin",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 200.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.7006765000000001,
+        "min": 1.482119,
+        "max": 2.67529
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.726434,
+        "min": 13.347055,
+        "max": 15.889112
+      },
+      "server_select_ms": {
+        "median": 0.37241500000000005,
+        "min": 0.3663892,
+        "max": 0.42394420000000005
+      },
+      "owner_server_ms": {
+        "median": 0.1511821,
+        "min": 0.1491713,
+        "max": 0.1759384
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 200.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.890787,
+        "min": 1.539022,
+        "max": 2.613645
+      },
+      "fresh_connection_first_ms": {
+        "median": 13.345476,
+        "min": 13.208935,
+        "max": 14.810897
+      },
+      "server_select_ms": {
+        "median": 0.3765834,
+        "min": 0.3732275,
+        "max": 0.3862358
+      },
+      "owner_server_ms": {
+        "median": 0.1581753,
+        "min": 0.1534024,
+        "max": 0.1589599
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": false,
+      "selects": 706.0,
+      "owner_calls": 1.0,
+      "owner_rows": 200.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 62.5929685,
+        "min": 50.049058,
+        "max": 86.700609
+      },
+      "fresh_connection_first_ms": {
+        "median": 85.732798,
+        "min": 79.28547800000001,
+        "max": 90.03096500000001
+      },
+      "server_select_ms": {
+        "median": 11.495662200000002,
+        "min": 11.384400099999997,
+        "max": 11.92195039999999
+      },
+      "owner_server_ms": {
+        "median": 0.1556585,
+        "min": 0.15528229999999998,
+        "max": 0.1603399
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "player",
+      "filtered": false,
+      "selects": 706.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 54.5340705,
+        "min": 47.825639,
+        "max": 68.393865
+      },
+      "fresh_connection_first_ms": {
+        "median": 78.510515,
+        "min": 68.732008,
+        "max": 84.221227
+      },
+      "server_select_ms": {
+        "median": 11.106579600000002,
+        "min": 10.97163409999999,
+        "max": 11.32231939999999
+      },
+      "owner_server_ms": {
+        "median": 0.12447440000000001,
+        "min": 0.0750552,
+        "max": 0.1379516
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "player",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 2.142253,
+        "min": 1.634108,
+        "max": 3.277817
+      },
+      "fresh_connection_first_ms": {
+        "median": 14.175787,
+        "min": 14.174419,
+        "max": 15.236778
+      },
+      "server_select_ms": {
+        "median": 0.33507220000000004,
+        "min": 0.3294712,
+        "max": 0.3629505
+      },
+      "owner_server_ms": {
+        "median": 0.1133024,
+        "min": 0.08168230000000001,
+        "max": 0.11528799999999999
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": true,
+      "selects": 12.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 1.473853,
+        "min": 1.058823,
+        "max": 2.81615
+      },
+      "fresh_connection_first_ms": {
+        "median": 15.374462,
+        "min": 10.873951,
+        "max": 19.130021
+      },
+      "server_select_ms": {
+        "median": 0.2610275,
+        "min": 0.2039078,
+        "max": 0.3110817
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": false,
+      "selects": 705.0,
+      "owner_calls": 0.0,
+      "owner_rows": 0.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 54.2422095,
+        "min": 49.424822,
+        "max": 78.61886999999999
+      },
+      "fresh_connection_first_ms": {
+        "median": 77.214068,
+        "min": 72.07504100000001,
+        "max": 82.129024
+      },
+      "server_select_ms": {
+        "median": 11.097952099999997,
+        "min": 10.872128500000008,
+        "max": 11.494205899999995
+      },
+      "owner_server_ms": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "player_other",
+      "filtered": true,
+      "selects": 13.0,
+      "owner_calls": 1.0,
+      "owner_rows": 2.0,
+      "session": 2.0,
+      "membership": 1.0,
+      "authorization_round": 0.0,
+      "warm_ms": {
+        "median": 2.003933,
+        "min": 1.655315,
+        "max": 2.980647
+      },
+      "fresh_connection_first_ms": {
+        "median": 14.579449,
+        "min": 13.635243000000001,
+        "max": 14.715143
+      },
+      "server_select_ms": {
+        "median": 0.3172929,
+        "min": 0.2952861,
+        "max": 0.3254987
+      },
+      "owner_server_ms": {
+        "median": 0.10888179999999999,
+        "min": 0.0657011,
+        "max": 0.11476060000000002
+      }
+    }
+  ]
+}

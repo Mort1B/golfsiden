@@ -1,3 +1,5 @@
+mod match_listing;
+pub(crate) use match_listing::MatchListingContext;
 use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 use thiserror::Error;
 use uuid::Uuid;

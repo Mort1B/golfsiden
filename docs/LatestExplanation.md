@@ -1,57 +1,58 @@
-# Database authorization costs are now measured
+# Match listings share one authorization context
 
-**Completed — READY WITH KNOWN LIMITATIONS.** This iteration measures the unchanged player-filtered implementation at `c02059d`
-using disposable PostgreSQL and an opt-in release-profile SQLx harness. It changes
-no production queries, authorization, scoring, schema, API or frontend behavior.
-The [measurement report](performance/database-authorization/README.md) records the
-fixtures, normalized SQL statistics, raw timing samples and reproduction commands.
+**Completed — READY WITH KNOWN LIMITATIONS.** Full and player-filtered match
+listings now resolve eligible player owners once inside their existing transaction.
+Both opponents must be eligible, with unchanged role/round gates and full-card
+projection. Scoring, detail and mutation authorization remain on their existing
+paths. The [report](performance/listing-authorization/README.md) retains the measured
+comparison, validation evidence and an unresolved transaction-start issue.
 
-Across three exclusive release runs, 72 cases and 2,160 warmed samples reproduce
-the exact query counts. A 24-match administrator listing performs 412 SELECTs and
-returns 2,304 owner IDs through 48 repeated owner queries. Its warm median is 41.25ms
-(range 38.60–64.51ms). The existing player filter reduces this to 21 SELECTs and 96
-owner IDs, with a 2.24ms median (2.04–3.39ms). At 100 matches, a full administrator
-listing returns 40,000 owner IDs and performs 1,704 SELECTs. These are measurements
-of the current code, not a proposed optimization's speedup.
+For an administrator reading 24 matches in an open, released final, repository
+SELECTs fall 412→174 and returned owner IDs fall 2,304→48. The local warm median falls
+41.25→15.26ms (candidate range 13.85–19.52ms). One filtered card falls 21→13 SELECTs
+and 2.24→1.44ms median. At 100 matches the full-list count falls 1,704→706, with owner
+rows 40,000→200. Baseline and candidate are separate sessions on the same configured
+local environment, not an interleaved trial or production performance guarantee.
+Exact query/row reductions reproduce in all 72 cases across three release runs.
 
-Full-card listings reuse mutation authorization for each opponent. An administrator
-or scorer repeatedly resolves all eligible snapshot owners twice per selected
-match. A linked player resolves only their flight's owners but repeats that work
-for each attempted match; a viewer stops before owner enumeration. Filtering to
-one card removes most full-list work but retains two whole-owner-set reads for a
-privileged actor. Visibility changes projected facts; locked status suppresses
-writable IDs after authorization rather than skipping those checks.
+The new context locks the same active session/user and required membership and
+calls the existing eligible-owner resolver. It lives only within one listing
+transaction. Empty lists skip owner resolution, but still authorize membership.
+No card evidence, handicap, visibility, ordering, schema, API or cache change is
+included. Card construction still performs seven queries per match.
 
-The supported next candidate is a listing-only shared authorization context:
-resolve eligible owners once inside the same transaction and require both opponents
-to belong to that set. Preserve live session/membership locking, flight/snapshot
-semantics, independent writable rules, card construction and visibility. Explicitly
-recheck expiry after waits/before commit; the current repeated checks use database
-wall-clock time. Scoring and mutation paths remain separate. No proposed repair
-has been implemented or measured, so this step claims no optimization speedup.
-
-The fixture has two numeric notes and an accepted/confirmed early concession per
-match. This focuses on authorization and permitted-projection behavior, not fully
-populated 18-hole ledger processing. Fresh-connection first calls exclude connection
-establishment and share warmed database/OS caches; they are not cold-storage
-measurements. Repository elapsed time includes sequential database waits and card
-construction, while SQL execution time excludes untracked planning, transaction
-control and HTTP/browser work. The report gives descriptive ranges from one local
-machine, not production latency or capacity guarantees.
+Session expiry is checked again immediately before commit using database wall-clock
+time, including empty results and the last card after materialization waits. This
+closes a gap in the old per-card checks. Both new expiry regressions fail against
+the old implementation and pass with the repair. Session/user/membership locks
+remain held through assembly, preserving ordering against revocation/removal.
 
 ## Validation
 
-- 208 ordinary backend tests and 581 PostgreSQL tests pass, plus formatting and
-all-feature Clippy. Migrate and seed pass. The three measurement tests are ignored
-by the general suite and run explicitly, sequentially, on the exclusive server.
-- All nine explicitly invoked release tests pass. The count audit verifies all
-three runs and 216 fresh-connection samples in addition to the warmed samples.
-- Every measured response matches its expected full-card result; filtered results
-match the exact full-list subset and writable intersection. Hidden/released and
-locked results remain correct. Removing membership denies both listing variants.
-- Read-only review covers measurement isolation, semantic parity and attribution.
-Python syntax and diff checks pass. Frontend/build/browser checks were not rerun:
-no frontend or user-facing behavior changed.
+- 208 ordinary backend and 587 PostgreSQL tests pass. Formatting, all-feature Clippy,
+migrate and seed pass. Six new tests cover expiry, both lock orderings, independent
+comparison with untouched scoring/detail reads, and one-eligible-opponent denial.
+- All nine explicitly invoked release measurement tests pass: 72 cases, 2,160 warmed
+samples and 216 fresh-connection first calls. Query/owner-row/category assertions and
+semantic equality pass. Source hashes identify the actual measured candidate.
+- Real Chrome/API validation initially passed 10/11 cases. A focused rerun of all
+three history widths passed, including hidden/released payloads, SSE and persisted
+pageshow. The eight other match workflows passed initially. Layout/interaction
+assertions and screenshots were checked. Frontend source and assets are unchanged;
+its unit/type/build ladder was not repeated.
+- Read-only source, race-test and retained-evidence review found no listing-repair
+blocker. Diff, source limits, Python syntax and documentation checks pass.
 
-The disposable service is removed after validation. The wider security review
-remains queued after the separately approved performance work.
+## Known limitation and next step
+
+The initial desktop return-refresh failure was SQLSTATE 25001 during transaction
+initialization, before the changed authorization logic. A standalone SQLx 0.8.6
+probe reproduces this error after cancelling a deliberately delayed transaction
+start, without calling application code. The browser error is consistent with that
+existing dependency/transaction-management defect, but its exact cancellation and
+connection-reuse sequence has not been traced. The focused rerun does not erase
+the initial failure or establish that an HTTP 500 is its only possible effect.
+
+This step does not repair that transaction-start risk. A bounded cancellation and
+pooled-connection cleanup/isolation repair is queued ahead of the wider security
+review. The disposable validation services are removed after completion.

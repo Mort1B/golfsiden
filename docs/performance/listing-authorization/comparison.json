@@ -1,0 +1,1950 @@
+{
+  "baseline_sha256": "320884e91d38db8c5b920b7c4216dfec9f27ee356604b1f8b04b0df23cc1f599",
+  "timing_caveat": "separately measured sessions under the same configured conditions; not an interleaved trial",
+  "cases": [
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "admin",
+      "filtered": false,
+      "before": {
+        "selects": 208.0,
+        "owner_calls": 24.0,
+        "owner_rows": 576.0,
+        "warm_ms": {
+          "median": 21.171803,
+          "min": 18.85108,
+          "max": 25.95727
+        }
+      },
+      "after": {
+        "selects": 90.0,
+        "owner_calls": 1.0,
+        "owner_rows": 24.0,
+        "warm_ms": {
+          "median": 8.3099725,
+          "min": 7.475571,
+          "max": 12.822318
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "admin",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 2.5054410000000003,
+          "min": 2.017814,
+          "max": 3.366312
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 24.0,
+        "warm_ms": {
+          "median": 1.7653035,
+          "min": 1.336372,
+          "max": 2.5008690000000002
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 2.5781665,
+          "min": 1.9344430000000001,
+          "max": 3.530436
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 24.0,
+        "warm_ms": {
+          "median": 1.6316745,
+          "min": 1.3364749999999999,
+          "max": 2.2689860000000004
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": false,
+      "before": {
+        "selects": 208.0,
+        "owner_calls": 24.0,
+        "owner_rows": 576.0,
+        "warm_ms": {
+          "median": 21.5099485,
+          "min": 18.643526,
+          "max": 25.757382999999997
+        }
+      },
+      "after": {
+        "selects": 90.0,
+        "owner_calls": 1.0,
+        "owner_rows": 24.0,
+        "warm_ms": {
+          "median": 8.719949499999998,
+          "min": 7.006039,
+          "max": 14.326604999999999
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "player",
+      "filtered": false,
+      "before": {
+        "selects": 164.0,
+        "owner_calls": 13.0,
+        "owner_rows": 26.0,
+        "warm_ms": {
+          "median": 19.2611385,
+          "min": 17.745226,
+          "max": 21.902094
+        }
+      },
+      "after": {
+        "selects": 90.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 8.8306595,
+          "min": 7.501214,
+          "max": 10.686782000000001
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "player",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 4.0,
+        "warm_ms": {
+          "median": 2.6500565,
+          "min": 2.3406849999999997,
+          "max": 4.325594000000001
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.7188915,
+          "min": 1.582654,
+          "max": 2.7298270000000002
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": true,
+      "before": {
+        "selects": 16.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.5535484999999998,
+          "min": 1.379997,
+          "max": 2.625671
+        }
+      },
+      "after": {
+        "selects": 12.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.2429825,
+          "min": 1.081674,
+          "max": 1.887092
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": false,
+      "before": {
+        "selects": 148.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 12.087192000000002,
+          "min": 10.891197,
+          "max": 20.487216999999998
+        }
+      },
+      "after": {
+        "selects": 89.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 7.7711255,
+          "min": 6.406364,
+          "max": 9.977209
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": true,
+      "role": "player_other",
+      "filtered": true,
+      "before": {
+        "selects": 17.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 2.2624554999999997,
+          "min": 1.826974,
+          "max": 3.5626490000000004
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.9095404999999999,
+          "min": 1.628176,
+          "max": 2.991864
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "admin",
+      "filtered": false,
+      "before": {
+        "selects": 208.0,
+        "owner_calls": 24.0,
+        "owner_rows": 576.0,
+        "warm_ms": {
+          "median": 21.786261500000002,
+          "min": 19.15955,
+          "max": 27.951099
+        }
+      },
+      "after": {
+        "selects": 90.0,
+        "owner_calls": 1.0,
+        "owner_rows": 24.0,
+        "warm_ms": {
+          "median": 8.1309035,
+          "min": 7.164457,
+          "max": 10.433316
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "admin",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 2.1541275,
+          "min": 1.914432,
+          "max": 3.404035
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 24.0,
+        "warm_ms": {
+          "median": 1.7072075,
+          "min": 1.201402,
+          "max": 3.342605
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 2.5651124999999997,
+          "min": 2.012235,
+          "max": 4.314756
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 24.0,
+        "warm_ms": {
+          "median": 1.5591255,
+          "min": 1.27674,
+          "max": 2.621632
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": false,
+      "before": {
+        "selects": 208.0,
+        "owner_calls": 24.0,
+        "owner_rows": 576.0,
+        "warm_ms": {
+          "median": 21.210351,
+          "min": 18.027853999999998,
+          "max": 38.905179999999994
+        }
+      },
+      "after": {
+        "selects": 90.0,
+        "owner_calls": 1.0,
+        "owner_rows": 24.0,
+        "warm_ms": {
+          "median": 7.866768,
+          "min": 6.813586,
+          "max": 10.365799
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "player",
+      "filtered": false,
+      "before": {
+        "selects": 164.0,
+        "owner_calls": 13.0,
+        "owner_rows": 26.0,
+        "warm_ms": {
+          "median": 18.381704499999998,
+          "min": 17.275921,
+          "max": 21.631398
+        }
+      },
+      "after": {
+        "selects": 90.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 8.716331,
+          "min": 6.576087,
+          "max": 12.462900000000001
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "player",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 4.0,
+        "warm_ms": {
+          "median": 2.9433835000000004,
+          "min": 2.437733,
+          "max": 4.030282
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.9443959999999998,
+          "min": 1.5358889999999998,
+          "max": 2.9713909999999997
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": true,
+      "before": {
+        "selects": 16.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.4996420000000001,
+          "min": 1.337645,
+          "max": 2.092486
+        }
+      },
+      "after": {
+        "selects": 12.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.4570645,
+          "min": 1.1008909999999998,
+          "max": 1.906555
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": false,
+      "before": {
+        "selects": 148.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 11.7585025,
+          "min": 10.860577999999999,
+          "max": 17.073417
+        }
+      },
+      "after": {
+        "selects": 89.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 7.5461185,
+          "min": 6.493317,
+          "max": 8.698134
+        }
+      }
+    },
+    {
+      "matches": 12,
+      "state": "open",
+      "hidden": false,
+      "role": "player_other",
+      "filtered": true,
+      "before": {
+        "selects": 17.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 2.4215025,
+          "min": 1.887681,
+          "max": 3.536941
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.790326,
+          "min": 1.474294,
+          "max": 3.56907
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "admin",
+      "filtered": false,
+      "before": {
+        "selects": 412.0,
+        "owner_calls": 48.0,
+        "owner_rows": 2304.0,
+        "warm_ms": {
+          "median": 42.3628535,
+          "min": 37.618721,
+          "max": 50.698924
+        }
+      },
+      "after": {
+        "selects": 174.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 15.7958345,
+          "min": 14.495486999999999,
+          "max": 21.679813
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "admin",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 96.0,
+        "warm_ms": {
+          "median": 2.573715,
+          "min": 2.082527,
+          "max": 3.4781679999999997
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 1.6415905,
+          "min": 1.398808,
+          "max": 2.4613389999999997
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 96.0,
+        "warm_ms": {
+          "median": 2.315912,
+          "min": 2.024394,
+          "max": 2.961408
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 1.4798205000000002,
+          "min": 1.35179,
+          "max": 2.5104070000000003
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": false,
+      "before": {
+        "selects": 412.0,
+        "owner_calls": 48.0,
+        "owner_rows": 2304.0,
+        "warm_ms": {
+          "median": 41.768634,
+          "min": 39.140317,
+          "max": 55.765311
+        }
+      },
+      "after": {
+        "selects": 174.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 15.7117305,
+          "min": 13.889324,
+          "max": 21.360015999999998
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "player",
+      "filtered": false,
+      "before": {
+        "selects": 320.0,
+        "owner_calls": 25.0,
+        "owner_rows": 50.0,
+        "warm_ms": {
+          "median": 36.530349,
+          "min": 34.126082000000004,
+          "max": 41.786951
+        }
+      },
+      "after": {
+        "selects": 174.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 15.0379805,
+          "min": 14.109200000000001,
+          "max": 17.449189
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "player",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 4.0,
+        "warm_ms": {
+          "median": 2.98627,
+          "min": 2.5051069999999998,
+          "max": 3.76901
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.8805835,
+          "min": 1.5979519999999998,
+          "max": 2.869193
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": true,
+      "before": {
+        "selects": 16.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.7665959999999998,
+          "min": 1.410538,
+          "max": 2.9292160000000003
+        }
+      },
+      "after": {
+        "selects": 12.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.2011800000000001,
+          "min": 1.1306370000000001,
+          "max": 2.172042
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": false,
+      "before": {
+        "selects": 292.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 24.122690499999997,
+          "min": 21.394745999999998,
+          "max": 40.964145
+        }
+      },
+      "after": {
+        "selects": 173.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 15.010364,
+          "min": 13.765585999999999,
+          "max": 18.046019
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": true,
+      "role": "player_other",
+      "filtered": true,
+      "before": {
+        "selects": 17.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 2.0331235000000003,
+          "min": 1.869062,
+          "max": 2.89269
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.7112775,
+          "min": 1.5575350000000001,
+          "max": 2.515699
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "admin",
+      "filtered": false,
+      "before": {
+        "selects": 412.0,
+        "owner_calls": 48.0,
+        "owner_rows": 2304.0,
+        "warm_ms": {
+          "median": 41.247261,
+          "min": 38.602789,
+          "max": 64.507514
+        }
+      },
+      "after": {
+        "selects": 174.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 15.257155,
+          "min": 13.849581,
+          "max": 19.523522
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "admin",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 96.0,
+        "warm_ms": {
+          "median": 2.2427824999999997,
+          "min": 2.035986,
+          "max": 3.388364
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 1.4351885000000002,
+          "min": 1.3086879999999999,
+          "max": 2.094636
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 96.0,
+        "warm_ms": {
+          "median": 2.225391,
+          "min": 2.088005,
+          "max": 3.033179
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 1.6805255000000001,
+          "min": 1.360477,
+          "max": 2.3007589999999998
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": false,
+      "before": {
+        "selects": 412.0,
+        "owner_calls": 48.0,
+        "owner_rows": 2304.0,
+        "warm_ms": {
+          "median": 39.803002500000005,
+          "min": 37.585514,
+          "max": 55.752052000000006
+        }
+      },
+      "after": {
+        "selects": 174.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 14.951973500000001,
+          "min": 13.871725,
+          "max": 18.352370999999998
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "player",
+      "filtered": false,
+      "before": {
+        "selects": 320.0,
+        "owner_calls": 25.0,
+        "owner_rows": 50.0,
+        "warm_ms": {
+          "median": 37.303281,
+          "min": 34.941675,
+          "max": 47.505582999999994
+        }
+      },
+      "after": {
+        "selects": 174.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 15.621047,
+          "min": 14.097649,
+          "max": 18.614327
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "player",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 4.0,
+        "warm_ms": {
+          "median": 3.0452955,
+          "min": 2.460545,
+          "max": 4.5592690000000005
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.9571070000000002,
+          "min": 1.507122,
+          "max": 2.604984
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": true,
+      "before": {
+        "selects": 16.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.6714905,
+          "min": 1.361817,
+          "max": 2.577784
+        }
+      },
+      "after": {
+        "selects": 12.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.475506,
+          "min": 1.211855,
+          "max": 2.09933
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": false,
+      "before": {
+        "selects": 292.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 24.528444999999998,
+          "min": 21.788021,
+          "max": 32.281914
+        }
+      },
+      "after": {
+        "selects": 173.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 15.118732,
+          "min": 13.780113,
+          "max": 17.841203
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "open",
+      "hidden": false,
+      "role": "player_other",
+      "filtered": true,
+      "before": {
+        "selects": 17.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.9736965,
+          "min": 1.801992,
+          "max": 2.982893
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.827267,
+          "min": 1.5548039999999999,
+          "max": 2.755433
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "admin",
+      "filtered": false,
+      "before": {
+        "selects": 412.0,
+        "owner_calls": 48.0,
+        "owner_rows": 2304.0,
+        "warm_ms": {
+          "median": 41.116248999999996,
+          "min": 38.158149,
+          "max": 51.826862
+        }
+      },
+      "after": {
+        "selects": 174.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 16.0518725,
+          "min": 14.163228,
+          "max": 26.979049
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "admin",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 96.0,
+        "warm_ms": {
+          "median": 2.472713,
+          "min": 2.099911,
+          "max": 4.092644
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 1.5156865000000002,
+          "min": 1.3506099999999999,
+          "max": 2.103124
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 96.0,
+        "warm_ms": {
+          "median": 2.4396945,
+          "min": 2.060436,
+          "max": 4.11712
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 1.5332165,
+          "min": 1.333971,
+          "max": 3.4909899999999996
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": false,
+      "before": {
+        "selects": 412.0,
+        "owner_calls": 48.0,
+        "owner_rows": 2304.0,
+        "warm_ms": {
+          "median": 40.863296000000005,
+          "min": 36.896404000000004,
+          "max": 54.437498
+        }
+      },
+      "after": {
+        "selects": 174.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 15.072118,
+          "min": 13.906717,
+          "max": 18.481871
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "player",
+      "filtered": false,
+      "before": {
+        "selects": 320.0,
+        "owner_calls": 25.0,
+        "owner_rows": 50.0,
+        "warm_ms": {
+          "median": 37.632155,
+          "min": 34.030493,
+          "max": 43.975407000000004
+        }
+      },
+      "after": {
+        "selects": 174.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 15.4253875,
+          "min": 14.386403000000001,
+          "max": 27.95157
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "player",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 4.0,
+        "warm_ms": {
+          "median": 2.9944045,
+          "min": 2.395683,
+          "max": 4.373893
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.898228,
+          "min": 1.5396450000000002,
+          "max": 2.5946849999999997
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": true,
+      "before": {
+        "selects": 16.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.5003745,
+          "min": 1.375229,
+          "max": 2.01238
+        }
+      },
+      "after": {
+        "selects": 12.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.185096,
+          "min": 1.124906,
+          "max": 1.696366
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": false,
+      "before": {
+        "selects": 292.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 24.3745275,
+          "min": 21.897076000000002,
+          "max": 29.480639
+        }
+      },
+      "after": {
+        "selects": 173.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 15.215907000000001,
+          "min": 13.468014,
+          "max": 17.729897
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": true,
+      "role": "player_other",
+      "filtered": true,
+      "before": {
+        "selects": 17.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 2.0827894999999996,
+          "min": 1.811696,
+          "max": 2.7244859999999997
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 2.3419904999999996,
+          "min": 1.601117,
+          "max": 3.688609
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "admin",
+      "filtered": false,
+      "before": {
+        "selects": 412.0,
+        "owner_calls": 48.0,
+        "owner_rows": 2304.0,
+        "warm_ms": {
+          "median": 41.219948,
+          "min": 37.922526,
+          "max": 49.475725
+        }
+      },
+      "after": {
+        "selects": 174.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 15.7926475,
+          "min": 13.543502,
+          "max": 19.860639
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "admin",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 96.0,
+        "warm_ms": {
+          "median": 2.3107385000000003,
+          "min": 1.9814749999999999,
+          "max": 3.701045
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 1.722533,
+          "min": 1.369212,
+          "max": 3.216843
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 96.0,
+        "warm_ms": {
+          "median": 2.134196,
+          "min": 1.987964,
+          "max": 2.788136
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 1.5781435,
+          "min": 1.385695,
+          "max": 2.2436969999999996
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": false,
+      "before": {
+        "selects": 412.0,
+        "owner_calls": 48.0,
+        "owner_rows": 2304.0,
+        "warm_ms": {
+          "median": 40.6448465,
+          "min": 38.305046000000004,
+          "max": 49.441905
+        }
+      },
+      "after": {
+        "selects": 174.0,
+        "owner_calls": 1.0,
+        "owner_rows": 48.0,
+        "warm_ms": {
+          "median": 15.50652,
+          "min": 14.09511,
+          "max": 24.944306
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "player",
+      "filtered": false,
+      "before": {
+        "selects": 320.0,
+        "owner_calls": 25.0,
+        "owner_rows": 50.0,
+        "warm_ms": {
+          "median": 35.9232985,
+          "min": 32.900905,
+          "max": 49.893384
+        }
+      },
+      "after": {
+        "selects": 174.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 15.514478,
+          "min": 13.911073,
+          "max": 18.290463
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "player",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 4.0,
+        "warm_ms": {
+          "median": 2.681782,
+          "min": 2.287159,
+          "max": 4.261735
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.7765105,
+          "min": 1.540518,
+          "max": 2.989108
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": true,
+      "before": {
+        "selects": 16.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.6471475,
+          "min": 1.37211,
+          "max": 2.1681500000000002
+        }
+      },
+      "after": {
+        "selects": 12.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.4766975000000002,
+          "min": 1.103151,
+          "max": 2.304661
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": false,
+      "before": {
+        "selects": 292.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 25.6102745,
+          "min": 21.997732,
+          "max": 50.207198
+        }
+      },
+      "after": {
+        "selects": 173.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 14.528867,
+          "min": 12.956231,
+          "max": 18.09906
+        }
+      }
+    },
+    {
+      "matches": 24,
+      "state": "locked",
+      "hidden": false,
+      "role": "player_other",
+      "filtered": true,
+      "before": {
+        "selects": 17.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 2.4014445,
+          "min": 1.9778349999999998,
+          "max": 4.383863
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.9303715000000001,
+          "min": 1.5570060000000001,
+          "max": 2.400353
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "admin",
+      "filtered": false,
+      "before": {
+        "selects": 1704.0,
+        "owner_calls": 200.0,
+        "owner_rows": 40000.0,
+        "warm_ms": {
+          "median": 213.13544149999998,
+          "min": 200.929269,
+          "max": 250.47823699999998
+        }
+      },
+      "after": {
+        "selects": 706.0,
+        "owner_calls": 1.0,
+        "owner_rows": 200.0,
+        "warm_ms": {
+          "median": 64.77308500000001,
+          "min": 51.061749,
+          "max": 74.63929
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "admin",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 400.0,
+        "warm_ms": {
+          "median": 3.1242455,
+          "min": 2.3071099999999998,
+          "max": 4.825023000000001
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 200.0,
+        "warm_ms": {
+          "median": 1.9677345000000002,
+          "min": 1.543397,
+          "max": 3.154993
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 400.0,
+        "warm_ms": {
+          "median": 2.9283115,
+          "min": 2.2977969999999996,
+          "max": 3.7819770000000004
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 200.0,
+        "warm_ms": {
+          "median": 1.9028215,
+          "min": 1.480606,
+          "max": 2.629713
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "scorer",
+      "filtered": false,
+      "before": {
+        "selects": 1704.0,
+        "owner_calls": 200.0,
+        "owner_rows": 40000.0,
+        "warm_ms": {
+          "median": 225.9986155,
+          "min": 184.969167,
+          "max": 275.95020900000003
+        }
+      },
+      "after": {
+        "selects": 706.0,
+        "owner_calls": 1.0,
+        "owner_rows": 200.0,
+        "warm_ms": {
+          "median": 62.413049,
+          "min": 50.959351,
+          "max": 80.488536
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "player",
+      "filtered": false,
+      "before": {
+        "selects": 1308.0,
+        "owner_calls": 101.0,
+        "owner_rows": 202.0,
+        "warm_ms": {
+          "median": 167.293385,
+          "min": 147.505575,
+          "max": 186.355093
+        }
+      },
+      "after": {
+        "selects": 706.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 61.6278535,
+          "min": 50.053486,
+          "max": 74.347679
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "player",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 4.0,
+        "warm_ms": {
+          "median": 2.9860040000000003,
+          "min": 2.657598,
+          "max": 5.334095
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.7117369999999998,
+          "min": 1.630166,
+          "max": 2.6181170000000002
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": true,
+      "before": {
+        "selects": 16.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.5903165000000001,
+          "min": 1.3426619999999998,
+          "max": 2.226349
+        }
+      },
+      "after": {
+        "selects": 12.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.4869059999999998,
+          "min": 1.078851,
+          "max": 2.01867
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "viewer",
+      "filtered": false,
+      "before": {
+        "selects": 1204.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 93.606063,
+          "min": 86.450864,
+          "max": 110.28626
+        }
+      },
+      "after": {
+        "selects": 705.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 60.87526,
+          "min": 48.914739,
+          "max": 78.602232
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": true,
+      "role": "player_other",
+      "filtered": true,
+      "before": {
+        "selects": 17.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 2.3805185,
+          "min": 1.9678289999999998,
+          "max": 3.465957
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 1.9390275000000001,
+          "min": 1.6180240000000001,
+          "max": 2.6406519999999998
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "admin",
+      "filtered": false,
+      "before": {
+        "selects": 1704.0,
+        "owner_calls": 200.0,
+        "owner_rows": 40000.0,
+        "warm_ms": {
+          "median": 208.4419365,
+          "min": 195.04686900000002,
+          "max": 236.42642899999998
+        }
+      },
+      "after": {
+        "selects": 706.0,
+        "owner_calls": 1.0,
+        "owner_rows": 200.0,
+        "warm_ms": {
+          "median": 63.6119395,
+          "min": 49.500337,
+          "max": 79.394541
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "admin",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 400.0,
+        "warm_ms": {
+          "median": 2.8271845,
+          "min": 2.264599,
+          "max": 4.221209
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 200.0,
+        "warm_ms": {
+          "median": 1.7006765000000001,
+          "min": 1.482119,
+          "max": 2.67529
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 400.0,
+        "warm_ms": {
+          "median": 2.6551530000000003,
+          "min": 2.2188030000000003,
+          "max": 4.154985
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 200.0,
+        "warm_ms": {
+          "median": 1.890787,
+          "min": 1.539022,
+          "max": 2.613645
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "scorer",
+      "filtered": false,
+      "before": {
+        "selects": 1704.0,
+        "owner_calls": 200.0,
+        "owner_rows": 40000.0,
+        "warm_ms": {
+          "median": 208.55276750000002,
+          "min": 188.92235499999998,
+          "max": 235.969438
+        }
+      },
+      "after": {
+        "selects": 706.0,
+        "owner_calls": 1.0,
+        "owner_rows": 200.0,
+        "warm_ms": {
+          "median": 62.5929685,
+          "min": 50.049058,
+          "max": 86.700609
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "player",
+      "filtered": false,
+      "before": {
+        "selects": 1308.0,
+        "owner_calls": 101.0,
+        "owner_rows": 202.0,
+        "warm_ms": {
+          "median": 164.5372655,
+          "min": 151.21476,
+          "max": 183.90379000000001
+        }
+      },
+      "after": {
+        "selects": 706.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 54.5340705,
+          "min": 47.825639,
+          "max": 68.393865
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "player",
+      "filtered": true,
+      "before": {
+        "selects": 21.0,
+        "owner_calls": 2.0,
+        "owner_rows": 4.0,
+        "warm_ms": {
+          "median": 3.1023115,
+          "min": 2.757956,
+          "max": 4.311073
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 2.142253,
+          "min": 1.634108,
+          "max": 3.277817
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": true,
+      "before": {
+        "selects": 16.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.780909,
+          "min": 1.2613189999999999,
+          "max": 2.9158410000000003
+        }
+      },
+      "after": {
+        "selects": 12.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 1.473853,
+          "min": 1.058823,
+          "max": 2.81615
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "viewer",
+      "filtered": false,
+      "before": {
+        "selects": 1204.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 94.149545,
+          "min": 89.954954,
+          "max": 122.432382
+        }
+      },
+      "after": {
+        "selects": 705.0,
+        "owner_calls": 0.0,
+        "owner_rows": 0.0,
+        "warm_ms": {
+          "median": 54.2422095,
+          "min": 49.424822,
+          "max": 78.61886999999999
+        }
+      }
+    },
+    {
+      "matches": 100,
+      "state": "open",
+      "hidden": false,
+      "role": "player_other",
+      "filtered": true,
+      "before": {
+        "selects": 17.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 2.0574554999999997,
+          "min": 1.902909,
+          "max": 3.216433
+        }
+      },
+      "after": {
+        "selects": 13.0,
+        "owner_calls": 1.0,
+        "owner_rows": 2.0,
+        "warm_ms": {
+          "median": 2.003933,
+          "min": 1.655315,
+          "max": 2.980647
+        }
+      }
+    }
+  ]
+}
