@@ -29,4 +29,6 @@ backend, migration, dependency or production configuration changes.
 
 Deployment remains **NOT READY** while PERSIST-2/PERSIST-3 and operational/device
 acceptance remain open. PERSIST-2 is the next proposed bounded repair. This step
-stops here, committed locally without a push.
+stops here. The owner has restored the repository default: publish completed,
+validated commits to `origin/main`, including the locally accumulated review and
+repair commits. Local-only security validation does not prohibit Git publication.

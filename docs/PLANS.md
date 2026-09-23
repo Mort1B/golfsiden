@@ -26,8 +26,10 @@ Validation: reproduce the failing storage/timer schedule with bounded synthetic
 faults; prove responsiveness, bounded attempts, preserved queue identity and
 recovery after storage returns. Run focused tests, the affected frontend ladder,
 Chrome and independent read-only review. Use only disposable local services and
-synthetic accounts. Stop after the repair, evidence and documentation; local-only,
-no production, external targets, real credentials or push.
+synthetic accounts. Security validation remains local-only: no production,
+external test targets or real credentials. Commit completed, validated work to
+`main` and push to `origin/main`, as explicitly requested by the owner. Stop after
+the repair, evidence, documentation and verified publication.
 
 ## Later queue
 
