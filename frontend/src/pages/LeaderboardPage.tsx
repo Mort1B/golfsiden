@@ -1,3 +1,4 @@
+import { usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 import { usePrivateResultQuery } from '../features/leaderboards/usePrivateResultQuery'
 import { TournamentSelect } from '../features/leaderboards/TournamentSelect'
 import { MatchResults } from './MatchResultsPage'
@@ -69,6 +70,11 @@ export function LeaderboardPage() {
       && !roundsQuery.error,
   })
 
+  usePublishTournamentNavigation(selectedTournament && !tournamentsQuery.error && !roundsQuery.error
+    ? { tournamentId, roundId: selectedRound?.id ?? null, scope, metric } : null,
+    !tournamentsQuery.isPending && !tournamentsQuery.isFetching
+      && (!selectedTournament || !roundsQuery.isPending && !roundsQuery.isFetching))
+
   if (tournamentsQuery.isPending) return <section className="page leaderboard-page"><LoadingState /></section>
   if (tournamentsQuery.error && tournaments.length === 0) {
     return (
@@ -91,7 +97,7 @@ export function LeaderboardPage() {
     tournamentId={tournamentId}
     tournamentSelector={<section className="leaderboard-controls" aria-label="Resultatvisning">
       <TournamentSelect tournaments={tournaments} tournamentId={tournamentId}
-        onChange={(id) => setSearchParams(leaderboardSearch(id, scope, undefined, metric))} />
+        onChange={(id) => setSearchParams(leaderboardSearch(id, scope, undefined, metric), { flushSync: true })} />
     </section>}
   />
 
@@ -107,7 +113,9 @@ export function LeaderboardPage() {
     nextScope: LeaderboardScope,
     nextRoundId: string | undefined,
     nextMetric: typeof metric,
-  ) => setSearchParams(leaderboardSearch(nextTournamentId, nextScope, nextRoundId, nextMetric))
+  // Commit explicit control changes before a following control reads the URL
+  // selection; deferred rendering can otherwise reuse the previous scope/metric.
+  ) => setSearchParams(leaderboardSearch(nextTournamentId, nextScope, nextRoundId, nextMetric), { flushSync: true })
 
   const isMatch = scope === 'round' && selectedRound?.scoring_format === 'singles_match_play'
   const activeQuery = scope === 'round' ? roundLeaderboardQuery : tournamentLeaderboardQuery

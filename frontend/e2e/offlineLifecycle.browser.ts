@@ -34,6 +34,7 @@ test('retains queued data on logout but hides it from another account and resume
     expect((await second.read()).holes[0]?.score).toBeNull()
     await offlineLayout(page, 'different-account')
     await page.getByRole('button', { name: 'Logg ut' }).click()
+    await expect(page.getByRole('button', { name: 'Logg inn', exact: true })).toBeVisible()
     await page.unroute('**/scores/conditional')
     await signIn(page, fixture.username, fixture.password)
     await page.goto(fixture.url())

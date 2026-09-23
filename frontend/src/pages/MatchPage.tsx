@@ -1,3 +1,5 @@
+import { ApiHttpError } from '../api/http'
+import { usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 import { MatchReadWorkspace } from '../features/matchPlay/MatchReadWorkspace'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
@@ -15,6 +17,7 @@ import { MatchPending } from '../features/matchPlay/MatchPending'
 import { useMatchQueue } from '../features/matchPlay/offline/context'
 export function MatchPage({ scoring = false }: { scoring?: boolean }) {
   const { roundId = '', matchId } = useParams(), { session } = useAuth()
+  usePublishTournamentNavigation(null, !isCanonicalUuid(roundId) || !!matchId && !isCanonicalUuid(matchId))
   if (!isCanonicalUuid(roundId) || matchId && !isCanonicalUuid(matchId)) return <section className="page"><ErrorState error={new Error('Ugyldig matchadresse.')} /></section>
   if (!scoring) return <MatchReadWorkspace key={`${session?.user_id}:${roundId}:${matchId}`} roundId={roundId} matchId={matchId} />
   return <MatchWorkspace key={`${session?.user_id}:${session?.csrf_token}:${roundId}:${matchId}:${scoring}`} roundId={roundId} matchId={matchId} scoring={scoring} />
@@ -26,6 +29,11 @@ function MatchWorkspace({ roundId, matchId, scoring }: { roundId: string; matchI
   const disconnected = useTournamentLive(round.data?.tournament_id ?? '')
   const card = useQuery<MatchCard | MatchScoringCard>({ queryKey: scoring ? matchKeys.scoring(user, roundId, matchId ?? '') : matchKeys.read(user, roundId, matchId ?? ''),
     queryFn: () => scoring ? matchApi.scoring(roundId, matchId ?? '') : matchApi.read(roundId, matchId ?? ''), enabled: !!matchId && !!round.data, retry: false, networkMode: 'always' })
+  const denied = [card.error, memberships.error].some(error => error instanceof ApiHttpError && [401, 403, 404].includes(error.status))
+    || memberships.isSuccess && !memberships.data.some(membership => membership.tournament.id === round.data?.tournament_id)
+  usePublishTournamentNavigation(round.data && !round.error && !denied ? { tournamentId: round.data.tournament_id, roundId: round.data.id } : null,
+    !round.isPending && !round.isFetching)
+
   const admin = !memberships.error && memberships.data?.some(m => m.tournament.id === round.data?.tournament_id && m.role === 'admin') === true
   const pending = queue.items.find(i => i.matchId === matchId && (i.action || i.notes.length))
   if (round.error && !round.data) return <section className="page"><ErrorState error={round.error} onRetry={() => void round.refetch()} /></section>

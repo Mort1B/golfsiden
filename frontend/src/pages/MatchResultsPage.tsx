@@ -1,6 +1,7 @@
+import { usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 import type { ReactNode } from 'react'
 import { usePrivateResultQuery } from '../features/leaderboards/usePrivateResultQuery'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { matchApi, matchKeys } from '../api/matchPlay'
 import { tournamentKeys } from '../api/tournaments'
@@ -19,6 +20,9 @@ export function MatchResults({ tournamentId, selectedPlayerId, tournamentSelecto
   const user = useAuth().session?.user_id ?? '', [search] = useSearchParams(), playerId = selectedPlayerId ?? search.get('player') ?? undefined
   const rounds = usePrivateResultQuery({ userId: user, tournamentId }, { queryKey: tournamentKeys.rounds(user, tournamentId), queryFn: () => api.rounds(tournamentId) })
   const table = usePrivateResultQuery({ userId: user, tournamentId }, { queryKey: matchKeys.table(user, tournamentId), queryFn: ({ signal }) => matchApi.table(tournamentId, signal), retry: false })
+  const dedicated = useLocation().pathname.includes('/match-results')
+  usePublishTournamentNavigation(rounds.data && !rounds.error && !table.error ? { tournamentId, scope: 'tournament' } : null,
+    dedicated && !rounds.isPending && !rounds.isFetching && !table.isPending && !table.isFetching, rounds.data)
   const error = rounds.error ?? table.error
   if (error) return <section className="page match-page">{tournamentSelector}<ErrorState error={error} onRetry={() => { void rounds.refetch(); void table.refetch() }} /></section>
   if (!rounds.data) return <section className="page match-page">{tournamentSelector}<LoadingState /></section>

@@ -69,6 +69,9 @@ test('Stableford confirmation holds the player lease across tabs and releases on
   for (let number = 1; number <= 18; number++) await fixture.save(number, { type: 'no_score' })
   await page.goto(fixture.url(1, 'summary'))
   const second = await context.newPage(); await second.goto(fixture.url())
+  // Hold the confirmation refresh, not either tab's initial card load.
+  await expect(page.getByRole('button', { name: 'Bekreft scorekort', exact: true })).toBeEnabled()
+  await expect(second.getByRole('button', { name: 'Registrer par (4)' })).toBeEnabled()
   let release = () => undefined as void
   const wait = new Promise<void>(resolve => { release = resolve })
   await page.route(`**${fixture.cardPath}/scoring`, async route => { await wait; await route.fulfill({ status: 503, json: { error: { code: 'unavailable', message: 'unavailable' } } }) })

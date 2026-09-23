@@ -1,5 +1,6 @@
 import { useScoringGuard } from '../features/scoring/scoringGuardContext'
 import { LoadingState } from './AsyncState'
+import { usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 
 export function RouteLoading() {
   return <section className="page" aria-label="Laster side"><LoadingState /></section>
@@ -9,6 +10,7 @@ export function RouteLoading() {
 // not expose a reload action after unmounting a scorer and releasing its guard.
 export function RouteLoadError() {
   const { blocked } = useScoringGuard()
+  usePublishTournamentNavigation(null, true)
   return <section className="page">
     <header className="page-header"><h1>Siden kunne ikke lastes</h1></header>
     <div className="state-message error" role="alert">

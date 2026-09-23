@@ -1,3 +1,4 @@
+import { isScoreResumeSearch, usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 import { useScoreDrafts } from '../features/scoring/recovery/context'
 import { ScoreRecovery } from '../features/scoring/recovery/ScoreRecovery'
 import { MatchRound } from '../features/matchPlay/MatchRound'
@@ -21,7 +22,7 @@ import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 
 export function ScorePage() {
   const location = useLocation()
-  const resume = location.search === ''
+  const resume = isScoreResumeSearch(location.search)
   return <><PendingScores /><ScoreWorkspace key={resume ? location.key : 'selected'} resume={resume} /></>
 }
 
@@ -32,6 +33,11 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
     completionQuery, accessQuery, progressOwners, writableOwners, owner, effectiveRoundStatus,
     canWrite, cardQuery, terminalScoringError, view, hole, prefetchOwner, retainingScorer,
     connectionLost, retryLive, deniedError } = useScoreWorkspaceData(searchParams, resume)
+
+  usePublishTournamentNavigation(tournament && !tournamentsQuery.error && !roundsQuery.error && !deniedError && !terminalScoringError
+    ? { tournamentId: tournament.id, roundId: round?.id ?? null } : null,
+    !tournamentsQuery.isFetching && !tournamentsQuery.isPending
+      && (!tournament || !roundsQuery.isFetching && !roundsQuery.isPending))
 
   const loading = connectionLost
     ? <ErrorState error={new Error('Forbindelsen er brutt. Prøver å koble til igjen.')} onRetry={retryLive} />

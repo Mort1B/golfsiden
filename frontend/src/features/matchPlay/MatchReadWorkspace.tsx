@@ -1,3 +1,4 @@
+import { usePublishTournamentNavigation } from '../../routing/tournamentNavigation'
 import { Link } from 'react-router-dom'
 import { api } from '../../api/client'
 import { matchApi, matchKeys } from '../../api/matchPlay'
@@ -18,6 +19,9 @@ export function MatchReadWorkspace({ roundId, matchId }: { roundId: string; matc
     queryKey: matchKeys.read(userId, roundId, matchId ?? ''),
     queryFn: () => matchApi.read(roundId, matchId ?? ''), enabled: !!matchId && !!round.data, retry: false,
   })
+  usePublishTournamentNavigation(round.data && !round.error ? { tournamentId: round.data.tournament_id, roundId: round.data.id } : null,
+    !round.isPending && !round.isFetching)
+
   if (round.error && !round.data) return <section className="page"><ErrorState error={round.error} onRetry={() => void round.refetch()} /></section>
   if (!round.data) return <section className="page"><LoadingState /></section>
   return <section className="page match-page">

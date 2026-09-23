@@ -2,7 +2,9 @@ import { MatchPendingLink } from '../features/matchPlay/MatchPending'
 import { MatchQueueProvider } from '../features/matchPlay/offline/MatchQueueProvider'
 import { ScoreQueueProvider } from '../features/scoring/offline/ScoreQueueProvider'
 import { PendingScoreLink } from '../features/scoring/offline/PendingScores'
-import { useState } from 'react'
+import { useContext, useState } from 'react'
+import { TournamentNavigationProvider } from '../routing/TournamentNavigationProvider'
+import { TournamentNavigationContext, tournamentNavigationLinks } from '../routing/tournamentNavigation'
 import { BarChart3, ClipboardPen, LogIn, LogOut, Trophy, UserRound } from 'lucide-react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../features/auth/authContext'
@@ -16,7 +18,7 @@ const baseNavItems = [
 ]
 
 export function AppShell() {
-  return <ScoreQueueProvider><MatchQueueProvider><PrivateShell /></MatchQueueProvider></ScoreQueueProvider>
+  return <TournamentNavigationProvider><ScoreQueueProvider><MatchQueueProvider><PrivateShell /></MatchQueueProvider></ScoreQueueProvider></TournamentNavigationProvider>
 }
 
 function PrivateShell() {
@@ -26,6 +28,8 @@ function PrivateShell() {
   const path = useLocation().pathname
   const matchScoring = /\/matches(?:\/[^/]+\/score)?$/.test(path)
   const matchResults = path.includes('/match-results') || /\/matches\/[^/]+$/.test(path)
+  const navigation = useContext(TournamentNavigationContext)
+  const links = tournamentNavigationLinks(navigation?.selection ?? null)
   const navItems = baseNavItems
 
   return (
@@ -49,7 +53,9 @@ function PrivateShell() {
       </main>
       <nav className={`bottom-nav nav-count-${navItems.length}`} aria-label="Hovedmeny">
         {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} aria-current={to === '/score' && matchScoring || to === '/leaderboard' && matchResults ? 'page' : undefined} className={({ isActive }) => isActive || to === '/score' && matchScoring || to === '/leaderboard' && matchResults ? 'nav-link active' : 'nav-link'}>
+          <NavLink key={to} to={to === '/score' ? links.score : to === '/leaderboard' ? links.results : to}
+            aria-disabled={navigation?.pending && (to === '/score' || to === '/leaderboard') || undefined}
+            onClick={event => { if (navigation?.pending && (to === '/score' || to === '/leaderboard')) event.preventDefault() }} aria-current={to === '/score' && matchScoring || to === '/leaderboard' && matchResults ? 'page' : undefined} className={({ isActive }) => isActive || to === '/score' && matchScoring || to === '/leaderboard' && matchResults ? 'nav-link active' : 'nav-link'}>
             <Icon aria-hidden="true" size={21} strokeWidth={2} />
             <span>{label}</span>
           </NavLink>

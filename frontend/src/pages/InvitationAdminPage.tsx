@@ -1,3 +1,4 @@
+import { usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft } from 'lucide-react'
@@ -45,6 +46,9 @@ export function InvitationAdminPage() {
   const memberships = useQuery({ queryKey: tournamentKeys.mine(userId), queryFn: tournamentApi.mine, enabled: userId.length > 0 })
   const membership = memberships.data?.find((entry) => entry.tournament.id === tournamentId)
   const authorized = membership?.role === 'admin'
+  usePublishTournamentNavigation(authorized && !memberships.error ? { tournamentId } : null,
+    !memberships.isPending && !memberships.isFetching)
+
   if (!isCanonicalUuid(tournamentId)) return <AdminState title="Ugyldig turnering" />
   if (memberships.isPending) return <section className="page"><LoadingState /></section>
   if (memberships.error) return <section className="page"><ErrorState error={memberships.error} onRetry={() => void memberships.refetch()} /></section>

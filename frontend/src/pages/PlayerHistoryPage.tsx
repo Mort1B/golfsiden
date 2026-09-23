@@ -1,3 +1,4 @@
+import { usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 import { usePrivateResultQuery } from '../features/leaderboards/usePrivateResultQuery'
 import { MatchResults } from './MatchResultsPage'
 import { useQueryClient } from '@tanstack/react-query'
@@ -37,6 +38,9 @@ export function PlayerHistoryPage() {
     }),
     enabled: tournamentId !== '' && playerId !== '' && roundsQuery.data?.some(r => r.scoring_format !== 'singles_match_play') === true && !roundsQuery.error,
   })
+  usePublishTournamentNavigation(roundsQuery.data && !roundsQuery.error ? { tournamentId, scope: 'tournament', metric } : null,
+    !roundsQuery.isPending && !roundsQuery.isFetching, roundsQuery.data)
+
   const matchOnly = roundsQuery.data !== undefined && roundsQuery.data.every(r => r.scoring_format === 'singles_match_play')
   const player = leaderboardQuery.data?.entries.find((entry) => entry.player_id === playerId)
   const canonical = new URLSearchParams({ metric })

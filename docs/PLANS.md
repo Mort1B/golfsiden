@@ -18,87 +18,9 @@ from repairs; prioritize concrete reproducible risks and validation evidence.
 
 No additional implementation step is currently approved.
 
-### Next candidate: preserve tournament context
+### Next candidate: functionality, design and Chrome deployment validation
 
-**Proposed; planning only, awaiting implementation approval.** Preserve the
-separately planned security assessment. This is the next product repair, followed by
-the validation-only candidate below. Execute one bounded step at a time.
-
-Goal: a golfer or organizer working in tournament B can move between its rounds,
-Score, Resultater, and administration without unexpectedly landing in tournament A.
-
-Source evidence to reproduce: `frontend/src/ui/AppShell.tsx` currently links to
-bare `/score` and `/leaderboard`. Score has separate session-local resume IDs in
-`useScoreWorkspaceData.ts`; results selects from URL parameters in
-`LeaderboardPage.tsx`. Round links already use `scoringSearch` and
-`leaderboardSearch`. These are source observations, not a verified browser failure.
-
-Scope: first reproduce with one account belonging to two tournaments, selecting
-the non-default tournament. Trace main navigation, tournament/round pages,
-management, private history/read cards, and singles-match routes. Repair only the
-selection and link boundaries necessary to retain validated context. Use existing
-typed URL builders, router ownership, identity-scoped queries, and score-resume
-semantics. No backend contract, migration, scoring rule, or visual redesign is
-planned; a need for one becomes a separate bounded candidate.
-
-Required behavior:
-
-- An explicit valid route/URL selection wins over remembered selection. Navigation
-  within a tournament carries its validated ID and a compatible round ID; a round
-  from another tournament must never travel with it. Resolve round-only routes
-  through authorized loaded data before remembering their tournament.
-- Main Score and Resultater actions retain the current tournament. From a neutral
-  page such as Profil, retain only the last validated context in the current
-  account session. Keep the tournament list and an explicit switch accessible;
-  entering the list alone must not silently select another tournament.
-- Switching tournaments clears incompatible round, owner, match, hole and
-  destination-specific state. Keep result scope/metric where valid. Never copy
-  score-owner or match identity into a destination where it has no meaning.
-- Main Score navigation keeps fresh-authority resume behavior and selects the
-  first missing persisted hole or complete-card summary within the selected
-  tournament/round. Explicit score URLs retain their requested hole/view. Do not
-  turn contextual navigation into an explicit URL that accidentally skips resume
-  freshness checks. Singles match play keeps its existing dedicated entry flow.
-- Refresh, copied canonical URLs, login return, and browser Back/Forward preserve
-  explicit selections. A bare URL in a new application session uses existing
-  authorized defaults; no new persistent storage is required. Sign-out/account
-  change clears remembered context. Context is never proof of permission.
-- Malformed, stale, inaccessible, or cross-tournament identifiers cannot enable a
-  mismatched query or display stale private content. Revalidate authority, clear
-  invalid context, and show an appropriate denied/empty/selection state or the
-  existing authorized fallback. Loading and failed reads cannot establish new
-  remembered context; delayed responses from A cannot replace B.
-- Pending score edits, offline queues and conflicts retain their exact targets
-  and existing navigation guards. Never redirect or replay a queued mutation into
-  another tournament while preserving navigation context.
-
-Invariants: preserve every root product invariant, administrator-managed teams,
-session/private-cache isolation, server-owned handicaps and gross/net/Stableford
-results, hidden-result projections, round locks and audited corrections. Add no
-global copy of server state or new authorization authority.
-
-Validation: create a failing two-tournament reproduction before repair, then
-exercise both directions between Score and Resultater, management/round entry,
-Profil return, switching, deep links, reload, login return and Back/Forward. Cover
-admin, scorer and player access; a nonmember; removed membership; locked/no eligible
-rounds; empty/loading/error states; held late responses; pending/offline edits;
-and existing stroke-play, Stableford, four-ball and singles-match destinations.
-Assert the visible tournament/round, canonical URL, request targets and mutation
-targets, not just screenshots. Add focused behavior regressions, run the full
-frontend ladder from [the workflow](AGENT_WORKFLOW.md#validation-ladders), and
-repeat relevant Chrome route/resume/offline/identity browser regressions against
-the real local API with disposable fixtures. Require read-only review of routing,
-cache isolation and resume/queue interactions. Run backend/PostgreSQL ladders if
-their implementation boundaries change; stop and re-bound that scope first.
-
-Stop: after the reproduced context issue is fixed, reviewed, validated and
-documented in `Documentation.md`, `ARCHITECTURE.md` if ownership changes, and
-`LatestExplanation.md`, publish the bounded repair. Report unrelated findings as
-queued candidates; do not begin the broader audit automatically.
-
-### Following candidate: functionality, design and Chrome deployment validation
-
-**Proposed validation-only step; awaiting approval after the context repair.**
+**Proposed validation-only step; awaiting approval.**
 
 Goal: establish whether the existing product is usable for the friends' deployment
 and identify reproducible blockers without adding features or silently repairing

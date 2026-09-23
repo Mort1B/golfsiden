@@ -158,14 +158,14 @@ describe('scoring route resume', () => {
     await act(() => client.invalidateQueries({ queryKey: scoringKeys.scoring(session.user_id, round.id, owner) }))
     await expectHole(2)
   })
-  it('waits for authoritative data on return even with a fresh cached card; retry never resumes from stale data', async () => {
+  it.each(['/score', `/score?tournament=${tournament.id}&round=${round.id}&resume=1`])('waits for authoritative data on %s even with a fresh cached card; retry never resumes from stale data', async (target) => {
     const { router } = mount(explicit(8))
     await expectHole(8)
     await act(() => router.navigate('/elsewhere'))
     vi.mocked(api.scorecardScoring).mockRejectedValue(new Error('Read unavailable'))
-    await act(() => router.navigate('/score'))
+    await act(() => router.navigate(target))
     await screen.findByText('Read unavailable')
-    expect(router.state.location.search).toBe('')
+    expect(router.state.location.search).toBe(target.slice('/score'.length))
     vi.mocked(api.scorecardScoring).mockResolvedValue(card([1, 3]))
     fireEvent.click(screen.getByRole('button', { name: 'Prøv igjen' }))
     await expectHole(2)

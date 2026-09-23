@@ -496,16 +496,35 @@ Indicators appear on unscored holes as well as recorded scores, for both players
 and teams, and remain separate from gross/net score values. Accessible labels
 include the hole and number of strokes received or given back.
 
-The main **Score** navigation resumes the last successfully loaded tournament,
-round, and player/team in the current mounted application session. It waits for
-fresh tournament, round, access, completion, and card reads, then opens the
-lowest-numbered hole without a persisted score. A fully registered writable card
-opens its summary for confirmation. Failed reads show retry rather than choosing
-from a cached card. Signing out or changing account clears the remembered IDs;
-a full reload starts fresh unless the URL itself contains the selection.
-Explicit hole/summary URLs and browser Back/Forward keep their intended selection.
+The main **Score** and **Resultater** links keep the tournament and compatible
+round from the current authorized workspace. Tournament, management, round,
+invitation, match, history and read-card routes publish only validated selection
+IDs. Returning through **Profil** or the tournament list keeps that selection;
+merely opening the list does not select another tournament. Tournament-only pages
+retain a same-tournament round while their available round list still contains
+it. Switching tournament clears the old round, and explicit invalid selections
+never carry a foreign round. Result scope and gross/net preference are retained.
+
+The main **Score** link uses a contextual resume URL containing `tournament`, an
+optional `round`, and `resume=1`. Like bare `/score`, it waits for fresh tournament,
+round, access, completion, and card reads before opening the lowest-numbered hole
+without a persisted score, or the summary of a fully registered writable card.
+It only reuses a remembered player/team within the same tournament and round.
+Failed reads show retry rather than choosing from a cached card. An explicit
+owner/hole/view URL remains explicit even if a resume parameter is present.
 Saving or background refresh does not automatically advance the current hole.
-Read-only and restricted cards continue to select only returned visible holes.
+Read-only and restricted cards select only returned visible holes; singles match
+play retains its dedicated scoring entry.
+
+Navigation memory lasts only in the mounted private application shell and contains
+IDs and result-view preferences, never scores or permissions. Sign-out/account
+change clears it. Reloads and copied explicit URLs preserve the URL selection;
+a bare entry in a new session uses existing authorized defaults. Browser
+Back/Forward and login return keep explicit destinations. While a target's
+selection is unresolved, the two contextual navigation links wait; the tournament
+list and profile remain reachable. Denied/invalid targets and page-module failure
+clear context and restore ordinary navigation. Existing score-edit guards and
+pending mutations retain their exact targets throughout these transitions.
 
 Returning to a visible tab, a restored page, or a recovered network connection
 revalidates the session and refreshes the current workspace. A stopped live

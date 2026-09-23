@@ -1,3 +1,4 @@
+import { usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 import { MatchRound } from '../features/matchPlay/MatchRound'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, Flag, MapPin } from 'lucide-react'
@@ -19,6 +20,7 @@ import { FlightProgressPanel } from '../features/rounds/FlightProgressPanel'
 export function RoundPage() {
   const { roundId = '' } = useParams()
   const { session } = useAuth()
+  usePublishTournamentNavigation(null, !isCanonicalUuid(roundId))
   if (!isCanonicalUuid(roundId)) return <section className="page"><ErrorState error={new Error('Ugyldig runde.')} /></section>
   if (!session) return <section className="page"><LoadingState /></section>
   return <RoundWorkspace key={`${session.user_id}:${roundId}`} roundId={roundId} />
@@ -36,6 +38,9 @@ function RoundWorkspace({ roundId }: { roundId: string }) {
     queryFn: () => pairingApi.get(roundId, round.data?.tournament_id ?? ''),
     enabled: round.data !== undefined && !round.error,
   })
+  usePublishTournamentNavigation(round.data && !round.error ? { tournamentId: round.data.tournament_id, roundId: round.data.id } : null,
+    !round.isPending && !round.isFetching)
+
   const retry = () => { void round.refetch(); void pairings.refetch() }
   if (round.isPending) return <section className="page"><LoadingState /></section>
   if (round.error) return <section className="page"><ErrorState error={round.error} onRetry={() => { void round.refetch() }} /></section>

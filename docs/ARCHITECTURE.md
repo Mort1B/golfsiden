@@ -808,14 +808,29 @@ and reapplies runtime grants before the API is started.
   score access, preserves the hole on quick switches, and replaces rapid switch
   history. The route prefetches only adjacent writable owner keys; TanStack Query
   remains the sole owner of authoritative scorecard reads.
-  Bare `/score` is the ordinary resume entry; it forces fresh reads on the same
-  canonical keys and waits for successful post-mount fetches before replacing
-  the URL with the first missing hole or a complete writable card's summary.
-  Explicit URL navigation never applies this resume decision. A narrow transient
-  provider remembers only validated tournament/round/tagged-owner IDs during the
-  mounted application session. It clears that state synchronously on identity
-  changes without remounting the router or discarding onboarding/invitation
-  success receipts. It stores no card, permission, score intent, or server data.
+  Bare `/score` and contextual `tournament`/optional `round`/`resume=1` entries
+  force fresh reads on the same canonical keys and wait for successful post-mount
+  fetches before replacing the URL with the first missing hole or complete-card
+  summary. An owner/hole/view parameter keeps explicit navigation semantics.
+  The existing score-resume provider remembers only selection IDs, including the
+  tagged owner; owner reuse requires both the selected tournament and round to
+  match. Explicit leaderboard controls commit URL changes synchronously so rapid
+  consecutive selections read the committed scope and metric.
+- `TournamentNavigationProvider` owns transient navigation hints within the
+  private shell: tournament/round IDs and result scope/metric. Route workspaces
+  publish after their typed authority queries settle successfully; loading cannot
+  establish new context and denied/invalid routes clear it. Tournament-only
+  publication retains a same-tournament round, checked against the route's loaded
+  round collection when available; explicit null clears a disproven selection.
+  This is not permission or a copy of server state. The router still owns explicit
+  selection and TanStack Query still owns data, decoding and authorization reads.
+  Route-key and user guards reject old publishers and clear visible links before
+  another route/account renders. Neutral profile/list pages retain the last
+  validated hints; new target pages wait for their own publication. Score and
+  results links are temporarily unavailable while the target is unresolved, with
+  list/profile navigation still usable. No local/session storage is introduced,
+  and score/match queues and their blockers are unchanged. Score-owner resume and
+  navigation memory cannot move pending writes to a different target.
 - Visibility events synchronously clear role-projected leaderboard, completion,
   history, drilldown, and actor-free scorecard query state before authoritative
   refetch. An EventSource error performs the same transition without refetching

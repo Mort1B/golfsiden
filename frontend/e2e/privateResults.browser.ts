@@ -14,7 +14,15 @@ for (const [view, status] of [['card', 401], ['history', 403], ['round', 404]] a
       : `/leaderboard?tournament=${f.tournament.id}&scope=round&round=${f.round.id}&metric=gross`
     let liveRequests = 0
     page.on('request', request => { if (new URL(request.url()).pathname.endsWith('/live')) liveRequests++ })
-    await page.addInitScript(() => {
+    await page.addInitScript(({ target }) => {
+      const nativeFetch = window.fetch
+      window.fetch = async (input, init) => {
+        const path = new URL(input instanceof Request ? input.url : input, location.href).pathname
+        const afterOpen = Number(document.documentElement.dataset.testLiveOpen ?? '0') > 0
+        const response = await nativeFetch(input, init)
+        if (path === target && afterOpen && response.ok) document.documentElement.dataset.testLiveResultReady = '1'
+        return response
+      }
       const Native = EventSource
       window.EventSource = class extends Native {
         constructor(url: string | URL, options?: EventSourceInit) {
@@ -23,11 +31,15 @@ for (const [view, status] of [['card', 401], ['history', 403], ['round', 404]] a
           this.addEventListener('error', () => { document.documentElement.dataset.testLiveError = String(Number(document.documentElement.dataset.testLiveError ?? '0') + 1) })
         }
       }
-    })
+    }, { target })
     await page.setViewportSize({ width: 390, height: 844 }); await page.goto(path)
     const resultName = page.locator('.main-content').getByText(name, { exact: true })
     await expect(resultName).toBeVisible()
     await expect.poll(() => page.evaluate(() => Number(document.documentElement.dataset.testLiveOpen ?? '0')), { timeout: 30_000 }).toBeGreaterThan(0)
+    // Stream open clears the initial projection and starts an authoritative read.
+    // Inject the transient error only after that read has restored the baseline.
+    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.testLiveResultReady)).toBe('1')
+    await expect(resultName).toBeVisible()
     const initialLive = liveRequests; expect(initialLive).toBeGreaterThan(0)
     let responseStatus = 500
     await page.route(url => url.pathname === target, route => responseStatus === 200 ? route.continue() : route.fulfill({ status: responseStatus, json: { error: { code: 'private_result_test', message: responseStatus === 500 ? 'Temporary failure' : 'Access denied' } } }))

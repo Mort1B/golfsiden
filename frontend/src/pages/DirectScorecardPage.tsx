@@ -1,3 +1,4 @@
+import { usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 import { usePrivateResultQuery } from '../features/leaderboards/usePrivateResultQuery'
 import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { useEffect } from 'react'
@@ -55,6 +56,9 @@ export function DirectScorecardPage() {
     enabled: ownerEntry !== null,
     retry: false,
   })
+
+  usePublishTournamentNavigation(round && !roundsQuery.error ? { tournamentId, roundId: round.id, metric } : null,
+    targetOwner === null || !roundsQuery.isPending && !roundsQuery.isFetching)
 
   const visibleHole = canonicalVisibleHole(cardQuery.data?.holes.map((hole) => hole.hole_number) ?? [], requestedHole)
   const hole = cardQuery.data?.holes.find((candidate) => candidate.hole_number === visibleHole)

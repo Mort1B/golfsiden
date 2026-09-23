@@ -1,3 +1,4 @@
+import { usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft } from 'lucide-react'
@@ -55,6 +56,11 @@ function TournamentManagementWorkspace({ tournamentId }: { tournamentId: string 
     queryFn: () => tournamentApi.rounds(tournamentId),
     enabled,
   })
+
+  usePublishTournamentNavigation(enabled && !rounds.error ? { tournamentId,
+    roundId: selectedRoundId === null ? undefined : rounds.data?.find(round => round.id === selectedRoundId)?.id ?? null } : null,
+    access.state !== 'loading' && !memberships.isFetching && !tournament.isFetching
+      && (!enabled || !rounds.isPending && !rounds.isFetching), rounds.data)
 
   useEffect(() => {
     if (access.state !== 'ready') return

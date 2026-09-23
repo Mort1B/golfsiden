@@ -64,8 +64,8 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
     : undefined
   const requestedOwner = selectedOwner(
     progressOwners,
-    searchParams.get('owner_type') ?? (resume && round?.id === selection?.roundId ? selection?.owner.type ?? null : null),
-    searchParams.get('owner') ?? (resume && round?.id === selection?.roundId ? selection?.owner.id ?? null : null),
+    searchParams.get('owner_type') ?? (resume && tournament?.id === selection?.tournamentId && round?.id === selection?.roundId ? selection?.owner.type ?? null : null),
+    searchParams.get('owner') ?? (resume && tournament?.id === selection?.tournamentId && round?.id === selection?.roundId ? selection?.owner.id ?? null : null),
     writableOwners,
   )
   const owner = useMemo(() => requestedOwner

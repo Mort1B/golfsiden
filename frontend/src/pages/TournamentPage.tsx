@@ -1,3 +1,4 @@
+import { usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, Flag, Settings, MapPin, Users } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
@@ -23,6 +24,9 @@ function TournamentWorkspace({ tournamentId }: { tournamentId: string }) {
   const rounds = useQuery({ queryKey: tournamentKeys.rounds(userId, tournamentId), queryFn: () => api.rounds(tournamentId) })
   const memberships = useQuery({ queryKey: tournamentKeys.mine(userId), queryFn: api.myTournaments, enabled: userId.length > 0 })
   const isTournamentAdmin = memberships.data?.some((entry) => entry.tournament.id === tournamentId && entry.role === 'admin') ?? false
+
+  usePublishTournamentNavigation(tournament.data && !tournament.error && !rounds.error ? { tournamentId: tournament.data.id } : null,
+    !tournament.isPending && !tournament.isFetching && !rounds.isPending && !rounds.isFetching, rounds.data)
 
   if (tournament.isPending) return <section className="page"><LoadingState /></section>
   if (tournament.error) return <section className="page"><ErrorState error={tournament.error} /></section>
