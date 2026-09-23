@@ -18,34 +18,25 @@ from repairs; prioritize concrete reproducible risks and validation evidence.
 
 No additional implementation step is currently approved.
 
-### Next candidate: disposable deployment and recovery rehearsal
+### Next candidate: correct the backup verification example
 
-**Proposed validation-only step; awaiting approval.** Continue the outstanding
-recovery gate from the [friends deployment assessment](validation/friends-2026-09-23/README.md).
+**Proposed documentation-only repair; awaiting approval.** Resolve OPS-1 from the
+[recovery rehearsal](validation/recovery-2026-09-23/README.md).
 
-Goal: establish that the current production images, migrations, restricted runtime
-role, proxy and backup/restore procedures work together on disposable data.
+Goal: make the documented standalone checksum command work when the dump and its
+basename-relative sidecar live outside the checkout.
 
-Scope: an isolated production Compose project with unused ports/volumes and
-synthetic accounts. Build the current images, initialize with owner migrations,
-refresh runtime grants, start the restricted API and proxy, write representative
-scores and permissions, back up and restore into a second fresh isolated target.
-Verify authenticated reads, score preservation, migration state and private/public
-visibility after restore. Keep operational findings separate from repairs.
+Scope/behavior: update the Backup example in `deployment_guide.md` to verify from
+the dump directory; update the current explanation and finding status. Preserve
+the existing backup/restore scripts, image configuration and application behavior.
 
-Invariants: do not deploy to production, use real credentials/data, overwrite
-existing volumes, or alter server scoring/authorization behavior. Browser drafts
-are outside server backups and must not be presented as restored server data.
-Preserve the separate security assessment and its findings/plan state.
+Validation: reproduce the old failure and corrected success using a temporary
+non-secret file/sidecar outside the checkout, run documentation checks and review
+the scoped diff. Preserve the separate security assessment and its plan state.
 
-Validation: exercise the documented operator commands, health/readiness, exact
-restored values and API authorization. Record image/source revisions, commands,
-failures and untested external DNS/TLS/browser/device prerequisites. Produce a
-reviewed readiness report and one bounded next candidate if a defect is found.
-
-Stop: publish the validation report; do not silently implement operational fixes
-or start a production deployment. Native 200% browser zoom and physical Android
-remain separate outstanding acceptance checks when suitable tools/devices exist.
+Stop: publish only the reviewed documentation repair. Do not begin security
+remediation, production deployment or additional feature work. Public-host
+acceptance, native 200% zoom and physical Android Chrome remain outstanding.
 
 No automatic opponents/byes/brackets, team match play, extra holes, new scoring
 rules, public match sharing, cold offline launch or background sync is included.

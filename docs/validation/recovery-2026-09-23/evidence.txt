@@ -1,0 +1,98 @@
+=== source-snapshot.log ===
+source: 47 public tables fingerprinted; 277 rows
+{"_sqlx_migrations": 32, "course_presets": 3, "courses": 5, "flight_memberships": 3, "flights": 2, "handicap_history": 4, "holes": 90, "invitation_redemptions": 1, "password_recovery_authority_changes": 8, "players": 4, "round_handicap_snapshots": 3, "rounds": 3, "score_audits": 38, "score_mutation_receipts": 1, "scores": 38, "tees": 5, "tournament_handicap_history": 4, "tournament_handicap_locks": 2, "tournament_invitations": 3, "tournament_memberships": 4, "tournament_overall_configuration_guards": 3, "tournament_players": 4, "tournament_result_share_audits": 1, "tournament_result_shares": 1, "tournaments": 3, "user_sessions": 8, "users": 4}
+
+=== restore-snapshot.log ===
+restore: 47 public tables fingerprinted; 277 rows
+{"_sqlx_migrations": 32, "course_presets": 3, "courses": 5, "flight_memberships": 3, "flights": 2, "handicap_history": 4, "holes": 90, "invitation_redemptions": 1, "password_recovery_authority_changes": 8, "players": 4, "round_handicap_snapshots": 3, "rounds": 3, "score_audits": 38, "score_mutation_receipts": 1, "scores": 38, "tees": 5, "tournament_handicap_history": 4, "tournament_handicap_locks": 2, "tournament_invitations": 3, "tournament_memberships": 4, "tournament_overall_configuration_guards": 3, "tournament_players": 4, "tournament_result_share_audits": 1, "tournament_result_shares": 1, "tournaments": 3, "user_sessions": 8, "users": 4}
+Every table count and canonical row-data SHA-256 matches source exactly.
+
+=== restore-guards.log ===
+Documented checksum command from checkout: exit 1
+source.dump: FAILED open or read
+sha256sum: source.dump: No such file or directory
+sha256sum: WARNING: 1 listed file could not be read
+
+Checksum from dump directory: exit 0
+source.dump: OK
+
+Missing restore confirmation: exit 2
+set CONFIRM_EMPTY_RESTORE=RESTORE_TO_EMPTY_DATABASE after verifying the target
+
+Mismatched checksum: exit 1
+bad-checksum.dump: FAILED
+sha256sum: WARNING: 1 computed checksum did NOT match
+
+Valid checksum but truncated archive: exit 1
+truncated.dump: OK
+pg_restore: error: could not read from input file: end of file
+
+Empty schema after failed transaction: exit 0
+0
+
+Successful restore: exit 0
+source.dump: OK
+GRANT
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+Restore complete; start api and web, then verify /api/ready and tournament state.
+ Container golf-rehearsal-restore-738ec1d-postgres-1 Running
+ Container golf-rehearsal-restore-738ec1d-postgres-1 Waiting
+ Container golf-rehearsal-restore-738ec1d-postgres-1 Healthy
+ Container golf-rehearsal-restore-738ec1d-permissions-run-dc51a0448416 Creating
+ Container golf-rehearsal-restore-738ec1d-permissions-run-dc51a0448416 Created
+
+Repeat restore rejects populated schema: exit 1
+source.dump: OK
+refusing restore: target public schema contains 358 objects
+
+
+=== role-and-rollback.log ===
+golfsiden_app|f|f|f|f|t|f
+BEGIN
+ERROR:  permission denied for schema public
+LINE 1: CREATE TABLE public.rehearsal_forbidden(id int);
+                     ^
+BEGIN
+ERROR:  permission denied for table _sqlx_migrations
+Runtime schema creation and migration-history mutation denied.
+
+Late-truncated archive has a readable complete table of contents.
+Restore executed CREATE TABLE and table data before the injected late EOF failure.
+0
+
+Late failure rolled back all public objects; task-owned probe database removed.
+
+=== fixture-verify.log ===
+verify: admin/member reads, gross/net standings, scoring card, anonymous 401, outsider 403, public projection and admin-cookie projection equal before/after restore
+Exact assertions: admin gross 74/net 62/18 holes; public front nine totals 36 and 45; cookie-independent public projection.
+
+=== chrome-source.log ===
+
+Running 1 test using 1 worker
+
+(node:462222) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] e2e/deploymentBoundary.browser.ts:9:1 › HTTPS proxy preserves secure sessions, score persistence and native live results
+  1 passed (17.3s)
+
+=== chrome-restored.log ===
+
+Running 1 test using 1 worker
+
+(node:470616) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+
+
+[1/1] e2e/deploymentBoundary.browser.ts:9:1 › HTTPS proxy preserves secure sessions, score persistence and native live results
+  1 passed (17.3s)
+
+=== browser-restored.log ===
+Browser 153.0.8010.36
+Restored admin: UI login, exact persisted totals at 390x844 and 1280x900, no overflow or unexpected console/HTTP errors.
+Restored member: UI login, exact persisted totals at 390x844 and 1280x900, no overflow or unexpected console/HTTP errors.

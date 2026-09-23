@@ -14,6 +14,12 @@ This assessment does not authorize deployment or claim those untested boundaries
 are safe. There is no completed security report in the current documentation from
 which to infer either a clean verdict or additional confirmed vulnerabilities.
 
+Follow-up: the [disposable recovery rehearsal](../recovery-2026-09-23/README.md)
+subsequently built the complete production images, proved exact restore parity
+and passed Chrome checks on the restored stack. That closes the local recovery
+exercise; the security, public-host and device gates still prevent sign-off.
+The original evidence and limitations below describe this earlier assessment.
+
 ## Confirmed findings
 
 Follow-up: UI-1, UI-2 and UI-3 were repaired and regression-tested in the

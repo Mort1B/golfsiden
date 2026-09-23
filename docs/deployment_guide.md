@@ -568,9 +568,16 @@ exercised production API mode, secure cookies and native score events through
 the proxy. It used an internal local certificate and did not assemble the full
 production Compose deployment or validate public DNS/ACME.
 
-Deployment sign-off is **NOT READY**: the separate security assessment and a
-current backup/restore exercise remain unresolved. Native 200% browser zoom and
-physical Android Chrome also remain unverified. The report's three frontend
+The subsequent [disposable recovery rehearsal](validation/recovery-2026-09-23/README.md)
+built all current production images, restored 47 tables with exact data parity,
+and passed Chrome checks on both stacks. It used Docker Compose on rootless
+Podman and local TLS; Docker Engine and public DNS/ACME acceptance remain untested.
+The report records OPS-1: the Backup section's checksum example needs to run from
+the dump directory. The restore script already handles this correctly.
+
+Deployment sign-off is **NOT READY**: the separate security assessment, public-host
+acceptance, native 200% browser zoom and physical Android Chrome remain unresolved.
+The report's three frontend
 accessibility defects were repaired in the subsequent
 [navigation accessibility step](validation/navigation-accessibility-2026-09-23/README.md).
 Complete the outstanding deployment/browser gates before treating
