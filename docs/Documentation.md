@@ -481,6 +481,15 @@ revisions, event IDs and audit details. Only authorized scoring reads expose the
 revision and accepted IDs needed for reporting/correction. Committed `match` SSE
 events invalidate private match, lifecycle and result queries for fresh reads.
 
+## Keyboard navigation and layout
+
+Private pages reserve scrolling space around the fixed navigation so Tab and
+Shift+Tab keep focused controls and tournament cards readable. Mobile clearance
+includes the device's bottom safe-area inset. At 700px the menu becomes a left
+rail and the scroll clearance follows that layout. Public and sign-in pages do
+not inherit the private menu spacing. Back controls measure 44×44 CSS pixels;
+small tournament section counts use darker text for readable contrast.
+
 ## Mobile score entry
 
 The React `/score` page keeps tournament, round, tagged owner, hole, and

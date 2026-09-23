@@ -9,12 +9,17 @@ Date: 2026-09-23. Google Chrome 153.0.8010.36 on Linux
 **NOT READY for deployment sign-off.** The tested browser journeys provide broad
 functional evidence, but the separate security assessment and a current deployment
 restore exercise remain unresolved. Native 200% browser zoom and physical Android
-Chrome were not verified. Three reproducible usability defects also remain below.
+Chrome were not verified. Three reproducible usability defects were also identified; their follow-up is recorded below.
 This assessment does not authorize deployment or claim those untested boundaries
 are safe. There is no completed security report in the current documentation from
 which to infer either a clean verdict or additional confirmed vulnerabilities.
 
 ## Confirmed findings
+
+Follow-up: UI-1, UI-2 and UI-3 were repaired and regression-tested in the
+[navigation accessibility step](../navigation-accessibility-2026-09-23/README.md).
+The table below preserves the original assessment evidence. This does not close
+the separate security, recovery or physical-device acceptance gates.
 
 | ID | Severity | Scenario and reproduction | Expected / observed | Evidence |
 | --- | --- | --- | --- | --- |
@@ -28,10 +33,10 @@ WCAG 2.4.11. UI-3 uses the unrounded threshold described by
 [W3C's contrast guidance](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html).
 The 44px requirement for UI-2 comes from `frontend/AGENTS.md`.
 
-Next bounded repair: shared navigation/focus clearance, the back target and these
-section-count colors. Preserve layout language and all route/scoring behavior;
-add focused browser regressions and rerun the affected frontend checks. Do not
-combine this with new features or the separate security remediation queue.
+The subsequent bounded repair addressed shared navigation/focus clearance, the
+back target and these section-count colors. It preserved layout language and
+route/scoring behavior and added focused Chrome regressions. See the follow-up
+linked above; the separate security and deployment gates remain open.
 
 ## Tested topology and limits
 

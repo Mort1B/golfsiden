@@ -54,6 +54,16 @@ boundaries: treating them as chunk failures could unmount a scorer, release its
 guard and expose an unsafe reload. Durable score queues and transient edit guards
 remain owned by the existing providers and scoring features.
 
+## Private-shell scroll clearance
+
+Shared CSS reserves root scroll padding only while `.app-shell` is mounted.
+Below 700px, bottom clearance matches the existing 76px content allowance plus
+the bottom safe-area inset; desktop uses an 8px block margin and 100px left
+clearance for the 92px navigation rail. Native keyboard focus scrolling uses this
+space without a focus listener or route effect. Public/authentication pages retain
+their ordinary scrolling. Shared detail headers allocate a 44px back-control
+column, and small section counts use the established darker secondary text color.
+
 ## Production delivery boundary
 
 The portable production topology is one same-origin HTTPS boundary. Caddy serves

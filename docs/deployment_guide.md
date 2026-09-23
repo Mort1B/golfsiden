@@ -570,6 +570,8 @@ production Compose deployment or validate public DNS/ACME.
 
 Deployment sign-off is **NOT READY**: the separate security assessment and a
 current backup/restore exercise remain unresolved. Native 200% browser zoom and
-physical Android Chrome also remain unverified, and the report records three
-frontend accessibility defects. Complete those outstanding gates before treating
+physical Android Chrome also remain unverified. The report's three frontend
+accessibility defects were repaired in the subsequent
+[navigation accessibility step](validation/navigation-accessibility-2026-09-23/README.md).
+Complete the outstanding deployment/browser gates before treating
 the local browser results as a production-readiness verdict.

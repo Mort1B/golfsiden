@@ -18,37 +18,34 @@ from repairs; prioritize concrete reproducible risks and validation evidence.
 
 No additional implementation step is currently approved.
 
-### Next candidate: navigation and focus accessibility repairs
+### Next candidate: disposable deployment and recovery rehearsal
 
-**Proposed; awaiting implementation approval.** Findings and reproduction are in
-[the friends deployment assessment](validation/friends-2026-09-23/README.md).
+**Proposed validation-only step; awaiting approval.** Continue the outstanding
+recovery gate from the [friends deployment assessment](validation/friends-2026-09-23/README.md).
 
-Goal: keep keyboard-focused content readable above fixed navigation and meet the
-existing touch-target and text-contrast requirements.
+Goal: establish that the current production images, migrations, restricted runtime
+role, proxy and backup/restore procedures work together on disposable data.
 
-Scope: shared frontend focus/scroll clearance for the profile tournament cards,
-the 40px back-navigation target, and low-contrast tournament section counts.
-Preserve the visual language, navigation destinations and all scoring, account,
-team and privacy behavior. No API, migration, new features or redesign.
+Scope: an isolated production Compose project with unused ports/volumes and
+synthetic accounts. Build the current images, initialize with owner migrations,
+refresh runtime grants, start the restricted API and proxy, write representative
+scores and permissions, back up and restore into a second fresh isolated target.
+Verify authenticated reads, score preservation, migration state and private/public
+visibility after restore. Keep operational findings separate from repairs.
 
-Behavior: at 320×600, keyboard traversal must keep the focused card's identifying
-content clear of the bottom menu without manual scrolling. Primary back controls
-must measure at least 44×44 CSS pixels. Small section-count text must reach 4.5:1
-contrast on its actual background.
+Invariants: do not deploy to production, use real credentials/data, overwrite
+existing volumes, or alter server scoring/authorization behavior. Browser drafts
+are outside server backups and must not be presented as restored server data.
+Preserve the separate security assessment and its findings/plan state.
 
-Validation: begin with the recorded failures; add focused browser regressions for
-keyboard focus and geometry, both sides of 700px, mobile/desktop and long content.
-Check score/profile/management clearance, error/empty/populated states, focus
-visibility and touch targets. Run the full frontend ladder and Chrome checks;
-use native 200% zoom if available and explicitly record any remaining device gap.
-Require read-only review and update affected behavior/validation documentation.
+Validation: exercise the documented operator commands, health/readiness, exact
+restored values and API authorization. Record image/source revisions, commands,
+failures and untested external DNS/TLS/browser/device prerequisites. Produce a
+reviewed readiness report and one bounded next candidate if a defect is found.
 
-Invariants: preserve all root product rules, private-data isolation, contextual
-navigation, pending-write guards and existing mutation targets.
-
-Stop: publish only the reviewed, validated accessibility repair, then wait.
-Deployment sign-off still requires the separate security assessment, recovery
-validation and remaining browser/device gates from the report.
+Stop: publish the validation report; do not silently implement operational fixes
+or start a production deployment. Native 200% browser zoom and physical Android
+remain separate outstanding acceptance checks when suitable tools/devices exist.
 
 No automatic opponents/byes/brackets, team match play, extra holes, new scoring
 rules, public match sharing, cold offline launch or background sync is included.
