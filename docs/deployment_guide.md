@@ -600,10 +600,14 @@ checks do not establish public TLS, deployment-role or physical-device acceptanc
 The [local result-projection assessment](validation/result-projection-security-2026-09-23/README.md)
 confirmed SHARE-1 (P2): public-link issuance can complete after session expiry
 during a late audit-table wait. The reproducer required a maintenance-style lock;
-no anonymous mechanism for inducing it was shown. No repair is included in that
-assessment. Existing projection, privacy and installed Chrome scenarios passed.
+no anonymous mechanism for inducing it was shown. The subsequent
+[SHARE-1 repair](validation/result-share-session-expiry-2026-09-23/README.md)
+rechecks session validity after writes and immediately before commit. Expired
+issue/replacement/revoke requests roll back with 401 and no invalidation event;
+failed replacement/revoke preserves the old grant unchanged. No migration or operator
+configuration change is required.
 
-Deployment sign-off is **NOT READY**: SHARE-1 remains unfixed; remaining security assessment,
+Deployment sign-off is **NOT READY**: remaining security assessment,
 public-host acceptance, native 200% browser zoom and physical Android Chrome remain
 unresolved.
 The report's three frontend

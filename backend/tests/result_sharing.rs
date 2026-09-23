@@ -5,6 +5,8 @@ mod api;
 mod races;
 #[path = "result_sharing/schema.rs"]
 mod schema;
+#[path = "result_sharing/session_expiry.rs"]
+mod session_expiry;
 #[path = "result_sharing/support.rs"]
 mod support;
 #[path = "result_sharing/visibility.rs"]

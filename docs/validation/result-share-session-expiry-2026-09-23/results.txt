@@ -1,0 +1,49 @@
+SHARE-1 result-link session-expiry repair, 2026-09-23
+Parent revision: ef79897
+PostgreSQL 17.10, disposable loopback database, cached image, tmpfs data.
+
+Before repair, new expiry regressions: 4 failed; 4 valid controls passed.
+Expired issue: 201 vs expected 401.
+Expired replacement old audit: 500 vs expected 401.
+Expired replacement new audit: 201 vs expected 401.
+Expired revoke: 204 vs expected 401.
+After repair, entire result_sharing target: 22 passed, 0 failed, 0 ignored.
+
+cargo fmt --all -- --check: exit 0.
+cargo test --offline --workspace --all-targets: exit 0; 215 passed.
+cargo clippy --offline --workspace --all-targets --all-features -- -D warnings: exit 0.
+First full PostgreSQL ladder: exit 101; stopped at round_configuration.
+Unchanged configuration_first_commits_before_waiting_open_rechecks_readiness:
+returned 409 where 200 expected; other 15 tests in that target passed.
+Focused rerun of that test: exit 0; 1 passed, 15 filtered.
+Full PostgreSQL --no-fail-fast rerun: exit 0; 615 passed, 0 failed, 3 ignored.
+These feature-enabled totals include backend unit tests, not 615 database-only cases.
+Ignored: match_listing_benchmark hundred_matches, twelve_matches, twenty_four_matches;
+they require exclusive disposable PostgreSQL with pg_stat_statements.
+Full Rust/PostgreSQL runs use RUST_TEST_THREADS=4.
+cargo run --offline -p golf-api --bin migrate: exit 0; migrations current.
+cargo run --offline -p golf-api --bin seed: exit 0; synthetic seed completed.
+Frontend focused result-sharing/private-result suite: 35 passed in 5 files.
+Frontend build/type compilation: passed.
+Chrome 153.0.8010.36: 2 scenarios passed (55.3 seconds).
+Layouts: 17 states x 3 widths (320x600, 390x844, 1280x900); 51 screenshots.
+Three fresh representative screenshots inspected and retained.
+
+Independent read-only implementation/test/documentation review: no findings;
+reviewer did not independently rerun tests. Complete initial DB failure retained
+above; its test uses timing waits and was not changed in this bounded step.
+Existing vendored SQLx and Node color-environment warnings unchanged.
+Full frontend test/lint and public deployment/device gates not rerun; no UI source changed.
+
+No platform cybersecurity safeguard or automatic approval rejection.
+Initial sandboxed DB connection failed before tests could run meaningfully:
+failed to connect to setup test database: Io(Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" })
+Same offline tests completed with local permission against disposable loopback only.
+
+Cleanup: API and Vite stopped (expected Ctrl-C wrapper interruption).
+golf-share-repair-pg and tmpfs database removed; synthetic postgres.env/config.json deleted.
+No listeners on 3000/5173/55443. Existing golf-cancel-pg:55439 and
+golf-security-review-pg:55440 remain untouched.
+
+SHARE-1 repaired. Broader security/public-host/device acceptance remains NOT READY.
+Local-only commit; no push, production, external targets or real credentials.

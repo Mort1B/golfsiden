@@ -2,6 +2,9 @@
 
 Date: 2026-09-23. Assessed revision: `7fdb2e0`.
 
+Subsequent disposition: [SHARE-1 repair](../result-share-session-expiry-2026-09-23/README.md).
+The findings and validation below describe the pre-repair revision.
+
 **One confirmed finding: SHARE-1 (P2/medium), late session expiry during public
 result-link issuance.** No cross-tournament access or public field leak was
 demonstrated. This is a bounded assessment, not proof that other defects do not

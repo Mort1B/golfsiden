@@ -1,35 +1,40 @@
-# Result-projection assessment confirms a late session-expiry defect
+# Result-link mutations now reject late session expiry
 
-The bounded [result-projection assessment](validation/result-projection-security-2026-09-23/README.md)
-confirmed SHARE-1 (P2/medium). A public-link issue request starts with a valid
-administrator session and CSRF token, waits during its audit write, then commits
-a usable grant after the session expires. The local probe observed the precise
-database wait and expiry, a 201 issue response, persisted grant/audit and event,
-then session 401 and anonymous capability 200. An unexpired control succeeded.
+The [SHARE-1 repair](validation/result-share-session-expiry-2026-09-23/README.md)
+rechecks session validity after grant/audit writes immediately before commit.
+Replacement also checks after the old grant's audit, before inserting the new
+link. Detected expiry now returns 401 and rolls back every grant/audit change
+without an invalidation event. Failed replacement/revoke preserves the original
+grant unchanged; an otherwise valid capability remains usable.
 
-The deliberate blocker was a maintenance-style audit-table lock; no anonymous
-ability to cause it was demonstrated. The empty synthetic tournament proves
-capability usability, not populated-score disclosure. No expired-at-entry,
-cross-tournament, CSRF or public-field bypass was established. Revoke has a
-similar source pattern but was not independently reproduced. Recommended repair:
-recheck the session after grant/audit writes immediately before commit, with
-rollback/no-event expiry tests for issue, replacement and revoke.
+Eight deterministic database cases cover expired and valid sessions for issue,
+revoke and both replacement audit writes. Before the repair, expired issue/new
+replacement returned 201, revoke returned 204, and expiry between replacement
+writes returned 500. All four expiry cases now return 401; controls preserve
+normal responses, audit counts and exactly one event. Tests observe the exact
+wait while the session is active and then wait for database wall-clock expiry.
+The synthetic maintenance/advisory waits do not demonstrate an anonymous ability
+to induce such a delay in production.
 
-Application source, tests, migrations and dependencies are unchanged. The report
-separates confirmed evidence from private-read lifecycle and format-coverage gaps.
-Two independent read-only reviews covered public and private boundaries; the
-public reviewer also checked the diagnostic reproduction and final report.
+The change reuses existing held session/user locks and the active-session
+predicate; exact membership, expected-grant intent and public projections remain
+unchanged. No migration, dependency or frontend source changed. Expiry during
+COMMIT itself is outside the promised boundary. Independent read-only code,
+regression and documentation review found no issues.
 
-Validation passed 45 PostgreSQL tests, one Rust unit test, 35 frontend tests and
-a production frontend build. Both result-sharing scenarios passed in installed
-Chrome 153 at 320, 390 and 1280px, producing 51 layout samples. Representative
-mobile live results, long names and desktop error screenshots were inspected.
-The real flow exercised issue/copy/replace/revoke; mocked states covered loading,
-errors, empty/long results and return/offline behavior.
+Validation passed formatting, 215 backend tests, Clippy, migration/seed, 35
+frontend tests and a frontend production build. The complete PostgreSQL-enabled
+rerun passed 615 tests, with three existing benchmark tests ignored. Its first
+attempt hit an unchanged round-configuration race test (409 versus 200); that
+test passed alone and in the full rerun. The report preserves that failure and
+the timing-test concern instead of silently treating the first run as green.
 
-The assessment is complete, but deployment remains **NOT READY** with SHARE-1
-unfixed and broader persistence, operational and public-host/device gates open.
-No platform cybersecurity safeguard blocked the review; a sandboxed Podman
-inspection needed local permission and then succeeded. Cleanup and sanitized
-results are recorded with the report. Work remains local without a push.
-The next proposed bounded step repairs SHARE-1; implementation remains separate.
+Both sharing scenarios passed in installed Chrome 153 at 320, 390 and 1280px.
+Fresh representative screenshots were inspected. Disposable services and
+synthetic credentials were removed. A sandboxed database connection initially
+needed local permission; no cybersecurity safeguard blocked the work.
+
+SHARE-1 is repaired. Overall deployment remains **NOT READY** pending broader
+persistence, operational and public-host/device gates. The next proposed bounded
+step is a read-only browser/offline persistence assessment. Work remains local
+without a push; no queued work was started.

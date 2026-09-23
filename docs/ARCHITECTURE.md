@@ -597,6 +597,11 @@ and reapplies runtime grants before the API is started.
   are preserved snapshots rather than user foreign keys. Grants belong to the
   tournament and survive issuer demotion; management rechecks current exact-admin
   session, membership and credential generation under locks.
+  Management rechecks wall-clock session validity after grant/audit writes and
+  immediately before commit; replacement also rechecks after terminating the old
+  grant, before inserting the new one. Detected expiry returns unauthenticated and
+  rolls back every grant/audit change without invalidation. Existing locks preserve
+  concurrent authority; this does not promise atomic expiry during COMMIT itself.
 - Public reads hold the grant `FOR SHARE` through repeatable-read fact loading and
   assembly, with wall-clock expiry checks after grant waits and after loading.
   Queued readers whose grant changed under repeatable read fail unavailable.

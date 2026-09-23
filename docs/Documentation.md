@@ -706,9 +706,14 @@ The [result-projection assessment](validation/result-projection-security-2026-09
 confirmed SHARE-1: an initially authorized public-link issue request can commit
 a usable grant after session expiry during a later audit-table wait. A controlled
 local reproducer used a maintenance-style table lock; anonymous ability to cause
-that wait was not demonstrated. This remains unfixed. Existing private/public
-projection and Chrome checks passed; no cross-tournament or public field leak
-was demonstrated. Broader persistence and operational assessment remains open.
+that wait was not demonstrated. The subsequent
+[SHARE-1 repair](validation/result-share-session-expiry-2026-09-23/README.md)
+rechecks the session after grant/audit writes and immediately before commit.
+Replacement also checks after the old grant's audit, before the new insertion.
+Detected expiry returns 401, rolls back every grant/audit change and emits no
+invalidation; failed replacement/revoke preserves the old grant unchanged. Existing
+private/public projection checks found no cross-tournament or public field leak.
+Broader persistence and operational assessment remains open.
 
 `tournament_memberships` owns the role for a specific trip. Tournament admins
 and scorers can write any eligible card in that tournament. A tournament player

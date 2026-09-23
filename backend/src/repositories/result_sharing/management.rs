@@ -1,6 +1,21 @@
 use super::*;
-use crate::{domain::result_sharing::ResultShareTokenHash, repositories::tournament_authorization};
+use crate::{
+    domain::result_sharing::ResultShareTokenHash,
+    repositories::{auth, tournament_authorization},
+};
 use sqlx::{PgPool, Postgres, Transaction};
+
+// Session/user and membership locks are already held, but natural expiry can
+// occur during subsequent grant/audit writes. Failure rolls back the transaction.
+async fn require_active_session(
+    tx: &mut Transaction<'_, Postgres>,
+    session: Uuid,
+) -> Result<(), ShareError> {
+    auth::lock_active_session(tx, session)
+        .await?
+        .ok_or(AuthorizationError::Unauthenticated)?;
+    Ok(())
+}
 
 async fn authorize(
     tx: &mut Transaction<'_, Postgres>,
@@ -75,10 +90,13 @@ pub async fn issue(
             .await?;
         sqlx::query("UPDATE tournament_result_shares SET revoked_at=clock_timestamp(),revoked_by=$2 WHERE id=$1")
             .bind(previous.id).bind(actor).execute(&mut *tx).await?;
+        // Detect expiry at the old grant's audit before the new grant's guard.
+        require_active_session(&mut tx, session).await?;
     }
     let grant=sqlx::query_as(&format!("WITH stamp AS (SELECT GREATEST(clock_timestamp(),$5::timestamptz + interval '1 microsecond') AS created) INSERT INTO tournament_result_shares(id,tournament_id,token_hash,created_by,created_at,expires_at) SELECT $1,$2,$3,$4,created,created+interval '30 days' FROM stamp RETURNING {METADATA}"))
         .bind(Uuid::new_v4()).bind(tournament).bind(hash.as_bytes()).bind(actor).bind(previous.as_ref().map(|p|p.created_at))
         .fetch_one(&mut *tx).await?;
+    require_active_session(&mut tx, session).await?;
     tx.commit().await?;
     Ok(grant)
 }
@@ -100,6 +118,7 @@ pub async fn revoke(
         sqlx::query("UPDATE tournament_result_shares SET revoked_at=clock_timestamp(),revoked_by=$2 WHERE id=$1")
             .bind(grant).bind(actor).execute(&mut *tx).await?;
     }
+    require_active_session(&mut tx, session).await?;
     tx.commit().await?;
     Ok(changed)
 }
