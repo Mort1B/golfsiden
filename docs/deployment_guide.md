@@ -319,8 +319,11 @@ whose entry uses only the dump basename, so the pair can be moved together:
 
 ```bash
 scripts/backup-production.sh .env.production /secure-staging/golfsiden-YYYYMMDD-HHMM.dump
-sha256sum --check /secure-staging/golfsiden-YYYYMMDD-HHMM.dump.sha256
+(cd /secure-staging && sha256sum --check golfsiden-YYYYMMDD-HHMM.dump.sha256)
 ```
+
+Run checksum verification from the dump directory because the sidecar records
+only the dump basename. The subshell keeps your original working directory.
 
 Copy both files to encrypted off-host storage, then test restores on a schedule.
 Choose retention based on the tournament calendar; at minimum keep multiple
@@ -572,8 +575,8 @@ The subsequent [disposable recovery rehearsal](validation/recovery-2026-09-23/RE
 built all current production images, restored 47 tables with exact data parity,
 and passed Chrome checks on both stacks. It used Docker Compose on rootless
 Podman and local TLS; Docker Engine and public DNS/ACME acceptance remain untested.
-The report records OPS-1: the Backup section's checksum example needs to run from
-the dump directory. The restore script already handles this correctly.
+The report's OPS-1 documentation finding is resolved: the Backup example now
+verifies from the dump directory. The restore script already handled this correctly.
 
 Deployment sign-off is **NOT READY**: the separate security assessment, public-host
 acceptance, native 200% browser zoom and physical Android Chrome remain unresolved.

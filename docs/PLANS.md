@@ -18,25 +18,13 @@ from repairs; prioritize concrete reproducible risks and validation evidence.
 
 No additional implementation step is currently approved.
 
-### Next candidate: correct the backup verification example
+### Remaining deployment acceptance
 
-**Proposed documentation-only repair; awaiting approval.** Resolve OPS-1 from the
-[recovery rehearsal](validation/recovery-2026-09-23/README.md).
-
-Goal: make the documented standalone checksum command work when the dump and its
-basename-relative sidecar live outside the checkout.
-
-Scope/behavior: update the Backup example in `deployment_guide.md` to verify from
-the dump directory; update the current explanation and finding status. Preserve
-the existing backup/restore scripts, image configuration and application behavior.
-
-Validation: reproduce the old failure and corrected success using a temporary
-non-secret file/sidecar outside the checkout, run documentation checks and review
-the scoped diff. Preserve the separate security assessment and its plan state.
-
-Stop: publish only the reviewed documentation repair. Do not begin security
-remediation, production deployment or additional feature work. Public-host
-acceptance, native 200% zoom and physical Android Chrome remain outstanding.
+Public-host acceptance still needs a Docker Engine environment and public DNS/TLS
+validation. Native 200% browser zoom and physical Android Chrome also remain
+unverified. Confirm the available host/browser/device environment before defining
+the next bounded acceptance step. Keep the separate security assessment above
+distinct from these operational and device acceptance checks.
 
 No automatic opponents/byes/brackets, team match play, extra holes, new scoring
 rules, public match sharing, cold offline launch or background sync is included.

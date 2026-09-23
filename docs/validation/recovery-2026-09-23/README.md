@@ -10,8 +10,9 @@ images built, initialized a new database, served the application, and recovered
 all stored data into a separate fresh target using the repository scripts.
 **Overall friends deployment: NOT READY.** The separate security assessment,
 public-host DNS/ACME acceptance, native 200% zoom and physical Android Chrome
-checks remain outstanding. A confirmed P2 operator-documentation defect is
-queued separately; this assessment does not silently repair it.
+checks remain outstanding. The P2 operator-documentation defect recorded below
+was resolved in a subsequent documentation-only repair; the original rehearsal
+evidence remains unchanged.
 
 ## Isolation and versions
 
@@ -151,12 +152,12 @@ fixtures. They are not general-purpose production administration tools.
   [admin desktop](restored-admin-1280.png), [member phone](restored-member-390.png),
   [member desktop](restored-member-1280.png).
 
-## Confirmed finding: OPS-1 (P2)
+## Confirmed finding: OPS-1 (P2; resolved)
 
-`docs/deployment_guide.md`'s Backup example checks an absolute `.sha256` path while
-remaining in the checkout. The backup script deliberately writes a basename-only
-checksum entry. `sha256sum` resolves that entry against the current directory,
-not the sidecar's directory, so the documented command fails on a valid backup:
+At assessment time, `docs/deployment_guide.md`'s Backup example checked an absolute
+`.sha256` path while remaining in the checkout. The backup script deliberately
+writes a basename-only checksum entry. `sha256sum` resolves that entry against the current directory,
+not the sidecar's directory, so the original command failed on a valid backup:
 
 ```text
 source.dump: FAILED open or read
@@ -167,8 +168,24 @@ Running `(cd /tmp/golf-rehearsal-738ec1d && sha256sum --check source.dump.sha256
 passed immediately. The restore script already changes to the dump directory
 and therefore restored successfully. Impact: a false backup-verification failure
 in the documented operator flow; no observed backup corruption or restore loss.
-The bounded next repair is to correct the guide example and verify it using a
-sidecar outside the checkout. Application and script changes are unnecessary.
+
+Follow-up repair (2026-09-23): the guide now uses a subshell to change into the
+dump directory before checking the basename-relative sidecar. Application and
+backup/restore scripts are unchanged.
+
+Validation used a non-secret temporary file and sidecar outside the checkout.
+Both command forms were extracted from the old/current guide; only the example
+directory was replaced with the temporary location. Executed from the checkout:
+
+| Check | Exit | Result |
+| --- | --- | --- |
+| Original absolute-sidecar command | 1 | Dump basename not found |
+| Corrected subshell command | 0 | Checksum OK |
+| Corrected command after changing file contents | 1 | Checksum mismatch rejected |
+
+The caller's directory was preserved and the temporary fixture removed. Relative
+documentation links, the scoped diff and whitespace checks passed. This closes
+OPS-1 without repeating or changing the earlier deployment/recovery results.
 
 ## Limits and cleanup
 
