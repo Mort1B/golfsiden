@@ -1,0 +1,151 @@
+{
+  "rows": [
+    {
+      "tag": "BUTTON",
+      "name": "Logg ut",
+      "top": 8,
+      "bottom": 52,
+      "cover": "path.[object SVGAnimatedString]",
+      "visible": true,
+      "notCovered": true,
+      "outline": "rgb(16, 16, 16) auto 1px"
+    },
+    {
+      "tag": "A",
+      "name": "Opprett ny turnering",
+      "top": 240.921875,
+      "bottom": 288.921875,
+      "cover": "A.button primary",
+      "visible": true,
+      "notCovered": true,
+      "outline": "rgb(99, 169, 132) solid 3px"
+    },
+    {
+      "tag": "A",
+      "name": "KladdGolfturen med et langt turneringsnavn for alle vennene 1790184058",
+      "top": 304.921875,
+      "bottom": 459.921875,
+      "cover": "H3.",
+      "visible": true,
+      "notCovered": true,
+      "outline": "rgb(16, 16, 16) auto 1px"
+    },
+    {
+      "tag": "A",
+      "name": "AktivLagturneringen 1790184206637Spiller",
+      "top": 469.921875,
+      "bottom": 599.921875,
+      "cover": "NAV.bottom-nav nav-count-4",
+      "visible": true,
+      "notCovered": false,
+      "outline": "rgb(16, 16, 16) auto 1px"
+    },
+    {
+      "tag": "A",
+      "name": "AktivLagturneringen 1790184236684Spiller",
+      "top": 234.921875,
+      "bottom": 364.921875,
+      "cover": "H3.",
+      "visible": true,
+      "notCovered": true,
+      "outline": "rgb(16, 16, 16) auto 1px"
+    },
+    {
+      "tag": "A",
+      "name": "Gå til turneringsoversikten",
+      "top": 380.921875,
+      "bottom": 402.921875,
+      "cover": "A.",
+      "visible": true,
+      "notCovered": true,
+      "outline": "rgb(16, 16, 16) auto 1px"
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Oppdater profil og turneringer",
+      "top": 426.921875,
+      "bottom": 470.921875,
+      "cover": "BUTTON.button secondary",
+      "visible": true,
+      "notCovered": true,
+      "outline": "rgb(99, 169, 132) solid 3px"
+    },
+    {
+      "tag": "INPUT",
+      "name": "",
+      "top": 277.3125,
+      "bottom": 322.09375,
+      "cover": "INPUT.",
+      "visible": true,
+      "notCovered": true,
+      "outline": "rgb(118, 184, 141) solid 3px"
+    },
+    {
+      "tag": "INPUT",
+      "name": "",
+      "top": 366.484375,
+      "bottom": 411.265625,
+      "cover": "INPUT.",
+      "visible": true,
+      "notCovered": true,
+      "outline": "rgb(118, 184, 141) solid 3px"
+    },
+    {
+      "tag": "BUTTON",
+      "name": "Lagre navn og handicap",
+      "top": 278.265625,
+      "bottom": 322.265625,
+      "cover": "BUTTON.button primary",
+      "visible": true,
+      "notCovered": true,
+      "outline": "rgb(99, 169, 132) solid 3px"
+    },
+    {
+      "tag": "SUMMARY",
+      "name": "Endre brukernavn",
+      "top": 363.265625,
+      "bottom": 409.046875,
+      "cover": "H2.",
+      "visible": true,
+      "notCovered": true,
+      "outline": "rgb(118, 184, 141) solid 3px"
+    },
+    {
+      "tag": "SUMMARY",
+      "name": "Endre passord",
+      "top": 450.046875,
+      "bottom": 495.828125,
+      "cover": "H2.",
+      "visible": true,
+      "notCovered": true,
+      "outline": "rgb(118, 184, 141) solid 3px"
+    },
+    {
+      "tag": "A",
+      "name": "Turnering",
+      "top": 541,
+      "bottom": 595,
+      "cover": "path.[object SVGAnimatedString]",
+      "visible": true,
+      "notCovered": true,
+      "outline": "rgb(16, 16, 16) auto 1px"
+    },
+    {
+      "tag": "A",
+      "name": "Score",
+      "top": 541,
+      "bottom": 595,
+      "cover": "path.[object SVGAnimatedString]",
+      "visible": true,
+      "notCovered": true,
+      "outline": "rgb(16, 16, 16) auto 1px"
+    }
+  ],
+  "usernameDisclosureEnter": true,
+  "clearance": {
+    "mainBottom": 600.171875,
+    "lastControlBottom": 492.171875,
+    "navTop": 534,
+    "scrollY": 1370
+  }
+}

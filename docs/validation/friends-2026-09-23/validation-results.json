@@ -1,0 +1,208 @@
+{
+  "application_commit": "38e3eef43ecbdc9e6d00605aedcac8b248d07144",
+  "date": "2026-09-23",
+  "browser": "Google Chrome 153.0.8010.36",
+  "os": "Linux 7.2.5-200.fc44.x86_64",
+  "unit_tests": {
+    "files": 116,
+    "passed": 751
+  },
+  "frontend_checks": [
+    "typecheck",
+    "lint",
+    "build",
+    "browser TypeScript"
+  ],
+  "browser_runs": [
+    {
+      "run": "routes",
+      "log": "/tmp/golf-audit-routes.log",
+      "summary": {
+        "passed": 42,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "handicap",
+      "log": "/tmp/golf-audit-handicap.log",
+      "summary": {
+        "passed": 2,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "tie-mock",
+      "log": "/tmp/golf-audit-tie-mock.log",
+      "summary": {
+        "passed": 1,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "core",
+      "log": "/tmp/golf-audit-core.log",
+      "summary": {
+        "passed": 31,
+        "failed": 29,
+        "skipped": null
+      }
+    },
+    {
+      "run": "core-recovery",
+      "log": "/tmp/golf-audit-core-recovery.log",
+      "summary": {
+        "passed": 26,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "coursePresets",
+      "log": "/tmp/golf-audit-coursePresets.log",
+      "summary": {
+        "passed": 2,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "courseLayout",
+      "log": "/tmp/golf-audit-courseLayout.log",
+      "summary": {
+        "passed": 3,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "organizerSummary",
+      "log": "/tmp/golf-audit-organizerSummary.log",
+      "summary": {
+        "passed": 1,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "roundDetails",
+      "log": "/tmp/golf-audit-roundDetails.log",
+      "summary": {
+        "passed": 1,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "tournamentCreation",
+      "log": "/tmp/golf-audit-tournamentCreation.log",
+      "summary": {
+        "passed": 2,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "profile",
+      "log": "/tmp/golf-audit-profile.log",
+      "summary": {
+        "passed": 3,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "passwordRecovery",
+      "log": "/tmp/golf-audit-passwordRecovery.log",
+      "summary": {
+        "passed": 2,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "tournamentTieBreak",
+      "log": "/tmp/golf-audit-tournamentTieBreak.log",
+      "summary": {
+        "passed": 1,
+        "failed": 1,
+        "skipped": null
+      }
+    },
+    {
+      "run": "flightProgress",
+      "log": "/tmp/golf-audit-flightProgress.log",
+      "summary": {
+        "passed": null,
+        "failed": 1,
+        "skipped": null
+      }
+    },
+    {
+      "run": "flightProgress-final",
+      "log": "/tmp/golf-audit-flightProgress-final.log",
+      "summary": {
+        "passed": 1,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "roundLifecycle",
+      "log": "/tmp/golf-audit-roundLifecycle.log",
+      "summary": {
+        "passed": 1,
+        "failed": 1,
+        "skipped": null
+      }
+    },
+    {
+      "run": "roundLifecycle-final",
+      "log": "/tmp/golf-audit-roundLifecycle-final.log",
+      "summary": {
+        "passed": 2,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "tournamentCompletion",
+      "log": "/tmp/golf-audit-tournamentCompletion.log",
+      "summary": {
+        "passed": 1,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "tournamentArchive",
+      "log": "/tmp/golf-audit-tournamentArchive.log",
+      "summary": {
+        "passed": 1,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "resultSharing",
+      "log": "/tmp/golf-audit-resultSharing.log",
+      "summary": {
+        "passed": 1,
+        "failed": null,
+        "skipped": null
+      }
+    },
+    {
+      "run": "secure-final",
+      "log": "/tmp/golf-audit-secure-final.log",
+      "summary": {
+        "passed": 1,
+        "failed": null,
+        "skipped": null
+      }
+    }
+  ],
+  "note": "Runs overlap; failed initial harness runs are retained. See README for final case results and limitations."
+}

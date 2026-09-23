@@ -1,91 +1,57 @@
-# Navigation keeps the selected tournament and round
+# Friends deployment validation
 
-The bounded context repair replaces bare main-menu destinations with validated
-session-local tournament and round selections. The controlled Chrome reproduction
-used an account with two active tournaments: opening the non-default tournament's
-round and choosing **Resultater** previously selected the other tournament.
-The same case now keeps the tournament and round.
+The functionality, design and Chrome assessment is complete for application
+commit `38e3eef`. The full [report and evidence](validation/friends-2026-09-23/README.md)
+record commands, topology, roles, viewports, confirmed findings and skipped gates.
+No production application code, scoring rules or schemas changed.
 
-Route workspaces publish IDs after their existing typed queries succeed. The
-private shell retains those hints through **Profil** and the tournament list.
-Tournament-only pages keep an earlier selected round within the same tournament,
-checking the loaded rounds when available. Switching tournament, an explicit
-invalid round, a removed round, or authorization denial cannot carry that old
-selection into a replacement workspace. Old route/account callbacks are ignored.
-Malformed routes and module-loading failures restore ordinary navigation;
-contextual links wait while a new target is still unresolved.
+The deployment sign-off verdict is **NOT READY**. The separate security assessment
+and a current backup/restore exercise remain unresolved; physical Android and
+native 200% Chrome zoom were not verified. The tested desktop Chrome journeys
+provide broad functional evidence but cannot establish those deployment gates.
 
-Main **Score** navigation uses `tournament`, optional `round`, and `resume=1`.
-It keeps the existing fresh-authority checks before choosing the first missing
-persisted hole or complete-card summary. Explicit owner/hole/view URLs, login
-return and Back/Forward retain their exact selection. The score-owner resume hint
-is usable only in its original tournament and round. Explicit results-control
-changes commit synchronously so a rapid scope change followed by a tournament
-selection cannot reuse the previous scope. The new memory contains no
-scores or permissions and does not change score/match queues, mutation targets,
-API contracts, backend rules or database schemas.
+Three UI defects were reproduced:
 
-For example, after scoring hole 1 in tournament B's earlier round, a golfer can
-visit results, switch to Brutto, visit Profil and return to Score. The application
-keeps B and that round, refreshes authority and opens hole 2. Tournament A receives
-no score mutation. Returning through B's tournament overview also preserves the
-earlier round, even when a later round is open.
+- Keyboard focus on a profile tournament card can be partly covered by fixed
+  navigation at 320×600. Manual scrolling reveals it.
+- Management back navigation is 40×40px, below the repository's 44×44px requirement.
+- Small tournament section counts measure 4.4705:1 contrast, below 4.5:1.
 
-Read-only review identified and resolved invalid-route navigation lockout,
-retained context after delayed stroke/match authorization denial, and loss of an
-earlier round through tournament-only pages. The final review found no remaining
-concrete blockers in this scope. The broader functionality/design/deployment
-assessment is separate and has not been performed.
+The next product candidate is one bounded shared navigation/focus accessibility
+repair. It remains proposed; this assessment does not implement those fixes.
+The pre-existing separate security-review plan edits are preserved.
 
-## Validation
+## Functional and browser evidence
 
-- `npm --prefix frontend run test`: 751 tests across 116 files passed.
-- `npm --prefix frontend run typecheck`, `npm --prefix frontend run lint`,
-  `npm --prefix frontend run build`, and
-  `frontend/node_modules/.bin/tsc -p frontend/tsconfig.browser.json --noEmit`: passed.
-- `npx playwright test --config playwright.routes.config.ts` from `frontend/`:
-  all 42 production-build Chrome cases passed, covering route chunks, recovery,
-  pending-write guards, identity transitions, result privacy, lost/frozen/visible
-  returns and overlapping authority refresh. These cases use controlled API
-  fixtures, including held responses and simulated failures.
-- Real-API production-preview matrix: all 32 cases passed, covering context,
-  stroke play, Stableford, four-ball, singles match play, private results,
-  confirmation, locks and offline delivery. Subsequent final changes were limited
-  to the rapid results-control race and more precise test readiness checks.
-- The original rapid results-switch regression passed three consecutive runs
-  after the control fix; no extra wait was added to that sequence.
-- Final context/results/private-read suite: all 15 cases passed on the final
-  production build, including a real separate-account nonmember denial and
-  the strengthened post-SSE private-result baseline checks.
-- Documentation links, `git diff --check`, and changed production-file line limits:
-  passed. Independent read-only review has no remaining concrete blockers.
+The assessment exercised account/profile/recovery, tournament creation and joining,
+manual organizer team/flight setup, saved courses, score entry and persistence,
+existing formats, offline/retry/conflicts, return freshness, private reads,
+completion/archive and public result-sharing boundaries. The detailed report
+separates real API assertions from mocked layout/error tests.
 
-Chrome was Google Chrome 153.0.8010.36 on Linux. The new context journeys use
-320x600, 390x900 and 1280x900 viewports and assert URLs, visible selection, exact
-mutation destinations, persisted scores, console/network health, navigation
-hit targets and overflow. Phone and desktop screenshots were inspected. Test
-accounts and scores belong to the disposable `golf-context-pg` database; existing
-security-review services/data were not used.
+Chrome 153.0.8010.36 ran on Linux. Layout checks covered 320×600, 390×844, 699×900,
+700×900 and 1280×900; screenshots and DOM geometry were inspected. Main navigation,
+profile, saved courses and administration were reachable on mobile and desktop.
+The actual UI journey issued an invitation, joined an existing account, saved a
+supplied course, assigned two players to a team and flight, and opened the round.
 
-The first development-server two-tab lost-response test timed out; its isolated
-production-preview rerun passed without a test or queue-code change. One final
-matrix attempt could not connect because the preview process had terminated;
-that infrastructure failure is recorded separately from the restarted run.
-An earlier real-API run passed 28/32 cases. Investigation distinguished the actual
-rapid results-control race from test setup prerequisites: confirmation must be
-ready before holding its refetch, sign-out must finish before navigating to login,
-and the private projection must be restored after SSE opens before injecting a
-later transient failure. The unchanged baseline reproduced the confirmation
-setup failure; the rapid-switch and private-history failures reproduced against
-the changed build and were investigated separately. The original privacy,
-denial, retention and queue assertions remain intact.
+Production assets were served through Caddy against disposable PostgreSQL with
+separate owner/runtime roles. A separate HTTPS production-mode API smoke verified
+secure session attributes, CSP/security headers, a native score event through the
+same-origin proxy, persisted scores and an exact second-session gross total from
+5 to 9. Its local internal certificate does not prove public TLS/DNS readiness.
 
-No backend/migration code changed, so the Rust unit/Clippy and complete PostgreSQL
-ladders were not rerun. The real API used a fresh PostgreSQL database initialized
-by the existing migration runner; browser fixtures created their own tournaments.
-Physical Android Chrome, other browser engines, Caddy/TLS deployment, and the
-broader functionality/design assessment remain untested in this bounded repair.
-This iteration makes no deployment-readiness claim.
+All 751 frontend tests, typecheck, lint and production build passed. The browser
+matrix includes 42 route/return cases, 26 resumed core cases and independent fresh
+seed suites; final per-suite results and overlaps are recorded in the report.
 
-The bounded context repair is complete and reviewed. The next product step is the
-separate functionality, design and Chrome deployment assessment in `PLANS.md`.
+Only browser-test maintenance was needed: lifecycle assertions now use the current
+server-saved and flight-completion wording, with hidden-state checks strengthened.
+A new opt-in HTTPS regression covers the previously missing proxy event boundary.
+The initial local API outage, production onboarding rate limit during repeated
+fixture development, and mock-stream/CSP incompatibilities are documented rather
+than counted as passing checks. No production checks or policies were weakened.
+
+No backend or migration code changed, so the full Rust/PostgreSQL ladders were not
+repeated. Fresh migration/seed and real API mutation behavior were tested. This
+work does not deploy the application or modify real tournament data.

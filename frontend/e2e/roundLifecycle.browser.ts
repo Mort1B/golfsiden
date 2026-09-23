@@ -128,7 +128,7 @@ test('admin lifecycle, live readiness, corrections, permissions and final visibi
       await page.getByRole('link', { name: /^Fyll ut scorekort for / }).first().click()
       await page.locator('.scorecard-holes li').first().getByRole('button').click()
       await page.getByRole('button', { name: /^Registrer par/ }).click()
-      await expect(page.locator('.score-sync')).toHaveText(/^(Lagret|Synkronisert)$/)
+      await expect(page.locator('.score-sync')).toHaveText('Lagret på serveren')
       await page.goto(manage(round.id))
     }
     const firstOwner = await fillCards(api, round, auth.csrf_token)
@@ -153,7 +153,7 @@ test('admin lifecycle, live readiness, corrections, permissions and final visibi
       await otherPage.getByRole('button', { name: 'Korriger score', exact: true }).click()
       await otherPage.locator('.scorecard-holes li').first().getByRole('button').click()
       await otherPage.getByRole('button', { name: 'Legg til ett slag', exact: true }).click()
-      await expect(otherPage.locator('.score-sync')).toHaveText(/^(Lagret|Synkronisert)$/)
+      await expect(otherPage.locator('.score-sync')).toHaveText('Lagret på serveren')
       await expect(page.getByRole('button', { name: 'Lås runden', exact: true })).toBeDisabled()
       await page.locator('.organizer-summary').getByRole('link', { name: `Bekreft scorekort for ${firstOwner.owner_name}`, exact: true }).click()
       await page.getByRole('button', { name: 'Bekreft fullført scorekort', exact: true }).click()

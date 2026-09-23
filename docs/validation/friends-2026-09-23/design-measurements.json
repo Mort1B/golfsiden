@@ -1,0 +1,1597 @@
+{
+  "browser": "153.0.8010.36",
+  "viewport_checks": [
+    {
+      "name": "tournaments",
+      "width": 320,
+      "height": 600,
+      "innerWidth": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Dine turneringer",
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 83,
+            "bottom": 595,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 83,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 160,
+            "bottom": 595,
+            "left": 83
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 160,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 237,
+            "bottom": 595,
+            "left": 160
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 237,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 314,
+            "bottom": 595,
+            "left": 237
+          }
+        }
+      ],
+      "smallControls": []
+    },
+    {
+      "name": "tournaments",
+      "width": 390,
+      "height": 844,
+      "innerWidth": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Dine turneringer",
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 100.5,
+            "bottom": 839,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 100.5,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 195,
+            "bottom": 839,
+            "left": 100.5
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 195,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 289.5,
+            "bottom": 839,
+            "left": 195
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 289.5,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 384,
+            "bottom": 839,
+            "left": 289.5
+          }
+        }
+      ],
+      "smallControls": []
+    },
+    {
+      "name": "tournaments",
+      "width": 699,
+      "height": 900,
+      "innerWidth": 699,
+      "scrollWidth": 699,
+      "headings": [
+        "Dine turneringer",
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 177.75,
+            "bottom": 895,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 177.75,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 349.5,
+            "bottom": 895,
+            "left": 177.75
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 349.5,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 521.25,
+            "bottom": 895,
+            "left": 349.5
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 521.25,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 693,
+            "bottom": 895,
+            "left": 521.25
+          }
+        }
+      ],
+      "smallControls": []
+    },
+    {
+      "name": "tournaments",
+      "width": 700,
+      "height": 900,
+      "innerWidth": 700,
+      "scrollWidth": 700,
+      "headings": [
+        "Dine turneringer",
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 310.5,
+            "width": 79,
+            "height": 70,
+            "top": 310.5,
+            "right": 85,
+            "bottom": 380.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 380.5,
+            "width": 79,
+            "height": 70,
+            "top": 380.5,
+            "right": 85,
+            "bottom": 450.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 450.5,
+            "width": 79,
+            "height": 70,
+            "top": 450.5,
+            "right": 85,
+            "bottom": 520.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 520.5,
+            "width": 79,
+            "height": 70,
+            "top": 520.5,
+            "right": 85,
+            "bottom": 590.5,
+            "left": 6
+          }
+        }
+      ],
+      "smallControls": []
+    },
+    {
+      "name": "tournaments",
+      "width": 1280,
+      "height": 900,
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "headings": [
+        "Dine turneringer",
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 310.5,
+            "width": 79,
+            "height": 70,
+            "top": 310.5,
+            "right": 85,
+            "bottom": 380.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 380.5,
+            "width": 79,
+            "height": 70,
+            "top": 380.5,
+            "right": 85,
+            "bottom": 450.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 450.5,
+            "width": 79,
+            "height": 70,
+            "top": 450.5,
+            "right": 85,
+            "bottom": 520.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 520.5,
+            "width": 79,
+            "height": 70,
+            "top": 520.5,
+            "right": 85,
+            "bottom": 590.5,
+            "left": 6
+          }
+        }
+      ],
+      "smallControls": []
+    },
+    {
+      "name": "profile",
+      "width": 320,
+      "height": 600,
+      "innerWidth": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Min profil",
+        "Mine turneringer",
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742",
+        "Navn og handicap",
+        "Endre brukernavn",
+        "Endre passord"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 83,
+            "bottom": 595,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 83,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 160,
+            "bottom": 595,
+            "left": 83
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 160,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 237,
+            "bottom": 595,
+            "left": 160
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 237,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 314,
+            "bottom": 595,
+            "left": 237
+          }
+        }
+      ],
+      "smallControls": [
+        {
+          "text": "Gå til turneringsoversikten",
+          "tag": "A",
+          "width": 200.4,
+          "height": 22,
+          "cls": ""
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "width": 390,
+      "height": 844,
+      "innerWidth": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Min profil",
+        "Mine turneringer",
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742",
+        "Navn og handicap",
+        "Endre brukernavn",
+        "Endre passord"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 100.5,
+            "bottom": 839,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 100.5,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 195,
+            "bottom": 839,
+            "left": 100.5
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 195,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 289.5,
+            "bottom": 839,
+            "left": 195
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 289.5,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 384,
+            "bottom": 839,
+            "left": 289.5
+          }
+        }
+      ],
+      "smallControls": [
+        {
+          "text": "Gå til turneringsoversikten",
+          "tag": "A",
+          "width": 200.4,
+          "height": 22,
+          "cls": ""
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "width": 699,
+      "height": 900,
+      "innerWidth": 699,
+      "scrollWidth": 699,
+      "headings": [
+        "Min profil",
+        "Mine turneringer",
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742",
+        "Navn og handicap",
+        "Endre brukernavn",
+        "Endre passord"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 177.75,
+            "bottom": 895,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 177.75,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 349.5,
+            "bottom": 895,
+            "left": 177.75
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 349.5,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 521.25,
+            "bottom": 895,
+            "left": 349.5
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 521.25,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 693,
+            "bottom": 895,
+            "left": 521.25
+          }
+        }
+      ],
+      "smallControls": [
+        {
+          "text": "Gå til turneringsoversikten",
+          "tag": "A",
+          "width": 200.4,
+          "height": 22,
+          "cls": ""
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "width": 700,
+      "height": 900,
+      "innerWidth": 700,
+      "scrollWidth": 700,
+      "headings": [
+        "Min profil",
+        "Mine turneringer",
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742",
+        "Navn og handicap",
+        "Endre brukernavn",
+        "Endre passord"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 310.5,
+            "width": 79,
+            "height": 70,
+            "top": 310.5,
+            "right": 85,
+            "bottom": 380.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 380.5,
+            "width": 79,
+            "height": 70,
+            "top": 380.5,
+            "right": 85,
+            "bottom": 450.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 450.5,
+            "width": 79,
+            "height": 70,
+            "top": 450.5,
+            "right": 85,
+            "bottom": 520.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 520.5,
+            "width": 79,
+            "height": 70,
+            "top": 520.5,
+            "right": 85,
+            "bottom": 590.5,
+            "left": 6
+          }
+        }
+      ],
+      "smallControls": [
+        {
+          "text": "Gå til turneringsoversikten",
+          "tag": "A",
+          "width": 200.4,
+          "height": 22,
+          "cls": ""
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "width": 1280,
+      "height": 900,
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "headings": [
+        "Min profil",
+        "Mine turneringer",
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742",
+        "Navn og handicap",
+        "Endre brukernavn",
+        "Endre passord"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 310.5,
+            "width": 79,
+            "height": 70,
+            "top": 310.5,
+            "right": 85,
+            "bottom": 380.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 380.5,
+            "width": 79,
+            "height": 70,
+            "top": 380.5,
+            "right": 85,
+            "bottom": 450.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 450.5,
+            "width": 79,
+            "height": 70,
+            "top": 450.5,
+            "right": 85,
+            "bottom": 520.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 520.5,
+            "width": 79,
+            "height": 70,
+            "top": 520.5,
+            "right": 85,
+            "bottom": 590.5,
+            "left": 6
+          }
+        }
+      ],
+      "smallControls": [
+        {
+          "text": "Gå til turneringsoversikten",
+          "tag": "A",
+          "width": 200.4,
+          "height": 22,
+          "cls": ""
+        }
+      ]
+    },
+    {
+      "name": "manage",
+      "width": 320,
+      "height": 600,
+      "innerWidth": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742",
+        "Dette trenger oppfølging",
+        "Runde 1: Runden med et langt navn for alle vennene",
+        "Innstillinger",
+        "Tellende runder og lik totalscore",
+        "Del resultater offentlig",
+        "Deltakere",
+        "Invitasjoner",
+        "Runder",
+        "Baner",
+        "Spillegrupper",
+        "Rundestyring",
+        "Start turneringen",
+        "Administrer en runde",
+        "Fullfør turneringen",
+        "Arkiver turneringen"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 83,
+            "bottom": 595,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 83,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 160,
+            "bottom": 595,
+            "left": 83
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 160,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 237,
+            "bottom": 595,
+            "left": 160
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 237,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 314,
+            "bottom": 595,
+            "left": 237
+          }
+        }
+      ],
+      "smallControls": [
+        {
+          "text": "Tilbake til turneringen",
+          "tag": "A",
+          "width": 40,
+          "height": 40,
+          "cls": "back-button"
+        }
+      ]
+    },
+    {
+      "name": "manage",
+      "width": 390,
+      "height": 844,
+      "innerWidth": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742",
+        "Dette trenger oppfølging",
+        "Runde 1: Runden med et langt navn for alle vennene",
+        "Innstillinger",
+        "Tellende runder og lik totalscore",
+        "Del resultater offentlig",
+        "Deltakere",
+        "Invitasjoner",
+        "Runder",
+        "Baner",
+        "Spillegrupper",
+        "Rundestyring",
+        "Start turneringen",
+        "Administrer en runde",
+        "Fullfør turneringen",
+        "Arkiver turneringen"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 100.5,
+            "bottom": 839,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 100.5,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 195,
+            "bottom": 839,
+            "left": 100.5
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 195,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 289.5,
+            "bottom": 839,
+            "left": 195
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 289.5,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 384,
+            "bottom": 839,
+            "left": 289.5
+          }
+        }
+      ],
+      "smallControls": [
+        {
+          "text": "Tilbake til turneringen",
+          "tag": "A",
+          "width": 40,
+          "height": 40,
+          "cls": "back-button"
+        }
+      ]
+    },
+    {
+      "name": "manage",
+      "width": 699,
+      "height": 900,
+      "innerWidth": 699,
+      "scrollWidth": 699,
+      "headings": [
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742",
+        "Dette trenger oppfølging",
+        "Runde 1: Runden med et langt navn for alle vennene",
+        "Innstillinger",
+        "Tellende runder og lik totalscore",
+        "Del resultater offentlig",
+        "Deltakere",
+        "Invitasjoner",
+        "Runder",
+        "Baner",
+        "Spillegrupper",
+        "Rundestyring",
+        "Start turneringen",
+        "Administrer en runde",
+        "Fullfør turneringen",
+        "Arkiver turneringen"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 177.75,
+            "bottom": 895,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 177.75,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 349.5,
+            "bottom": 895,
+            "left": 177.75
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 349.5,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 521.25,
+            "bottom": 895,
+            "left": 349.5
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 521.25,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 693,
+            "bottom": 895,
+            "left": 521.25
+          }
+        }
+      ],
+      "smallControls": [
+        {
+          "text": "Tilbake til turneringen",
+          "tag": "A",
+          "width": 40,
+          "height": 40,
+          "cls": "back-button"
+        }
+      ]
+    },
+    {
+      "name": "manage",
+      "width": 700,
+      "height": 900,
+      "innerWidth": 700,
+      "scrollWidth": 700,
+      "headings": [
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742",
+        "Dette trenger oppfølging",
+        "Runde 1: Runden med et langt navn for alle vennene",
+        "Innstillinger",
+        "Tellende runder og lik totalscore",
+        "Del resultater offentlig",
+        "Deltakere",
+        "Invitasjoner",
+        "Runder",
+        "Baner",
+        "Spillegrupper",
+        "Rundestyring",
+        "Start turneringen",
+        "Administrer en runde",
+        "Fullfør turneringen",
+        "Arkiver turneringen"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 310.5,
+            "width": 79,
+            "height": 70,
+            "top": 310.5,
+            "right": 85,
+            "bottom": 380.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 380.5,
+            "width": 79,
+            "height": 70,
+            "top": 380.5,
+            "right": 85,
+            "bottom": 450.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 450.5,
+            "width": 79,
+            "height": 70,
+            "top": 450.5,
+            "right": 85,
+            "bottom": 520.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 520.5,
+            "width": 79,
+            "height": 70,
+            "top": 520.5,
+            "right": 85,
+            "bottom": 590.5,
+            "left": 6
+          }
+        }
+      ],
+      "smallControls": [
+        {
+          "text": "Tilbake til turneringen",
+          "tag": "A",
+          "width": 40,
+          "height": 40,
+          "cls": "back-button"
+        }
+      ]
+    },
+    {
+      "name": "manage",
+      "width": 1280,
+      "height": 900,
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "headings": [
+        "Golfturen med et langt turneringsnavn for alle vennene 1790184058742",
+        "Dette trenger oppfølging",
+        "Runde 1: Runden med et langt navn for alle vennene",
+        "Innstillinger",
+        "Tellende runder og lik totalscore",
+        "Del resultater offentlig",
+        "Deltakere",
+        "Invitasjoner",
+        "Runder",
+        "Baner",
+        "Spillegrupper",
+        "Rundestyring",
+        "Start turneringen",
+        "Administrer en runde",
+        "Fullfør turneringen",
+        "Arkiver turneringen"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 310.5,
+            "width": 79,
+            "height": 70,
+            "top": 310.5,
+            "right": 85,
+            "bottom": 380.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 380.5,
+            "width": 79,
+            "height": 70,
+            "top": 380.5,
+            "right": 85,
+            "bottom": 450.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 450.5,
+            "width": 79,
+            "height": 70,
+            "top": 450.5,
+            "right": 85,
+            "bottom": 520.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 520.5,
+            "width": 79,
+            "height": 70,
+            "top": 520.5,
+            "right": 85,
+            "bottom": 590.5,
+            "left": 6
+          }
+        }
+      ],
+      "smallControls": [
+        {
+          "text": "Tilbake til turneringen",
+          "tag": "A",
+          "width": 40,
+          "height": 40,
+          "cls": "back-button"
+        }
+      ]
+    },
+    {
+      "name": "invites",
+      "width": 320,
+      "height": 600,
+      "innerWidth": 320,
+      "scrollWidth": 320,
+      "headings": [
+        "Invitasjoner",
+        "Opprett invitasjon",
+        "Invitasjonslenker"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 83,
+            "bottom": 595,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 83,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 160,
+            "bottom": 595,
+            "left": 83
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 160,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 237,
+            "bottom": 595,
+            "left": 160
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 237,
+            "y": 541,
+            "width": 77,
+            "height": 54,
+            "top": 541,
+            "right": 314,
+            "bottom": 595,
+            "left": 237
+          }
+        }
+      ],
+      "smallControls": []
+    },
+    {
+      "name": "invites",
+      "width": 390,
+      "height": 844,
+      "innerWidth": 390,
+      "scrollWidth": 390,
+      "headings": [
+        "Invitasjoner",
+        "Opprett invitasjon",
+        "Invitasjonslenker"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 100.5,
+            "bottom": 839,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 100.5,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 195,
+            "bottom": 839,
+            "left": 100.5
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 195,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 289.5,
+            "bottom": 839,
+            "left": 195
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 289.5,
+            "y": 785,
+            "width": 94.5,
+            "height": 54,
+            "top": 785,
+            "right": 384,
+            "bottom": 839,
+            "left": 289.5
+          }
+        }
+      ],
+      "smallControls": []
+    },
+    {
+      "name": "invites",
+      "width": 699,
+      "height": 900,
+      "innerWidth": 699,
+      "scrollWidth": 699,
+      "headings": [
+        "Invitasjoner",
+        "Opprett invitasjon",
+        "Invitasjonslenker"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 177.75,
+            "bottom": 895,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 177.75,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 349.5,
+            "bottom": 895,
+            "left": 177.75
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 349.5,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 521.25,
+            "bottom": 895,
+            "left": 349.5
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 521.25,
+            "y": 841,
+            "width": 171.75,
+            "height": 54,
+            "top": 841,
+            "right": 693,
+            "bottom": 895,
+            "left": 521.25
+          }
+        }
+      ],
+      "smallControls": []
+    },
+    {
+      "name": "invites",
+      "width": 700,
+      "height": 900,
+      "innerWidth": 700,
+      "scrollWidth": 700,
+      "headings": [
+        "Invitasjoner",
+        "Opprett invitasjon",
+        "Invitasjonslenker"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 310.5,
+            "width": 79,
+            "height": 70,
+            "top": 310.5,
+            "right": 85,
+            "bottom": 380.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 380.5,
+            "width": 79,
+            "height": 70,
+            "top": 380.5,
+            "right": 85,
+            "bottom": 450.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 450.5,
+            "width": 79,
+            "height": 70,
+            "top": 450.5,
+            "right": 85,
+            "bottom": 520.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 520.5,
+            "width": 79,
+            "height": 70,
+            "top": 520.5,
+            "right": 85,
+            "bottom": 590.5,
+            "left": 6
+          }
+        }
+      ],
+      "smallControls": []
+    },
+    {
+      "name": "invites",
+      "width": 1280,
+      "height": 900,
+      "innerWidth": 1280,
+      "scrollWidth": 1280,
+      "headings": [
+        "Invitasjoner",
+        "Opprett invitasjon",
+        "Invitasjonslenker"
+      ],
+      "nav": [
+        {
+          "text": "Turnering",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 310.5,
+            "width": 79,
+            "height": 70,
+            "top": 310.5,
+            "right": 85,
+            "bottom": 380.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Score",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 380.5,
+            "width": 79,
+            "height": 70,
+            "top": 380.5,
+            "right": 85,
+            "bottom": 450.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Resultater",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 450.5,
+            "width": 79,
+            "height": 70,
+            "top": 450.5,
+            "right": 85,
+            "bottom": 520.5,
+            "left": 6
+          }
+        },
+        {
+          "text": "Profil",
+          "visible": true,
+          "rect": {
+            "x": 6,
+            "y": 520.5,
+            "width": 79,
+            "height": 70,
+            "top": 520.5,
+            "right": 85,
+            "bottom": 590.5,
+            "left": 6
+          }
+        }
+      ],
+      "smallControls": []
+    }
+  ],
+  "issues": {
+    "errors": [],
+    "http": [],
+    "failed": []
+  },
+  "zoom": {
+    "before": {
+      "width": 1280,
+      "dpr": 1,
+      "scale": 1
+    },
+    "after": {
+      "width": 1280,
+      "dpr": 1,
+      "scale": 1
+    }
+  }
+}

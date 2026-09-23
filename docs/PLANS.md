@@ -18,60 +18,37 @@ from repairs; prioritize concrete reproducible risks and validation evidence.
 
 No additional implementation step is currently approved.
 
-### Next candidate: functionality, design and Chrome deployment validation
+### Next candidate: navigation and focus accessibility repairs
 
-**Proposed validation-only step; awaiting approval.**
+**Proposed; awaiting implementation approval.** Findings and reproduction are in
+[the friends deployment assessment](validation/friends-2026-09-23/README.md).
 
-Goal: establish whether the existing product is usable for the friends' deployment
-and identify reproducible blockers without adding features or silently repairing
-unrelated defects. Use disposable accounts/data and a production frontend build
-served through the local production-like proxy/API topology. Do not deploy or
-mutate real user data as part of this assessment.
+Goal: keep keyboard-focused content readable above fixed navigation and meet the
+existing touch-target and text-contrast requirements.
 
-Scope and acceptance matrix:
+Scope: shared frontend focus/scroll clearance for the profile tournament cards,
+the 40px back-navigation target, and low-contrast tournament section counts.
+Preserve the visual language, navigation destinations and all scoring, account,
+team and privacy behavior. No API, migration, new features or redesign.
 
-| Boundary | Required evidence |
-| --- | --- |
-| Account to tournament | Sign-in/out, invitation join, login return, account switching, expired session, authorized tournament selection; no stale private data or redirect loops |
-| Organizer setup to playable round | Existing creation, roster, saved-course selection/configuration, administrator team assignment, pairing/access and round opening; controls discoverable on mobile and desktop |
-| Score to results | Save/retry, confirmation, existing formats, gross/net and native Stableford presentation, private history/read cards, match results; API-confirmed persistence and a second session receiving live updates |
-| Connectivity to authority | Pending/offline delivery, reconnect, conflicts, duplicate submission protection, tab return and overlapping refresh; no lost edits or stale permissions |
-| Lifecycle to privacy | Complete/lock, rejected ordinary writes, authorized correction, tournament completion/archive and hidden-result visibility; existing public share remains appropriately restricted |
-| Layout to interaction | Navigation and current tournament are clear; primary actions visible; loading, empty, populated, failure/retry, disabled/locked and long-content states remain usable |
+Behavior: at 320×600, keyboard traversal must keep the focused card's identifying
+content clear of the bottom menu without manual scrolling. Primary back controls
+must measure at least 44×44 CSS pixels. Small section-count text must reach 4.5:1
+contrast on its actual background.
 
-Chrome/design acceptance: run installed Google Chrome with the existing Playwright
-`channel: 'chrome'` configuration; record version, OS, viewport and tested commit.
-Validate 320px and 390px phone widths, a short phone viewport, and 1280px desktop,
-plus both sides of the actual navigation breakpoint. Check 200% zoom, keyboard
-navigation/focus, semantic labels, error announcements, readable contrast,
-44x44px primary touch targets, and no unintended page overflow, overlap or content
-hidden beneath fixed navigation. Verify profile, tournament switching, saved
-courses and administration are reachable at desktop widths. Preserve the existing
-visual language; propose focused usability repairs only where evidence warrants.
+Validation: begin with the recorded failures; add focused browser regressions for
+keyboard focus and geometry, both sides of 700px, mobile/desktop and long content.
+Check score/profile/management clearance, error/empty/populated states, focus
+visibility and touch targets. Run the full frontend ladder and Chrome checks;
+use native 200% zoom if available and explicitly record any remaining device gap.
+Require read-only review and update affected behavior/validation documentation.
 
-Exercise native form validation (including username patterns), numeric inputs,
-dialogs, history, reload, storage, SSE and retry behavior in Chrome. Capture
-screenshots plus DOM/state assertions, console errors and failed requests, with
-expected authorization failures distinguished from defects. Desktop Chrome mobile
-emulation is layout evidence, not Android device evidence: smoke-test the primary
-journey on Android Chrome if available and record the exact blocker if unavailable.
+Invariants: preserve all root product rules, private-data isolation, contextual
+navigation, pending-write guards and existing mutation targets.
 
-Validation/output: map existing `frontend/e2e/*.browser.ts` suites to the matrix,
-run relevant suites with their required fixtures/environment flags, and add only
-missing boundary regressions. Count skipped tests as untested. Run the full
-frontend ladder and affected backend/PostgreSQL ladders per the workflow; collect
-real-API evidence rather than relying solely on mocked browser tests. Produce a
-reviewed report with scenario, role, viewport, expected/actual behavior, evidence,
-severity and reproduction for each finding. Retain the active security review's
-unresolved deployment blockers in the readiness decision.
-
-Stop: document a `READY`, `READY WITH KNOWN LIMITATIONS`, or `NOT READY` verdict
-for the tested deployment setup. Wrong tournament/owner writes, private-data
-exposure, lost scores, broken critical journeys, or untested critical boundaries
-prevent `READY`; cosmetic limitations must be explicit. Propose one bounded repair
-for the highest-priority remaining defect and wait before implementing it. Update
-current documentation only where verified behavior needs correction and record
-the assessment in `LatestExplanation.md`; this verdict does not authorize deployment.
+Stop: publish only the reviewed, validated accessibility repair, then wait.
+Deployment sign-off still requires the separate security assessment, recovery
+validation and remaining browser/device gates from the report.
 
 No automatic opponents/byes/brackets, team match play, extra holes, new scoring
 rules, public match sharing, cold offline launch or background sync is included.

@@ -558,3 +558,18 @@ corrections and confirmation require connectivity and current authorization.
 Deploy strict nullable overall and match decoders with the API: match-only private
 overall reads are explicitly not applicable and public overall sharing unavailable.
 Mixed public summaries keep their existing allowlist and exclude match facts.
+
+## Current friends-deployment validation
+
+The [2026-09-23 assessment](validation/friends-2026-09-23/README.md) covers
+application commit `38e3eef` using production frontend assets, local Caddy,
+disposable PostgreSQL and a restricted runtime role. Its separate HTTPS smoke
+exercised production API mode, secure cookies and native score events through
+the proxy. It used an internal local certificate and did not assemble the full
+production Compose deployment or validate public DNS/ACME.
+
+Deployment sign-off is **NOT READY**: the separate security assessment and a
+current backup/restore exercise remain unresolved. Native 200% browser zoom and
+physical Android Chrome also remain unverified, and the report records three
+frontend accessibility defects. Complete those outstanding gates before treating
+the local browser results as a production-readiness verdict.

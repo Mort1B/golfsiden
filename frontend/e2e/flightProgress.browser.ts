@@ -75,7 +75,7 @@ test('flight progress counts cards once and follows live scores, confirmations a
   for (const hole of card.holes) await mutate(api, `/api/rounds/${final.id}/scores`, auth.csrf_token, { owner: first.owner, hole_id: hole.hole_id, gross_strokes: hole.par }, 'PUT')
   await mutate(api, `${ownerPath}/confirm`, auth.csrf_token)
   await expect(panel.getByText('9/36 synlige hullregistreringer fordelt på 4 scorekort')).toBeVisible()
-  await expect(panel.getByText(/fullført|Bekreftet/)).toHaveCount(0)
+  await expect(panel.getByText(/fullført|scorekort med alle hull ført|bekreftet/i)).toHaveCount(0)
   await layout(page, 'hidden')
   const visibilityPath = `/api/tournaments/${trip.id}/final-round-visibility`
   const visibility = async (hidden: boolean) => {
@@ -83,18 +83,18 @@ test('flight progress counts cards once and follows live scores, confirmations a
     await mutate(api, visibilityPath, auth.csrf_token, { back_nine_hidden: hidden, expected_visibility_updated_at: current.visibility_updated_at }, 'PATCH')
   }
   await visibility(false)
-  await expect(panel.getByText('1/4 fullført · 1/4 bekreftet')).toBeVisible()
+  await expect(panel.getByText('1/4 scorekort med alle hull ført · 1/4 bekreftet')).toBeVisible()
   await expect(panel.getByText('18/72 hullregistreringer fordelt på 4 scorekort')).toBeVisible()
   await layout(page, 'released')
   const hole = card.holes[0]
   if (!hole) throw new Error('Final hole missing')
   await mutate(api, `/api/rounds/${final.id}/scores`, auth.csrf_token, { owner: first.owner, hole_id: hole.hole_id, gross_strokes: hole.par + 1 }, 'PUT')
-  await expect(panel.getByText('1/4 fullført · 0/4 bekreftet')).toBeVisible()
+  await expect(panel.getByText('1/4 scorekort med alle hull ført · 0/4 bekreftet')).toBeVisible()
   await mutate(api, `${ownerPath}/confirm`, auth.csrf_token)
-  await expect(panel.getByText('1/4 fullført · 1/4 bekreftet')).toBeVisible()
+  await expect(panel.getByText('1/4 scorekort med alle hull ført · 1/4 bekreftet')).toBeVisible()
   await visibility(true)
   await expect(panel.getByText('9/36 synlige hullregistreringer fordelt på 4 scorekort')).toBeVisible()
-  await expect(panel.getByText(/fullført|Bekreftet|18\/72/)).toHaveCount(0)
+  await expect(panel.getByText(/fullført|scorekort med alle hull ført|bekreftet|18\/72/i)).toHaveCount(0)
   expect(errors).toEqual([])
   expect(failed).toEqual([])
 

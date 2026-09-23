@@ -1,0 +1,53 @@
+[
+  {
+    "path": "/profile",
+    "minimum": 4.535837714858983,
+    "failures": [],
+    "checked": 37
+  },
+  {
+    "path": "/tournaments",
+    "minimum": 4.535837714858983,
+    "failures": [],
+    "checked": 22
+  },
+  {
+    "path": "/manage/tournaments/3da3d4b8-20ec-43d0-b70b-cabe9ef0395a",
+    "minimum": 4.535837714858983,
+    "failures": [],
+    "checked": 124
+  },
+  {
+    "path": "/tournaments/3da3d4b8-20ec-43d0-b70b-cabe9ef0395a",
+    "minimum": 4.470538504328448,
+    "failures": [
+      {
+        "text": "1 av 1",
+        "selector": "SPAN.",
+        "color": "rgb(105, 116, 109)",
+        "bg": [
+          244,
+          246,
+          242
+        ],
+        "size": "12.8px",
+        "ratio": 4.470538504328448,
+        "pass": false
+      },
+      {
+        "text": "1",
+        "selector": "SPAN.",
+        "color": "rgb(105, 116, 109)",
+        "bg": [
+          244,
+          246,
+          242
+        ],
+        "size": "12.8px",
+        "ratio": 4.470538504328448,
+        "pass": false
+      }
+    ],
+    "checked": 25
+  }
+]
