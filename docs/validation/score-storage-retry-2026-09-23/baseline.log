@@ -1,0 +1,43 @@
+
+> golf-web@0.1.0 test
+> vitest run src/features/scoring/offline/storageRetry.test.ts
+
+
+ RUN  v3.2.7 /home/morten/Prog/guttasgolfside/golfsiden/frontend
+
+ ❯ src/features/scoring/offline/storageRetry.test.ts (3 tests | 3 failed) 199ms
+   × yields to browser tasks after list without changing retained intent 80ms
+     → expected 20 to be 1 // Object.is equality
+   × yields to browser tasks after claim without changing retained intent 59ms
+     → expected 20 to be 1 // Object.is equality
+   × yields to browser tasks after contention without changing retained intent 58ms
+     → expected 20 to be 1 // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/scoring/offline/storageRetry.test.ts > yields to browser tasks after list without changing retained intent
+ FAIL  src/features/scoring/offline/storageRetry.test.ts > yields to browser tasks after claim without changing retained intent
+ FAIL  src/features/scoring/offline/storageRetry.test.ts > yields to browser tasks after contention without changing retained intent
+AssertionError: expected 20 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 20
+
+ ❯ src/features/scoring/offline/storageRetry.test.ts:42:19
+     40|  await runtime.wake()
+     41|  await new Promise(resolve => setTimeout(resolve, 0))
+     42|  expect(attempts).toBe(1)
+       |                   ^
+     43|  expect(runtime.current().items).toEqual(initial)
+     44|  if (fault !== 'contention') expect(runtime.current().error).toBe(STOR…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed (3)
+   Start at  22:12:08
+   Duration  1.56s (transform 213ms, setup 0ms, collect 313ms, tests 199ms, environment 568ms, prepare 68ms)

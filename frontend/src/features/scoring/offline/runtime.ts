@@ -1,5 +1,6 @@
 import { isCancelledError, type QueryClient } from '@tanstack/react-query'
 import type { ScoringScorecard } from '../../../api/scorecards'
+import type { ScoreAcknowledgement } from '../../../api/scorecards/conditional'
 import type { FourBallScoringCard } from '../../../api/fourBall'
 import { stablefordApi, type StablefordScoringCard } from '../../../api/stableford'
 import { fourBallApi } from '../../../api/fourBall'
@@ -48,11 +49,13 @@ export class QueueRuntime {
     }
   }
   changed = async (): Promise<void> => {
-    this.channel?.postMessage('changed')
-    await this.reload()
-    void this.wake()
+    if (await this.reloadChanged()) void this.wake()
   }
-  private async reload(): Promise<PendingScore[]> {
+  private async reloadChanged(): Promise<boolean> {
+    this.channel?.postMessage('changed')
+    return await this.reload() !== null
+  }
+  private async reload(): Promise<PendingScore[] | null> {
     try {
       const items = await queueDatabase.list(this.accountId)
       const removed = this.snapshot.items.filter(previous => !items.some(item => item.key === previous.key))
@@ -62,65 +65,77 @@ export class QueueRuntime {
       return items
     } catch {
       this.update({ loading: false, error: STORAGE_ERROR })
-      return []
+      return null
     }
   }
   wake = async (): Promise<void> => {
     if (!this.isCurrent()) return
     if (this.running) { await this.reload(); return }
     this.running = true
+    let progressed = false
     try {
       const items = await this.reload()
-      if (!this.isCurrent() || !navigator.onLine) return
+      if (items === null || !this.isCurrent() || !navigator.onLine) return
       const next = items.find(item => item.phase === 'queued' && !hasLease(item) && item.retryAt <= Date.now())
-      if (next) await this.deliver(next)
+      if (next) progressed = await this.deliver(next)
       else {
         const refresh = this.snapshot.refreshing.find(item => item.retryAt <= Date.now())
         if (refresh) await this.refreshCard(refresh)
       }
     } finally {
       this.running = false
-      if (this.isCurrent() && navigator.onLine && this.snapshot.items.some(item => item.phase === 'queued' && !hasLease(item) && item.retryAt <= Date.now())) {
+      if (progressed && this.isCurrent() && navigator.onLine && this.snapshot.items.some(item => item.phase === 'queued' && !hasLease(item) && item.retryAt <= Date.now())) {
         queueMicrotask(() => { void this.wake() })
       }
     }
   }
-  private async deliver(candidate: PendingScore): Promise<void> {
+  // No-progress and storage-failed passes yield to the existing 2s timer or
+  // explicit wake signals. Snapshot eligibility alone cannot justify a drain.
+  private async deliver(candidate: PendingScore): Promise<boolean> {
     const leaseId = crypto.randomUUID()
-    let item: PendingScore | null = null
-    let timer: number | undefined
+    let item: PendingScore | null
+    try { item = await queueDatabase.claim(candidate.key, leaseId) }
+    catch { this.update({ error: STORAGE_ERROR }); return false }
+    if (!item || !this.isCurrent()) return false
+    if (await this.reload() === null || !this.isCurrent()) return false
+    this.channel?.postMessage('changed')
+    const controller = new AbortController(); this.controller = controller
+    const timer = window.setTimeout(() => controller.abort(), REQUEST_MS)
     try {
-      item = await queueDatabase.claim(candidate.key, leaseId)
-      if (!item || !this.isCurrent()) return
-      await this.reload()
-      this.channel?.postMessage('changed')
-      if (!this.isCurrent()) return
-      const controller = new AbortController(); this.controller = controller
-      timer = window.setTimeout(() => controller.abort(), REQUEST_MS)
-      const ack = item.protocol === 'four_ball_v1'
-        ? await fourBallApi.save(item.roundId, item.head, this.csrfToken, controller.signal)
-        : item.protocol === 'stableford_v1' ? await stablefordApi.save(item.roundId, item.head, this.csrfToken, controller.signal)
-        : await api.saveConditionalScore(item.roundId, item.head, this.csrfToken, controller.signal)
-      if (!this.isCurrent()) return
-      await queueDatabase.acknowledge(item.key, ack)
-      if (!this.isCurrent()) return
-      await this.changed()
+      let ack: ScoreAcknowledgement
+      try {
+        ack = item.protocol === 'four_ball_v1'
+          ? await fourBallApi.save(item.roundId, item.head, this.csrfToken, controller.signal)
+          : item.protocol === 'stableford_v1' ? await stablefordApi.save(item.roundId, item.head, this.csrfToken, controller.signal)
+          : await api.saveConditionalScore(item.roundId, item.head, this.csrfToken, controller.signal)
+      } catch (error) { return await this.recordFailure(item, leaseId, error) }
+      if (!this.isCurrent()) return false
+      try { await queueDatabase.acknowledge(item.key, ack) }
+      catch { this.update({ error: STORAGE_ERROR }); return false }
+      // If retaining the acknowledgement failed, the original immutable request
+      // and lease remain for exact replay after storage and the lease recover.
+      if (!this.isCurrent() || !await this.reloadChanged()) return false
       const deliveredKey = item.key
       const refresh = this.snapshot.refreshing.find(value => value.item.key === deliveredKey)
       if (refresh) await this.refreshCard(refresh)
-    } catch (error) {
-      if (!this.isCurrent()) return
-      if (!item) { this.update({ error: STORAGE_ERROR }); return }
-      const phase = error instanceof ApiHttpError && error.code === 'score_version_conflict' ? 'conflict'
-        : error instanceof ApiHttpError && error.status >= 400 && error.status < 500 && error.status !== 429 ? 'blocked' : 'queued'
-      try { await queueDatabase.fail(item.key, item.head.request_id, leaseId, phase); await this.changed() }
-      catch { this.update({ error: STORAGE_ERROR }) }
-      if (phase === 'blocked' && this.isCurrent()) {
-        this.client.removeQueries({ queryKey: scoringKeys.scoring(this.accountId, item.roundId, pendingOwner(item)), exact: true })
-        void this.client.invalidateQueries({ queryKey: privateWorkspaceKeys.scoreAccess(this.accountId, item.roundId), exact: true })
-        void this.client.invalidateQueries({ queryKey: privateWorkspaceKeys.completion(this.accountId, item.roundId), exact: true })
-      }
+      return true
     } finally { window.clearTimeout(timer); this.controller = null }
+  }
+  private async recordFailure(item: PendingScore, leaseId: string, error: unknown): Promise<boolean> {
+    if (!this.isCurrent()) return false
+    const phase = error instanceof ApiHttpError && error.code === 'score_version_conflict' ? 'conflict'
+      : error instanceof ApiHttpError && error.status >= 400 && error.status < 500 && error.status !== 429 ? 'blocked' : 'queued'
+    let reloaded = false
+    try {
+      await queueDatabase.fail(item.key, item.head.request_id, leaseId, phase)
+      if (this.isCurrent()) reloaded = await this.reloadChanged()
+    } catch { this.update({ error: STORAGE_ERROR }) }
+    if (phase === 'blocked' && this.isCurrent()) {
+      this.client.removeQueries({ queryKey: scoringKeys.scoring(this.accountId, item.roundId, pendingOwner(item)), exact: true })
+      void this.client.invalidateQueries({ queryKey: privateWorkspaceKeys.scoreAccess(this.accountId, item.roundId), exact: true })
+      void this.client.invalidateQueries({ queryKey: privateWorkspaceKeys.completion(this.accountId, item.roundId), exact: true })
+    }
+    return reloaded
   }
   private async refreshCard(refresh: RefreshingScore): Promise<void> {
     const item = refresh.item

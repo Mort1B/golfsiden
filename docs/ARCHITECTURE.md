@@ -911,6 +911,14 @@ and reapplies runtime grants before the API is started.
   protection remain active until explicit discard or durable retention.
 - The private workspace queue runner is fenced to current account/CSRF identity,
   retries with bounded requests/backoff and wakes on reconnect/page return.
+  Immediate score draining requires a successful durable change and successful
+  queue reload. Failed list/claim/post-claim/acknowledgement/failure-record storage
+  operations and null claims end that pass; retained snapshot eligibility alone
+  never schedules another microtask. The existing two-second polling timer or an
+  explicit manual/return/reconnect/cross-tab wake may retry. A failed acknowledgement
+  keeps the immutable request and its existing lease for exact replay, so recovery
+  can wait for the 20-second lease to expire. Storage errors retain queue intent;
+  another account or a stopped runtime cannot resume its delivery.
   Logout pauses delivery while preserving same-account pending edits. Other
   accounts cannot display or replay them. Broadcast notifications contain no
   score payloads; IndexedDB transactions arbitrate claims and exact-generation

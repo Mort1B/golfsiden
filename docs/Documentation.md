@@ -596,6 +596,12 @@ automatic retries/backoff, and reconnect/tab-return wakeups. Several tabs coordi
 through local transactions and leases. A persisted request is immutable; rapid
 further input becomes a successor using the first operation's acknowledged
 revision. Delayed reads cannot turn an old cached score into a verified save.
+If device storage fails during queue delivery, pending input and its error remain
+visible. Automatic retries yield to the existing two-second polling timer rather
+than continuously restarting. **Prøv lokal lagring igjen**, reconnect or page return
+can retry sooner. An already-claimed operation keeps its delivery lease; retry
+may wait up to the remaining 20-second lease period. Failed acknowledgement
+storage retains the same request for exact replay, without rebasing the score.
 
 If another scorer changed the hole, **Sammenlign scorer** fetches the current
 server score and shows it beside the local value. **Behold serverscoren** discards
@@ -723,9 +729,10 @@ private/public projection checks found no cross-tournament or public field leak.
 The subsequent [browser/offline persistence assessment](validation/browser-persistence-2026-09-23/README.md)
 confirmed three boundary defects. The subsequent
 [match-note retention repair](validation/match-note-retention-2026-09-23/README.md)
-resolves same-account transient input loss (PERSIST-1). Storage failures can still
-cause uncontrolled queue retries (PERSIST-2), and late administrator mutation
-success can recreate cleared account-scoped memory caches (PERSIST-3). No other-account
+resolves same-account transient input loss (PERSIST-1). The
+[score retry repair](validation/score-storage-retry-2026-09-23/README.md) resolves
+uncontrolled retries on storage failures (PERSIST-2). Late administrator mutation
+success can still recreate cleared account-scoped memory caches (PERSIST-3). No other-account
 UI disclosure or server authorization bypass was demonstrated. Durable queues
 remain account-scoped and intentionally survive logout; the report records
 passing controls and exact limitations. Operational assessment remains open.

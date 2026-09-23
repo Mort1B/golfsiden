@@ -1,0 +1,23 @@
+
+> golf-web@0.1.0 test
+> vitest run src/features/scoring/offline
+
+
+ RUN  v3.2.7 /home/morten/Prog/guttasgolfside/golfsiden/frontend
+
+ ✓ src/features/scoring/offline/fourBallDatabase.test.ts (4 tests) 31ms
+ ✓ src/features/scoring/offline/stablefordDatabase.test.ts (4 tests) 33ms
+ ✓ src/features/scoring/offline/database.test.ts (8 tests) 43ms
+ ✓ src/features/scoring/offline/runtime.test.ts (6 tests) 627ms
+ ✓ src/features/scoring/offline/fourBallRuntime.test.ts (3 tests) 2198ms
+   ✓ promptly re-verifies after a live refetch cancels delivery verification without trusting cached data  2019ms
+ ✓ src/features/scoring/offline/stablefordRuntime.test.ts (4 tests) 2248ms
+   ✓ promptly re-verifies after a live refetch cancels delivery verification without trusting cached data  2018ms
+ ✓ src/features/scoring/offline/storageRetry.test.ts (14 tests) 5100ms
+   ✓ recovers a failed read through timer without losing the original request  2016ms
+   ✓ keeps a sustained outage bounded by the existing polling interval  2254ms
+
+ Test Files  7 passed (7)
+      Tests  43 passed (43)
+   Start at  22:15:22
+   Duration  7.19s (transform 562ms, setup 0ms, collect 1.93s, tests 10.28s, environment 8.03s, prepare 1.18s)

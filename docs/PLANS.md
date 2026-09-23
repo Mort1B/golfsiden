@@ -9,32 +9,31 @@ None. No implementation step is currently approved.
 
 ## Next candidate
 
-**PERSIST-2: bound score-queue retries after device storage failure (proposed).**
+**PERSIST-3: fence late administrator mutation callbacks (proposed).**
 
-Goal: prevent the score delivery runner from repeatedly draining eligible in-memory
-work when IndexedDB fails. Scope the existing score runtime retry scheduling and
-focused regression tests, based on the
-[confirmed assessment](validation/browser-persistence-2026-09-23/README.md).
+Goal: prevent a delayed administrator response from recreating an old account's
+cleared private query data after logout or session replacement. Start with the
+confirmed Stableford-settings path in the
+[assessment](validation/browser-persistence-2026-09-23/README.md). Scope that
+mutation's identity/lifetime boundary and regression tests; inspect similar
+callbacks read-only before proposing any separate expansion.
 
-Behavior: retain durable/local intent and a visible storage error, yield browser
-execution between bounded retry attempts and recover on an explicit retry or
-existing reconnect/return signal. Preserve immutable conditional requests,
-account/session fences, leases and conflict handling. No queue format, server API
-or match-rule change. Keep PERSIST-3 separate.
+Behavior: apply cache writes, invalidation and local completion effects only while
+the initiating account/session still owns the mounted operation. Current-session
+success and deliberate errors remain visible. Session teardown must leave old
+private caches cleared even if an earlier request later succeeds. Do not claim
+client cancellation undoes a server write; a fresh authorized read recovers actual
+server state. Preserve tournament roles, server authorization and settings rules.
 
-Validation: reproduce the failing storage/timer schedule with bounded synthetic
-faults; prove responsiveness, bounded attempts, preserved queue identity and
-recovery after storage returns. Run focused tests, the affected frontend ladder,
-Chrome and independent read-only review. Use only disposable local services and
-synthetic accounts. Security validation remains local-only: no production,
-external test targets or real credentials. Commit completed, validated work to
-`main` and push to `origin/main`, as explicitly requested by the owner. Stop after
-the repair, evidence, documentation and verified publication.
+Validation: held-response failing-first tests for logout, account change,
+same-account replacement and unmount; normal success/failure controls; affected
+frontend ladder, real Chrome and independent read-only review. Use synthetic
+accounts and disposable local services only. No production, external test targets
+or real credentials. Commit completed validated work to main, push origin/main
+and verify clean alignment. Stop after that repair, evidence and documentation.
 
 ## Later queue
 
-- PERSIST-3: fence administrator mutation callbacks across session teardown;
-  confirm related source-supported paths before expanding the repair.
 - Remaining broader security assessment: production proxy/database privileges,
   recovery operations and dependency advisories. Define a bounded next scope and
   authorized environment before proceeding.

@@ -79,7 +79,7 @@ for (const outcome of ['success', 'failure'] as const) it(`settles a pending ${o
  if (outcome === 'success') await waitFor(() => expect(screen.queryByRole('button', { name: 'Forkast ulagrede notater' })).toBeNull())
  else {
   await waitFor(() => expect(screen.getByRole('alert').textContent).toContain(STORAGE_ERROR))
-  expect(input().value).toBe('7'); expect(input().disabled).toBe(false)
+  expect(input().value).toBe('7'); await waitFor(() => expect(input().disabled).toBe(false))
  }
 })
 for (const state of ['round-loading', 'round-error', 'card-error', 'membership-denied', 'locked', 'terminal'] as const) it(`retains guarded local recovery after replacement with ${state}`, async () => {
