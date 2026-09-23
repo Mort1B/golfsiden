@@ -702,6 +702,14 @@ revocation or credential invalidation. Its PostgreSQL, frontend and Chrome check
 passed; the report separately records operator/late-write test gaps and limits.
 This does not complete the wider security or deployment acceptance review.
 
+The [result-projection assessment](validation/result-projection-security-2026-09-23/README.md)
+confirmed SHARE-1: an initially authorized public-link issue request can commit
+a usable grant after session expiry during a later audit-table wait. A controlled
+local reproducer used a maintenance-style table lock; anonymous ability to cause
+that wait was not demonstrated. This remains unfixed. Existing private/public
+projection and Chrome checks passed; no cross-tournament or public field leak
+was demonstrated. Broader persistence and operational assessment remains open.
+
 `tournament_memberships` owns the role for a specific trip. Tournament admins
 and scorers can write any eligible card in that tournament. A tournament player
 linked to an exact flight member can enter, correct, and confirm every eligible

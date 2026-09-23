@@ -5,38 +5,37 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. See the [latest explanation](LatestExplanation.md) for the completed step.
+None.
 
 ## Next candidate
 
-**Local private/public result-projection assessment (awaiting approval).**
+**SHARE-1: recheck result-link mutation sessions after writes (proposed).**
 
-Goal: verify that private result reads require exact tournament access and public
-capabilities expose only the intended projection. Scope source, existing tests
-and controlled disposable local validation of grant scope, expiry/revocation,
-rotation, response allowlists and concurrent membership changes.
+Goal: prevent public-link mutations from committing when their session expires
+during a late grant/audit write wait. Scope the result-sharing management
+repository and focused regression tests, based on the
+[confirmed assessment](validation/result-projection-security-2026-09-23/README.md).
 
-Behavior/invariants: assessment only; no application, migration, dependency or
-operator repairs. Preserve gross/net semantics, historical snapshots and private
-account/scorecard boundaries. Use only synthetic accounts and disposable local
-services; do not access production, external targets or real credentials.
+Behavior: recheck active session validity after writes immediately before commit.
+Detected expiry returns 401, rolls back grant/audit changes and emits no event.
+Preserve exact tournament authority, lock order, expected-grant intent, valid
+issue/replace/revoke behavior and public projection contracts. Do not claim
+atomic expiry during COMMIT itself.
 
-Validation: inspect handlers, repositories, decoders and existing privacy/race
-tests; reproduce concrete concerns where warranted. Report confirmed findings
-with source/impact/recommendation, separate unverified concerns, record limits
-and exact safeguard notices, and obtain independent read-only review.
+Validation: controlled late-wait issue/replacement/revoke expiry cases and valid
+controls using synthetic disposable PostgreSQL, relevant authorization and
+sharing tests, affected validation ladder and independent read-only review.
 
-Stop after the report and one bounded next candidate. Keep browser-persistence,
-operational/dependency assessment and any remediation separate. Work and commits
-remain local under the existing scope.
+Stop after this repair, evidence and documentation. No broader lifecycle,
+projection, persistence or operator changes. Retain local-only scope.
 
 ## Later queue
 
 No queued work is currently approved.
 
 - Remaining broader security assessment: browser/offline persistence,
-  production proxy/database privileges, recovery operations and dependency advisories. Define a bounded next scope and
-  authorized environment before proceeding.
+  production proxy/database privileges, recovery operations and dependency
+  advisories. Define a bounded next scope and authorized environment before proceeding.
 
 ### Remaining deployment acceptance
 

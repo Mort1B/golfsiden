@@ -1,0 +1,44 @@
+Local result-projection assessment, 2026-09-23
+Source revision: 7fdb2e0
+No application, test, migration or dependency changes.
+
+PostgreSQL 17.10, disposable loopback database, cached image, tmpfs storage.
+Database: 45 passed (34 primary + 2 Stableford public + 3 match overall + 6 embargo).
+Rust unit: 1 passed (212 unrelated filtered).
+Frontend: 35 passed across 5 files.
+Frontend production build/type compilation: passed.
+Installed Chrome 153.0.8010.36: 2 scenarios passed (57.6 seconds).
+Layouts: 17 states x 3 widths (320x600, 390x844, 1280x900), 51 screenshots.
+Three representative screenshots inspected and retained.
+
+Diagnostic output (no credentials/capabilities):
+SHARE-1: expired_before_audit_unlock=false; issue=201 Created; live_grants=1; audits=1; matching_event=true; next_session=200 OK; anonymous_read=200 OK
+SHARE-1: expired_before_audit_unlock=true; issue=201 Created; live_grants=1; audits=1; matching_event=true; next_session=401 Unauthorized; anonymous_read=200 OK
+
+Diagnostic cases assert success in reproducing the existing defect/control;
+they do not assert that expired issuance is desired behavior.
+
+Read-only review: public capability/projection and private access reviewers
+completed. Public reviewer independently inspected the probe and final report;
+SHARE-1 confirmed, no report blockers. Minor hash/expiry wording clarified.
+Reviewers did not independently rerun the primary's validation commands.
+
+Validation corrections: nonexistent private_results test target failed before
+execution, corrected to leaderboards. Initial public filter selected zero match
+tests; corrected to overall (3 passed). No ignored tests in reported results.
+Existing vendor SQLx and Node color-environment warnings only.
+Full release ladders and external advisory lookup not run; assessment only.
+
+No platform cybersecurity safeguard or automatic approval rejection.
+Sandboxed Podman version inspection initially returned:
+Failed to obtain podman configuration: set sticky bit on: chmod /run/user/1000/libpod: read-only file system
+The same read-only inspection succeeded with local permission.
+
+Cleanup verified: API and Vite stopped by Ctrl-C (expected wrapper interruption),
+only golf-results-assessment-pg removed, tmpfs synthetic database destroyed;
+synthetic postgres.env/config.json deleted. No listeners at 3000/5173/55443.
+Pre-existing golf-cancel-pg:55439 and golf-security-review-pg:55440 untouched.
+Retained diagnostic Rust artifacts pass rustfmt; git diff --check passed.
+
+Assessment complete. Deployment NOT READY: SHARE-1 unfixed and broader gates open.
+Work and commit local only; no production, external target or real credential access.

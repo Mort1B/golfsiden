@@ -597,7 +597,13 @@ session preservation. The report records remaining operator-output failure,
 configured-runtime CLI and late-write expiry coverage gaps. Its loopback HTTP
 checks do not establish public TLS, deployment-role or physical-device acceptance.
 
-Deployment sign-off is **NOT READY**: remaining security assessment,
+The [local result-projection assessment](validation/result-projection-security-2026-09-23/README.md)
+confirmed SHARE-1 (P2): public-link issuance can complete after session expiry
+during a late audit-table wait. The reproducer required a maintenance-style lock;
+no anonymous mechanism for inducing it was shown. No repair is included in that
+assessment. Existing projection, privacy and installed Chrome scenarios passed.
+
+Deployment sign-off is **NOT READY**: SHARE-1 remains unfixed; remaining security assessment,
 public-host acceptance, native 200% browser zoom and physical Android Chrome remain
 unresolved.
 The report's three frontend
