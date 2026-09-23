@@ -1,40 +1,37 @@
-# Result-link mutations now reject late session expiry
+# Browser/offline assessment confirms three boundary defects
 
-The [SHARE-1 repair](validation/result-share-session-expiry-2026-09-23/README.md)
-rechecks session validity after grant/audit writes immediately before commit.
-Replacement also checks after the old grant's audit, before inserting the new
-link. Detected expiry now returns 401 and rolls back every grant/audit change
-without an invalidation event. Failed replacement/revoke preserves the original
-grant unchanged; an otherwise valid capability remains usable.
+The [persistence assessment](validation/browser-persistence-2026-09-23/README.md)
+confirmed three P2 issues without changing application code:
 
-Eight deterministic database cases cover expired and valid sessions for issue,
-revoke and both replacement audit writes. Before the repair, expired issue/new
-replacement returned 201, revoke returned 204, and expiry between replacement
-writes returned 500. All four expiry cases now return 401; controls preserve
-normal responses, audit counts and exactly one event. Tests observe the exact
-wait while the session is active and then wait for database wall-clock expiry.
-The synthetic maintenance/advisory waits do not demonstrate an anonymous ability
-to induce such a delay in production.
+- PERSIST-1: same-account session replacement remounts match input and silently
+  loses unsaved/failed-save notes and their navigation guard. Real Chrome with
+  local authentication reproduced both cases; unchanged-session return preserves
+  input, and a durable queued note survives replacement and reaches the server.
+- PERSIST-2: a storage failure leaves eligible queued work in memory and causes
+  repeated microtask retries. A bounded synthetic Chrome probe observed 52
+  storage accesses before a zero-delay timer, then restored storage. It did not
+  leave Chrome hung or demonstrate permanent queue loss.
+- PERSIST-3: a delayed successful Stableford-settings response recreates the old
+  account's memory cache after logout/account switching. The component probe uses
+  actual UI/session code with a held mocked API response. Other similar callback
+  paths remain source-supported concerns; no other-account UI disclosure or
+  server authorization bypass was demonstrated.
 
-The change reuses existing held session/user locks and the active-session
-predicate; exact membership, expected-grant intent and public projections remain
-unchanged. No migration, dependency or frontend source changed. Expiry during
-COMMIT itself is outside the promised boundary. Independent read-only code,
-regression and documentation review found no issues.
+Independent read-only reviewers checked each source path, diagnostic probe and
+report. The report separates account-scoped durable intent, private query state,
+capability state and explicitly untested schedules. Existing account-indexed
+storage, immutable conditional requests, session fences and server authorization
+passed their scoped validation. No service worker or offline app shell exists.
 
-Validation passed formatting, 215 backend tests, Clippy, migration/seed, 35
-frontend tests and a frontend production build. The complete PostgreSQL-enabled
-rerun passed 615 tests, with three existing benchmark tests ignored. Its first
-attempt hit an unchanged round-configuration race test (409 versus 200); that
-test passed alone and in the full rerun. The report preserves that failure and
-the timing-test concern instead of silently treating the first run as green.
+The full frontend suite passed 751 tests, typecheck, lint and production build.
+The four backend score/match suites passed 99 PostgreSQL tests. Twenty-nine distinct existing Chrome scenarios passed across runs, plus four
+browser diagnostic cases and three component cases. The initial recovery flow
+failed because the temporary harness lacked a recovery origin; both recovery
+scenarios passed after that local harness correction. Disposable services and
+synthetic credential files were removed. Detailed outcomes are retained with the report.
+These checks establish bounded evidence, not whole-application security sign-off.
 
-Both sharing scenarios passed in installed Chrome 153 at 320, 390 and 1280px.
-Fresh representative screenshots were inspected. Disposable services and
-synthetic credentials were removed. A sandboxed database connection initially
-needed local permission; no cybersecurity safeguard blocked the work.
-
-SHARE-1 is repaired. Overall deployment remains **NOT READY** pending broader
-persistence, operational and public-host/device gates. The next proposed bounded
-step is a read-only browser/offline persistence assessment. Work remains local
-without a push; no queued work was started.
+No implementation, migration, dependency or production configuration changed.
+The next proposed repair is PERSIST-1; the other two repairs and operational
+assessment remain separate queued work. Deployment is **NOT READY** while these
+findings and public-host/device gates remain open. Work stays local without a push.

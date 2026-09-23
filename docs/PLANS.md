@@ -9,31 +9,36 @@ None.
 
 ## Next candidate
 
-**Local browser/offline persistence assessment (proposed).**
+**PERSIST-1: preserve transient match notes across same-account sessions (proposed).**
 
-Goal: verify that private tournament data, queued score mutations and capability
-state remain scoped to the correct account and tournament across logout,
-account changes, membership loss, page return and offline/online transitions.
-Scope existing browser storage, query cache, service worker, queued mutation
-ownership and relevant source/tests using synthetic disposable local services.
+Goal: prevent silent loss of unsaved or failed-save match notes when a renewed
+session for the same account remounts the private workspace. Scope an account-owned
+transient match-intent boundary, matching UI recovery/guards and regression tests,
+based on the [confirmed assessment](validation/browser-persistence-2026-09-23/README.md).
 
-Behavior/invariants: assessment only; no implementation, dependency or operator
-repairs. Preserve score ownership, historical snapshots, round locks, explicit
-administrator correction paths and existing offline delivery rules. No
-production, external targets or real credentials. Retain local-only scope.
+Behavior: preserve local note values and explicit unsaved/recovery state across
+same-account CSRF changes. Clear transient state on logout/account change; prevent
+late writes/callbacks from restoring another account's state. Do not claim durable
+storage until IndexedDB commits. Preserve durable queue ownership, conditional
+revisions, existing match rules, round locks and administrator corrections.
 
-Validation: inspect source and existing tests, reproduce concrete boundary
-concerns locally, exercise relevant real Chrome mobile/desktop flows, and obtain
-independent read-only review. Separate confirmed findings, source-supported
-concerns and untested assumptions; record exact safeguard notices and limits.
+Validation: failing-first provider/lifecycle tests and real Chrome probes for
+unsaved and failed-save notes, same-session return, same-account replacement,
+account teardown and durable-queue controls; affected validation ladder and
+independent read-only review. Use only synthetic disposable local services.
 
-Stop after the report and one bounded next candidate. Keep any remediation and
-operational/dependency assessment separate.
+Stop after this repair, evidence and documentation. Keep PERSIST-2/PERSIST-3 and
+operational review separate. No production, external targets or real credentials;
+retain local-only scope.
 
 ## Later queue
 
 No queued work is currently approved.
 
+- PERSIST-2: bound score-queue retries after device storage failure; preserve local
+  intent/error and browser responsiveness. Define its own repair step.
+- PERSIST-3: fence administrator mutation callbacks across session teardown;
+  confirm related source-supported paths before expanding the repair.
 - Remaining broader security assessment: production proxy/database privileges,
   recovery operations and dependency advisories. Define a bounded next scope and
   authorized environment before proceeding.

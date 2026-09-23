@@ -607,7 +607,13 @@ issue/replacement/revoke requests roll back with 401 and no invalidation event;
 failed replacement/revoke preserves the old grant unchanged. No migration or operator
 configuration change is required.
 
-Deployment sign-off is **NOT READY**: remaining security assessment,
+The [browser/offline persistence assessment](validation/browser-persistence-2026-09-23/README.md)
+confirmed PERSIST-1 (transient match input loss), PERSIST-2 (uncontrolled retry on
+storage failure) and PERSIST-3 (late mutation recreating cleared memory cache).
+These remain unfixed and require separate bounded repairs. The findings do not
+establish a server authorization bypass or another account's UI disclosure.
+
+Deployment sign-off is **NOT READY**: PERSIST-1/2/3, remaining operational assessment,
 public-host acceptance, native 200% browser zoom and physical Android Chrome remain
 unresolved.
 The report's three frontend

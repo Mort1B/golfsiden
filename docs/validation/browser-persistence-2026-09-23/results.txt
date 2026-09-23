@@ -1,0 +1,50 @@
+Browser/offline persistence assessment, 2026-09-23
+Assessed source: e0104af
+No application, existing test, migration or dependency changes.
+
+Frontend: 751 tests passed in 116 files; typecheck, lint and production build exit 0.
+PostgreSQL 17.10: 99 tests passed, no failed/ignored/filtered tests:
+four_ball 17, scorecards 31, singles_match 32, stableford 19.
+
+Installed Chrome 153.0.8010.36 existing scenarios:
+Offline legacy/lifecycle, Stableford, matchPlay and returnOrdering: 21 passed (2.1m).
+Additional fourBall/public results/recovery run: 7 passed, 1 failed (1.7m).
+Failure: real recovery issue receipt was absent because temporary API harness
+had no recovery_origin. This was not a platform safeguard or product finding.
+Temporary harness changed to explicit http://127.0.0.1:5173 recovery_origin.
+Recovery rerun: 2 passed (14.7s), including the failed real flow and repeated mock flow.
+Total distinct existing scenarios passed across runs: 29. No skips.
+Relevant scenarios include320/390/1280px; three fresh representative screenshots
+were visually inspected and retained. No application-wide design verdict implied.
+
+PERSIST-1/2 browser diagnostic corrected run: 3 passed (6.0s).
+PERSIST-1 durable control: 1 passed (5.8s).
+Initial failed-save hook incorrectly targeted drafts rather than matches;
+that case failed its expected alert assertion and supplies no failed-save evidence.
+It was corrected only in temporary diagnostic code and rerun successfully.
+Sanitized observed results:
+PERSIST-1 unsaved: same-session return retains 7; same-user new session clears
+input/discard control/navigation guard; server notes remain empty.
+PERSIST-1 failed-save: same result after synthetic matches put failure.
+PERSIST-1 durable control: queued 7 survives rotation and server receives 7.
+Fresh-profile inventory: localStorage 0, sessionStorage 0, CacheStorage [], serviceWorkers 0.
+PERSIST-2: 52 storage accesses before first 0 ms timer; exactly 50 immediate failures
+then automatic restoration; queued edit retained. No sustained hang induced.
+PERSIST-3 actual-component/mocked-API probe: 3 passed (204ms test time).
+Logout and account switch: private cache empty before held success; old-account
+round restored afterward while auth remains null/new account. Control succeeds.
+No cross-account UI disclosure, persistent write or server auth bypass shown.
+
+Two independent read-only reviewers approved finding evidence and qualifications;
+reviewers inspected source/probes/logs, did not independently execute tests.
+Full backend/Clippy/deployment ladders not rerun: assessment-only scope.
+Existing vendor SQLx and Node color-environment warnings remain.
+No platform cybersecurity safeguard, automatic approval rejection or unresolved block.
+
+Cleanup verified: both API harnesses and Vite stopped via Ctrl-C (expected wrapper
+interruptions). golf-persistence-assessment-pg and tmpfs synthetic database removed;
+postgres.env/config.json deleted. Ports 3000/5173/55443 closed.
+Pre-existing golf-cancel-pg:55439 and golf-security-review-pg:55440 untouched.
+
+Three P2 findings remain unfixed; deployment NOT READY.
+Local-only report/commit; no production, external targets, real credentials or push.

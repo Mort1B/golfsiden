@@ -1,0 +1,2 @@
+import { defineConfig } from '/home/morten/Prog/guttasgolfside/golfsiden/frontend/node_modules/@playwright/test/index.mjs'
+export default defineConfig({testDir:'/tmp/golf-persistence-assessment',testMatch:'*.probe.ts',workers:1,timeout:60000,outputDir:'/tmp/golf-persistence-assessment/probe-results',use:{baseURL:'http://127.0.0.1:5173',browserName:'chromium',channel:'chrome',headless:true,trace:'off',screenshot:'off'}})
