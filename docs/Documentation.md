@@ -315,6 +315,11 @@ scoring permissions apply. Administrators can enable/disable handicaps and set
 the integer allowance from 0–100% in the round's Stableford settings while draft.
 The default is 100%. A stale save reloads the current settings and explicitly
 replaces the local draft; opened rounds show frozen settings instead of an editor.
+The editor belongs to the current account/session and round. Logout, session
+replacement, navigation away or changing target ends that ownership: late responses
+cannot restore old cached round data, refetch for the departed editor or overwrite
+the replacement editor's input/messages. A fresh authorized read shows actual
+server settings; leaving the page does not undo a request the server accepted.
 
 The card shows received strokes, original numeric input or **Plukket opp**, and
 server-confirmed gross/net points. A pickup requires explicit confirmation and
@@ -731,9 +736,12 @@ confirmed three boundary defects. The subsequent
 [match-note retention repair](validation/match-note-retention-2026-09-23/README.md)
 resolves same-account transient input loss (PERSIST-1). The
 [score retry repair](validation/score-storage-retry-2026-09-23/README.md) resolves
-uncontrolled retries on storage failures (PERSIST-2). Late administrator mutation
-success can still recreate cleared account-scoped memory caches (PERSIST-3). No other-account
-UI disclosure or server authorization bypass was demonstrated. Durable queues
+uncontrolled retries on storage failures (PERSIST-2). The
+[Stableford callback repair](validation/stableford-settings-lifetime-2026-09-23/README.md)
+resolves the confirmed PERSIST-3 path. Similar pairing, tournament-start and final
+visibility callbacks remain source-supported concerns awaiting separate reproduction;
+this repair does not establish their safety. No other-account UI disclosure or
+server authorization bypass was demonstrated. Durable queues
 remain account-scoped and intentionally survive logout; the report records
 passing controls and exact limitations. Operational assessment remains open.
 

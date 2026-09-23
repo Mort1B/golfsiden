@@ -19,7 +19,9 @@ unfixed and broader operational/public-host/device gates still open.
 
 Subsequent disposition: [PERSIST-1 was repaired](../match-note-retention-2026-09-23/README.md).
 [PERSIST-2 was also repaired](../score-storage-retry-2026-09-23/README.md).
-The findings and reproducer below describe the assessed revision; PERSIST-3 remains open.
+[The confirmed PERSIST-3 Stableford path was repaired](../stableford-settings-lifetime-2026-09-23/README.md).
+The findings and reproducers below describe the assessed revision. Similar
+administrator callbacks remain source-supported, unverified concerns.
 
 ## PERSIST-1 — Same-account session replacement loses unsaved match notes
 

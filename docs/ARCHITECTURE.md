@@ -780,6 +780,14 @@ and reapplies runtime grants before the API is started.
   requested identity and archived status. Completion and archive share one private
   query reconciliation function, preserving pre-outcome read cancellation, newer
   SSE refetch handling and no late mutation-response insertion.
+- Stableford settings mutation ownership is fixed by an account/CSRF/tournament/
+  round-keyed form. Layout cleanup invalidates its mounted lifetime synchronously.
+  Dispatch and response-driven cache writes/refetches also compare canonical
+  `authKeys.session` identity, covering session publication before React remount.
+  Conflict refresh continuations recheck before resetting local drafts. A renewed
+  session gets a separate mutation observer, draft and receipt; an older response
+  cannot reset its input or busy state. This client fence does not cancel an
+  accepted server write: current authorized reads still determine server state.
 - The tournament list filters the unmodified user-scoped membership collection
   locally, using URL view selection. Current includes every non-archived status;
   archived/all views retain direct private history links. Failed authoritative

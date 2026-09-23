@@ -616,12 +616,18 @@ input remains memory-only until a device write commits. The
 [score retry repair](validation/score-storage-retry-2026-09-23/README.md) resolves
 PERSIST-2 with no operator/configuration change: failed storage ends the immediate
 drain, preserves pending operations, and waits for polling or an explicit wake.
-An existing lease still governs retry timing. PERSIST-3 remains unresolved. The findings do not establish a server
-authorization bypass or another account's UI disclosure. Repair validation used
-real Chrome with synthetic API responses; repeating the local PostgreSQL-backed
-browser control was blocked by Docker socket permissions.
+An existing lease still governs retry timing. The
+[Stableford callback repair](validation/stableford-settings-lifetime-2026-09-23/README.md)
+resolves the confirmed PERSIST-3 path without configuration changes. Late responses
+from that departed editor are ignored; a fresh authorized read recovers server
+settings. Similar pairing, tournament-start and visibility callbacks remain
+source-supported concerns requiring separate reproduction. These findings do not
+establish a server authorization bypass or another account's UI disclosure.
+Frontend repair validation used real Chrome with synthetic API responses. The
+PERSIST-1 PostgreSQL-backed repeat remains blocked by its documented Docker socket
+permissions.
 
-Deployment sign-off is **NOT READY**: PERSIST-3, remaining operational assessment,
+Deployment sign-off is **NOT READY**: related callback concerns, remaining operational assessment,
 public-host acceptance, native 200% browser zoom and physical Android Chrome remain
 unresolved.
 The report's three frontend

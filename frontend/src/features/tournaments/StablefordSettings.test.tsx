@@ -7,10 +7,12 @@ import { round as draft, session } from './lifecycle/__tests__/fixtures'
 import { AuthContext, type AuthContextValue } from '../auth/authContext'
 import { stablefordApi } from '../../api/stableford'
 import { ApiHttpError } from '../../api/http'
+import { authKeys } from '../../api/auth'
 const round = { ...draft, scoring_format: 'individual_stableford' as const }
 const auth: AuthContextValue = { session, loading: false, error: null, signIn: vi.fn(), signOut: vi.fn(), establishSession: vi.fn(), retry: vi.fn() }
 function mount(status: 'draft' | 'open' = 'draft') {
   const client = new QueryClient()
+  client.setQueryData(authKeys.session, session)
   render(<QueryClientProvider client={client}><AuthContext value={auth}><StablefordSettings round={{ ...round, status }} /></AuthContext></QueryClientProvider>)
   return client
 }

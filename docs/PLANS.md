@@ -9,31 +9,31 @@ None. No implementation step is currently approved.
 
 ## Next candidate
 
-**PERSIST-3: fence late administrator mutation callbacks (proposed).**
+**ADMIN-CB-1: final-round visibility callback ownership (proposed).**
 
-Goal: prevent a delayed administrator response from recreating an old account's
-cleared private query data after logout or session replacement. Start with the
-confirmed Stableford-settings path in the
-[assessment](validation/browser-persistence-2026-09-23/README.md). Scope that
-mutation's identity/lifetime boundary and regression tests; inspect similar
-callbacks read-only before proposing any separate expansion.
+Goal: resolve the source-supported concern that a late visibility mutation writes
+private query data or invalidates projections after its initiating session departs.
+Scope `FinalRoundVisibilityControl` and its response/error lifetime boundary only;
+see the [read-only findings](validation/stableford-settings-lifetime-2026-09-23/README.md).
 
-Behavior: apply cache writes, invalidation and local completion effects only while
-the initiating account/session still owns the mounted operation. Current-session
-success and deliberate errors remain visible. Session teardown must leave old
-private caches cleared even if an earlier request later succeeds. Do not claim
-client cancellation undoes a server write; a fresh authorized read recovers actual
-server state. Preserve tournament roles, server authorization and settings rules.
+First reproduce with held success and stale-error responses across logout,
+account/session replacement and unmount. If confirmed, fence cache, refetch and
+local completion effects to the initiating mounted account/CSRF/target, using the
+smallest appropriate boundary. Preserve final-round visibility rules, server
+version checks, current-session errors and normal result-projection invalidation.
+Do not infer server cancellation or change other administrator workflows. If not
+reproduced, document the evidence and stop without speculative implementation.
 
-Validation: held-response failing-first tests for logout, account change,
-same-account replacement and unmount; normal success/failure controls; affected
-frontend ladder, real Chrome and independent read-only review. Use synthetic
-accounts and disposable local services only. No production, external test targets
-or real credentials. Commit completed validated work to main, push origin/main
-and verify clean alignment. Stop after that repair, evidence and documentation.
+Validate current-session controls, delayed refresh continuations and replacement
+input; run the affected frontend ladder, Chrome and independent read-only review.
+Use disposable local services and synthetic accounts only; no production,
+external test targets or real credentials. Commit completed validated work to main,
+push origin/main and verify clean alignment. Stop after this bounded follow-up.
 
 ## Later queue
 
+- Pairing editor and tournament-start mutation callbacks: source-supported lifetime
+  concerns awaiting separate reproduction and bounded repair decisions.
 - Remaining broader security assessment: production proxy/database privileges,
   recovery operations and dependency advisories. Define a bounded next scope and
   authorized environment before proceeding.
