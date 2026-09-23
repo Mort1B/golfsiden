@@ -895,6 +895,20 @@ and reapplies runtime grants before the API is started.
   delivery. It cannot replace an existing queued head or bypass a confirmation
   lease. Ordinary retries preserve their original expectation and reject an
   unrelated observed head; later local input cannot be erased by an older save.
+- Transient numeric match notes have a separate account-owned `MatchNoteStore`
+  above both CSRF-keyed delivery providers. It retains target/player IDs, hole,
+  stable slot, raw input, error/saving state and original revision, observed queue
+  generation and old value. It holds no canonical cards, names or permission.
+  Same-account session replacement retains intent; account departure closes the
+  store and aborts unfinished guarded IndexedDB writes. A committed write clears
+  only its exact transient sequence even if the old delivery runtime has stopped.
+  Only a proven append advances sibling intents observing the same generation.
+  Full page reload ends transient input; committed queues remain durable.
+  Match route navigation protection lives at that same stable boundary, sharing
+  React Router matching semantics; it spans changing loading/recovery/scoring
+  views. Missing card/round data, membership denial and terminal/locked cards can
+  display local recovery without granting write authority. Logout and unload
+  protection remain active until explicit discard or durable retention.
 - The private workspace queue runner is fenced to current account/CSRF identity,
   retries with bounded requests/backoff and wakes on reconnect/page return.
   Logout pauses delivery while preserving same-account pending edits. Other

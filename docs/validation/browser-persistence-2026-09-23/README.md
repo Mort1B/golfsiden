@@ -17,6 +17,10 @@ The primary ran validation and reviewed representative fresh Chrome screenshots.
 The assessment is complete; deployment remains **NOT READY** with these findings
 unfixed and broader operational/public-host/device gates still open.
 
+Subsequent disposition: [PERSIST-1 was repaired](../match-note-retention-2026-09-23/README.md).
+The findings and reproducer below describe the assessed revision; PERSIST-2 and
+PERSIST-3 remain open.
+
 ## PERSIST-1 — Same-account session replacement loses unsaved match notes
 
 **Confirmed in installed Chrome using real local authentication.**

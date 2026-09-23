@@ -1,0 +1,607 @@
+
+> golf-web@0.1.0 test
+> vitest run src/features/matchPlay/MatchNotes.retention.test.tsx
+
+
+ RUN  v3.2.7 /home/morten/Prog/guttasgolfside/golfsiden/frontend
+
+ ❯ src/features/matchPlay/MatchNotes.retention.test.tsx (3 tests | 2 failed) 2572ms
+   × preserves unsaved input, hole and guard across same-account replacement 1215ms
+     → expected '' to be '7' // Object.is equality
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"app-shell"[39m
+      [36m>[39m
+        [36m<aside[39m
+          [33maria-label[39m=[32m"Brukerkonto"[39m
+          [33mclass[39m=[32m"session-bar"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mAdministrator[0m
+          [36m</span>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Logg ut"[39m
+            [33mtitle[39m=[32m"Logg ut"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-log-out"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m16 17 5-5-5-5"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M21 12H9"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</aside>[39m
+        [36m<main[39m
+          [33mclass[39m=[32m"main-content"[39m
+        [36m>[39m
+          [36m<section[39m
+            [33mclass[39m=[32m"match-panel"[39m
+          [36m>[39m
+            [36m<h2>[39m
+              [0mAndreas med et langt navn[0m
+              [0m mot [0m
+              [0mBjørn med et annet langt navn[0m
+            [36m</h2>[39m
+            [36m<p>[39m
+              [0mOffisiell spilleform: [0m
+              [0mNetto[0m
+              [0m · Spille-HCP [0m
+              [0m0 / 0[0m
+              [0m · Relative slag [0m
+              [0m0 / 0[0m
+            [36m</p>[39m
+            [36m<h3>[39m
+              [0mIkke startet[0m
+            [36m</h3>[39m
+            [36m<p>[39m
+              [0mIngen bekreftede matchpoeng ennå.[0m
+            [36m</p>[39m
+            [36m<h3>[39m
+              [0mAksepterte rapporter[0m
+            [36m</h3>[39m
+            [36m<p>[39m
+              [0mIngen hull eller matchresultat er rapportert.[0m
+            [36m</p>[39m
+            [36m<details>[39m
+              [36m<summary>[39m
+                [0mNumeriske notater og hull[0m
+              [36m</summary>[39m
+              [36m<p>[39m
+                [0mNotater er forslag. De endrer ikke en akseptert rapport.[0m
+              [36m</p>[39m
+              [36m<ol[39m
+                [33mclass[39m=[32m"match-holes"[39m
+              [36m>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m1[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m1[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m2[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m2[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m3[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m3[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m4[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m4[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m5[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m5[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m6[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m6[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m7[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m7[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m8[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m8[0m
+                  [36m</strong>[39m
+       ...
+   × preserves failed-save input, hole and guard across same-account replacement 1251ms
+     → expected '' to be '7' // Object.is equality
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"app-shell"[39m
+      [36m>[39m
+        [36m<aside[39m
+          [33maria-label[39m=[32m"Brukerkonto"[39m
+          [33mclass[39m=[32m"session-bar"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mAdministrator[0m
+          [36m</span>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Logg ut"[39m
+            [33mtitle[39m=[32m"Logg ut"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-log-out"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m16 17 5-5-5-5"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M21 12H9"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</aside>[39m
+        [36m<main[39m
+          [33mclass[39m=[32m"main-content"[39m
+        [36m>[39m
+          [36m<section[39m
+            [33mclass[39m=[32m"match-panel"[39m
+          [36m>[39m
+            [36m<h2>[39m
+              [0mAndreas med et langt navn[0m
+              [0m mot [0m
+              [0mBjørn med et annet langt navn[0m
+            [36m</h2>[39m
+            [36m<p>[39m
+              [0mOffisiell spilleform: [0m
+              [0mNetto[0m
+              [0m · Spille-HCP [0m
+              [0m0 / 0[0m
+              [0m · Relative slag [0m
+              [0m0 / 0[0m
+            [36m</p>[39m
+            [36m<h3>[39m
+              [0mIkke startet[0m
+            [36m</h3>[39m
+            [36m<p>[39m
+              [0mIngen bekreftede matchpoeng ennå.[0m
+            [36m</p>[39m
+            [36m<h3>[39m
+              [0mAksepterte rapporter[0m
+            [36m</h3>[39m
+            [36m<p>[39m
+              [0mIngen hull eller matchresultat er rapportert.[0m
+            [36m</p>[39m
+            [36m<details>[39m
+              [36m<summary>[39m
+                [0mNumeriske notater og hull[0m
+              [36m</summary>[39m
+              [36m<p>[39m
+                [0mNotater er forslag. De endrer ikke en akseptert rapport.[0m
+              [36m</p>[39m
+              [36m<ol[39m
+                [33mclass[39m=[32m"match-holes"[39m
+              [36m>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m1[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m1[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m2[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m2[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m3[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m3[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m4[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m4[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m5[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m5[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m6[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m6[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m7[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m7[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m8[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m8[0m
+                  [36m</strong>[39m
+       ...
+   ✓ clears transient input across account departure and never restores it on return 104ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/matchPlay/MatchNotes.retention.test.tsx > preserves unsaved input, hole and guard across same-account replacement
+ FAIL  src/features/matchPlay/MatchNotes.retention.test.tsx > preserves failed-save input, hole and guard across same-account replacement
+AssertionError: expected '' to be '7' // Object.is equality
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"app-shell"[39m
+      [36m>[39m
+        [36m<aside[39m
+          [33maria-label[39m=[32m"Brukerkonto"[39m
+          [33mclass[39m=[32m"session-bar"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mAdministrator[0m
+          [36m</span>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Logg ut"[39m
+            [33mtitle[39m=[32m"Logg ut"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-log-out"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m16 17 5-5-5-5"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M21 12H9"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</aside>[39m
+        [36m<main[39m
+          [33mclass[39m=[32m"main-content"[39m
+        [36m>[39m
+          [36m<section[39m
+            [33mclass[39m=[32m"match-panel"[39m
+          [36m>[39m
+            [36m<h2>[39m
+              [0mAndreas med et langt navn[0m
+              [0m mot [0m
+              [0mBjørn med et annet langt navn[0m
+            [36m</h2>[39m
+            [36m<p>[39m
+              [0mOffisiell spilleform: [0m
+              [0mNetto[0m
+              [0m · Spille-HCP [0m
+              [0m0 / 0[0m
+              [0m · Relative slag [0m
+              [0m0 / 0[0m
+            [36m</p>[39m
+            [36m<h3>[39m
+              [0mIkke startet[0m
+            [36m</h3>[39m
+            [36m<p>[39m
+              [0mIngen bekreftede matchpoeng ennå.[0m
+            [36m</p>[39m
+            [36m<h3>[39m
+              [0mAksepterte rapporter[0m
+            [36m</h3>[39m
+            [36m<p>[39m
+              [0mIngen hull eller matchresultat er rapportert.[0m
+            [36m</p>[39m
+            [36m<details>[39m
+              [36m<summary>[39m
+                [0mNumeriske notater og hull[0m
+              [36m</summary>[39m
+              [36m<p>[39m
+                [0mNotater er forslag. De endrer ikke en akseptert rapport.[0m
+              [36m</p>[39m
+              [36m<ol[39m
+                [33mclass[39m=[32m"match-holes"[39m
+              [36m>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m1[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m1[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m2[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m2[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m3[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m3[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m4[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m4[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m5[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m5[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m6[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m6[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m7[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m7[0m
+                  [36m</strong>[39m
+                  [36m<span>[39m
+                    [0mAndreas med et langt navn: tomt / Bjørn med et annet langt navn: tomt[0m
+                  [36m</span>[39m
+                [36m</li>[39m
+                [36m<li>[39m
+                  [36m<strong>[39m
+                    [0mHull [0m
+                    [0m8[0m
+                    [0m · par [0m
+                    [0m4[0m
+                    [0m · indeks [0m
+                    [0m8[0m
+                  [36m</strong>[39m
+       ...
+
+- Expected
++ Received
+
+- 7
+
+ ❯ src/features/matchPlay/MatchNotes.retention.test.tsx:37:42
+     35|  expect(input().value).toBe('7')
+     36|  view.change({...auth,session:{...session,csrf_token:'replacement'}})
+     37|  await waitFor(()=>expect(input().value).toBe('7'))
+       |                                          ^
+     38|  expect((screen.getByLabelText('Hull') as HTMLSelectElement).value).to…
+     39|  expect(screen.getByRole('button',{name:'Logg ut'}).hasAttribute('disa…
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 1 passed (3)
+   Start at  21:48:29
+   Duration  4.29s (transform 384ms, setup 0ms, collect 711ms, tests 2.57s, environment 561ms, prepare 77ms)

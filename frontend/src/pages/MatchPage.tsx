@@ -1,3 +1,4 @@
+import { MatchNoteRecovery } from '../features/matchPlay/drafts/MatchNoteRecovery'
 import { ApiHttpError } from '../api/http'
 import { usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 import { MatchReadWorkspace } from '../features/matchPlay/MatchReadWorkspace'
@@ -36,8 +37,9 @@ function MatchWorkspace({ roundId, matchId, scoring }: { roundId: string; matchI
 
   const admin = !memberships.error && memberships.data?.some(m => m.tournament.id === round.data?.tournament_id && m.role === 'admin') === true
   const pending = queue.items.find(i => i.matchId === matchId && (i.action || i.notes.length))
-  if (round.error && !round.data) return <section className="page"><ErrorState error={round.error} onRetry={() => void round.refetch()} /></section>
-  if (!round.data) return <section className="page"><LoadingState /></section>
+  const recovery = matchId ? <MatchNoteRecovery roundId={roundId} matchId={matchId} /> : null
+  if (round.error && !round.data) return <section className="page"><ErrorState error={round.error} onRetry={() => void round.refetch()} />{recovery}</section>
+  if (!round.data) return <section className="page"><LoadingState />{recovery}</section>
   return <section className="page match-page"><header className="page-header"><p className="brand">Matchspill · singel</p><h1>{round.data.name}</h1></header>
     {round.error && <ErrorState error={round.error} onRetry={() => void round.refetch()} />}
     <nav className="match-actions" aria-label="Matchvalg"><Link to={`/rounds/${roundId}`}>Runden</Link><Link to={matchUrl(roundId)}>Alle matcher</Link><Link to={tableUrl(round.data.tournament_id)}>Matchpoeng og historikk</Link></nav>
@@ -45,7 +47,8 @@ function MatchWorkspace({ roundId, matchId, scoring }: { roundId: string; matchI
       {card.error && <ErrorState error={card.error} onRetry={() => void card.refetch()} />}
       {card.error && pending && <MatchPending item={pending} />}
       {!card.data && !card.error && <LoadingState />}
-      {card.data && (scoring && 'revision' in card.data ? <MatchScoring card={card.data} admin={admin} recoveryOnly={[card.error, round.error].some(e => e && 'status' in e && [401,403,404].includes(Number(e.status)))} recovering={!!round.error || disconnected || card.isFetching || !!card.error || memberships.isFetching || !!memberships.error} /> : !card.error && <MatchReadView card={card.data} />)}
+      {!card.data && recovery}
+      {card.data && (scoring && 'revision' in card.data ? <MatchScoring card={card.data} admin={admin} recoveryOnly={denied || [card.error, round.error].some(e => e && 'status' in e && [401,403,404].includes(Number(e.status)))} recovering={!!round.error || disconnected || card.isFetching || !!card.error || memberships.isFetching || !!memberships.error} /> : !card.error && <MatchReadView card={card.data} />)}
       {scoring && <Link to={matchUrl(roundId, matchId)}>Åpne tillatt, skrivebeskyttet matchvisning</Link>}
     </>}
   </section>

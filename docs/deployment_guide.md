@@ -610,10 +610,15 @@ configuration change is required.
 The [browser/offline persistence assessment](validation/browser-persistence-2026-09-23/README.md)
 confirmed PERSIST-1 (transient match input loss), PERSIST-2 (uncontrolled retry on
 storage failure) and PERSIST-3 (late mutation recreating cleared memory cache).
-These remain unfixed and require separate bounded repairs. The findings do not
-establish a server authorization bypass or another account's UI disclosure.
+The [match-note retention repair](validation/match-note-retention-2026-09-23/README.md)
+resolves PERSIST-1 without migration or operator configuration changes. Unsaved
+input remains memory-only until a device write commits. PERSIST-2/PERSIST-3 still
+require separate bounded repairs. The findings do not establish a server
+authorization bypass or another account's UI disclosure. Repair validation used
+real Chrome with synthetic API responses; repeating the local PostgreSQL-backed
+browser control was blocked by Docker socket permissions.
 
-Deployment sign-off is **NOT READY**: PERSIST-1/2/3, remaining operational assessment,
+Deployment sign-off is **NOT READY**: PERSIST-2/PERSIST-3, remaining operational assessment,
 public-host acceptance, native 200% browser zoom and physical Android Chrome remain
 unresolved.
 The report's three frontend

@@ -1,0 +1,65 @@
+
+> golf-web@0.1.0 build
+> tsc -b && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 1981 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                      0.58 kB │ gzip:   0.34 kB
+dist/assets/TournamentsPage-By3L3DFO.css             0.66 kB │ gzip:   0.36 kB
+dist/assets/RoundPage-wcT7C6DS.css                   0.83 kB │ gzip:   0.36 kB
+dist/assets/ProfilePage-0ILpLUhR.css                 1.27 kB │ gzip:   0.48 kB
+dist/assets/ScorecardSummaryView-PzQW966n.css        2.75 kB │ gzip:   0.85 kB
+dist/assets/resultSharing-BXTnhsUo.css               3.28 kB │ gzip:   1.02 kB
+dist/assets/TournamentManagementPage-q76c0ZwO.css    3.68 kB │ gzip:   0.93 kB
+dist/assets/index-BLE7lTJP.css                      71.82 kB │ gzip:  12.48 kB
+dist/assets/check-CpcbeR3F.js                        0.13 kB │ gzip:   0.14 kB
+dist/assets/chevron-right-q0dXUvi0.js                0.13 kB │ gzip:   0.14 kB
+dist/assets/chevron-left-B_m4UdfJ.js                 0.13 kB │ gzip:   0.15 kB
+dist/assets/plus-CbGWWa0y.js                         0.15 kB │ gzip:   0.15 kB
+dist/assets/x-CFB8UshA.js                            0.16 kB │ gzip:   0.15 kB
+dist/assets/circle-check-BkoXJhdn.js                 0.18 kB │ gzip:   0.17 kB
+dist/assets/flag-CbKi2Az6.js                         0.26 kB │ gzip:   0.22 kB
+dist/assets/StatusBadge-CkzcEEaj.js                  0.26 kB │ gzip:   0.23 kB
+dist/assets/map-pin-B2kV_SLM.js                      0.26 kB │ gzip:   0.23 kB
+dist/assets/finalRoundExplanation-DIiFCWmu.js        0.27 kB │ gzip:   0.22 kB
+dist/assets/users-Dm_QFxE8.js                        0.31 kB │ gzip:   0.23 kB
+dist/assets/refresh-cw-BO9F-vHc.js                   0.32 kB │ gzip:   0.23 kB
+dist/assets/trash-2-CId9ubpF.js                      0.33 kB │ gzip:   0.22 kB
+dist/assets/resultExplanations-vi8djnSL.js           0.36 kB │ gzip:   0.25 kB
+dist/assets/overallConfiguration-ABTMy3Gc.js         0.38 kB │ gzip:   0.24 kB
+dist/assets/password-CbC00kx7.js                     0.43 kB │ gzip:   0.30 kB
+dist/assets/drilldownRoutes-RBLfWGPT.js              0.46 kB │ gzip:   0.29 kB
+dist/assets/format-CAgFkmGX.js                       0.47 kB │ gzip:   0.35 kB
+dist/assets/calendar-days-YpSm22VW.js                0.50 kB │ gzip:   0.27 kB
+dist/assets/tieBreakExplanation-BDPa7Azd.js          0.55 kB │ gzip:   0.32 kB
+dist/assets/tournamentLoader-Cfs5TZLu.js             0.84 kB │ gzip:   0.53 kB
+dist/assets/format-BJysboft.js                       1.65 kB │ gzip:   0.81 kB
+dist/assets/usePrivateResultQuery-BQmLuF2k.js        2.09 kB │ gzip:   0.98 kB
+dist/assets/messages-C72bG6rC.js                     2.38 kB │ gzip:   1.19 kB
+dist/assets/MatchResultsPage-DAqqEYSh.js             2.87 kB │ gzip:   1.31 kB
+dist/assets/TournamentsPage-Bmvx6G6f.js              2.91 kB │ gzip:   1.35 kB
+dist/assets/useTournamentLive-DVPIQ6bk.js            3.07 kB │ gzip:   1.37 kB
+dist/assets/MatchRound-cmyuNYo8.js                   3.32 kB │ gzip:   1.45 kB
+dist/assets/invitations-Bls-AKT5.js                  4.17 kB │ gzip:   1.22 kB
+dist/assets/ResetPasswordPage-DvNptUR0.js            4.32 kB │ gzip:   1.89 kB
+dist/assets/pairings-CjoTzwqd.js                     5.85 kB │ gzip:   2.24 kB
+dist/assets/SharedResultsPage-CBeXwqSb.js            6.00 kB │ gzip:   2.52 kB
+dist/assets/resultSharing-n8H1_Jw1.js                6.39 kB │ gzip:   2.42 kB
+dist/assets/PlayerHistoryPage-WM-_THaq.js            6.93 kB │ gzip:   2.60 kB
+dist/assets/DirectScorecardPage-BiBgamPZ.js          7.72 kB │ gzip:   2.69 kB
+dist/assets/RoundPage-CAzECT_H.js                    8.53 kB │ gzip:   2.96 kB
+dist/assets/InvitationAdminPage-C6-mpy3S.js          9.24 kB │ gzip:   3.32 kB
+dist/assets/ScorecardSummaryView-Czm962gH.js         9.51 kB │ gzip:   2.52 kB
+dist/assets/ProfilePage-RCbBnLf9.js                  9.67 kB │ gzip:   3.48 kB
+dist/assets/JoinPage-CeShbOxH.js                    10.71 kB │ gzip:   3.49 kB
+dist/assets/TournamentPage-jVz3Rrq4.js              12.10 kB │ gzip:   4.25 kB
+dist/assets/LeaderboardPage-BDkShq8Y.js             12.48 kB │ gzip:   3.93 kB
+dist/assets/MatchPage-DCMAeN3B.js                   17.51 kB │ gzip:   5.67 kB
+dist/assets/TournamentOnboardingPage-z6_eXyBX.js    28.11 kB │ gzip:   8.61 kB
+dist/assets/ScorePage-D1VuULqj.js                   48.76 kB │ gzip:  11.68 kB
+dist/assets/TournamentManagementPage--X8epI_X.js   115.59 kB │ gzip:  31.95 kB
+dist/assets/index-HsHpXTCg.js                      459.33 kB │ gzip: 141.05 kB
+✓ built in 2.82s

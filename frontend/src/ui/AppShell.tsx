@@ -1,3 +1,4 @@
+import { MatchNoteProvider } from '../features/matchPlay/drafts/MatchNoteProvider'
 import { MatchPendingLink } from '../features/matchPlay/MatchPending'
 import { MatchQueueProvider } from '../features/matchPlay/offline/MatchQueueProvider'
 import { ScoreQueueProvider } from '../features/scoring/offline/ScoreQueueProvider'
@@ -18,7 +19,7 @@ const baseNavItems = [
 ]
 
 export function AppShell() {
-  return <TournamentNavigationProvider><ScoreQueueProvider><MatchQueueProvider><PrivateShell /></MatchQueueProvider></ScoreQueueProvider></TournamentNavigationProvider>
+  return <TournamentNavigationProvider><MatchNoteProvider><ScoreQueueProvider><MatchQueueProvider><PrivateShell /></MatchQueueProvider></ScoreQueueProvider></MatchNoteProvider></TournamentNavigationProvider>
 }
 
 function PrivateShell() {

@@ -469,6 +469,13 @@ authorization loss preserve unsaved notes in a minimal local-only recovery view
 while preventing authoritative actions. Navigation protection offers explicit
 review or discard for unsaved edits. Cold offline launch and background sync are
 not supported; server backups do not include unsent device notes.
+Unsaved and failed-save match notes also survive a renewed session for the same
+account, including the selected hole and original conditional expectation. They
+remain labelled **Ikke lagret på enheten** until IndexedDB commits. Loading or
+lost access keeps a minimal local recovery view with explicit discard; navigation,
+logout and unload guards remain active. Account change, session teardown or a full
+reload clears transient notes. A device-saved queue is separate and survives.
+
 
 Dedicated routes are `/rounds/:roundId/matches`, the match's read and `/score`
 paths, and `/tournaments/:tournamentId/match-results` with optional player scope.
@@ -714,10 +721,11 @@ Detected expiry returns 401, rolls back every grant/audit change and emits no
 invalidation; failed replacement/revoke preserves the old grant unchanged. Existing
 private/public projection checks found no cross-tournament or public field leak.
 The subsequent [browser/offline persistence assessment](validation/browser-persistence-2026-09-23/README.md)
-confirmed three unfixed boundary defects: transient match notes are lost on
-same-account session replacement (PERSIST-1), storage failures can cause
-uncontrolled queue retries (PERSIST-2), and late administrator mutation success
-can recreate cleared account-scoped memory caches (PERSIST-3). No other-account
+confirmed three boundary defects. The subsequent
+[match-note retention repair](validation/match-note-retention-2026-09-23/README.md)
+resolves same-account transient input loss (PERSIST-1). Storage failures can still
+cause uncontrolled queue retries (PERSIST-2), and late administrator mutation
+success can recreate cleared account-scoped memory caches (PERSIST-3). No other-account
 UI disclosure or server authorization bypass was demonstrated. Durable queues
 remain account-scoped and intentionally survive logout; the report records
 passing controls and exact limitations. Operational assessment remains open.

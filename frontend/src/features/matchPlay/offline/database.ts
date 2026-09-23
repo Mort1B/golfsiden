@@ -11,13 +11,17 @@ function open(): Promise<IDBDatabase> {
     req.onsuccess = () => { req.result.onversionchange = () => req.result.close(); resolve(req.result) }
   })
 }
-async function transaction<T>(work: (store: IDBObjectStore) => Promise<T>): Promise<T> {
+export interface RetentionGuard { allowed: () => boolean; subscribe: (listener: () => void) => () => void }
+async function transaction<T>(work: (store: IDBObjectStore) => Promise<T>, guard?: RetentionGuard): Promise<T> {
   const db = await open()
   try {
+    if (guard && !guard.allowed()) throw new Error(STORAGE_ERROR)
     const tx = db.transaction('matches', 'readwrite')
+    const unsubscribe = guard?.subscribe(() => { if (!guard.allowed()) { try { tx.abort() } catch { /* already settled */ } } })
     const done = new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onabort = tx.onerror = () => reject(new Error(STORAGE_ERROR)) })
     try { const result = await work(tx.objectStore('matches')); await done; return result }
     catch (e) { try { tx.abort() } catch { /* finished */ } await done.catch(() => undefined); throw e }
+    finally { unsubscribe?.() }
   } finally { db.close() }
 }
 async function read(store: IDBObjectStore, key: string): Promise<MatchDraft | null> {
@@ -28,7 +32,7 @@ function busy(item: MatchDraft): boolean { return item.lease !== null && item.le
 function put(store: IDBObjectStore, item: MatchDraft): MatchDraft { const next = { ...item, generation: crypto.randomUUID() }; store.put(next); return next }
 export const matchDatabase = {
   list: (account: string): Promise<MatchDraft[]> => transaction(async s => { const values: unknown[] = await request(s.index('account').getAll(account)); return values.map(decodeDraft) }),
-  enqueue: (target: MatchTarget, observed: string | null, revision: string, command: MatchNoteCommand, oldValue: number | null): Promise<MatchDraft> => transaction(async s => {
+  enqueue: (target: MatchTarget, observed: string | null, revision: string, command: MatchNoteCommand, oldValue: number | null, guard?: RetentionGuard): Promise<MatchDraft> => transaction(async s => {
     const current = await read(s, matchDraftKey(target))
     if ((current?.generation ?? null) !== observed) throw new Error(STALE_ERROR)
     const item = current ?? initial(target)
@@ -37,7 +41,7 @@ export const matchDatabase = {
     const head: MatchRequest = { request_id: crypto.randomUUID(), expected_revision: tail ? nextRevision(tail.request.expected_revision) : revision, command }
     const delivery: Delivery = { request: head, predecessor: tail?.request.request_id ?? null, oldValue, phase: 'queued', error: null }
     return put(s, { ...item, notes: [...item.notes, delivery], retryAt: 0 })
-  }),
+  }, guard),
   claim: (key: string, leaseId: string): Promise<MatchDraft | null> => transaction(async s => {
     const item = await read(s, key); const next = item?.action ?? item?.notes[0]
     if (!item || !next || next.phase === 'blocked' || busy(item) || item.retryAt > Date.now()) return null

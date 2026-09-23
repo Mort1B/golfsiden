@@ -1,37 +1,32 @@
-# Browser/offline assessment confirms three boundary defects
+# Match notes survive a renewed session for the same account
 
-The [persistence assessment](validation/browser-persistence-2026-09-23/README.md)
-confirmed three P2 issues without changing application code:
+PERSIST-1 is repaired. A numeric match note now lives in an account-owned transient
+store above the session-keyed delivery providers. Renewing the same account's
+session preserves the value, selected hole, failed-save error and original
+conditional metadata. It remains labelled **Ikke lagret på enheten** until the
+IndexedDB transaction commits. Logout/account change clears transient state and
+aborts unfinished writes; completed queues keep their existing account ownership.
 
-- PERSIST-1: same-account session replacement remounts match input and silently
-  loses unsaved/failed-save notes and their navigation guard. Real Chrome with
-  local authentication reproduced both cases; unchanged-session return preserves
-  input, and a durable queued note survives replacement and reaches the server.
-- PERSIST-2: a storage failure leaves eligible queued work in memory and causes
-  repeated microtask retries. A bounded synthetic Chrome probe observed 52
-  storage accesses before a zero-delay timer, then restored storage. It did not
-  leave Chrome hung or demonstrate permanent queue loss.
-- PERSIST-3: a delayed successful Stableford-settings response recreates the old
-  account's memory cache after logout/account switching. The component probe uses
-  actual UI/session code with a held mocked API response. Other similar callback
-  paths remain source-supported concerns; no other-account UI disclosure or
-  server authorization bypass was demonstrated.
+Recovery stays visible when card/round data is unavailable or access changes.
+The navigation guard shares the account lifetime, so switching loading, recovery
+and scoring views cannot temporarily release it. Router matching also covers
+accepted trailing-slash and case variants. Original match revisions, locks,
+explicit corrections and cross-tab queue generation checks remain enforced.
 
-Independent read-only reviewers checked each source path, diagnostic probe and
-report. The report separates account-scoped durable intent, private query state,
-capability state and explicitly untested schedules. Existing account-indexed
-storage, immutable conditional requests, session fences and server authorization
-passed their scoped validation. No service worker or offline app shell exists.
+For example, a failed save of `7` on hole 3 remains `7` on hole 3 after same-account
+session replacement, with its error and discard choice visible. It is not described
+as device-saved until storage commits. A full reload still ends transient input.
 
-The full frontend suite passed 751 tests, typecheck, lint and production build.
-The four backend score/match suites passed 99 PostgreSQL tests. Twenty-nine distinct existing Chrome scenarios passed across runs, plus four
-browser diagnostic cases and three component cases. The initial recovery flow
-failed because the temporary harness lacked a recovery origin; both recovery
-scenarios passed after that local harness correction. Disposable services and
-synthetic credential files were removed. Detailed outcomes are retained with the report.
-These checks establish bounded evidence, not whole-application security sign-off.
+The [validation report](validation/match-note-retention-2026-09-23/README.md) records
+failing-first reproduction, 17 new unit/component tests, the full 768-test suite,
+typecheck, lint, build and real Chrome checks at 320/390/1280px. Independent review
+found no remaining actionable source defect after guard corrections.
 
-No implementation, migration, dependency or production configuration changed.
-The next proposed repair is PERSIST-1; the other two repairs and operational
-assessment remain separate queued work. Deployment is **NOT READY** while these
-findings and public-host/device gates remain open. Work stays local without a push.
+The repair is **READY WITH KNOWN LIMITATIONS**: Chrome used synthetic API responses.
+Docker socket permissions prevented repeating the PostgreSQL-backed browser
+controls; no platform safeguard rejected the review or repair. There are no
+backend, migration, dependency or production configuration changes.
+
+Deployment remains **NOT READY** while PERSIST-2/PERSIST-3 and operational/device
+acceptance remain open. PERSIST-2 is the next proposed bounded repair. This step
+stops here, committed locally without a push.

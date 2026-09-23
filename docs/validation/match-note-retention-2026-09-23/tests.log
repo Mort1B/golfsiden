@@ -1,0 +1,175 @@
+
+> golf-web@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.7 /home/morten/Prog/guttasgolfside/golfsiden/frontend
+
+ ✓ src/features/tournaments/lifecycle/__tests__/RoundLifecyclePanel.test.tsx (13 tests) 1347ms
+   ✓ administrator round lifecycle > explains provisional standings before completion without implying scoring starts then  346ms
+ ✓ src/features/scoring/offline/fourBallRuntime.test.ts (3 tests) 2202ms
+   ✓ promptly re-verifies after a live refetch cancels delivery verification without trusting cached data  2023ms
+ ✓ src/features/scoring/offline/stablefordRuntime.test.ts (4 tests) 2260ms
+   ✓ promptly re-verifies after a live refetch cancels delivery verification without trusting cached data  2021ms
+ ✓ src/pages/ProfilePage.test.tsx (12 tests) 2199ms
+   ✓ lists historical memberships and saves comma handicap without a typed reason and with authoritative refetch  495ms
+   ✓ shows duplicate username, clears passwords, and reloads stale forms deliberately  335ms
+ ✓ src/pages/MatchLiveOwnership.test.tsx (28 tests) 2635ms
+   ✓ direct keeps one owner through early open, refresh, clearing and remount  431ms
+ ✓ src/pages/MatchResultGate.test.tsx (46 tests) 3608ms
+   ✓ does not fetch or expose lists before initial table readiness: /tournaments/00000000-0000-0000-0000-000000000002/match-results  376ms
+ ✓ src/pages/ScorePage.test.tsx (18 tests) 4692ms
+   ✓ scoring route resume > retains durable input and allows navigation during disconnected and failed recovery  738ms
+   ✓ scoring route resume > keeps immutable submitted and successor intent through reconnect  328ms
+   ✓ scoring route resume > keeps pending confirmation guarded through completion clearing  597ms
+   ✓ scoring route resume > disables a failed confirmation retry while recovering  837ms
+ ✓ src/features/tournaments/completion/TournamentCompletionPanel.test.tsx (10 tests) 1397ms
+   ✓ requires confirmation, supports Escape/focus and completes with the exact version  649ms
+ ✓ src/pages/TournamentOnboardingPage.test.tsx (6 tests) 1797ms
+   ✓ signed-in wizard skips account entry, preserves previous memberships and creates through CSRF API  723ms
+   ✓ retains frozen retry key through lost success, throttling and authoritative retry  325ms
+ ✓ src/pages/TournamentsPage.test.tsx (5 tests) 1399ms
+   ✓ keeps completed tournaments current, links archived history and preserves cache/URL back navigation  826ms
+ ✓ src/pages/TournamentManagementLifecycle.test.tsx (6 tests) 1455ms
+   ✓ management lifecycle authority gate > does not let a global admin with exact player membership administer rounds  384ms
+   ✓ management lifecycle authority gate > removes lifecycle data and controls after exact admin membership is revoked  588ms
+ ✓ src/features/tournaments/archive/TournamentArchivePanel.test.tsx (11 tests) 1355ms
+   ✓ requires confirmation, supports Escape/focus and completes with the exact version  614ms
+ ✓ src/features/matchPlay/MatchNotes.retention.test.tsx (11 tests) 4374ms
+   ✓ preserves unsaved input, hole and guard across same-account replacement  972ms
+   ✓ preserves failed-save input, hole and guard across same-account replacement  561ms
+   ✓ clears transient input across account departure and never restores it on return  357ms
+   ✓ settles a pending success through actual provider replacement  378ms
+   ✓ settles a pending failure through actual provider replacement  304ms
+   ✓ retains guarded local recovery after replacement with round-loading  329ms
+   ✓ retains guarded local recovery after replacement with terminal  325ms
+ ✓ src/features/rounds/RoundPage.test.tsx (14 tests) 1372ms
+   ✓ shows flight schedules on an individual draft, no empty teams or scoring authority  606ms
+ ✓ src/features/resultSharing/SharedResultsPage.test.tsx (9 tests) 1209ms
+   ✓ uses an isolated public cache, retains the reusable fragment and renders no private links  461ms
+   ✓ clears old metrics before a failed read and never revives them after hidden-final refresh  366ms
+ ✓ src/pages/PrivateResults.test.tsx (9 tests) 1638ms
+   ✓ erases cached card and dependent names after 401 and never revives them on retry/remount  306ms
+   ✓ hides a read-only match after denied round through pending retry  444ms
+ ✓ src/features/recovery/ResetPasswordExperience.test.tsx (7 tests) 1110ms
+   ✓ captures fragments in StrictMode, validates repeats and byte length, preserves spaces and another signed-in account on success  761ms
+ ✓ src/features/tournaments/CountedRoundsEditor.test.tsx (8 tests) 1201ms
+   ✓ saves the declared rule with CSRF/version and refreshes both metric caches  466ms
+ ✓ src/features/recovery/PlayerRecovery.test.tsx (4 tests) 993ms
+   ✓ creates, handles clipboard failure, hides and revokes a lost receipt using fresh password confirmation  699ms
+ ✓ src/features/scoring/recovery/store.test.ts (8 tests) 956ms
+ ✓ src/features/resultSharing/ResultShareControl.test.tsx (6 tests) 871ms
+   ✓ explains disclosure before creation, handles copy fallback, hides receipt and revokes by metadata  489ms
+ ✓ src/features/scoring/fourBall/FourBallViews.test.tsx (4 tests) 900ms
+   ✓ shows each named partner allocation and separate gross/net attribution without a team handicap  588ms
+ ✓ src/pages/LeaderboardNavigation.test.tsx (5 tests) 929ms
+   ✓ switches out of match-only results, canonicalizes stroke selection and restores player scope through history  693ms
+ ✓ src/routing/TournamentNavigationProvider.test.tsx (5 tests) 709ms
+   ✓ retains validated context on neutral pages, blocks old context on route changes, and rejects late publishers  554ms
+ ✓ src/features/tournaments/organizer/OrganizerSummary.test.tsx (9 tests) 773ms
+   ✓ orders actionable rounds and does not request readiness for locked rounds  393ms
+ ✓ src/pages/MatchPlayerCache.test.tsx (8 tests) 680ms
+   ✓ isolates player variants from the management list and reuses fresh exact keys on return  504ms
+ ✓ src/features/tournaments/SavedCoursePicker.test.tsx (6 tests) 682ms
+   ✓ inspects and explicitly applies exact male red-tee facts; blocks while saving or read-only  466ms
+ ✓ src/features/scoring/ScorecardSummaryView.test.tsx (4 tests) 643ms
+   ✓ shows server allocations on unscored holes beside metadata and preserves hole navigation  348ms
+ ✓ src/features/scoring/offline/runtime.test.ts (6 tests) 633ms
+ ✓ src/features/leaderboards/TournamentStandings.test.tsx (3 tests) 571ms
+   ✓ explains evaluated gross final scores and retains server positions  381ms
+ ✓ src/features/tournaments/StablefordSettings.test.tsx (3 tests) 478ms
+   ✓ validates 0–100 and persists enabled/allowance with the exact draft timestamp  387ms
+ ✓ src/features/scoring/fourBall/useFourBallConfirmation.test.tsx (5 tests) 518ms
+ ✓ src/features/rounds/FlightProgressPanel.test.tsx (6 tests) 514ms
+ ✓ src/features/scoring/useScorecardConfirmation.test.tsx (4 tests) 482ms
+ ✓ src/routing/lazyPage.test.tsx (5 tests) 431ms
+ ✓ src/features/matchPlay/offline/runtime.test.ts (4 tests) 258ms
+ ✓ src/features/scoring/stableford/useStablefordConfirmation.test.tsx (4 tests) 458ms
+ ✓ src/features/auth/passwordForms.test.tsx (2 tests) 402ms
+   ✓ validates invitation passwords by bytes before submitting, including multibyte minimum  368ms
+ ✓ src/features/scoring/recovery/provider.test.tsx (3 tests) 323ms
+ ✓ src/features/recovery/RecoveryAuthority.test.tsx (1 test) 354ms
+   ✓ hides self recovery, clears disclosure secrets on authority changes and keeps handicap locking independent  352ms
+ ✓ src/features/scoring/stableford/useStablefordSync.test.tsx (1 test) 168ms
+ ✓ src/features/scoring/fourBall/useFourBallSync.test.tsx (1 test) 158ms
+ ✓ src/features/scoring/offline/fourBallDatabase.test.ts (4 tests) 51ms
+ ✓ src/features/scoring/offline/database.test.ts (8 tests) 64ms
+ ✓ src/features/scoring/offline/stablefordDatabase.test.ts (4 tests) 45ms
+ ✓ src/features/matchPlay/drafts/store.test.ts (6 tests) 58ms
+ ✓ src/features/matchPlay/offline/database.test.ts (5 tests) 45ms
+ ✓ src/api/matchPlay/cancellation.test.ts (30 tests) 74ms
+ ✓ src/api/matchPlay/sharedCancellation.test.ts (3 tests) 132ms
+ ✓ src/features/recovery/refreshRecoverySession.test.ts (4 tests) 77ms
+ ✓ src/api/liveInvalidation.test.ts (7 tests) 133ms
+ ✓ src/api/scorecards/timeout.test.ts (2 tests) 15ms
+ ✓ src/api/returnRefresh.test.ts (8 tests) 498ms
+ ✓ src/api/pageReturn.test.ts (1 test) 11ms
+ ✓ src/api/courses.test.ts (4 tests) 31ms
+ ✓ src/api/tournaments.test.ts (12 tests) 47ms
+ ✓ src/api/leaderboards/tournamentTieBreak.test.ts (14 tests) 33ms
+ ✓ src/api/stableford/decoders.test.ts (17 tests) 93ms
+ ✓ src/api/leaderboards.test.ts (15 tests) 38ms
+ ✓ src/api/resultSharing.test.ts (6 tests) 31ms
+ ✓ src/api/invitations.test.ts (7 tests) 42ms
+ ✓ src/api/scorecards.test.ts (6 tests) 20ms
+ ✓ src/api/fourBall/decoders.test.ts (5 tests) 22ms
+ ✓ src/features/leaderboards/tournamentLoader.test.ts (3 tests) 21ms
+ ✓ src/api/matchPlay/playerListing.test.ts (3 tests) 42ms
+ ✓ src/api/roundTransitions.test.ts (6 tests) 31ms
+ ✓ src/api/tournamentCompletion.test.ts (1 test) 30ms
+ ✓ src/features/tournaments/lifecycle/__tests__/lifecycleState.test.ts (6 tests) 34ms
+ ✓ src/api/teams.test.ts (3 tests) 21ms
+ ✓ src/api/onboarding.test.ts (16 tests) 36ms
+ ✓ src/api/auth.test.ts (3 tests) 25ms
+ ✓ src/api/privateResults.test.ts (5 tests) 31ms
+ ✓ src/api/tournamentArchive.test.ts (1 test) 23ms
+ ✓ src/api/pairings.test.ts (4 tests) 23ms
+ ✓ src/api/finalRoundVisibility.test.ts (3 tests) 21ms
+ ✓ src/features/auth/username.test.ts (10 tests) 24ms
+ ✓ src/api/matchPlay/decoders.test.ts (6 tests) 21ms
+ ✓ src/features/rounds/flightProgress.test.ts (10 tests) 16ms
+ ✓ src/api/tournamentLive.test.ts (7 tests) 21ms
+ ✓ src/features/tournaments/completion/completionState.test.ts (8 tests) 7ms
+ ✓ src/api/stableford/api.test.ts (3 tests) 18ms
+ ✓ src/features/tournaments/courseConfiguration.test.ts (12 tests) 18ms
+ ✓ src/features/auth/navigation.test.ts (3 tests) 9ms
+ ✓ src/features/tournaments/pairings/draft.test.ts (11 tests) 26ms
+ ✓ src/api/http.test.ts (2 tests) 22ms
+ ✓ src/features/tournaments/managementWorkspace.test.ts (6 tests) 14ms
+ ✓ src/api/passwordRecovery.test.ts (2 tests) 25ms
+ ✓ src/features/auth/AuthProvider.test.ts (6 tests) 22ms
+ ✓ src/api/coursePresets.test.ts (9 tests) 15ms
+ ✓ src/features/tournaments/tournamentStart.test.ts (3 tests) 18ms
+ ✓ src/features/tournaments/tournamentListView.test.ts (5 tests) 13ms
+ ✓ src/features/onboarding/wizardState.test.ts (7 tests) 18ms
+ ✓ src/features/tournaments/organizer/roundAttention.test.ts (3 tests) 10ms
+ ✓ src/features/invitations/adminState.test.ts (4 tests) 8ms
+ ✓ src/features/scoring/selection.test.ts (9 tests) 13ms
+ ✓ src/api/matchPlay/live.test.ts (2 tests) 13ms
+ ✓ src/features/handicap/format.test.ts (16 tests) 12ms
+ ✓ src/api/scorecards/conditional.test.ts (14 tests) 14ms
+ ✓ src/features/scoring/queries.test.ts (2 tests) 9ms
+ ✓ src/features/leaderboards/playerHistory.test.ts (6 tests) 9ms
+ ✓ src/api/privateWorkspace.test.ts (2 tests) 11ms
+ ✓ src/features/tournaments/countedRoundsEditor.test.ts (3 tests) 7ms
+ ✓ src/api/roundLifecycle.test.ts (2 tests) 9ms
+ ✓ src/api/profile.test.ts (2 tests) 10ms
+ ✓ src/api/mandatoryRounds.test.ts (2 tests) 9ms
+ ✓ src/features/leaderboards/format.test.ts (5 tests) 8ms
+ ✓ src/features/tournaments/finalRoundVisibility.test.ts (2 tests) 9ms
+ ✓ src/api/fourBall/format.test.ts (2 tests) 10ms
+ ✓ src/features/onboarding/matchWizard.test.ts (2 tests) 7ms
+ ✓ src/api/tournamentCreation.test.ts (2 tests) 23ms
+ ✓ src/features/auth/password.test.ts (4 tests) 33ms
+ ✓ src/api/visibility.test.ts (2 tests) 8ms
+ ✓ src/features/invitations/secret.test.ts (8 tests) 9ms
+ ✓ src/features/leaderboards/drilldownRoutes.test.ts (2 tests) 8ms
+ ✓ src/features/invitations/joinMessages.test.ts (8 tests) 8ms
+ ✓ src/features/leaderboards/selection.test.ts (2 tests) 7ms
+ ✓ src/features/scoring/directScorecard.test.ts (2 tests) 7ms
+ ✓ src/features/matchPlay/finalRoundExplanation.test.ts (1 test) 3ms
+
+ Test Files  118 passed (118)
+      Tests  768 passed (768)
+   Start at  21:59:54
+   Duration  30.45s (transform 5.37s, setup 0ms, collect 28.09s, tests 53.61s, environment 58.72s, prepare 17.57s)

@@ -1,0 +1,26 @@
+
+Running 19 tests using 1 worker
+
+(node:611253) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+  ✓   1 e2e/matchCancellation.browser.ts:40:39 › pending result and management navigation preserves the shared list at 320px (1.6s)
+  ✓   2 e2e/matchCancellation.browser.ts:40:39 › pending result and management navigation preserves the shared list at 390px (1.5s)
+  ✓   3 e2e/matchCancellation.browser.ts:40:39 › pending result and management navigation preserves the shared list at 1280px (1.4s)
+  ✓   4 e2e/matchCancellation.browser.ts:71:1 › logout cancels pending protected list reads and a new account loads fresh content (588ms)
+  ✓   5 e2e/matchCancellation.browser.ts:91:43 › uncancelled error on list remains recoverable (485ms)
+  ✓   6 e2e/matchCancellation.browser.ts:91:43 › uncancelled error on table remains recoverable (465ms)
+  ✓   7 e2e/matchRetention.browser.ts:15:75 › same-account unsaved match input survives at 320px (1.2s)
+  ✓   8 e2e/matchRetention.browser.ts:15:75 › same-account failed-save match input survives at 320px (1.2s)
+  ✓   9 e2e/matchRetention.browser.ts:15:75 › same-account unsaved match input survives at 390px (1.2s)
+  ✓  10 e2e/matchRetention.browser.ts:15:75 › same-account failed-save match input survives at 390px (1.5s)
+  ✓  11 e2e/matchRetention.browser.ts:15:75 › same-account unsaved match input survives at 1280px (1.2s)
+  ✓  12 e2e/matchRetention.browser.ts:15:75 › same-account failed-save match input survives at 1280px (1.4s)
+  ✓  13 e2e/matchRetention.browser.ts:49:1 › same-account denial retains only local recovery and account departure clears it (1.1s)
+  ✓  14 e2e/matchRetention.browser.ts:81:1 › committed local queue survives a same-account replacement (527ms)
+  ✓  15 e2e/matchRetention.browser.ts:105:45 › dirty notes block navigation on accepted route variant /score/ (552ms)
+  ✓  16 e2e/matchRetention.browser.ts:105:45 › dirty notes block navigation on accepted route variant /SCORE (567ms)
+  ✓  17 e2e/returnOrdering.browser.ts:5:1 › a frozen return refreshes authority after an unfinished earlier return at 320px (948ms)
+  ✓  18 e2e/returnOrdering.browser.ts:5:1 › a frozen return refreshes authority after an unfinished earlier return at 390px (946ms)
+  ✓  19 e2e/returnOrdering.browser.ts:5:1 › a frozen return refreshes authority after an unfinished earlier return at 1280px (941ms)
+
+  19 passed (20.5s)
