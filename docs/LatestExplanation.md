@@ -1,27 +1,30 @@
-# Local authentication assessment found two boundary defects
+# Active rate limits survive capacity pressure
 
-The authorized local review of authentication, sessions, CSRF and tournament
-authorization is complete. The [report](validation/authentication-2026-09-23/README.md)
-records source references, reproducible diagnostics, impact and recommended fixes.
-Application source, migrations and dependencies are unchanged.
+AUTH-1 is repaired. The limiter checks existing quotas before allocating buckets
+and rejects new admissions when storage is full. It no longer forgets an
+unexpired counter to make room, including when rejected requests vary their
+resource keys on another route.
 
-AUTH-1: requests rejected by one route can still allocate limiter buckets and
-evict another route's active counters. The actual production limiter accepted a
-previously blocked login after 615 ms instead of preserving its 60-second window.
+At capacity, existing keys retain their remaining quota. New client/resource
+buckets receive the established 429 response until space expires. This can
+temporarily deny new identities across routes; `Retry-After` is the earliest expiry
+hint, not guaranteed admission. Quotas, client identity, fixed windows and the
+8,192-bucket bound are unchanged.
 
-AUTH-2: a handicap correction that was initially authorized can wait on a database
-lock and commit after its session expires. The real router and disposable
-PostgreSQL reproduced the update, audit entry and invalidation; the next session
-read returned 401. A nonexpiring control passed. This does not demonstrate bypass
-of logout, CSRF or exact tournament membership.
+Four regressions failed against the previous code and passed after the fix. The
+final 11 limiter tests cover cross-route churn, production capacity, atomic
+admission, mixed windows and expiry recovery. A real-router test also verifies the
+HTTP contract and preserves the existing account's remaining quota.
 
-Validation passed 206 Rust library tests, 35 PostgreSQL integration tests and 18
-frontend auth/cache tests. Independent read-only reviewers checked the boundaries
-and evidence. Initial local socket restrictions were resolved; no platform
-cybersecurity safeguard blocked this run. The report distinguishes the findings
-from unverified read/logout semantics and remaining review areas.
+Formatting, the 215-test backend ladder, Clippy, migration and seed checks passed.
+The complete database-enabled run passed 601 tests (including those 215), with
+three existing performance measurements ignored because their PostgreSQL
+`pg_stat_statements` configuration was not enabled. Independent read-only source
+and documentation review completed. The task-owned disposable database was removed.
+Details are in the [repair report](validation/rate-limit-capacity-2026-09-23/README.md).
 
-Deployment remains **NOT READY** pending these repairs and the existing wider
-security, public-host and device/browser gates. AUTH-1 is the proposed next bounded
-step; remediation requires separate approval. This assessment stays local under
-the user's scope, without external publication.
+The AUTH-1 repair is **READY** with its documented capacity tradeoff. Deployment
+remains **NOT READY**: AUTH-2's session-expiry boundary, the wider security review
+and existing public-host/device gates remain open. Frontend/browser checks were
+not rerun for this backend-only repair. Work remains local, without a push, under
+the user's existing scope. AUTH-2 is the next proposed bounded step.

@@ -196,13 +196,11 @@ impl RateLimiter {
             .state
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        ensure_buckets(
-            &mut state,
-            [narrow_key, client_key],
-            rule.window,
-            inner.max_buckets,
-            now,
-        );
+        // Admission and accounting share one lock so concurrent requests cannot
+        // overbook capacity or forget an active limit.
+        state
+            .buckets
+            .retain(|_, bucket| now.saturating_duration_since(bucket.started_at) < bucket.window);
 
         let narrow = state.buckets.get(&narrow_key).copied().unwrap_or(Bucket {
             started_at: now,
@@ -220,6 +218,14 @@ impl RateLimiter {
         if client_bucket.count >= rule.per_client_limit {
             return Err(exceeded(client_bucket, now));
         }
+
+        ensure_buckets(
+            &mut state,
+            [narrow_key, client_key],
+            rule.window,
+            inner.max_buckets,
+            now,
+        )?;
 
         increment(&mut state, narrow_key);
         increment(&mut state, client_key);
@@ -241,34 +247,32 @@ fn ensure_buckets(
     window: Duration,
     max_buckets: usize,
     now: Instant,
-) {
-    state
-        .buckets
-        .retain(|_, bucket| now.saturating_duration_since(bucket.started_at) < bucket.window);
+) -> Result<(), RateLimitExceeded> {
     let missing = keys
         .iter()
         .filter(|key| !state.buckets.contains_key(*key))
         .count();
-    while state.buckets.len() + missing > max_buckets {
-        let Some(oldest) = state
+    if state.buckets.len() + missing > max_buckets {
+        // Never evict live counters to admit a new identity/resource. Rejection
+        // leaves both buckets untouched; the first expiry is only a retry hint.
+        let retry_after_seconds = state
             .buckets
-            .iter()
-            .filter(|(key, _)| !keys.contains(key))
-            .min_by_key(|(_, bucket)| bucket.started_at)
-            .map(|(key, _)| *key)
-        else {
-            break;
-        };
-        state.buckets.remove(&oldest);
+            .values()
+            .map(|bucket| exceeded(*bucket, now).retry_after_seconds)
+            .min()
+            .unwrap_or(1);
+        return Err(RateLimitExceeded {
+            retry_after_seconds,
+        });
     }
     for key in keys {
-        let bucket = state.buckets.entry(key).or_insert(Bucket {
+        state.buckets.entry(key).or_insert(Bucket {
             started_at: now,
             count: 0,
             window,
         });
-        refresh(bucket, now);
     }
+    Ok(())
 }
 
 fn increment(state: &mut State, key: [u8; 32]) {
@@ -288,16 +292,6 @@ fn hash_bucket(
     hasher.update(client.as_bytes());
     hasher.update(logical_key);
     hasher.finalize().into()
-}
-
-fn refresh(bucket: &mut Bucket, now: Instant) {
-    if now.saturating_duration_since(bucket.started_at) >= bucket.window {
-        *bucket = Bucket {
-            started_at: now,
-            count: 0,
-            window: bucket.window,
-        };
-    }
 }
 
 fn exceeded(bucket: Bucket, now: Instant) -> RateLimitExceeded {
@@ -417,37 +411,356 @@ mod tests {
     }
 
     #[test]
-    fn all_bucket_storage_is_bounded_and_disabled_mode_is_open() {
+    fn capacity_preserves_counters_and_admits_existing_keys_until_their_limit() {
         let start = Instant::now();
-        let limiter = RateLimiter::with_rules(
-            [(RateLimitRoute::Login, Duration::from_secs(60), 2, 100)],
-            4,
+        let limiter =
+            RateLimiter::with_rules([(RateLimitRoute::Login, Duration::from_secs(60), 2, 3)], 4);
+        let first = client("198.51.100.1");
+        let second = client("198.51.100.2");
+        let third = client("198.51.100.3");
+        assert_eq!(
+            limiter.check_at(RateLimitRoute::Login, first, b"one", start),
+            Ok(())
         );
-        for (ip, key) in [
-            ("198.51.100.1", b"one".as_slice()),
-            ("198.51.100.2", b"two"),
-            ("198.51.100.3", b"three"),
+        assert_eq!(
+            limiter.check_at(RateLimitRoute::Login, second, b"two", start),
+            Ok(())
+        );
+        let later = start + Duration::from_millis(1500);
+        assert_eq!(
+            limiter.check_at(RateLimitRoute::Login, third, b"three", later),
+            Err(RateLimitExceeded {
+                retry_after_seconds: 59
+            })
+        );
+        assert_eq!(bucket_count(&limiter), 4);
+        // Refused admission must not reset a bucket or consume an admitted key's quota.
+        assert_eq!(
+            limiter.check_at(RateLimitRoute::Login, first, b"one", later),
+            Ok(())
+        );
+        assert!(
+            limiter
+                .check_at(RateLimitRoute::Login, first, b"one", later)
+                .is_err()
+        );
+        assert_eq!(
+            limiter.check_at(RateLimitRoute::Login, second, b"two", later),
+            Ok(())
+        );
+        assert!(
+            limiter
+                .check_at(RateLimitRoute::Login, second, b"two", later)
+                .is_err()
+        );
+        assert_eq!(
+            limiter.check_at(
+                RateLimitRoute::Login,
+                third,
+                b"three",
+                start + Duration::from_secs(60)
+            ),
+            Ok(())
+        );
+        assert_eq!(bucket_count(&limiter), 2);
+        assert_eq!(
+            RateLimiter::disabled().check(RateLimitRoute::Login, first, b"one"),
+            Ok(())
+        );
+    }
+
+    fn bucket_count(limiter: &RateLimiter) -> usize {
+        limiter
+            .inner
+            .as_ref()
+            .unwrap()
+            .state
+            .lock()
+            .unwrap()
+            .buckets
+            .len()
+    }
+
+    #[test]
+    fn rejected_cross_route_churn_preserves_login_limits_at_small_and_production_capacity() {
+        for limiter in [
+            RateLimiter::with_rules(
+                [
+                    (RateLimitRoute::Login, Duration::from_secs(60), 10, 40),
+                    (
+                        RateLimitRoute::RecoveryPreview,
+                        Duration::from_secs(60),
+                        30,
+                        60,
+                    ),
+                ],
+                8,
+            ),
+            RateLimiter::production(),
         ] {
+            let start = Instant::now();
+            let caller = client("198.51.100.1");
+            for key in 0u32..4 {
+                for _ in 0..10 {
+                    assert_eq!(
+                        limiter.check_at(RateLimitRoute::Login, caller, &key.to_be_bytes(), start),
+                        Ok(())
+                    );
+                }
+            }
+            let later = start + Duration::from_millis(1);
+            assert!(
+                limiter
+                    .check_at(RateLimitRoute::Login, caller, &0u32.to_be_bytes(), later)
+                    .is_err()
+            );
+            assert!(
+                limiter
+                    .check_at(RateLimitRoute::Login, caller, b"new-account", later)
+                    .is_err()
+            );
+            for key in 0u128..8192 {
+                let _ = limiter.check_at(
+                    RateLimitRoute::RecoveryPreview,
+                    caller,
+                    &key.to_be_bytes(),
+                    later,
+                );
+            }
+            assert!(
+                limiter
+                    .check_at(RateLimitRoute::Login, caller, &0u32.to_be_bytes(), later)
+                    .is_err()
+            );
+            assert!(
+                limiter
+                    .check_at(RateLimitRoute::Login, caller, b"new-account", later)
+                    .is_err()
+            );
+            assert!(bucket_count(&limiter) <= limiter.inner.as_ref().unwrap().max_buckets);
             assert_eq!(
-                limiter.check_at(RateLimitRoute::Login, client(ip), key, start),
+                limiter.check_at(
+                    RateLimitRoute::Login,
+                    caller,
+                    b"new-account",
+                    start + Duration::from_secs(60)
+                ),
                 Ok(())
             );
         }
+    }
+
+    #[test]
+    fn limited_client_cannot_allocate_fresh_resource_keys() {
+        let start = Instant::now();
+        let limiter =
+            RateLimiter::with_rules([(RateLimitRoute::Login, Duration::from_secs(60), 1, 1)], 16);
+        let caller = client("198.51.100.1");
         assert_eq!(
-            limiter
-                .inner
-                .as_ref()
-                .unwrap()
-                .state
-                .lock()
-                .unwrap()
-                .buckets
-                .len(),
-            4
-        );
-        assert_eq!(
-            RateLimiter::disabled().check(RateLimitRoute::Login, client("198.51.100.1"), b"one"),
+            limiter.check_at(RateLimitRoute::Login, caller, b"one", start),
             Ok(())
         );
+        for key in 0u32..100 {
+            assert!(
+                limiter
+                    .check_at(RateLimitRoute::Login, caller, &key.to_be_bytes(), start)
+                    .is_err()
+            );
+        }
+        assert_eq!(bucket_count(&limiter), 2);
+    }
+
+    #[test]
+    fn insufficient_capacity_does_not_partially_insert_or_charge_buckets() {
+        let start = Instant::now();
+        let limiter =
+            RateLimiter::with_rules([(RateLimitRoute::Login, Duration::from_secs(60), 1, 2)], 3);
+        let first = client("198.51.100.1");
+        let second = client("198.51.100.2");
+        assert_eq!(
+            limiter.check_at(RateLimitRoute::Login, first, b"one", start),
+            Ok(())
+        );
+        assert!(
+            limiter
+                .check_at(RateLimitRoute::Login, second, b"one", start)
+                .is_err()
+        );
+        assert_eq!(bucket_count(&limiter), 2);
+        assert_eq!(
+            limiter.check_at(RateLimitRoute::Login, first, b"two", start),
+            Ok(())
+        );
+        assert_eq!(bucket_count(&limiter), 3);
+    }
+
+    #[test]
+    fn short_window_expiry_does_not_discard_long_window_protection() {
+        let start = Instant::now();
+        let limiter = RateLimiter::with_rules(
+            [
+                (RateLimitRoute::Login, Duration::from_secs(60), 1, 1),
+                (RateLimitRoute::Onboarding, Duration::from_secs(3600), 1, 1),
+            ],
+            4,
+        );
+        let first = client("198.51.100.1");
+        let second = client("198.51.100.2");
+        assert_eq!(
+            limiter.check_at(RateLimitRoute::Onboarding, first, b"long", start),
+            Ok(())
+        );
+        assert_eq!(
+            limiter.check_at(RateLimitRoute::Login, first, b"short", start),
+            Ok(())
+        );
+        assert_eq!(
+            limiter.check_at(
+                RateLimitRoute::Login,
+                second,
+                b"new",
+                start + Duration::from_secs(60)
+            ),
+            Ok(())
+        );
+        assert_eq!(
+            limiter.check_at(
+                RateLimitRoute::Onboarding,
+                first,
+                b"long",
+                start + Duration::from_secs(60)
+            ),
+            Err(RateLimitExceeded {
+                retry_after_seconds: 3540
+            })
+        );
+        assert_eq!(
+            limiter.check_at(
+                RateLimitRoute::Onboarding,
+                first,
+                b"long",
+                start + Duration::from_secs(3600)
+            ),
+            Ok(())
+        );
+    }
+    #[test]
+    fn production_capacity_stays_bounded_and_recovers_for_new_clients() {
+        let start = Instant::now();
+        let limiter = RateLimiter::production();
+        for id in 0..4096 {
+            let caller = client(&format!("2001:db8::{id:x}"));
+            assert_eq!(
+                limiter.check_at(RateLimitRoute::Login, caller, b"account", start),
+                Ok(())
+            );
+        }
+        assert_eq!(bucket_count(&limiter), 8192);
+        let new_client = client("198.51.100.2");
+        assert!(
+            limiter
+                .check_at(RateLimitRoute::Login, new_client, b"new", start)
+                .is_err()
+        );
+        let existing_client = client("2001:db8::0");
+        for _ in 1..10 {
+            assert_eq!(
+                limiter.check_at(RateLimitRoute::Login, existing_client, b"account", start),
+                Ok(())
+            );
+        }
+        assert!(
+            limiter
+                .check_at(RateLimitRoute::Login, existing_client, b"account", start)
+                .is_err()
+        );
+        assert_eq!(bucket_count(&limiter), 8192);
+        assert_eq!(
+            limiter.check_at(
+                RateLimitRoute::Login,
+                new_client,
+                b"new",
+                start + Duration::from_secs(60)
+            ),
+            Ok(())
+        );
+        assert_eq!(bucket_count(&limiter), 2);
+    }
+
+    #[test]
+    fn capacity_retry_uses_earliest_expiry_not_oldest_bucket() {
+        let start = Instant::now();
+        let limiter = RateLimiter::with_rules(
+            [
+                (RateLimitRoute::Onboarding, Duration::from_secs(3600), 2, 4),
+                (RateLimitRoute::Login, Duration::from_secs(60), 2, 2),
+            ],
+            4,
+        );
+        let caller = client("198.51.100.1");
+        assert_eq!(
+            limiter.check_at(RateLimitRoute::Onboarding, caller, b"long", start),
+            Ok(())
+        );
+        assert_eq!(
+            limiter.check_at(
+                RateLimitRoute::Login,
+                caller,
+                b"short",
+                start + Duration::from_secs(1)
+            ),
+            Ok(())
+        );
+        assert_eq!(
+            limiter.check_at(
+                RateLimitRoute::Login,
+                caller,
+                b"new",
+                start + Duration::from_millis(2500)
+            ),
+            Err(RateLimitExceeded {
+                retry_after_seconds: 59
+            })
+        );
+        // Capacity rejection did not charge the existing login client counter.
+        assert_eq!(
+            limiter.check_at(
+                RateLimitRoute::Login,
+                caller,
+                b"short",
+                start + Duration::from_secs(3)
+            ),
+            Ok(())
+        );
+        assert_eq!(
+            limiter.check_at(
+                RateLimitRoute::Login,
+                caller,
+                b"new",
+                start + Duration::from_secs(61)
+            ),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn zero_limits_reject_without_allocating() {
+        for (per_key, per_client) in [(0, 1), (1, 0)] {
+            let limiter = RateLimiter::with_rules(
+                [(
+                    RateLimitRoute::Login,
+                    Duration::from_secs(60),
+                    per_key,
+                    per_client,
+                )],
+                2,
+            );
+            assert!(
+                limiter
+                    .check(RateLimitRoute::Login, client("198.51.100.1"), b"one")
+                    .is_err()
+            );
+            assert_eq!(bucket_count(&limiter), 0);
+        }
     }
 }

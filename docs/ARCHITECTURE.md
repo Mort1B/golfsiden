@@ -81,7 +81,14 @@ otherwise collapses the request to a non-spoofable direct identity. Public
 `Forwarded`, `X-Forwarded-For`, and lookalike internal headers never select a
 rate-limit bucket. Abuse-sensitive authentication and invitation routes use a
 bounded two-level limiter, while password verification uses a separate shared
-four-task Argon2 semaphore.
+four-task Argon2 semaphore. The limiter checks existing quotas before admitting
+new buckets and never evicts an unexpired counter to make room. Its single mutex
+owns expiry pruning, capacity admission and accounting atomically. At shared
+capacity, new client/resource buckets fail closed until space expires; already
+admitted keys retain their remaining quota. Capacity rejection uses the same 429
+contract with the earliest bucket expiry as a retry hint, not a guarantee of
+admission. This favors preserving abuse limits over admitting new identities
+under saturation; the shared store does not provide per-route capacity isolation.
 
 Database authority is split by lifecycle. The owner credential initializes the
 cluster, performs explicit migrations, backups, and restores. A distinct runtime

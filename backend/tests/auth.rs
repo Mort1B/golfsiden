@@ -374,3 +374,57 @@ async fn expired_sessions_are_rejected(pool: PgPool) {
         .unwrap();
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
+
+#[sqlx::test(migrations = "../migrations")]
+async fn login_capacity_rejection_keeps_http_contract_and_existing_quota(pool: PgPool) {
+    seed_user(&pool).await;
+    let limiter = RateLimiter::with_rules(
+        [(
+            RateLimitRoute::Login,
+            std::time::Duration::from_secs(60),
+            2,
+            10,
+        )],
+        2,
+    );
+    let app = api::router(AppState::with_runtime_services_and_proxy(
+        pool,
+        golf_api::auth::AuthConfig::local(),
+        CourseProviderClient::disabled(),
+        limiter,
+        ProxyTrustConfig::direct(),
+    ));
+    for (username, expected) in [
+        ("session_player", StatusCode::OK),
+        ("missing_player", StatusCode::TOO_MANY_REQUESTS),
+        ("session_player", StatusCode::OK),
+        ("session_player", StatusCode::TOO_MANY_REQUESTS),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::post("/api/auth/login")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(
+                        json!({"username":username,"password":"test-password"}).to_string(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), expected);
+        if expected == StatusCode::TOO_MANY_REQUESTS {
+            let retry = response.headers()[header::RETRY_AFTER]
+                .to_str()
+                .unwrap()
+                .parse::<u64>()
+                .unwrap();
+            assert!((1..=60).contains(&retry));
+            assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
+            assert_eq!(
+                response_json(response).await,
+                json!({"error":{"code":"rate_limited","message":"too many requests; try again later"}})
+            );
+        }
+    }
+}

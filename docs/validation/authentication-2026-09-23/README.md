@@ -9,13 +9,17 @@ or real credentials were accessed. Application source, migrations and dependenci
 were not changed. Two independent read-only reviewers covered authentication and
 tournament access; the latter also verified the session-expiry reproducer.
 
-The bounded assessment is complete. Deployment remains **NOT READY**: two
-confirmed P2 findings remain unfixed, and the wider security and deployment gates
-are still open. P2 denotes medium priority here, not a calculated CVSS score.
+The bounded assessment is complete. At assessment time two confirmed P2 findings
+were unfixed. AUTH-1 is resolved by the subsequent
+[rate-limit repair](../rate-limit-capacity-2026-09-23/README.md); AUTH-2 remains
+unfixed. Deployment remains **NOT READY**, including the wider security and
+deployment gates. P2 denotes medium priority here, not a calculated CVSS score.
 
-## AUTH-1 — P2: capacity eviction removes active login throttles
+## AUTH-1 — P2: capacity eviction removes active login throttles (resolved)
 
-**Confirmed.** [rate_limit.rs](../../../backend/src/rate_limit.rs), lines 199–205,
+**Confirmed at assessed commit `d46ba30`.** The following source descriptions,
+line references and diagnostic results describe that revision, before repair.
+[rate_limit.rs](../../../backend/src/rate_limit.rs), lines 199–205,
 allocates buckets before checking either limit. Lines 238–270 evict the oldest
 other buckets at capacity even when their windows have not expired. Routes share
 the production store of 8,192 buckets. Thus even rejected requests with fresh
@@ -176,7 +180,10 @@ profile concurrency 3; tournament authorization 4; private workspace reads 4;
 private scorecard reads 4; tournament isolation 1; round creation 4;
 handicap corrections 3.
 
-[probes.rs](probes.rs) retains the diagnostic source; [results.txt](results.txt)
+[probes.rs](probes.rs) retains the diagnostic source for the assessed revision.
+It asserts the original vulnerable behavior and is expected to fail against the
+AUTH-1 repair; use the repair regressions to validate current behavior.
+[results.txt](results.txt)
 retains its sanitized output and test totals. To recreate it, use a separate
 temporary Cargo crate with this file as `src/main.rs`, edition 2024, an empty
 `[workspace]`, and a path dependency on this checkout's `backend`. Dependencies
@@ -216,8 +223,8 @@ release acceptance. Remediation and its full affected ladder are separate work.
 
 ## Next bounded work
 
-Repair AUTH-1 first, with explicit capacity/expiry regressions. Repair AUTH-2 in a
-separate authorized step. Continue the remaining broader assessment and existing
+AUTH-1 was repaired separately with explicit capacity/expiry regressions. Repair
+AUTH-2 in a separate authorized step. Continue the remaining broader assessment and existing
 deployment/device gates afterward; do not infer sign-off from passing tests.
 This report and its diagnostics are local assessment artifacts; external
 publication is excluded from this local-only run.

@@ -5,31 +5,34 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. No implementation step is currently approved.
+None. See the [latest explanation](LatestExplanation.md) for the completed step.
 
 ## Next candidate
 
-**Preserve active rate limits at capacity (AUTH-1; proposed, awaiting approval).**
+**Revalidate handicap-correction sessions after waits (AUTH-2; awaiting approval).**
 
-Goal: prevent cross-route key churn, including rejected requests, from discarding
-unexpired login limits. Scope the repair to limiter admission/eviction behavior,
-its regressions and affected documentation. Preserve existing route limits,
-expiry recovery, bounded storage and the authentication contract.
+Goal: prevent an initially authorized correction from committing after session
+expiry during database waits. Scope the repair to the correction transaction,
+necessary existing session-validation helpers, regressions and documentation.
 
-Validation: reproduce the confirmed failure, prove both narrow and client limits
-survive rejected cross-route churn at small and production capacity, and check
-expiry recovery and memory bounds. Run the affected ladder and independent review.
-Use only disposable local services and synthetic accounts.
+Behavior/invariants: preserve lock order, exact tournament-admin authority,
+handicap snapshots and audit semantics. Expiry before commit must return 401,
+roll back handicap/audit changes and emit no invalidation. Valid-session and
+no-op behavior must remain consistent with existing contracts.
 
-Stop after this repair; do not include AUTH-2 or broader security changes.
-Evidence: [local authentication assessment](validation/authentication-2026-09-23/README.md).
+Validation: reproduce the held parent-row wait with a near-expiry synthetic
+session, prove rollback/no-event behavior and a nonexpiring control, and cover
+membership waits if a shared helper changes. Run affected backend/database
+ladders and independent review with disposable local services only.
+
+Stop after AUTH-2; do not broaden into other security or deployment work.
+Keep validation and commits local under the existing local-only scope.
+Evidence: [authentication assessment](validation/authentication-2026-09-23/README.md).
 
 ## Later queue
 
 No queued work is currently approved.
 
-- AUTH-2: revalidate session expiry after handicap-correction waits and before
-  commit, with rollback/audit/event regression coverage.
 - Remaining broader security assessment: recovery lifecycle, private/public
   projections and offline persistence, production proxy/database privileges,
   recovery operations and dependency advisories. Define a bounded next scope and

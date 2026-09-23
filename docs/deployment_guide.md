@@ -580,10 +580,14 @@ verifies from the dump directory. The restore script already handled this correc
 
 The [local authentication assessment](validation/authentication-2026-09-23/README.md)
 is complete for authentication, sessions, CSRF and tournament access. It confirmed
-two unfixed P2 issues: active throttle eviction and session expiry during a
-handicap-correction wait. It does not complete the wider security assessment.
+two P2 issues: active throttle eviction and session expiry during a
+handicap-correction wait. The subsequent AUTH-1 repair preserves live throttle
+counters under capacity pressure; AUTH-2 remains unfixed. Shared limiter saturation
+now temporarily rejects new client/resource buckets until space expires, using
+429 and a retry hint. Existing keys retain their remaining quota. This does not
+complete the wider security assessment.
 
-Deployment sign-off is **NOT READY**: those repairs, remaining security assessment,
+Deployment sign-off is **NOT READY**: AUTH-2, remaining security assessment,
 public-host acceptance, native 200% browser zoom and physical Android Chrome remain
 unresolved.
 The report's three frontend

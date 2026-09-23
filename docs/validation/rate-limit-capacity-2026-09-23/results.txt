@@ -1,0 +1,13 @@
+Parent revision: d1b44de
+Original focused regressions: 4 passed; 4 failed (expected before repair)
+Final focused limiter regressions: 11 passed; 0 failed
+cargo fmt --all -- --check: exit 0
+cargo test --offline --workspace --all-targets: exit 0; 215 passed; 0 failed
+cargo test --offline --workspace --all-targets --features database-tests: exit 0; 601 passed; 0 failed; 3 ignored
+cargo clippy --offline --workspace --all-targets --all-features -- -D warnings: exit 0
+cargo run --offline -p golf-api --bin migrate: exit 0; Database migrations are current.
+cargo run --offline -p golf-api --bin seed: exit 0; Seeded Guttas Golf 2026 with eight players and five rounds.
+Independent read-only source review: no findings
+Independent documentation review: historical-reference wording corrected
+Local disposable PostgreSQL: removed after validation
+No external publication; AUTH-2 remains unresolved

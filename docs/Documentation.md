@@ -678,15 +678,20 @@ allows 10-per-client/issuer and 30-per-client per minute; public result reads
 allow 60-per-client/grant and 240-per-client per minute.
 Rejected requests return the stable `rate_limited` JSON error, `429`,
 `Retry-After`, and `Cache-Control: no-store`. A narrow-key rejection does not
-charge the broad bucket, stale buckets are evicted, storage is capped, and the
-limiter is disabled in development and direct unit-test state unless selected
-explicitly.
+charge the broad bucket or allocate new resource buckets. Expired buckets are
+removed; active counters are never evicted for new admissions. Storage is capped
+at 8,192 buckets. At capacity, requests needing more buckets receive the same 429
+without partial allocation or quota charges; existing keys can use their remaining
+quota. New identities across routes can be temporarily denied by shared saturation.
+Capacity `Retry-After` reports the earliest expiry as a retry hint; it does not
+guarantee that enough space will then be available. The limiter is disabled in
+development and direct unit-test state unless selected explicitly.
 
 The [local authentication assessment](validation/authentication-2026-09-23/README.md)
-records two unfixed boundary defects: capacity eviction can discard unexpired
-login limits (AUTH-1), and an initially authorized handicap correction can commit
-after its session expires during a database wait (AUTH-2). These are confirmed
-limitations of the current implementation; their repairs are separate work.
+recorded two boundary defects. AUTH-1 is resolved by preserving active counters
+and rejecting admissions at capacity. AUTH-2 remains unfixed: an initially
+authorized handicap correction can commit after its session expires during a
+database wait. Its repair is a separate step.
 
 `tournament_memberships` owns the role for a specific trip. Tournament admins
 and scorers can write any eligible card in that tournament. A tournament player
