@@ -590,6 +590,13 @@ limiter saturation temporarily rejects new client/resource buckets until space
 expires, using 429 and a retry hint. Existing keys retain their remaining quota.
 These repairs do not complete the wider security assessment.
 
+The subsequent [local recovery security assessment](validation/recovery-security-2026-09-23/README.md)
+found no confirmed new defects. Existing local PostgreSQL tests and installed
+Chrome recovery flows passed, including target-session invalidation and unrelated
+session preservation. The report records remaining operator-output failure,
+configured-runtime CLI and late-write expiry coverage gaps. Its loopback HTTP
+checks do not establish public TLS, deployment-role or physical-device acceptance.
+
 Deployment sign-off is **NOT READY**: remaining security assessment,
 public-host acceptance, native 200% browser zoom and physical Android Chrome remain
 unresolved.

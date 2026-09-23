@@ -696,6 +696,12 @@ with no invalidation event. Existing unchanged-value errors and valid-session
 behavior remain unchanged. See the
 [session-expiry repair](validation/handicap-session-expiry-2026-09-23/README.md).
 
+The subsequent [recovery assessment](validation/recovery-security-2026-09-23/README.md)
+found no new confirmed security defects in capability issuance, redemption,
+revocation or credential invalidation. Its PostgreSQL, frontend and Chrome checks
+passed; the report separately records operator/late-write test gaps and limits.
+This does not complete the wider security or deployment acceptance review.
+
 `tournament_memberships` owns the role for a specific trip. Tournament admins
 and scorers can write any eligible card in that tournament. A tournament player
 linked to an exact flight member can enter, correct, and confirm every eligible

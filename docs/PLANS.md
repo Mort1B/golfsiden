@@ -9,32 +9,33 @@ None. See the [latest explanation](LatestExplanation.md) for the completed step.
 
 ## Next candidate
 
-**Local recovery capability and credential-revocation assessment (awaiting approval).**
+**Local private/public result-projection assessment (awaiting approval).**
 
-Goal: assess administrator-assisted recovery issuance, preview, redemption,
-expiry, revocation, single-use behavior and resulting session invalidation.
-Scope source, existing tests and bounded disposable local validation with
-synthetic accounts; report confirmed findings separately from unverified concerns.
+Goal: verify that private result reads require exact tournament access and public
+capabilities expose only the intended projection. Scope source, existing tests
+and controlled disposable local validation of grant scope, expiry/revocation,
+rotation, response allowlists and concurrent membership changes.
 
-Behavior/invariants: assessment only. Preserve exact tournament-admin authority,
-account identity and privacy. Do not change application, migration, dependency or
-operator code. Do not access production, external targets or real credentials.
+Behavior/invariants: assessment only; no application, migration, dependency or
+operator repairs. Preserve gross/net semantics, historical snapshots and private
+account/scorecard boundaries. Use only synthetic accounts and disposable local
+services; do not access production, external targets or real credentials.
 
-Validation: inspect capability generation/storage and transport, CSRF/authorization,
-credential-generation effects and transactional races. Use controlled local
-reproductions where needed, record exact evidence and limits, and obtain
-independent read-only review. Report any safeguard notice verbatim with its step.
+Validation: inspect handlers, repositories, decoders and existing privacy/race
+tests; reproduce concrete concerns where warranted. Report confirmed findings
+with source/impact/recommendation, separate unverified concerns, record limits
+and exact safeguard notices, and obtain independent read-only review.
 
-Stop after the report and one bounded next candidate. No remediation or broader
-security work is included. Keep work and commits local under the existing scope.
+Stop after the report and one bounded next candidate. Keep browser-persistence,
+operational/dependency assessment and any remediation separate. Work and commits
+remain local under the existing scope.
 
 ## Later queue
 
 No queued work is currently approved.
 
-- Remaining broader security assessment: private/public
-  projections and offline persistence, production proxy/database privileges,
-  recovery operations and dependency advisories. Define a bounded next scope and
+- Remaining broader security assessment: browser/offline persistence,
+  production proxy/database privileges, recovery operations and dependency advisories. Define a bounded next scope and
   authorized environment before proceeding.
 
 ### Remaining deployment acceptance

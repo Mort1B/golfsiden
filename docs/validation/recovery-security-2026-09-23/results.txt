@@ -1,0 +1,11 @@
+Assessed revision: ce72e45
+PostgreSQL: 17.10 (disposable loopback, cached image, tmpfs)
+Chrome: 153.0.8010.36 (channel chrome)
+cargo test --offline -p golf-api --lib recovery: exit 0; 2 passed
+Database suites password_recovery/profile_concurrency/auth: exit 0; 29 passed
+Frontend scoped tests: exit 0; 26 passed; 7 files
+npm run build: exit 0
+Existing passwordRecovery.browser.ts: exit 0; 2 passed; 12 states at 3 widths
+Independent repository and schema/operator reviews: no confirmed findings
+Implementation unchanged; unverified coverage gaps recorded in README
+Task-owned API/preview stopped; disposable database removed; synthetic credential configuration deleted
