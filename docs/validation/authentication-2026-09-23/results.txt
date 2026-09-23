@@ -1,0 +1,9 @@
+Assessed source: d46ba303446919f5a336031ea7e1e7a9df766c41
+PostgreSQL: 17.10
+Rust library: 206 passed; 0 failed
+PostgreSQL integration: 35 passed; 0 failed; 9 suites
+Frontend: 18 passed; 0 failed; 6 files
+
+AUTH-1: actual production limiter; login per-key and client limits initially denied; preview checks admitted=60, denied=8132; login accepted again before60s=true; elapsed_ms=615
+AUTH-2: expired_before_lock_release=false; correction_status=201 Created; handicap12_to5=true; audit_delta=1; invalidation=true; subsequent_session_status=200 OK
+AUTH-2: expired_before_lock_release=true; correction_status=201 Created; handicap12_to5=true; audit_delta=1; invalidation=true; subsequent_session_status=401 Unauthorized

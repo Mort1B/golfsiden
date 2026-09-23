@@ -578,8 +578,14 @@ Podman and local TLS; Docker Engine and public DNS/ACME acceptance remain untest
 The report's OPS-1 documentation finding is resolved: the Backup example now
 verifies from the dump directory. The restore script already handled this correctly.
 
-Deployment sign-off is **NOT READY**: the separate security assessment, public-host
-acceptance, native 200% browser zoom and physical Android Chrome remain unresolved.
+The [local authentication assessment](validation/authentication-2026-09-23/README.md)
+is complete for authentication, sessions, CSRF and tournament access. It confirmed
+two unfixed P2 issues: active throttle eviction and session expiry during a
+handicap-correction wait. It does not complete the wider security assessment.
+
+Deployment sign-off is **NOT READY**: those repairs, remaining security assessment,
+public-host acceptance, native 200% browser zoom and physical Android Chrome remain
+unresolved.
 The report's three frontend
 accessibility defects were repaired in the subsequent
 [navigation accessibility step](validation/navigation-accessibility-2026-09-23/README.md).

@@ -682,6 +682,12 @@ charge the broad bucket, stale buckets are evicted, storage is capped, and the
 limiter is disabled in development and direct unit-test state unless selected
 explicitly.
 
+The [local authentication assessment](validation/authentication-2026-09-23/README.md)
+records two unfixed boundary defects: capacity eviction can discard unexpired
+login limits (AUTH-1), and an initially authorized handicap correction can commit
+after its session expires during a database wait (AUTH-2). These are confirmed
+limitations of the current implementation; their repairs are separate work.
+
 `tournament_memberships` owns the role for a specific trip. Tournament admins
 and scorers can write any eligible card in that tournament. A tournament player
 linked to an exact flight member can enter, correct, and confirm every eligible
