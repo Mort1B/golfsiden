@@ -1,5 +1,8 @@
 #![cfg(feature = "database-tests")]
 
+#[path = "tournament_handicap_corrections/expiry.rs"]
+mod expiry;
+
 use chrono::{Duration, Utc};
 use golf_api::{
     auth::hash_session_token,

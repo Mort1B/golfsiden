@@ -688,10 +688,13 @@ guarantee that enough space will then be available. The limiter is disabled in
 development and direct unit-test state unless selected explicitly.
 
 The [local authentication assessment](validation/authentication-2026-09-23/README.md)
-recorded two boundary defects. AUTH-1 is resolved by preserving active counters
-and rejecting admissions at capacity. AUTH-2 remains unfixed: an initially
-authorized handicap correction can commit after its session expires during a
-database wait. Its repair is a separate step.
+recorded two boundary defects, now repaired. AUTH-1 preserves active counters and
+rejects admissions at capacity. AUTH-2 rechecks the active session immediately
+before a tournament handicap correction commits, after all transactional waits.
+Expiry detected there returns 401 and rolls back the handicap and audit changes,
+with no invalidation event. Existing unchanged-value errors and valid-session
+behavior remain unchanged. See the
+[session-expiry repair](validation/handicap-session-expiry-2026-09-23/README.md).
 
 `tournament_memberships` owns the role for a specific trip. Tournament admins
 and scorers can write any eligible card in that tournament. A tournament player
@@ -1368,6 +1371,10 @@ authoritative correction state. Tournament admins may call
 with a numeric `handicap_index` and nonblank audit `reason` only while that state
 is editable. The repository revalidates tournament-admin membership and uses the
 same deterministic round-before-tournament lock order as opening a round.
+After the update and audit read, it rechecks the active session immediately before
+commit. Expiry during transaction waits returns 401, rolls back both records and
+emits no invalidation. Valid sessions retain one audited change and one event;
+an unchanged value retains its existing conflict response.
 
 PostgreSQL rejects direct tournament-handicap updates without explicit
 correction context, appends immutable history for each changed value, and records

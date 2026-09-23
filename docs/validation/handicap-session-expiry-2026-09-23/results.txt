@@ -1,0 +1,13 @@
+Parent revision: 3c9fa44
+PostgreSQL: 17.10
+Corrected pre-repair regression fixture: 3 valid controls passed; 3 expiry cases failed (201 vs 401)
+Focused tournament_handicap_corrections after repair: exit 0; 9 passed; 0 failed
+cargo fmt --all -- --check: exit 0
+cargo test --offline --workspace --all-targets: exit 0; 215 passed; 0 failed
+cargo test --offline --workspace --all-targets --features database-tests: exit 0; 607 passed; 0 failed; 3 ignored
+cargo clippy --offline --workspace --all-targets --all-features -- -D warnings: exit 0
+cargo run --offline -p golf-api --bin migrate: exit 0; Database migrations are current.
+cargo run --offline -p golf-api --bin seed: exit 0; Seeded Guttas Golf 2026 with eight players and five rounds.
+Independent read-only implementation and documentation review: no findings
+Task-owned PostgreSQL container and tmpfs data: removed after validation
+No external publication; broader security and deployment acceptance remain open

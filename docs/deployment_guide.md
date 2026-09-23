@@ -582,12 +582,15 @@ The [local authentication assessment](validation/authentication-2026-09-23/READM
 is complete for authentication, sessions, CSRF and tournament access. It confirmed
 two P2 issues: active throttle eviction and session expiry during a
 handicap-correction wait. The subsequent AUTH-1 repair preserves live throttle
-counters under capacity pressure; AUTH-2 remains unfixed. Shared limiter saturation
-now temporarily rejects new client/resource buckets until space expires, using
-429 and a retry hint. Existing keys retain their remaining quota. This does not
-complete the wider security assessment.
+counters under capacity pressure. The subsequent
+[AUTH-2 repair](validation/handicap-session-expiry-2026-09-23/README.md) rechecks
+session validity immediately before handicap-correction commit after database
+waits; detected expiry rolls back the handicap/audit and emits no event. Shared
+limiter saturation temporarily rejects new client/resource buckets until space
+expires, using 429 and a retry hint. Existing keys retain their remaining quota.
+These repairs do not complete the wider security assessment.
 
-Deployment sign-off is **NOT READY**: AUTH-2, remaining security assessment,
+Deployment sign-off is **NOT READY**: remaining security assessment,
 public-host acceptance, native 200% browser zoom and physical Android Chrome remain
 unresolved.
 The report's three frontend

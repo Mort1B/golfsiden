@@ -7,7 +7,10 @@ use crate::{
         TournamentHandicapHistoryEntry, TournamentHandicapLockReason, TournamentPlayer,
         TournamentPlayerRoster,
     },
-    repositories::tournament_authorization::{self, AuthorizationError},
+    repositories::{
+        auth,
+        tournament_authorization::{self, AuthorizationError},
+    },
 };
 
 use super::TournamentMutationError;
@@ -148,6 +151,12 @@ pub async fn change_player_handicap_authorized(
     .bind(audit_id)
     .fetch_one(&mut *transaction)
     .await?;
+    // Existing session/user locks serialize revocation, but time can pass during
+    // later membership, parent or roster waits. Recheck before persisting either
+    // the handicap or its audit record; failure rolls back both.
+    auth::lock_active_session(&mut transaction, session_id)
+        .await?
+        .ok_or(AuthorizationError::Unauthenticated)?;
     transaction.commit().await?;
     Ok(TournamentHandicapCorrection { player, audit })
 }

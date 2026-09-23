@@ -3,7 +3,8 @@
 Date: 2026-09-23. Parent commit: `d1b44de`. Scope: AUTH-1 only, as proposed in
 `docs/PLANS.md` and authorized by the owner's “Move on”. The earlier
 [assessment](../authentication-2026-09-23/README.md) remains the historical evidence
-for the original defect. AUTH-2 is unchanged.
+for the original defect. AUTH-2 was unchanged by this step; it was subsequently
+resolved in the [session-expiry repair](../handicap-session-expiry-2026-09-23/README.md).
 
 ## Behavior
 
@@ -107,7 +108,7 @@ Existing SQLx vendor deprecation/dead-code warnings are separate from this repai
 ## Scope and remaining work
 
 AUTH-1 is **READY** with the documented shared-capacity availability tradeoff.
-This repair leaves session expiry during handicap-correction waits (AUTH-2), the
-broader security assessment and existing deployment/device gates open. Deployment
-sign-off remains **NOT READY**. Work and commits remain local under the owner's
+At completion this repair left AUTH-2, the broader security assessment and existing
+deployment/device gates open. AUTH-2 was subsequently repaired separately;
+deployment sign-off remains **NOT READY** for the remaining gates. Work and commits remain local under the owner's
 existing local-only scope; no external publication is performed.

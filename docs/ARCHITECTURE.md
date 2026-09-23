@@ -118,6 +118,12 @@ and reapplies runtime grants before the API is started.
   course handicap, and playing handicap used in each opened round.
   `round_team_handicap_snapshots` preserves the final team Playing Handicap for
   each opened foursomes team and is immutable except for ancestor deletion.
+- Tournament handicap correction retains its round, session/user, exact membership
+  and parent locks, then rechecks the active session immediately before commit
+  after the update and audit read. Natural expiry during transactional waits
+  returns unauthenticated and rolls back both records, without notification.
+  The final check uses database wall-clock time; it does not freeze the clock
+  during COMMIT. Existing unchanged-handicap errors remain unchanged.
 - Round opening locks the round and tournament, repeats readiness validation, and captures one immutable snapshot for each active entrant before changing status. A transaction-local opening context prevents direct status or snapshot bypasses.
 - Tournament start is a separate exact-admin lifecycle boundary. Its transaction
   locks the stored round set deterministically before reauthorizing the session

@@ -9,31 +9,30 @@ None. See the [latest explanation](LatestExplanation.md) for the completed step.
 
 ## Next candidate
 
-**Revalidate handicap-correction sessions after waits (AUTH-2; awaiting approval).**
+**Local recovery capability and credential-revocation assessment (awaiting approval).**
 
-Goal: prevent an initially authorized correction from committing after session
-expiry during database waits. Scope the repair to the correction transaction,
-necessary existing session-validation helpers, regressions and documentation.
+Goal: assess administrator-assisted recovery issuance, preview, redemption,
+expiry, revocation, single-use behavior and resulting session invalidation.
+Scope source, existing tests and bounded disposable local validation with
+synthetic accounts; report confirmed findings separately from unverified concerns.
 
-Behavior/invariants: preserve lock order, exact tournament-admin authority,
-handicap snapshots and audit semantics. Expiry before commit must return 401,
-roll back handicap/audit changes and emit no invalidation. Valid-session and
-no-op behavior must remain consistent with existing contracts.
+Behavior/invariants: assessment only. Preserve exact tournament-admin authority,
+account identity and privacy. Do not change application, migration, dependency or
+operator code. Do not access production, external targets or real credentials.
 
-Validation: reproduce the held parent-row wait with a near-expiry synthetic
-session, prove rollback/no-event behavior and a nonexpiring control, and cover
-membership waits if a shared helper changes. Run affected backend/database
-ladders and independent review with disposable local services only.
+Validation: inspect capability generation/storage and transport, CSRF/authorization,
+credential-generation effects and transactional races. Use controlled local
+reproductions where needed, record exact evidence and limits, and obtain
+independent read-only review. Report any safeguard notice verbatim with its step.
 
-Stop after AUTH-2; do not broaden into other security or deployment work.
-Keep validation and commits local under the existing local-only scope.
-Evidence: [authentication assessment](validation/authentication-2026-09-23/README.md).
+Stop after the report and one bounded next candidate. No remediation or broader
+security work is included. Keep work and commits local under the existing scope.
 
 ## Later queue
 
 No queued work is currently approved.
 
-- Remaining broader security assessment: recovery lifecycle, private/public
+- Remaining broader security assessment: private/public
   projections and offline persistence, production proxy/database privileges,
   recovery operations and dependency advisories. Define a bounded next scope and
   authorized environment before proceeding.

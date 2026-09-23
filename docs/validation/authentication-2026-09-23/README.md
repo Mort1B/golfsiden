@@ -11,8 +11,9 @@ tournament access; the latter also verified the session-expiry reproducer.
 
 The bounded assessment is complete. At assessment time two confirmed P2 findings
 were unfixed. AUTH-1 is resolved by the subsequent
-[rate-limit repair](../rate-limit-capacity-2026-09-23/README.md); AUTH-2 remains
-unfixed. Deployment remains **NOT READY**, including the wider security and
+[rate-limit repair](../rate-limit-capacity-2026-09-23/README.md), and AUTH-2 by the
+[session-expiry repair](../handicap-session-expiry-2026-09-23/README.md).
+Deployment remains **NOT READY**, including the wider security and
 deployment gates. P2 denotes medium priority here, not a calculated CVSS score.
 
 ## AUTH-1 — P2: capacity eviction removes active login throttles (resolved)
@@ -54,9 +55,10 @@ active protection. Add regressions for rejected cross-route churn, both limit
 levels, capacity, expiry recovery and bounded memory. Existing capacity tests
 check storage bounds but do not establish preservation of active limits.
 
-## AUTH-2 — P2: handicap correction commits after session expiry while waiting
+## AUTH-2 — P2: handicap correction commits after session expiry while waiting (resolved)
 
-**Confirmed.**
+**Confirmed at assessed commit `d46ba30`.** The following source descriptions,
+line references and diagnostic results describe that revision before repair.
 [tournaments/handicaps.rs](../../../backend/src/repositories/tournaments/handicaps.rs),
 lines 100–109, validates the active session and exact tournament-admin membership,
 then waits for a tournament row lock. Lines 126–151 update the handicap, obtain
@@ -223,8 +225,8 @@ release acceptance. Remediation and its full affected ladder are separate work.
 
 ## Next bounded work
 
-AUTH-1 was repaired separately with explicit capacity/expiry regressions. Repair
-AUTH-2 in a separate authorized step. Continue the remaining broader assessment and existing
-deployment/device gates afterward; do not infer sign-off from passing tests.
+AUTH-1 and AUTH-2 were repaired in separate steps with explicit regressions.
+Continue the remaining broader assessment and existing deployment/device gates;
+do not infer sign-off from passing tests.
 This report and its diagnostics are local assessment artifacts; external
 publication is excluded from this local-only run.
