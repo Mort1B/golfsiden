@@ -18,6 +18,11 @@ The [manual checklist](../../testing_checklist.md) is the handover for continued
 testing. Broader security assessment and unverified neighboring callback concerns
 remain deferred, as requested.
 
+Follow-up: [SCORE-READ-1](../score-read-retry-2026-09-29/README.md) subsequently
+reproduced and repaired the scoring-read serialization-conflict path. The
+observations and limitations below preserve this earlier validation run; its
+precise original interleaving was not captured.
+
 ## Environment and evidence boundaries
 
 - Fresh task-owned rootless Podman PostgreSQL 17 container

@@ -37,7 +37,15 @@ pub fn routes() -> Router<Arc<AppState>> {
         )
         .route(
             "/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/scoring",
-            get(get_scoring),
+            get(get_scoring).layer(axum::middleware::map_response(
+                |mut response: Response| async move {
+                    response
+                        .headers_mut()
+                        .entry(CACHE_CONTROL)
+                        .or_insert(axum::http::HeaderValue::from_static("private, no-store"));
+                    response
+                },
+            )),
         )
         .route(
             "/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/confirm",
@@ -189,6 +197,7 @@ fn map_error(error: ScorecardError) -> ApiError {
         ScorecardError::NotFound => ApiError::NotFound,
         ScorecardError::Unauthenticated => ApiError::Unauthenticated,
         ScorecardError::Forbidden => ApiError::Forbidden,
+        ScorecardError::ReadUnavailable => ApiError::ServiceUnavailable,
         ScorecardError::Conflict(conflict) => ApiError::DomainConflict {
             code: conflict.code(),
             message: conflict.message(),

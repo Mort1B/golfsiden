@@ -84,6 +84,15 @@ pub enum ScorecardError {
     Scoring(#[from] ScoringError),
     #[error("database operation failed")]
     Database(#[from] sqlx::Error),
+    #[error("scorecard read is temporarily unavailable")]
+    ReadUnavailable,
+}
+
+impl ScorecardError {
+    fn is_serialization_failure(&self) -> bool {
+        matches!(self, Self::Database(error) if error.as_database_error()
+            .is_some_and(|database| database.code().as_deref() == Some("40001")))
+    }
 }
 
 pub async fn get(
@@ -138,6 +147,25 @@ pub async fn get_read_authenticated(
 }
 
 pub async fn get_scoring_authenticated(
+    pool: &PgPool,
+    session_id: Uuid,
+    round_id: Uuid,
+    owner: ScoreOwner,
+) -> Result<ScorecardSummary, ScorecardError> {
+    // An authority row can change after the repeatable-read snapshot is taken
+    // but before its share lock is acquired. Discard that entire transaction;
+    // the fresh attempt must repeat every lookup and authorization check.
+    match get_scoring_once(pool, session_id, round_id, owner).await {
+        Err(error) if error.is_serialization_failure() => {}
+        result => return result,
+    }
+    match get_scoring_once(pool, session_id, round_id, owner).await {
+        Err(error) if error.is_serialization_failure() => Err(ScorecardError::ReadUnavailable),
+        result => result,
+    }
+}
+
+async fn get_scoring_once(
     pool: &PgPool,
     session_id: Uuid,
     round_id: Uuid,

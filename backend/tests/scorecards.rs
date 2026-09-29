@@ -1,5 +1,8 @@
 #![cfg(feature = "database-tests")]
 
+#[path = "scorecards/read_retry.rs"]
+mod read_retry;
+
 use std::{sync::Arc, time::Duration};
 
 use axum::{

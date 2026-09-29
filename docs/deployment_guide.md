@@ -645,5 +645,13 @@ The [2026-09-29 functional-readiness check](validation/test-ready-2026-09-29/REA
 subsequently passed real local core workflows and exact score/result comparisons
 after PostgreSQL/API/frontend restarts. Its
 [manual checklist](testing_checklist.md) is intended for continued testing on the
-user-managed deployment. One transient local scorecard-read concurrency error
-remains documented; the step made no application, migration or server changes.
+user-managed deployment. That readiness step recorded one transient local
+scorecard-read concurrency error and made no application, migration or server
+changes.
+
+The subsequent [SCORE-READ-1 repair](validation/score-read-retry-2026-09-29/README.md)
+retries that scoring-read serialization-conflict path once with fresh authority
+checks. Deploy the updated API normally; no migration, runtime grants, environment
+variables or frontend contract changes are required. Exhausted retries return a
+non-cacheable 503 instead of a generic 500. This does not deploy to gg26.no or
+extend retry behavior to score writes or other read endpoints.

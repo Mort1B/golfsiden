@@ -1,32 +1,39 @@
-# Ready for continued functional testing
+# Scoring-card reads recover from an authority update
 
-**READY WITH KNOWN LIMITATIONS** for continued application testing. The main
-workflows passed against a fresh local PostgreSQL database and real Chrome:
-organizer/player login, tournament creation and invitations, saved-course setup,
-manual teams/flights, start/open, score entry/editing, results, confirmation,
-corrections and round locking. Team and individual scorecards and gross/net
-results remained exactly unchanged after restarting PostgreSQL, the API and the
-frontend and signing in from a fresh browser session.
+The scoring-card GET now retries its complete database read once when PostgreSQL
+rejects its snapshot after a concurrent authorization-row update. For example,
+an otherwise harmless membership update previously caused HTTP 500; the fresh
+attempt now returns the saved card. Concurrent logout or removed permission
+returns the usual 401/403 instead of a generic error.
 
-No application or schema changes were needed. Two browser tests were corrected:
-one now waits for confirmation cleanup before hard navigation, and one correctly
-expects the second opponent's preserved local-note slot. Existing format checks
-also passed for Stableford, four-ball and singles match play. The practical
-journey covers 320px, 390px and 1280px widths; lifecycle checks also use 1440px.
+Each attempt repeats all access checks and preserves the existing isolation and
+share locks. A second serialization conflict returns a non-cacheable 503 without
+card data. Other errors are not retried. Scores, audits, confirmations, score
+writes, API fields and scoring rules are unchanged.
 
-Validation passed: 215 ordinary backend tests; 615 database-enabled tests
-(including ordinary tests); 806 frontend tests; formatting, strict Clippy,
-frontend typecheck/lint/build, browser typecheck, and 19 final passing existing
-browser cases plus the before/after restart journey. The
-[report](validation/test-ready-2026-09-29/README.md) distinguishes real API flows,
-injected error states, initial failures, repeat runs and remaining limits.
+Six deterministic PostgreSQL/API regressions failed before the fix and passed
+afterward. They cover session revocation, membership removal, individual/team
+recovery, the two-attempt limit and unrelated errors, while asserting unchanged
+stored score state and no emitted score events. Real Chrome checks passed at
+320px, 390px and 1280px using actual database contention: valid scoring recovered,
+logout removed the scoring UI, and a viewer downgrade removed editing controls
+while preserving allowed read-only access.
 
-One earlier journey recorded a transient scorecard-read HTTP 500 caused by a
-PostgreSQL concurrency conflict. Saved data remained correct and the repeat and
-restart checks passed. The precise overlapping action remains unconfirmed;
-this is recorded as an unresolved limitation, not claimed fixed.
+**READY** for this bounded fix. Validation passed: 215 ordinary backend tests;
+621 database-enabled tests (including those ordinary tests); 806 frontend tests;
+formatting, strict Clippy, frontend typecheck/lint/build, fresh migration and seed,
+and the three real-browser scenarios. Three existing performance measurements
+remain explicitly ignored because their separate measurement setup was not
+configured. Independent read-only review found no blocking issues.
 
-Use the [short checklist](testing_checklist.md) to continue testing. The user owns
-hosting at gg26.no; this step did not access or change it. Physical phone and
-hosted configuration acceptance remain unverified here. Further work follows
-concrete testing feedback; broader assessment and speculative repairs are deferred.
+The [validation report](validation/score-read-retry-2026-09-29/README.md) records
+full validation results, independent review, screenshots and the failure-first
+evidence. The earlier functional-readiness run's exact overlapping action was
+not captured; this repair covers the reproduced serialization-conflict class
+for this endpoint. Repeated contention can still return the deliberate 503.
+
+Continue testing with the [short checklist](testing_checklist.md). Deploy the
+updated API normally; no migration or configuration change is required. Hosting
+at gg26.no remains user-managed and was not accessed. Physical-device and hosted
+acceptance remain outside these local checks. Broader assessment and other
+queued concerns remain deferred pending concrete testing feedback.

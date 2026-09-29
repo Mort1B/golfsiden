@@ -16,10 +16,6 @@ Hosting and deployment at gg26.no remain user-owned.
 
 ## Later queue
 
-- Observe the transient scorecard-read HTTP 500 recorded in the
-  [functional checks](validation/test-ready-2026-09-29/README.md). Saved data and
-  subsequent reads were correct; investigate with a bounded reproducer if it
-  recurs during normal use or prevents recovery.
 - Deferred: final-round visibility, pairing editor and tournament-start callback
   lifetime concerns. These are unverified follow-ups, not automatic prerequisites
   for testing; retain the [existing evidence](validation/stableford-settings-lifetime-2026-09-23/README.md).

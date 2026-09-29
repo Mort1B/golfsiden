@@ -41,7 +41,7 @@ See the [functional-readiness report](validation/test-ready-2026-09-29/README.md
 for the local checks and their limits. That evidence does not verify your hosted
 configuration or a physical phone.
 
-One earlier local run recorded a transient HTTP 500 while reading a scorecard
-from PostgreSQL. Saved scores and results remained correct, and a clean repeat
-passed. The overlapping action was not proven; report it if it recurs during
-normal scoring, especially if retry or returning to the page does not recover.
+The [scorecard-read repair](validation/score-read-retry-2026-09-29/README.md)
+addresses the reproduced concurrency-error path from the earlier checks. Saved
+scores were unaffected. Report any recurring load/save error during normal
+scoring, especially if retry or returning to the page does not recover.

@@ -448,6 +448,16 @@ and reapplies runtime grants before the API is started.
 - Four-ball separates input and competition ownership: mutations authorize exact
   player cards, while score-access lists a team side only when both frozen partner
   cards are authorized. Side scoring reads and confirmation repeat both checks.
+- The ordinary authenticated scoring-card GET retries its whole repeatable-read
+  transaction once after PostgreSQL serialization failure (`40001`). No principal,
+  membership, owner eligibility, round context or result survives between attempts;
+  the failed transaction is dropped before the fresh attempt. Existing session/user
+  and membership share locks remain held through assembly and commit. A revoked
+  session or permission is denied on the fresh read. A second serialization failure
+  becomes a non-cacheable `503 service_unavailable`; unrelated errors are not
+  retried. This boundary applies only to the ordinary scoring-card read, not score
+  mutations, public/member projections, score-access lists, four-ball side reads
+  or match-card reads. It adds no new session-expiry policy or schema requirement.
 - The private score-access read re-locks the active session/user and exact
   tournament membership through deterministic owner assembly in a repeatable-
   read transaction. Missing target membership is forbidden rather than

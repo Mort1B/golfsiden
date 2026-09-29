@@ -1,0 +1,23 @@
+[
+  {
+    "change": "valid",
+    "width": 390,
+    "status": 200,
+    "privateResponse": true,
+    "errors": []
+  },
+  {
+    "change": "logout",
+    "width": 320,
+    "status": 401,
+    "privateResponse": true,
+    "errors": []
+  },
+  {
+    "change": "membership",
+    "width": 1280,
+    "status": 403,
+    "privateResponse": true,
+    "errors": []
+  }
+]

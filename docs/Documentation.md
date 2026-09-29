@@ -11,7 +11,8 @@ than a global role or player directory, owns access.
 For continued hands-on testing, use the [practical checklist](testing_checklist.md).
 The [2026-09-29 functional checks](validation/test-ready-2026-09-29/README.md)
 cover real local organizer/player flows and saved-data persistence through
-service restarts, with one recorded transient read-error limitation. Hosting at
+service restarts. The recorded serialization-conflict read path was subsequently
+[reproduced and repaired](validation/score-read-retry-2026-09-29/README.md). Hosting at
 gg26.no remains user-managed and was not verified by those local checks.
 
 Exact tournament admins configure counted rounds, an optional mandatory round and
@@ -219,9 +220,19 @@ When the final back nine is hidden, non-admin member reads contain only
 holes 1–9 and totals derived from those holes; authoritative completeness,
 confirmation, and confirmation time are null. The full card is available at the
 same path plus `/scoring` only after exact admin/scorer/flight-owner write
-authorization. That read is non-locking, remains private/non-cacheable, and
-rejects locked rounds. Database audit actors remain preserved but are absent
+authorization. That read avoids score mutation locks while holding session/user
+and membership share locks; it remains private/non-cacheable and rejects locked
+rounds. Database audit actors remain preserved but are absent
 from member read projections.
+
+If an authority update invalidates this scoring read's database snapshot, the
+server retries the complete read once with a fresh snapshot and repeats all
+access checks. Lost session/access returns the usual `401`/`403`; valid access
+returns the current card. A second serialization conflict returns the existing
+`503 service_unavailable` envelope without card data. Scoring-route responses
+are non-cacheable, retaining existing `no-store` denials and adding
+`private, no-store` where no cache header was present. Mutations and other read
+endpoints do not acquire this retry behavior.
 
 `POST` to that scorecard path plus `/confirm` requires all holes and records the
 session actor as `confirmed_by` plus `confirmed_at`. Confirmation records represent current state;
