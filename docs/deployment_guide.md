@@ -627,11 +627,16 @@ Frontend repair validation used real Chrome with synthetic API responses. The
 PERSIST-1 PostgreSQL-backed repeat remains blocked by its documented Docker socket
 permissions.
 
-Deployment sign-off is **NOT READY**: related callback concerns, remaining operational assessment,
-public-host acceptance, native 200% browser zoom and physical Android Chrome remain
-unresolved.
+Hosted deployment has not been independently verified here. The user reports
+hosting at gg26.no and owns further deployment/setup work. The current priority
+in `PLANS.md` is application readiness through practical core-flow and persistence
+checks, followed by continued hands-on testing. Related unverified callback
+concerns and broader operational assessment are deferred rather than automatic
+prerequisites for that work. Public-host acceptance, native 200% browser zoom and
+physical Android Chrome remain unverified in the recorded evidence. This priority
+change supplies no new deployment evidence and does not claim production sign-off.
 The report's three frontend
 accessibility defects were repaired in the subsequent
 [navigation accessibility step](validation/navigation-accessibility-2026-09-23/README.md).
-Complete the outstanding deployment/browser gates before treating
-the local browser results as a production-readiness verdict.
+The deployment checks in this guide remain available to the user as operator;
+local browser results alone do not establish hosted readiness.

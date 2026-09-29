@@ -9,34 +9,56 @@ None. No implementation step is currently approved.
 
 ## Next candidate
 
-**ADMIN-CB-1: final-round visibility callback ownership (proposed).**
+**TEST-READY-1: functional readiness for continued hands-on testing.**
 
-Goal: resolve the source-supported concern that a late visibility mutation writes
-private query data or invalidates projections after its initiating session departs.
-Scope `FinalRoundVisibilityControl` and its response/error lifetime boundary only;
-see the [read-only findings](validation/stableford-settings-lifetime-2026-09-23/README.md).
+Goal: verify that the existing application supports the main workflows so the user
+can keep testing it with others at gg26.no. The user owns hosting and deployment.
+Prioritize working functionality over further broad assessments, speculative
+repairs or polish.
 
-First reproduce with held success and stale-error responses across logout,
-account/session replacement and unmount. If confirmed, fence cache, refetch and
-local completion effects to the initiating mounted account/CSRF/target, using the
-smallest appropriate boundary. Preserve final-round visibility rules, server
-version checks, current-session errors and normal result-projection invalidation.
-Do not infer server cancellation or change other administrator workflows. If not
-reproduced, document the evidence and stop without speculative implementation.
+Environment: use dedicated local test services and synthetic accounts for agent
+validation. Confirm available services before setup; preserve existing databases
+and user test progress. The user reports an existing deployment at gg26.no and
+will handle its setup. No remote access, hosted mutations, production migrations
+or server administration are part of this step.
 
-Validate current-session controls, delayed refresh continuations and replacement
-input; run the affected frontend ladder, Chrome and independent read-only review.
-Use disposable local services and synthetic accounts only; no production,
-external test targets or real credentials. Commit completed validated work to main,
-push origin/main and verify clean alignment. Stop after this bounded follow-up.
+Scope and behavior: run the existing application with PostgreSQL and verify login
+as organizer and player, tournament setup/start, round opening,
+score entry/editing, confirmation, and gross/net results. Exercise existing team
+and individual paths with administrator-managed teams. Check that saved scores
+survive reload, sign-out/sign-in and a local service restart. Provide a short
+manual checklist the user can repeat after deploying.
+
+Validation: exercise real database-backed browser flows at mobile and desktop
+widths, including relevant loading, empty, error and populated states; check
+console/network failures. Fix only reproduced defects that block these flows or
+compromise authorization or saved data; run the affected validation ladder and
+review for any repair. Record exact blockers and untested paths without turning
+unrelated findings into new prerequisites.
+
+Invariants: preserve all scoring, handicap-snapshot, team ownership, round-lock and
+authorization rules. Keep test data across ordinary restarts; resets must be
+explicit. No new features, scoring rules or broad refactoring.
+
+Stop condition: the core flows work in the validated environment, saved data
+persists, and the user has a concise checklist and known limitations for continued
+testing on their deployment. Stop and hand over; subsequent work follows concrete
+testing feedback. If local validation is blocked, report the exact unverified
+paths without substituting mocked results or claiming readiness. This is
+application test readiness, not hosted deployment sign-off or an exhaustive
+security assessment. Publish completed validated repository changes normally.
 
 ## Later queue
 
-- Pairing editor and tournament-start mutation callbacks: source-supported lifetime
-  concerns awaiting separate reproduction and bounded repair decisions.
-- Remaining broader security assessment: production proxy/database privileges,
-  recovery operations and dependency advisories. Define a bounded next scope and
-  authorized environment before proceeding.
+- Bugs reported during hands-on testing: prioritize broken core flows, lost data
+  and confirmed authorization defects; address one bounded repair at a time.
+- Deferred: final-round visibility, pairing editor and tournament-start callback
+  lifetime concerns. These are unverified follow-ups, not automatic prerequisites
+  for testing; retain the [existing evidence](validation/stableford-settings-lifetime-2026-09-23/README.md).
+- Deferred broader security assessment: further production proxy/database privilege,
+  recovery and dependency-advisory investigation. Revisit for a specific finding
+  or a separately requested assessment, rather than making another broad review
+  a prerequisite for continued functional testing.
 
 ### Remaining deployment acceptance
 
@@ -47,7 +69,9 @@ unit/component and real Chrome evidence with synthetic API responses; see its
 
 Public-host acceptance still needs a Docker Engine environment and public DNS/TLS
 validation. Native 200% browser zoom and physical Android Chrome remain unverified.
-Confirm the available environment before defining the next bounded acceptance step.
+Hosting and deployment checks belong to the user. These historical acceptance
+limits do not expand the application-readiness step into server administration
+or another assessment. Broader device coverage and polish can follow feedback.
 
 No automatic opponents/byes/brackets, team match play, extra holes, new scoring
 rules, public match sharing, cold offline launch or background sync is included.

@@ -1,28 +1,27 @@
-# Late Stableford settings responses respect session ownership
+# Prioritize working functionality for hands-on testing
 
-The confirmed PERSIST-3 Stableford path is repaired. The settings form now belongs
-to one account, CSRF session, tournament and round. Before response-driven cache
-writes or refetches, it checks that the session is still current and that the form
-is still mounted. Conflict refresh continuations recheck before clearing drafts.
-A replacement form has its own mutation state and cannot inherit the old receipt,
-error or busy state.
+The next priority is working functionality so the user can keep testing from a
+phone and with other testers. The user reports hosting at gg26.no and will handle
+deployment themselves. `docs/PLANS.md` now defines one bounded application
+test-readiness candidate instead of another callback investigation.
 
-For example, session A submits 50% and its response is held. The same account
-renews its session and starts editing 70%. When the old response arrives, it cannot
-overwrite the new input, show an old save receipt or trigger old round refetches.
-The new session can save normally. Leaving the editor does not undo a request
-already accepted by the server; current authorized reads recover actual settings.
+Practical acceptance covers organizer/player login, tournament setup and start,
+round opening, score entry and editing, confirmation, and gross/net results. It
+includes real database-backed local browser flows and persistence across service
+restarts. The handover provides a concise manual checklist and known limitations
+for the user's deployment. Local setup must preserve existing test progress;
+hosted mutations and server administration are outside the agent's scope.
 
-The [validation report](validation/stableford-settings-lifetime-2026-09-23/README.md)
-records 19 failing-first cases, 27 passing focused tests, **806 passing frontend
-tests**, typecheck, lint, build and **nine passing Chrome scenarios** at mobile and
-desktop widths. Independent source review found no actionable defect in this
-bounded change. Browser API responses were synthetic; component tests inspect
-the actual QueryClient and session transition implementation.
+Further broad assessment, unverified callback concerns and polish are deferred.
+Only reproduced blockers to the agreed flows, authorization or saved data belong
+in this step. Existing product invariants and affected validation/review
+requirements still apply to repairs. After handover, work follows concrete testing
+feedback rather than another general investigation.
 
-This Stableford repair is **READY**. Similar callbacks in pairing, tournament
-start and final-round visibility remain source-supported, unverified concerns;
-they were inspected read-only and are not claimed repaired. Final-round visibility
-is the next proposed bounded follow-up. Deployment remains **NOT READY** pending
-those concerns and operational/public-host/device acceptance. Completed validated
-work is committed to main and pushed to origin/main as requested.
+This iteration changes documentation only. No application behavior changed, no
+services were started, and no new runtime, browser or deployment checks were run.
+The prior [Stableford repair evidence](validation/stableford-settings-lifetime-2026-09-23/README.md)
+remains available; neighboring callback concerns are not claimed repaired.
+Application test readiness must be established by the practical checks, not
+inferred from this plan update or equated with hosted deployment sign-off or an
+exhaustive security assessment.
