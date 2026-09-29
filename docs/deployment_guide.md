@@ -520,6 +520,28 @@ strict decoders and UI at the same time. Existing stroke-only result and deliver
 contracts retain their meaning. Public sharing keeps its existing overall-only
 scope, with a non-private converted-value label; it does not expose player cards.
 
+### Schema 33 draft tournament details
+
+Deploy migration `0033_tournament_details.sql` with its matching API and frontend.
+Use the owner connection for forward migrations and refresh runtime grants using
+this guide's existing permissions command. Exact schema readiness requires the
+matching binary. Migration 0033 adds guards/functions only; it does not rewrite
+existing tournament details, round dates or historical results. Existing date
+inconsistencies remain untouched, but later detail edits must choose a range
+containing every round. New round inserts/date changes must fit the parent range.
+
+The new edit endpoint uses READ COMMITTED. Direct changed-detail SQL requires the
+same exact-admin session context and rejects snapshot isolation. Administrators
+should use the application form. Unchanged development seed upserts remain
+idempotent; reapplying seed after editing its tournament is not a restoration
+workflow and may be rejected. Never run development seed against production.
+
+Back up before migration and deploy API/web builds together. This migration has
+no in-place downgrade. Restore a pre-upgrade backup into a fresh volume with
+matching binaries if rollback is needed. Local clean migration, schema-32 upgrade
+preservation and unchanged seeding twice were exercised for this step; hosted
+rollout and recovery remain the operator's responsibility.
+
 ### Schemas 30–32 singles match play
 
 Migrations 0030–0031 add the singles format, round-local matches/opponents,

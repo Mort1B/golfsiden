@@ -251,3 +251,15 @@ describe('tournament tie policy', () => {
     expect(fetchMock).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({ body: JSON.stringify(input) }))
   })
 })
+
+describe('tournament details updates', () => {
+  it('sends only versioned detail fields with PATCH and rejects a mismatched response identity', async () => {
+    const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => tournament })
+    vi.stubGlobal('fetch', fetch)
+    const input = { name: 'Ny tur', description: '', start_date: tournament.start_date, end_date: tournament.end_date, expected_tournament_updated_at: tournament.updated_at }
+    await expect(tournamentApi.updateDetails(tournament.id, input, 'test-token')).resolves.toEqual(tournament)
+    expect(fetch).toHaveBeenCalledWith(`/api/tournaments/${tournament.id}/details`, expect.objectContaining({ method: 'PATCH', body: JSON.stringify(input), headers: { 'content-type': 'application/json', 'x-csrf-token': 'test-token' } }))
+    fetch.mockResolvedValue({ ok: true, json: async () => ({ ...tournament, id: '00000000-0000-0000-0000-000000000099' }) })
+    await expect(tournamentApi.updateDetails(tournament.id, input, 'test-token')).rejects.toThrow()
+  })
+})

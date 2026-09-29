@@ -17,6 +17,7 @@ pub mod score_visibility;
 pub mod scorecards;
 pub mod scoring;
 pub mod stableford;
+pub mod tournament_details;
 pub mod tournament_plan;
 
 pub mod four_ball_card;

@@ -1180,6 +1180,31 @@ while authority or round status is unresolved, and offers explicit retry after
 a failed refresh. Drafts and late save responses are isolated by tournament,
 user and session identity.
 
+Under **Turneringsstyring → Innstillinger → Navn og datoer**, the exact
+administrator can edit a draft tournament's name, optional description, start date
+and end date. The period must contain every existing round date. Round dates are
+never moved automatically. Active, completed and archived tournaments show a
+read-only explanation. Round count, formats, teams, scoring settings and preserved
+results are outside this edit form.
+
+`PATCH /api/tournaments/{tournament_id}/details` accepts exactly `name`,
+`description`, `start_date`, `end_date` and `expected_tournament_updated_at`, with
+session cookie and CSRF. Name must be nonblank and at most 120 UTF-8 bytes;
+description may be empty and at most 2000 bytes. Both are trimmed; NUL text and
+invalid/unordered dates are rejected. Existing/past tournament dates are allowed.
+Success returns the authoritative private/non-cacheable tournament. An unchanged
+request preserves its version and emits no event. Stale versions, started
+tournaments and excluded round dates return `409 tournament_details_stale`,
+`tournament_details_locked` and `tournament_details_round_dates`, respectively.
+
+The form disables saving while authority/round data is unresolved. Failed saves
+preserve entered text and offer explicit retry. A competing edit preserves the
+local draft and offers **Forkast utkast og hent siste**; there is no automatic
+merge or overwrite. A successful write is not labelled saved-and-checked until
+scoped queries refresh. If that refresh fails, reload the latest version before
+another write. Late responses from a departed tournament or account cannot
+repopulate its editor or private queries.
+
 The Rundestyring section exposes `Start turneringen` only to the exact tournament
 admin. `POST /api/tournaments/{tournament_id}/start` requires CSRF plus the
 current tournament `updated_at`. Under deterministic locks it revalidates the
@@ -2135,11 +2160,11 @@ This suite requires local Google Chrome and a free loopback port 4179.
   summary; public scorecards and broader tournament access remain unimplemented.
 - Request throttling is process-local, so the supported production topology is
   one API replica. A future multi-replica topology requires a shared limiter.
-- Tournament settings currently edit only the atomic pre-start best-N and
+- Tournament settings edit draft name, description and containing date range, plus the atomic pre-start best-N and
   optional mandatory-round and overall tie-break configuration, manage result
   links and expose the explicit tournament-start action. Explicit completion and archive APIs have administrator
   confirmation controls; the tournament list offers current/archive/all views.
-  General tournament editing remains unimplemented. The Courses section supports
+  Wider round/schedule restructuring remains unimplemented. The Courses section supports
   draft-round configuration; non-draft rounds are deliberately read-only.
 - Pairing roster reads, atomic admin replacement, the mobile draft editor,
   flight-aware opening readiness, and representative ready seed assignments

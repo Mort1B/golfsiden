@@ -5,27 +5,9 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. Continue testing using the [checklist](testing_checklist.md). The following
-steps are planned; neither is implemented or started automatically.
+None. The next candidate below requires a new implementation instruction.
 
 ## Next candidate
-
-**TOURNAMENT-EDIT-1: edit basic tournament details (planned, not implemented).**
-
-Goal: let an exact tournament administrator correct the name, description and
-start/end dates of a draft tournament without recreating it.
-Scope/behavior: version-checked atomic update and mobile management form with
-validation, save receipt, conflict refresh and explicit retry. Require nonempty
-name and ordered valid dates that contain every configured round date; reject
-a narrower range rather than silently moving any round. Active/completed/archived
-tournaments remain read-only for this first step. Do not alter round count, format, teams, scoring settings,
-handicap snapshots, saved results or public-sharing behavior.
-Validation: API/database tests for exact-admin access, status/version races and
-invalid dates; frontend failure/conflict tests; mobile/desktop browser checks;
-complete affected ladders and documentation. Stop after this bounded edit flow
-is published; wider schedule/round restructuring needs its own step.
-
-## Later queue
 
 **OFFLINE-RETURN-1: return to a prepared card during a coverage gap (planned).**
 Goal: allow explicit return to the same account's exact previously loaded card
@@ -44,6 +26,8 @@ is verified and published. It does not provide offline reload or closed-app laun
 See the [course-connectivity assessment](validation/offline-course-assessment-2026-09-29/README.md).
 Reliable reopening after browser closure/eviction needs a separately scoped
 prepared app shell and private scorecard-retention/reauthorization design.
+
+## Later queue
 
 - Deferred broader security assessment: further production proxy/database privilege,
   recovery and dependency-advisory investigation. Revisit for a specific finding

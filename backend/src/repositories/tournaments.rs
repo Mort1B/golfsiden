@@ -1,6 +1,7 @@
 mod archive;
 mod complete;
 mod counted_rounds;
+pub mod details;
 mod handicaps;
 mod start;
 

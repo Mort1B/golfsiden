@@ -1,38 +1,38 @@
-# Pairing and tournament-start responses stay with their session
+# Draft tournament detail editing
 
-**READY** for both requested frontend repairs. Late pairing saves or tournament
-starts could previously update private cache/local state after logout, account or
-session replacement, target change or navigation. Each editor now has an
-account/CSRF/target-owned lifetime, with synchronous cleanup and canonical-session
-checks before dispatch and response effects. Pairing discard-and-reload also
-checks ownership after its awaited refresh. New sessions retain their own drafts,
-receipts and busy state.
+Exact tournament administrators can now correct a draft's name, description and
+start/end dates under **Turneringsstyring → Innstillinger → Navn og datoer**.
+The date range must contain every configured round; no round is moved. Active,
+completed and archived tournaments show a read-only explanation. Wider schedule
+changes, formats, teams, score data and public sharing are outside this iteration.
 
-For example, renewing a session during a pairing save no longer lets the old
-response overwrite the new flight draft. Current-session saves, conflicts,
-explicit retries and tournament-start readiness remain intact. Manual teams,
-formats, public sharing, scoring/handicap rules and server permissions are unchanged.
-Ignoring a late response does not undo an accepted server update.
+A strict versioned PATCH endpoint normalizes the four editable fields. Its
+transaction locks rounds, authority and tournament in the established order,
+revalidates the exact membership/session and checks expiry after possible waits.
+An unchanged request preserves its timestamp; a changed commit emits one live
+invalidation. Migration 33 adds independent context, status and date guards,
+preserving historical data. Review exposed a snapshot-isolation containment
+race; changed details now require READ COMMITTED, with a deterministic regression.
 
-The original implementation failed 44 of 52 held-response regressions; all 52
-pass after repair. The full frontend suite passed 881 tests across 123 files,
-with frontend/browser TypeScript, ESLint and production build passing. Twenty
-installed Chrome scenarios passed at 320/390/1280px using the production frontend
-and synthetic HTTP/SSE fixtures. Screenshots, cache/network effects and errors
-were checked. Independent read-only review found no actionable issue. The
-[repair report](validation/management-lifetime-2026-09-29/README.md) retains evidence.
+The form retains text after failed saves. Competing edits require explicit discard
+and reload; it never silently merges or overwrites them. A save receipt appears
+only after authoritative refresh. Accepted writes whose refresh fails require a
+reload before another write. Tournament/user/session ownership prevents departed
+callbacks from repopulating a different editor or private cache.
 
-[PLANS.md](PLANS.md) now defines `TOURNAMENT-EDIT-1` for basic draft-tournament
-name/description/date changes with administrator/version checks. It is planned,
-not implemented. The [offline assessment](validation/offline-course-assessment-2026-09-29/README.md)
-finds a practical connectivity gap: an already-open card supports durable local
-edits and reconnect delivery, but main-Score return and reopening the app without
-coverage are not supported. `OFFLINE-RETURN-1` is queued for explicit return within
-the running app; reliable reopening after browser closure/eviction needs a separate
-prepared app shell and local scorecard design. No offline runtime changes were made.
+Example: an organizer can rename a draft golf trip or extend its end date. Moving
+its start past the first round is rejected. If another administrator saves first,
+the local text stays visible until the organizer chooses **Forkast utkast og hent
+siste**. Starting the tournament closes this basic editing path.
 
-Deploy rebuilt frontend assets normally. No API, migration or configuration change
-is needed. gg26.no and existing databases were untouched. The
-[testing checklist](testing_checklist.md) now includes the current coverage-gap
-procedure and its limits. Backend/database ladders and new offline/physical-phone
-browser probes were not run for these frontend-only repairs.
+Validation: 215 backend tests; all 629 PostgreSQL-enabled checks pass across the
+full run and the corrected fixture target's rerun; 897 frontend tests; formatter,
+Clippy, typecheck, lint and build passed. Clean migration, schema-32 preservation
+and unchanged seed rerun passed. Real Chrome/real API checks cover 320/390/1280px,
+async/error/conflict states, persistence and start. Read-only review found no
+remaining actionable issue. See the [validation evidence](validation/tournament-details-2026-09-29/README.md).
+
+**READY WITH KNOWN LIMITATIONS:** deploy migration 33 and matching API/web builds.
+Hosted deployment remains user-owned. The next planned step is return to an
+already prepared scorecard during a coverage gap while the app remains open;
+that offline implementation has not started.

@@ -758,9 +758,9 @@ async fn database_guards_start_context_readiness_and_transition_order(pool: PgPo
         "INSERT INTO rounds
            (id, tournament_id, round_number, name, round_date, course_name, tee_name,
             status, scoring_format)
-         VALUES ($1, $2, 3, 'Stored open', '2026-09-03', '', '', 'open',
+         VALUES ($1, $2, 3, 'Stored open', '2026-09-02', '', '', 'open',
                  'individual_stroke_play'),
-                ($3, $2, 4, 'Stored completed', '2026-09-04', '', '', 'completed',
+                ($3, $2, 4, 'Stored completed', '2026-09-02', '', '', 'completed',
                  'individual_stroke_play')",
     )
     .bind(uuid!("15000000-0000-0000-0000-000000000033"))

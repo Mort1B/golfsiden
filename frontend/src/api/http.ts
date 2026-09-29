@@ -59,7 +59,7 @@ export async function requestUnchecked<T>(path: string, init?: RequestInit): Pro
   return await responseJson(path, init) as T
 }
 
-export function jsonRequest(method: 'POST' | 'PUT', body: unknown, csrfToken?: string): RequestInit {
+export function jsonRequest(method: 'POST' | 'PUT' | 'PATCH', body: unknown, csrfToken?: string): RequestInit {
   const headers: Record<string, string> = { 'content-type': 'application/json' }
   if (csrfToken) headers['x-csrf-token'] = csrfToken
   return {

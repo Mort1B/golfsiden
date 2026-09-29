@@ -238,7 +238,7 @@ async fn validation_is_deterministic_for_individual_and_scramble_rounds(pool: Pg
     assert!(!scramble.ready_to_complete);
 
     let draft_round = Uuid::new_v4();
-    sqlx::query("INSERT INTO rounds (id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, scoring_format) VALUES ($1, $2, 3, 'Empty draft', '2026-09-03', '40000000-0000-0000-0000-000000000041', 'Completion Course', '40000000-0000-0000-0000-000000000042', 'Test', 2, 'individual_stroke_play')")
+    sqlx::query("INSERT INTO rounds (id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, scoring_format) VALUES ($1, $2, 3, 'Empty draft', '2026-09-02', '40000000-0000-0000-0000-000000000041', 'Completion Course', '40000000-0000-0000-0000-000000000042', 'Test', 2, 'individual_stroke_play')")
         .bind(draft_round).bind(TOURNAMENT_ID).execute(&pool).await.unwrap();
     let draft = round_completion::validation(&pool, draft_round)
         .await

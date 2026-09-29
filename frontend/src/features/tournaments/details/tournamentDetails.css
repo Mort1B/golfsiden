@@ -1,0 +1,17 @@
+.tournament-details-editor { display: grid; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #e2e6e2; }
+.tournament-details-editor h3 { font-size: 1rem; }
+.tournament-details-editor p { line-height: 1.5; overflow-wrap: anywhere; }
+.tournament-details-editor fieldset { display: grid; gap: 8px; min-width: 0; border: 0; margin: 0; padding: 0; }
+.tournament-details-editor label { display: block; font-size: .85rem; font-weight: 700; }
+.tournament-details-editor input, .tournament-details-editor textarea { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; padding: 10px; border: 1px solid #aeb8b1; border-radius: 6px; color: #17201c; background: #fff; font: inherit; }
+.tournament-details-editor textarea { resize: vertical; }
+.details-dates { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.details-dates > div { display: grid; gap: 8px; align-content: start; }
+.tournament-details-editor button { display: inline-flex; justify-self: start; align-items: center; gap: 8px; min-height: 44px; padding: 10px 14px; border: 1px solid #176640; border-radius: 6px; font: inherit; font-weight: 700; color: #176640; background: #fff; }
+.tournament-details-editor .details-save { color: white; background: #176640; }
+.tournament-details-editor button:disabled, .tournament-details-editor fieldset:disabled { opacity: .6; }
+.tournament-details-editor :is(button, input, textarea):focus-visible { outline: 3px solid #176640; outline-offset: 2px; }
+.tournament-details-editor svg, .tournament-details-locked svg { flex: 0 0 auto; width: 18px; height: 18px; }
+.tournament-details-editor .details-error { color: #a12718; font-size: .85rem; }
+.tournament-details-locked { display: flex; align-items: start; gap: 8px; margin-top: 16px; }
+@media (min-width: 600px) { .details-dates { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

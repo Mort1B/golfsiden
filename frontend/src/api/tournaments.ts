@@ -55,6 +55,9 @@ export const tournamentApi = {
   detail: (id: string) => requestDecoded(`/api/tournaments/${id}`, (value) => decodeExpectedTournament(value, id)),
   rounds: (id: string) => requestDecoded(`/api/tournaments/${id}/rounds`, (value) => decodeTournamentRounds(value, id)),
   players: (id: string) => requestDecoded(`/api/tournaments/${id}/players`, (value) => decodeTournamentPlayerRoster(value, id)),
+  updateDetails: (tournamentId: string,
+    input: Pick<Tournament, 'name' | 'description' | 'start_date' | 'end_date'> & { expected_tournament_updated_at: string }, csrfToken: string,
+  ) => requestDecoded(`/api/tournaments/${tournamentId}/details`, value => decodeExpectedTournament(value, tournamentId), jsonRequest('PATCH', input, csrfToken)),
   updateCountedRounds: (
     tournamentId: string,
     input: { counted_rounds: number | null; mandatory_round_id: string | null; tie_break_policy?: TournamentTieBreakPolicy; expected_tournament_updated_at: string },

@@ -136,6 +136,22 @@ and reapplies runtime grants before the API is started.
   The general repository creation boundary is draft-only as defense in depth.
   Round opening requires an active parent, but course and pairing configuration
   remain independently editable while their individual rounds are draft.
+- Basic tournament details have a separate draft-only exact-admin mutation in
+  `repositories/tournaments/details.rs`, exposed through `PATCH
+  /api/tournaments/{id}/details`. Domain normalization validates name/description
+  and ordered dates; persistence locks rounds in UUID order, then active session,
+  exact membership and tournament. It checks the expected tournament timestamp,
+  re-reads round-date containment after the parent lock, and rechecks natural
+  session expiry before commit. Unchanged requests retain the timestamp and emit
+  no event; changed requests emit one tournament invalidation after commit.
+  Migration 0033 independently guards these four fields with transaction-local
+  tournament/session context and exact membership. Changed detail writes require
+  READ COMMITTED: fixed snapshots could miss concurrent round-date changes.
+  Round insert/date-change guards share-lock the parent and enforce containment;
+  existing historical rows are preserved. Other configuration/lifecycle updates
+  do not enter the detail workflow. The keyed frontend form owns its draft and
+  pending mutation by tournament/user/session, retains stale drafts until explicit
+  discard, and requires authoritative query reconciliation before a save receipt.
 - `tournaments.counted_rounds` is an explicit nullable configuration fact: null
   for match-only plans, otherwise 1 through the number of configured overall-eligible
   rounds. A singles match is never mandatory or counted in overall results.

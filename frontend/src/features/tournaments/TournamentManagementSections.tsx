@@ -1,3 +1,4 @@
+import { TournamentDetailsEditor } from './details/TournamentDetailsEditor'
 import { StablefordSettings } from './StablefordSettings'
 import { ResultShareControl } from '../resultSharing/ResultShareControl'
 import { ArrowRight } from 'lucide-react'
@@ -87,6 +88,8 @@ export function TournamentManagementSections({ tournament, roster, rounds, navig
           <div><dt>Poengvisning</dt><dd>{scoringMode(tournament.scoring_mode)}</dd></div>
           <div><dt>Planlagte runder</dt><dd>{tournament.number_of_rounds}</dd></div>
         </dl>
+        <TournamentDetailsEditor tournament={tournament} rounds={rounds.data}
+          loading={authorityRefreshing || rounds.pending} readError={rounds.error} retry={rounds.retry} />
         <CountedRoundsEditor
           tournament={tournament}
           authorityRefreshing={authorityRefreshing}
