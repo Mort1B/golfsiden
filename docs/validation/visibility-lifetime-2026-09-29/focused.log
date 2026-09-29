@@ -1,0 +1,13 @@
+
+> golf-web@0.1.0 test
+> vitest run --reporter=dot src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx
+
+
+ RUN  v3.2.7 /home/morten/Prog/guttasgolfside/golfsiden/frontend
+
+·······················
+
+ Test Files  1 passed (1)
+      Tests  23 passed (23)
+   Start at  10:39:32
+   Duration  1.93s (transform 116ms, setup 0ms, collect 301ms, tests 587ms, environment 588ms, prepare 72ms)

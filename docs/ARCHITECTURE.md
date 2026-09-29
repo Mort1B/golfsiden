@@ -798,6 +798,13 @@ and reapplies runtime grants before the API is started.
   session gets a separate mutation observer, draft and receipt; an older response
   cannot reset its input or busy state. This client fence does not cancel an
   accepted server write: current authorized reads still determine server state.
+- Final-round visibility uses its own account/CSRF/tournament/final-round-keyed
+  editor. Layout cleanup ends ownership; submission and response-driven private
+  cache writes, receipts and visibility projection invalidation also check the
+  canonical session. Replacement editors have independent mutation state and
+  busy guards. Current-session conflict refresh and retry remain available,
+  including on locked finals. This fence does not roll back an accepted server
+  update and does not extend to other management mutation callbacks.
 - The tournament list filters the unmodified user-scoped membership collection
   locally, using URL view selection. Current includes every non-archived status;
   archived/all views retain direct private history links. Failed authoritative

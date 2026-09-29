@@ -655,3 +655,8 @@ checks. Deploy the updated API normally; no migration, runtime grants, environme
 variables or frontend contract changes are required. Exhausted retries return a
 non-cacheable 503 instead of a generic 500. This does not deploy to gg26.no or
 extend retry behavior to score writes or other read endpoints.
+
+The [VISIBILITY-1 frontend repair](validation/visibility-lifetime-2026-09-29/README.md)
+prevents departed sessions' final-visibility responses from updating client state.
+Include the rebuilt frontend assets in the normal deployment. No database
+migration, API change or environment/configuration change is required.

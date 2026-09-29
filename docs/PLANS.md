@@ -16,7 +16,7 @@ Hosting and deployment at gg26.no remain user-owned.
 
 ## Later queue
 
-- Deferred: final-round visibility, pairing editor and tournament-start callback
+- Deferred: pairing editor and tournament-start callback
   lifetime concerns. These are unverified follow-ups, not automatic prerequisites
   for testing; retain the [existing evidence](validation/stableford-settings-lifetime-2026-09-23/README.md).
 - Deferred broader security assessment: further production proxy/database privilege,

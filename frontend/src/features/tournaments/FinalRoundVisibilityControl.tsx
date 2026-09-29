@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { authKeys, type AuthSession } from '../../api/auth'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Eye, EyeOff, LoaderCircle, RefreshCw } from 'lucide-react'
 import {
@@ -17,9 +18,24 @@ interface Props {
 }
 
 export function FinalRoundVisibilityControl({ tournament, finalRound }: Props) {
-  const auth = useAuth()
+  const { session } = useAuth()
+  if (!session) return null
+  return <VisibilityEditor key={`${session.user_id}:${session.csrf_token}:${tournament.id}:${finalRound.id}`}
+    tournament={tournament} finalRound={finalRound} session={session} />
+}
+
+function VisibilityEditor({ tournament, finalRound, session }: Props & { session: AuthSession }) {
   const queryClient = useQueryClient()
-  const userId = auth.session?.user_id ?? ''
+  const userId = session.user_id
+  const alive = useRef(false)
+  const busy = useRef(false)
+  useLayoutEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
+  // The keyed editor owns one session and target; canonical publication can
+  // precede React's replacement render, so mounted state alone is insufficient.
+  const isCurrent = () => {
+    const current = queryClient.getQueryData<AuthSession | null>(authKeys.session)
+    return alive.current && current?.user_id === userId && current.csrf_token === session.csrf_token
+  }
   const queryKey = finalRoundVisibilityKeys.detail(userId, tournament.id)
   const [receipt, setReceipt] = useState<string | null>(null)
   const visibilityQuery = useQuery({
@@ -28,10 +44,11 @@ export function FinalRoundVisibilityControl({ tournament, finalRound }: Props) {
     enabled: userId.length > 0,
   })
   const mutation = useMutation({
+    retry: false, gcTime: 0,
     mutationFn: (backNineHidden: boolean) => {
-      const csrfToken = auth.session?.csrf_token
+      const csrfToken = session.csrf_token
       const current = visibilityQuery.data
-      if (!csrfToken) throw new Error('Økten mangler. Logg inn på nytt.')
+      if (!csrfToken || !isCurrent()) throw new Error('Økten mangler. Logg inn på nytt.')
       if (!current) throw new Error('Synlighetsstatusen må lastes før den kan endres.')
       return finalRoundVisibilityApi.update(tournament.id, {
         back_nine_hidden: backNineHidden,
@@ -41,21 +58,27 @@ export function FinalRoundVisibilityControl({ tournament, finalRound }: Props) {
   })
 
   const save = async (backNineHidden: boolean) => {
-    if (mutation.isPending) return
+    if (!isCurrent() || busy.current) return
+    busy.current = true
     mutation.reset()
     setReceipt(null)
     try {
       const saved = await mutation.mutateAsync(backNineHidden)
+      if (!isCurrent()) return
       queryClient.setQueryData<FinalRoundVisibility>(queryKey, saved)
+      if (!isCurrent()) return
       setReceipt(backNineHidden
         ? 'Hull 10–18 er skjult igjen. Serverstatusen er bekreftet.'
         : 'Hull 10–18 er frigitt. Serverstatusen er bekreftet.')
-      await handleTournamentLiveSignal(queryClient, userId, 'visibility')
+      if (isCurrent()) await handleTournamentLiveSignal(queryClient, userId, 'visibility')
     } catch (error) {
+      if (!isCurrent()) return
       const failure = finalRoundVisibilityFailure(
         error instanceof Error ? error : new Error('Ukjent feil'),
       )
       if (failure?.refetch) await visibilityQuery.refetch()
+    } finally {
+      if (isCurrent()) busy.current = false
     }
   }
 
@@ -72,7 +95,7 @@ export function FinalRoundVisibilityControl({ tournament, finalRound }: Props) {
     return (
       <div className="final-visibility-control error" role="alert">
         <div><h3>Finalens bakni</h3><p>{visibilityQuery.error.message}</p></div>
-        <button type="button" onClick={() => void visibilityQuery.refetch()}>
+        <button type="button" onClick={() => { if (isCurrent()) void visibilityQuery.refetch() }}>
           <RefreshCw aria-hidden="true" /> Prøv igjen
         </button>
       </div>
@@ -117,6 +140,7 @@ export function FinalRoundVisibilityControl({ tournament, finalRound }: Props) {
         <div className="final-visibility-error" role="alert">
           <p>{failure.message}</p>
           <button type="button" disabled={mutation.isPending} onClick={() => {
+            if (!isCurrent()) return
             if (failure.refetch) void visibilityQuery.refetch()
             else if (attemptedState !== undefined) void save(attemptedState)
           }}>

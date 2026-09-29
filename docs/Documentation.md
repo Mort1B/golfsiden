@@ -755,9 +755,15 @@ resolves same-account transient input loss (PERSIST-1). The
 [score retry repair](validation/score-storage-retry-2026-09-23/README.md) resolves
 uncontrolled retries on storage failures (PERSIST-2). The
 [Stableford callback repair](validation/stableford-settings-lifetime-2026-09-23/README.md)
-resolves the confirmed PERSIST-3 path. Similar pairing, tournament-start and final
-visibility callbacks remain source-supported concerns awaiting separate reproduction;
-this repair does not establish their safety. No other-account UI disclosure or
+resolves the confirmed PERSIST-3 path. The subsequent
+[final-round visibility repair](validation/visibility-lifetime-2026-09-29/README.md)
+reproduces and resolves late visibility-response cache writes, receipts and
+refreshes after session or editor departure. Visibility controls reset for a new
+account/session/target; only the current mounted session may apply a response.
+Normal save, stale-status refresh and explicit retry remain available. Ignoring
+an old response does not undo a server update; fresh authorized reads recover it.
+Pairing and tournament-start callbacks remain source-supported concerns awaiting
+separate reproduction; these repairs do not establish their safety. No other-account UI disclosure or
 server authorization bypass was demonstrated. Durable queues
 remain account-scoped and intentionally survive logout; the report records
 passing controls and exact limitations. Operational assessment remains open.

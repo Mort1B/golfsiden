@@ -7,6 +7,10 @@ cannot recreate private round queries after its account/session departs or its
 editor unmounts. The repair is ready within this bounded scope; deployment remains
 **NOT READY** pending related unverified callbacks and operational/device gates.
 
+Follow-up: [VISIBILITY-1](../visibility-lifetime-2026-09-29/README.md) subsequently
+reproduced and repaired the final-round visibility concern listed below. The
+remaining findings and original validation boundaries are preserved here.
+
 ## Implementation
 
 [StablefordSettings](../../../frontend/src/features/tournaments/StablefordSettings.tsx)

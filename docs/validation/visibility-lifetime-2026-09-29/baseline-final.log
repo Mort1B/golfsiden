@@ -1,0 +1,178 @@
+
+> golf-web@0.1.0 test
+> vitest run --reporter=dot src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx
+
+
+ RUN  v3.2.7 /home/morten/Prog/guttasgolfside/golfsiden/frontend
+
+xx·xxxxxxxx·xxxxxxxxx··
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late success after logout
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late success after account
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late success after csrf
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late success after unmount
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late success after tournament
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late success after round
+AssertionError: expected "setQueryData" to not be called at all, but actually been called 1 times
+
+Received:
+
+  1st setQueryData call:
+
+    Array [
+      Array [
+        "private-workspace",
+        "00000000-0000-0000-0000-000000000003",
+        "tournaments",
+        "00000000-0000-0000-0000-000000000001",
+        "final-round-visibility",
+      ],
+      Object {
+        "back_nine_hidden": false,
+        "tournament_id": "00000000-0000-0000-0000-000000000001",
+        "visibility_updated_at": "2026-09-07T11:00:00Z",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx:66:24
+     64|     })
+     65|     await settled(client)
+     66|     expect(writes).not.toHaveBeenCalled(); expect(refresh).not.toHaveB…
+       |                        ^
+     67|     expect(get).toHaveBeenCalledTimes(reads)
+     68|     expect(client.getQueriesData({ queryKey: ['private-workspace'] }))…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯
+
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late stale after logout
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late stale after csrf
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late stale after unmount
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late stale after round
+AssertionError: expected "get" to be called +0 times, but got 1 times
+ ❯ src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx:67:17
+     65|     await settled(client)
+     66|     expect(writes).not.toHaveBeenCalled(); expect(refresh).not.toHaveB…
+     67|     expect(get).toHaveBeenCalledTimes(reads)
+       |                 ^
+     68|     expect(client.getQueriesData({ queryKey: ['private-workspace'] }))…
+     69|     expect(screen.queryByText(/Serverstatusen er bekreftet/)).toBeNull…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯
+
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late stale after account
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late stale after tournament
+AssertionError: expected "get" to be called 1 times, but got 2 times
+ ❯ src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx:67:17
+     65|     await settled(client)
+     66|     expect(writes).not.toHaveBeenCalled(); expect(refresh).not.toHaveB…
+     67|     expect(get).toHaveBeenCalledTimes(reads)
+       |                 ^
+     68|     expect(client.getQueriesData({ queryKey: ['private-workspace'] }))…
+     69|     expect(screen.queryByText(/Serverstatusen er bekreftet/)).toBeNull…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/19]⎯
+
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late failure after account
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late failure after csrf
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late failure after tournament
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > ignores late failure after round
+AssertionError: expected <div …(2)><p></p>
+…(1)</div> to be null
+
+- Expected:
+null
+
++ Received:
+<div
+  class="final-visibility-error"
+  role="alert"
+>
+  <p>
+    synthetic failure
+  </p>
+  <button
+    type="button"
+  >
+    <svg
+      aria-hidden="true"
+      class="lucide lucide-refresh-cw"
+      fill="none"
+      height="24"
+      stroke="currentColor"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+      width="24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"
+      />
+      <path
+        d="M21 3v5h-5"
+      />
+      <path
+        d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"
+      />
+      <path
+        d="M8 16H3v5"
+      />
+    </svg>
+
+    Prøv lagring igjen
+  </button>
+</div>
+
+ ❯ src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx:70:41
+     68|     expect(client.getQueriesData({ queryKey: ['private-workspace'] }))…
+     69|     expect(screen.queryByText(/Serverstatusen er bekreftet/)).toBeNull…
+     70|     expect(screen.queryByRole('alert')).toBeNull()
+       |                                         ^
+     71|   })
+     72| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/19]⎯
+
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > rejects late writes and submission after canonical logout before React rerenders
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > rejects late writes and submission after canonical renewal before React rerenders
+AssertionError: expected "update" to be called once, but got 2 times
+ ❯ src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx:84:16
+     82|   expect(client.getQueryData(keys.detail(session.user_id, tournament.i…
+     83|   await submit()
+     84|   expect(save).toHaveBeenCalledOnce()
+       |                ^
+     85| })
+     86| it('keeps a renewed session operation pending when the old response ar…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/19]⎯
+
+ FAIL  src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx > keeps a renewed session operation pending when the old response arrives
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/features/tournaments/FinalRoundVisibilityControl.lifetime.test.tsx:92:63
+     90|   await submit(); await waitFor(() => expect(save).toHaveBeenCalledOnc…
+     91|   act(() => change({ ...session, csrf_token: 'renewed' }))
+     92|   expect(screen.getByRole('switch').hasAttribute('disabled')).toBe(fal…
+       |                                                               ^
+     93|   await submit(); await waitFor(() => expect(save).toHaveBeenCalledTim…
+     94|   await act(async () => old.resolve(released))
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/19]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  19 failed | 4 passed (23)
+   Start at  10:41:01
+   Duration  1.94s (transform 125ms, setup 0ms, collect 308ms, tests 582ms, environment 586ms, prepare 78ms)
