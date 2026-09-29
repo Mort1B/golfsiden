@@ -1,6 +1,12 @@
 # Offline use on golf courses: current support and gaps
 
-Date: 2026-09-29. Read-only assessment of the current checkout. No offline runtime,
+Date: 2026-09-29. Historical assessment before OFFLINE-RETURN-1.
+The in-app return gap identified here is now addressed by the
+[offline-return implementation and validation](../offline-return-2026-09-29/README.md).
+Reload/closed-app launch limitations still apply. The table below describes the
+pre-implementation baseline.
+
+Read-only assessment of the current checkout. No offline runtime,
 format, public-sharing, backend or database change is included.
 
 **Existing open-card scoring supports interrupted connectivity. Reliable reopening

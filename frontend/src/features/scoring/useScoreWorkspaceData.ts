@@ -1,3 +1,4 @@
+import { useOnline } from './prepared/useOnline'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo } from 'react'
 import { stablefordApi, type StablefordCard } from '../../api/stableford'
@@ -14,9 +15,11 @@ import { resumeTournamentLive } from '../../api/tournamentLive'
 import { parseHoleNumber, parseScoreView, preferredScoreRound, scoreableRounds,
   selectedOwner, adjacentWritableOwners, writableOwnerProgress, canonicalVisibleHole } from './selection'
 
-export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boolean) {
+export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boolean, preparedReturn = false) {
+  const online = useOnline()
+  const freshRead = resume || preparedReturn
   const { selection, remember } = useScoreResume()
-  const fresh = { staleTime: resume ? 0 : 20_000, refetchOnMount: resume ? 'always' as const : true }
+  const fresh = { staleTime: freshRead ? 0 : 20_000, refetchOnMount: freshRead ? 'always' as const : true }
   const queryClient = useQueryClient()
   const auth = useAuth()
   const userId = auth.session?.user_id ?? ''
@@ -57,7 +60,7 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
   // Completion is visibility-projected and cleared on disconnect. The exact
   // authorized writable card is not: keep its mounted input/intent, not a copy
   // of the cleared names or progress, until fresh completion metadata arrives.
-  const recoveringOwner = !resume && completionQuery.data === undefined && !completionDenied
+  const recoveringOwner = !resume && (preparedReturn || completionQuery.data === undefined) && !completionDenied
     && !accessDenied && searchParams.get('tournament') === tournament?.id
     && searchParams.get('round') === round?.id && (round?.status === 'open' || round?.status === 'completed')
     ? writableOwners.find(item => item.type === searchParams.get('owner_type') && item.id === searchParams.get('owner'))
@@ -68,10 +71,10 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
     searchParams.get('owner') ?? (resume && tournament?.id === selection?.tournamentId && round?.id === selection?.roundId ? selection?.owner.id ?? null : null),
     writableOwners,
   )
-  const owner = useMemo(() => requestedOwner
+  const owner = useMemo(() => (preparedReturn ? undefined : requestedOwner)
     ?? (recoveringOwner ? { owner: recoveringOwner, owner_name: 'Valgt scorekort' } : undefined),
-  [requestedOwner, recoveringOwner])
-  const effectiveRoundStatus = completionQuery.data?.status ?? round?.status
+  [requestedOwner, recoveringOwner, preparedReturn])
+  const effectiveRoundStatus = round?.status === 'locked' ? 'locked' : completionQuery.data?.status ?? round?.status
   const canWrite = owner !== undefined
     && (effectiveRoundStatus === 'open' || effectiveRoundStatus === 'completed')
     && writableOwners.some((writable) => ownerEquals(writable, owner.owner))
@@ -121,7 +124,7 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
   }, [queryClient, round, userId])
 
   useEffect(() => {
-    if (!owner) return
+    if (!owner || preparedReturn) return
     const writableCards = writableOwnerProgress(
       completionQuery.data?.owners ?? [],
       accessQuery.data?.writable_owners ?? [],
@@ -129,7 +132,7 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
     for (const neighbor of adjacentWritableOwners(writableCards, owner.owner)) {
       prefetchOwner(neighbor)
     }
-  }, [accessQuery.data?.writable_owners, completionQuery.data?.owners, owner, prefetchOwner])
+  }, [accessQuery.data?.writable_owners, completionQuery.data?.owners, owner, prefetchOwner, preparedReturn])
 
   useEffect(() => {
     if (!resume && tournament && round && owner && cardQuery.isSuccess) {
@@ -137,9 +140,12 @@ export function useScoreWorkspaceData(searchParams: URLSearchParams, resume: boo
     }
   }, [resume, tournament, round, owner, cardQuery.isSuccess, remember])
 
+  const verificationPending = preparedReturn && (!online || [tournamentsQuery, roundsQuery, completionQuery, accessQuery, cardQuery]
+    .some(query => !query.isFetchedAfterMount || !query.isSuccess || query.isFetching))
+
   return { tournamentsQuery, tournaments, tournament, roundsQuery, eligibleRounds, round,
     completionQuery, accessQuery, progressOwners, writableOwners, owner, effectiveRoundStatus,
     canWrite, cardQuery, terminalScoringError, view, hole, prefetchOwner, retainingScorer,
     deniedError: completionDenied ? completionQuery.error : accessDenied ? accessQuery.error : null,
-    connectionLost, retryLive: () => resumeTournamentLive(userId, tournament?.id ?? '') }
+    verificationPending, connectionLost, retryLive: () => resumeTournamentLive(userId, tournament?.id ?? '') }
 }

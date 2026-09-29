@@ -642,13 +642,30 @@ online delivery, but reopening the whole site while offline is not guaranteed:
 there is no offline app shell, service worker or background sync. Clearing browser
 site data removes pending device edits.
 
-For course coverage gaps, open the intended card while connected and keep it
-open until connectivity returns. The main Score resume route deliberately requires
-fresh reads, so navigating away and returning while offline is not a supported
-fallback. Reopening after browser closure/eviction is also unsupported, even if
-pending edits were saved on the device. See the
-[offline course assessment](validation/offline-course-assessment-2026-09-29/README.md)
-for the distinction between durable edits, in-app return and offline app launch.
+For course coverage gaps, open the intended writable card while connected. While
+this app instance remains open, the Score page offers **Tilbake til åpnet scorekort**
+when disconnected or a read fails. It returns to the exact last visited card and
+hole using its existing in-memory scoring cache. Supported cards are stroke/team,
+four-ball and Stableford. No other card is inferred from pending edits or prefetches.
+
+Returned cards explicitly await server verification. Entered holes still use the
+existing device queue and original conditional revisions; confirmation and switching
+to other cards wait for fresh access/status/card reads. Reconnection refreshes the
+workspace and delivers queued changes through the existing conflict checks. Normal
+online Score resume still waits for fresh data and selects the first missing hole.
+
+Preparation is scoped to the current account and session. Observed denied access,
+locked/noneditable rounds, removed required caches, logout/session replacement and
+known session expiry remove eligibility. Reconnect and choose **Hent scorekort på
+nytt** if a returned card becomes unavailable. Removing an offline-return option
+does not delete pending edits. Cached server data may be evicted while away (the
+QueryClient uses its normal inactive-cache lifetime); no cache is pinned or copied.
+
+This does not provide offline reload or reopening after browser closure/eviction.
+Keep the app open; if no prepared card is available, reconnect before opening it.
+No app shell, service worker, persisted full-card cache or background sync was added.
+See the [offline-return validation](validation/offline-return-2026-09-29/README.md)
+and the earlier [course assessment](validation/offline-course-assessment-2026-09-29/README.md).
 
 The owner, tournament, and round identity precede the active hole or summary.
 Hole selection and the view toggle stay visible below it. The labeled tournament,

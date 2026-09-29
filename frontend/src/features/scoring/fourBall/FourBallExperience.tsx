@@ -68,7 +68,8 @@ function SideInput(props: Props & { card: FourBallScoringCard; hole: FourBallSco
   const syncs = [first, second]
   return <>
     <header className="scorecard-owner"><div><p>Four-ball · lagscore</p><h2>{card.owner_name}</h2></div></header>
-    <SideSelectors {...props} disabled={locked} />
+    {!props.recovering && <SideSelectors {...props} disabled={locked} />}
+    {props.recovering && <button className="score-recovery-toggle" type="button" disabled={locked} onClick={() => props.onView(props.view === 'hole' ? 'summary' : 'hole')}>{props.view === 'hole' ? 'Oppsummering' : 'Ett hull'}</button>}
     {props.recovering && <p role="status">Oppdaterer tilgang og rundestatus. Endringer lagres først på enheten. Bekreftelse venter.</p>}
     {navigationWarning && <p role="alert">Fullfør eller forkast den ulagrede endringen før du går videre.</p>}
     {props.round.status === 'completed' && <p>Runden er fullført. Score kan korrigeres frem til låsing.</p>}

@@ -1,3 +1,6 @@
+import { useOnline } from '../features/scoring/prepared/useOnline'
+import { PreparedReturnOffer, PrepareScoreVisit } from '../features/scoring/prepared/PreparedReturnOffer'
+import { usePreparedScore } from '../features/scoring/prepared/context'
 import { isScoreResumeSearch, usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 import { useScoreDrafts } from '../features/scoring/recovery/context'
 import { ScoreRecovery } from '../features/scoring/recovery/ScoreRecovery'
@@ -23,16 +26,29 @@ import { EmptyState, ErrorState, LoadingState } from '../ui/AsyncState'
 export function ScorePage() {
   const location = useLocation()
   const resume = isScoreResumeSearch(location.search)
-  return <><PendingScores /><ScoreWorkspace key={resume ? location.key : 'selected'} resume={resume} /></>
+  return <><PendingScores />{resume && <PreparedReturnOffer />}<PreparedWorkspace key={resume ? location.key : 'selected'} resume={resume} /></>
 }
 
-function ScoreWorkspace({ resume }: { resume: boolean }) {
+function PreparedWorkspace({ resume }: { resume: boolean }) {
+  const [params, setParams] = useSearchParams(), { prepared, available } = usePreparedScore()
+  const { drafts } = useScoreDrafts()
+  const returning = params.get('prepared') === '1', online = useOnline()
+  const unavailable = returning && (!prepared || !available() || params.get('tournament') !== prepared.tournamentId
+    || params.get('round') !== prepared.roundId || params.get('owner_type') !== prepared.owner.type
+    || params.get('owner') !== prepared.owner.id)
+  usePublishTournamentNavigation(null, unavailable)
+  if (unavailable) return drafts.length ? <ScoreRecovery /> : <ScoreState><EmptyState>Koble til nettet og åpne scorekortet på nytt. Det klargjorte kortet er ikke lenger tilgjengelig.</EmptyState>
+    <button className="score-recovery-toggle" type="button" disabled={!online} onClick={() => setParams({ tournament: params.get('tournament') ?? '', round: params.get('round') ?? '', resume: '1' }, { replace: true })}>Hent scorekort på nytt</button></ScoreState>
+  return <ScoreWorkspace resume={resume} preparedReturn={returning} />
+}
+
+function ScoreWorkspace({ resume, preparedReturn }: { resume: boolean; preparedReturn: boolean }) {
   const { drafts } = useScoreDrafts()
   const [searchParams, setSearchParams] = useSearchParams()
   const { tournamentsQuery, tournaments, tournament, roundsQuery, eligibleRounds, round,
     completionQuery, accessQuery, progressOwners, writableOwners, owner, effectiveRoundStatus,
     canWrite, cardQuery, terminalScoringError, view, hole, prefetchOwner, retainingScorer,
-    connectionLost, retryLive, deniedError } = useScoreWorkspaceData(searchParams, resume)
+    connectionLost, retryLive, deniedError, verificationPending } = useScoreWorkspaceData(searchParams, resume, preparedReturn)
 
   usePublishTournamentNavigation(tournament && !tournamentsQuery.error && !roundsQuery.error && !deniedError && !terminalScoringError
     ? { tournamentId: tournament.id, roundId: round?.id ?? null } : null,
@@ -44,12 +60,14 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
     : <LoadingState />
 
   const navigate = (selection: ScoreSelection, action: ScoreHistoryAction) => {
-    setSearchParams(scoringSearch(selection), { replace: replaceScoreHistory(action) })
+    const search = scoringSearch(selection)
+    if (verificationPending) search.set('prepared', '1')
+    setSearchParams(search, { replace: replaceScoreHistory(action) })
   }
 
   if (drafts.length > 0 && (drafts.some(draft => draft.recovery) || effectiveRoundStatus === 'locked'
-    || deniedError || terminalScoringError || tournamentsQuery.error || roundsQuery.error
-    || completionQuery.error || accessQuery.error || cardQuery.error || !cardQuery.data || !owner || !canWrite
+    || deniedError || terminalScoringError || (!preparedReturn && (tournamentsQuery.error || roundsQuery.error
+    || completionQuery.error || accessQuery.error || cardQuery.error)) || !cardQuery.data || !owner || !canWrite
     || drafts.some(draft => draft.target.roundId !== round?.id || draft.target.tournamentId !== tournament?.id
       || (draft.kind === 'four_ball' ? draft.target.sideId : draft.target.owner.id) !== owner.owner.id
       || (draft.kind === 'four_ball' ? 'team' : draft.target.owner.type) !== owner.owner.type || draft.target.holeId !== hole?.hole_id))) return <ScoreRecovery />
@@ -99,6 +117,7 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
     holeNumber: hole.hole_number,
     view,
   })
+  if (verificationPending) canonical.set('prepared', '1')
   if (searchParams.toString() !== canonical.toString()) {
     return <Navigate replace to={`/score?${canonical.toString()}`} />
   }
@@ -114,6 +133,8 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
   return (
     <section className="page score-page">
       <header className="page-header"><p className="brand">Guttas Golf</p><h1>Score</h1></header>
+      <PrepareScoreVisit target={{ tournamentId: tournament.id, roundId: round.id, owner: owner.owner, holeNumber: hole.hole_number }}
+        ready={canWrite && cardQuery.data.projection === 'scoring' && (preparedReturn || retainingScorer || [tournamentsQuery, roundsQuery, completionQuery, accessQuery, cardQuery].every(query => query.isSuccess && !query.isFetching))} />
       {connectionLost && <div className="background-query-error" role="status">
         <p>Forbindelsen er brutt. Prøver å koble til igjen.</p>
         <button type="button" onClick={retryLive}>Koble til igjen</button>
@@ -130,16 +151,16 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
         </div>
       )}
       {'format' in cardQuery.data && cardQuery.data.format === 'individual_stableford' ? <StablefordExperience tournaments={tournaments} rounds={eligibleRounds}
-        round={{ ...round, status: effectiveRoundStatus ?? round.status }} owners={progressOwners} card={cardQuery.data}
-        holeNumber={hole.hole_number} view={view} canWrite={canWrite} recovering={retainingScorer || connectionLost || accessQuery.error !== null}
+        round={{ ...round, status: effectiveRoundStatus ?? round.status }} owners={verificationPending ? [] : progressOwners} card={cardQuery.data}
+        holeNumber={hole.hole_number} view={view} canWrite={canWrite} recovering={verificationPending || retainingScorer || connectionLost || accessQuery.error !== null}
         onTournament={id => navigate({ tournamentId: id, view: 'hole' }, 'tournament')}
         onRound={id => navigate({ tournamentId: tournament.id, roundId: id, view: 'hole' }, 'round')}
         onOwner={id => { const next = progressOwners.find(item => item.owner.id === id); if (next) navigate({ ...base('hole'), owner: next.owner, holeNumber: 1 }, 'owner') }}
         onHole={number => navigate({ ...base('hole'), holeNumber: number }, 'hole')}
         onView={nextView => navigate(base(nextView), 'view')} />
         : 'format' in cardQuery.data && cardQuery.data.format === 'four_ball_stroke_play' ? <FourBallExperience tournaments={tournaments} rounds={eligibleRounds}
-        round={{ ...round, status: effectiveRoundStatus ?? round.status }} owners={progressOwners} card={cardQuery.data}
-        holeNumber={hole.hole_number} view={view} canWrite={canWrite} recovering={retainingScorer || connectionLost || accessQuery.error !== null}
+        round={{ ...round, status: effectiveRoundStatus ?? round.status }} owners={verificationPending ? [] : progressOwners} card={cardQuery.data}
+        holeNumber={hole.hole_number} view={view} canWrite={canWrite} recovering={verificationPending || retainingScorer || connectionLost || accessQuery.error !== null}
         onTournament={id => navigate({ tournamentId: id, view: 'hole' }, 'tournament')}
         onRound={id => navigate({ tournamentId: tournament.id, roundId: id, view: 'hole' }, 'round')}
         onOwner={id => { const next = progressOwners.find(item => item.owner.id === id); if (next) navigate({ ...base('hole'), owner: next.owner, holeNumber: 1 }, 'owner') }}
@@ -149,14 +170,14 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
         tournaments={tournaments}
         rounds={eligibleRounds}
         round={{ ...round, status: effectiveRoundStatus ?? round.status }}
-        owners={progressOwners}
+        owners={verificationPending ? [] : progressOwners}
         writableOwners={writableOwners}
         selectedOwner={owner}
         card={cardQuery.data}
         hole={hole}
         view={view}
         canWrite={canWrite}
-        recovering={retainingScorer || connectionLost || accessQuery.error !== null}
+        recovering={verificationPending || retainingScorer || connectionLost || accessQuery.error !== null}
         onTournament={(id) => navigate({ tournamentId: id, view: 'hole' }, 'tournament')}
         onRound={(id) => navigate({ tournamentId: tournament.id, roundId: id, view: 'hole' }, 'round')}
         onOwner={(id) => {
@@ -171,7 +192,7 @@ function ScoreWorkspace({ resume }: { resume: boolean }) {
         tournaments={tournaments}
         rounds={eligibleRounds}
         round={{ ...round, status: effectiveRoundStatus ?? round.status }}
-        owners={progressOwners}
+        owners={verificationPending ? [] : progressOwners}
         selectedOwner={owner}
         card={cardQuery.data}
         hole={hole}

@@ -57,7 +57,8 @@ function CardInput(props: Props & { card: StablefordScoringCard; hole: Stablefor
     && (!card.confirmed || correction) && !confirmation.confirming
   return <>
     <header className="scorecard-owner"><div><p>Stableford · individuelt</p><h2>{card.owner_name}</h2></div></header>
-    <Selectors {...props} disabled={locked} />
+    {!props.recovering && <Selectors {...props} disabled={locked} />}
+    {props.recovering && <button className="score-recovery-toggle" type="button" disabled={locked} onClick={() => props.onView(props.view === 'hole' ? 'summary' : 'hole')}>{props.view === 'hole' ? 'Oppsummering' : 'Ett hull'}</button>}
     {props.recovering && <p role="status">Oppdaterer tilgang og rundestatus. Endringer lagres først på enheten. Bekreftelse venter.</p>}
     {navigationWarning && <p role="alert">Fullfør eller forkast den ulagrede endringen før du går videre.</p>}
     {props.round.status === 'completed' && <p>Runden er fullført. Score kan korrigeres frem til låsing.</p>}

@@ -688,3 +688,12 @@ extends session-owned response handling to pairing editing and tournament start.
 Deploy rebuilt frontend assets normally; no API, migration or configuration change
 is required. The accompanying offline assessment and tournament-editing plan do
 not add runtime functionality or require deployment changes.
+
+The subsequent [OFFLINE-RETURN-1 update](validation/offline-return-2026-09-29/README.md)
+adds explicit return to a previously opened scorecard during a coverage gap.
+Deploy rebuilt frontend assets against the existing schema-33 API; this update
+requires no new migration, runtime grant or configuration. Golfers must open the
+card online first and keep the app open with its required data still cached.
+Reloading, closing the app or losing cached data requires connectivity before
+reopening the card. Pending score delivery and online-only confirmation retain
+their existing behavior.

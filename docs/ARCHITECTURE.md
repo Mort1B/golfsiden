@@ -895,6 +895,27 @@ and reapplies runtime grants before the API is started.
   tagged owner; owner reuse requires both the selected tournament and round to
   match. Explicit leaderboard controls commit URL changes synchronously so rapid
   consecutive selections read the committed scope and metric.
+- `PreparedScoreProvider` is a separate session-owned navigation capability for
+  in-app offline return. It stores only the visited tournament/round/tagged owner
+  and hole, never a duplicate card, visibility projection or score revision.
+  `PrepareScoreVisit` registers actual rendered writable cards after successful
+  workspace reads; prefetched neighbors and queue items cannot prepare a card.
+  The explicit `prepared=1` route requires a matching in-memory capability plus
+  retained exact scoring/access/tournament/round queries. It never selects another
+  owner as a fallback. Ordinary online resume remains fresh-read gated.
+  Query-cache events synchronously revoke the capability on denial, lock or required
+  cache removal before an SSE clear can erase that evidence. A barrier requires
+  fresh successful workspace reads before preparation can be restored. Account,
+  CSRF/session replacement and expiry invalidate it; action activation checks again.
+  Exact-card hole moves can update the remembered hole during a coverage gap.
+  Returned cards remain pending verification until post-mount authority/card reads
+  succeed. Selectors and confirmation stay unavailable while pending; device
+  persistence, leases, original expected revisions and conflict handling are unchanged.
+  Nonterminal network errors keep nondurable input on that exact card until storage
+  finishes; storage/terminal/target failures retain existing recovery guards.
+  Inactive queries retain normal QueryClient eviction behavior. Reload, closed-app
+  launch, persistent private-card caching and background delivery remain outside
+  this capability.
 - `TournamentNavigationProvider` owns transient navigation hints within the
   private shell: tournament/round IDs and result scope/metric. Route workspaces
   publish after their typed authority queries settle successfully; loading cannot

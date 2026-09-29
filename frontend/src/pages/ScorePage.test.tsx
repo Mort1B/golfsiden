@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
+import { PreparedScoreProvider } from '../features/scoring/prepared/PreparedScoreProvider'
+import { authKeys } from '../api/auth'
 import { IDBFactory } from 'fake-indexeddb'
 import { ScoreQueueProvider } from '../features/scoring/offline/ScoreQueueProvider'
 import { queueDatabase } from '../features/scoring/offline/database'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useState } from 'react'
@@ -22,7 +24,7 @@ import { ScorePage } from './ScorePage'
 vi.mock('../features/live/useTournamentLive', () => ({ useTournamentLive: vi.fn(() => false) }))
 const round = { ...draft, status: 'open' as const }
 const owner = { type: 'player' as const, id: session.player_id ?? '' }
-const auth: AuthContextValue = { session, loading: false, error: null, signIn: vi.fn(), signOut: vi.fn(), establishSession: vi.fn(), retry: vi.fn() }
+const auth: AuthContextValue = { session: { ...session, expires_at: '2099-01-01T00:00:00Z' }, loading: false, error: null, signIn: vi.fn(), signOut: vi.fn(), establishSession: vi.fn(), retry: vi.fn() }
 function card(scored: number[] = []): ScoringScorecard {
   return { projection: 'scoring', round_id: round.id, owner, number_of_holes: 18,
     gross_total: scored.length * 4, net_total: scored.length * 4, playing_handicap: 0,
@@ -36,8 +38,9 @@ function card(scored: number[] = []): ScoringScorecard {
 const explicit = (hole: number, view = 'hole') => `/score?tournament=${tournament.id}&round=${round.id}&owner_type=player&owner=${owner.id}&hole=${hole}&view=${view}`
 function mount(path = '/score') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 20_000 } } })
+  client.setQueryData(authKeys.session, auth.session)
   const router = createMemoryRouter([{ path: '/score', element: <ScorePage /> }, { path: '/elsewhere', element: <p>Elsewhere</p> }], { initialEntries: [path] })
-  render(<QueryClientProvider client={client}><AuthContext value={auth}><ScoreQueueProvider><ScoringGuardProvider><ScoreResumeProvider><RouterProvider router={router} /></ScoreResumeProvider></ScoringGuardProvider></ScoreQueueProvider></AuthContext></QueryClientProvider>)
+  render(<QueryClientProvider client={client}><AuthContext value={auth}><ScoreQueueProvider><ScoringGuardProvider><ScoreResumeProvider><PreparedScoreProvider><RouterProvider router={router} /></PreparedScoreProvider></ScoreResumeProvider></ScoringGuardProvider></ScoreQueueProvider></AuthContext></QueryClientProvider>)
   return { client, router }
 }
 beforeEach(() => {
@@ -49,7 +52,7 @@ beforeEach(() => {
   vi.spyOn(api, 'scoreAccess').mockResolvedValue({ round_id: round.id, writable_owners: [owner] })
   vi.spyOn(api, 'scorecardScoring').mockResolvedValue(card())
 })
-afterEach(() => { cleanup(); vi.restoreAllMocks() })
+afterEach(() => { cleanup(); onlineManager.setOnline(true); vi.restoreAllMocks() })
 const expectHole = async (number: number) => { await waitFor(() => expect(screen.getByRole('heading', { name: String(number) })).toBeTruthy()) }
 
 describe('scoring route resume', () => {
@@ -286,5 +289,71 @@ describe('H1 nondurable recovery', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Forkast ulagret endring' }))
     await act(() => router.navigate('/elsewhere'))
     expect(router.state.location.pathname).toBe('/elsewhere')
+  })
+})
+
+
+describe('prepared offline return', () => {
+  it('rejects a prepared URL without a visit and retries through ordinary fresh resume', async () => {
+    mount(explicit(8) + '&prepared=1')
+    expect(screen.getByText(/Det klargjorte kortet er ikke lenger tilgjengelig/)).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: '8' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Hent scorekort på nytt' }))
+    await expectHole(1)
+  })
+
+  it('explicitly returns to the last visited hole and preserves queued input', async () => {
+    vi.spyOn(api, 'saveConditionalScore').mockRejectedValue(new Error('Offline'))
+    const { client, router } = mount(explicit(8))
+    await expectHole(8)
+    await waitFor(() => expect(screen.getByRole('button', { name: /Registrer par/ }).hasAttribute('disabled')).toBe(false))
+    await act(() => handleTournamentLiveSignal(client, session.user_id, 'error'))
+    act(() => onlineManager.setOnline(false))
+    fireEvent.click(screen.getByRole('button', { name: /Registrer par/ }))
+    await waitFor(async () => expect(await queueDatabase.list(session.user_id)).toHaveLength(1))
+    fireEvent.click(screen.getByRole('button', { name: 'Neste' })); await expectHole(9)
+    await act(() => router.navigate('/elsewhere')); await act(() => router.navigate('/score'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Tilbake til åpnet scorekort' }))
+    await expectHole(9)
+    expect(screen.getByText(/Oppdaterer scoretilgang/)).toBeTruthy()
+    expect(screen.queryByLabelText('Velg turnering')).toBeNull()
+    expect(await queueDatabase.list(session.user_id)).toHaveLength(1)
+    await waitFor(() => expect(screen.getByRole('button', { name: /Registrer par/ }).hasAttribute('disabled')).toBe(false))
+    fireEvent.click(screen.getByRole('button', { name: /Registrer par/ }))
+    await waitFor(async () => expect(await queueDatabase.list(session.user_id)).toHaveLength(2))
+  })
+  it('keeps ordinary input mounted during held persistence after transport errors while still online', async () => {
+    vi.spyOn(api, 'saveConditionalScore').mockRejectedValue(new Error('Offline transport'))
+    const { router } = mount(explicit(8)); await expectHole(8)
+    await act(() => router.navigate('/elsewhere'))
+    vi.mocked(api.completionValidation).mockRejectedValue(new Error('No connection'))
+    vi.mocked(api.scoreAccess).mockRejectedValue(new ApiHttpError(503, 'unavailable', 'Unavailable'))
+    vi.mocked(api.scorecardScoring).mockRejectedValue(new Error('No connection'))
+    await act(() => router.navigate('/score'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Tilbake til åpnet scorekort' }))
+    await expectHole(8)
+    let release = () => {}; const held = new Promise<void>(resolve => { release = resolve })
+    const enqueue = queueDatabase.enqueue.bind(queueDatabase)
+    const spy = vi.spyOn(queueDatabase, 'enqueue').mockImplementation(async (...args) => { await held; return enqueue(...args) })
+    await waitFor(() => expect(screen.getByRole('button', { name: /Registrer par/ }).hasAttribute('disabled')).toBe(false))
+    fireEvent.click(screen.getByRole('button', { name: /Registrer par/ }))
+    await waitFor(() => expect(spy).toHaveBeenCalled())
+    expect(screen.queryByRole('region', { name: 'Ulagrede scoreendringer' })).toBeNull()
+    expect(screen.getByRole('heading', { name: '8' })).toBeTruthy()
+    await act(async () => release())
+    await waitFor(async () => expect(await queueDatabase.list(session.user_id)).toHaveLength(1))
+  })
+  it('keeps a denial revoked even if a following disconnect clears its error', async () => {
+    const { client, router } = mount(explicit(8)); await expectHole(8)
+    await act(() => router.navigate('/elsewhere'))
+    const key = ['private-workspace', session.user_id, 'rounds', round.id, 'completion-validation']
+    await act(async () => {
+      client.getQueryCache().find({ queryKey: key, exact: true })?.setState({ status: 'error', error: new ApiHttpError(403, 'denied', 'Denied') })
+      await handleTournamentLiveSignal(client, session.user_id, 'error')
+      onlineManager.setOnline(false)
+    })
+    await act(() => router.navigate('/score'))
+    expect(screen.queryByRole('button', { name: 'Tilbake til åpnet scorekort' })).toBeNull()
+    expect(screen.getByText(/Ingen klargjorte scorekort/)).toBeTruthy()
   })
 })

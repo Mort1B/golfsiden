@@ -5,29 +5,19 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The next candidate below requires a new implementation instruction.
+None.
 
 ## Next candidate
 
-**OFFLINE-RETURN-1: return to a prepared card during a coverage gap (planned).**
-Goal: allow explicit return to the same account's exact previously loaded card
-and hole while the app remains running. Scope: existing stroke/team, four-ball
-and Stableford scoring-route selection/cache coordination only; formats and
-public sharing stay unchanged. Retain local queued edits and original conditional
-revisions; label entry as pending server verification. Do not infer fresh access,
-restore hidden results or permit offline confirmation. Fresh denial/lock evidence
-and account changes invalidate eligibility; absent cached cards require connection.
-Keep ordinary online resume's fresh-read behavior.
-Validation: reproduce current navigation failure, then browser loss of connection,
-several queued holes, route departure/return, more entries and reconnect with exact
-server values; test denied/locked/expired/changed accounts and no cached card at
-phone/desktop widths plus the affected full ladder. Stop after this return path
-is verified and published. It does not provide offline reload or closed-app launch.
-See the [course-connectivity assessment](validation/offline-course-assessment-2026-09-29/README.md).
-Reliable reopening after browser closure/eviction needs a separately scoped
-prepared app shell and private scorecard-retention/reauthorization design.
+No further implementation is approved. Continue functional testing of the hosted
+site; scope a bounded repair from concrete feedback. The in-app offline return
+step is complete; it does not provide offline reload or closed-app launch.
 
 ## Later queue
+
+- Optional offline preparation for browser closure/eviction: requires a separately
+  scoped app-shell and private scorecard-retention/reauthorization design before
+  implementation. Current in-memory return and durable queued edits remain distinct.
 
 - Deferred broader security assessment: further production proxy/database privilege,
   recovery and dependency-advisory investigation. Revisit for a specific finding
