@@ -10,6 +10,25 @@ Only ports 80 and 443 are public; PostgreSQL is attached only to the internal
 This baseline is intentionally single-host. Backups must leave the host if they
 are expected to survive loss of that host.
 
+## Current release
+
+The current application requires **schema 33** through
+`0033_tournament_details.sql`, with matching API and frontend builds. The API
+checks every embedded migration and checksum, not only the largest version.
+Do not skip intermediate migrations when upgrading an older installation.
+
+| Change | Deployment requirement |
+| --- | --- |
+| Draft tournament name, description and date editing | Schema 33, refreshed runtime grants and matching API/frontend |
+| Offline return to the last opened scorecard | Updated frontend against the schema-33 API; no further migration or configuration |
+| Recent score-read, session, pairing/start and navigation repairs | Deploy the current API/frontend builds; retain the vendored SQLx patch |
+
+For an existing installation, use [Upgrade and rollback](#upgrade-and-rollback).
+For a new host, follow configuration and initial deployment below. Finish with
+[Post-deployment checks](#post-deployment-checks), then the
+[testing checklist](testing_checklist.md). The hosted site at gg26.no is
+operator-managed; this guide does not assert its installed version or readiness.
+
 ## Host and DNS prerequisites
 
 - A current Linux host with Docker Engine and Docker Compose v2.
@@ -71,15 +90,15 @@ baseline does not set `CORS_ALLOWED_ORIGIN`.
 
 ## Initial deployment
 
-All migration and seed actions below target PostgreSQL inside the Compose
-network; no database port needs to be opened.
+Run these commands from the repository root. Migration and permission actions
+target PostgreSQL inside the Compose network; no database port needs to be opened.
 
 ```bash
 docker compose --env-file .env.production -f compose.production.yml --profile tools build
-docker compose --env-file .env.production -f compose.production.yml up -d postgres
+docker compose --env-file .env.production -f compose.production.yml up -d --wait postgres
 docker compose --env-file .env.production -f compose.production.yml --profile tools run --rm migrate
 docker compose --env-file .env.production -f compose.production.yml --profile tools run --rm permissions
-docker compose --env-file .env.production -f compose.production.yml up -d api web
+docker compose --env-file .env.production -f compose.production.yml up -d --wait api web
 docker compose --env-file .env.production -f compose.production.yml ps
 curl --fail https://YOUR_HOST/api/ready
 ```
@@ -106,6 +125,53 @@ checksum. Pending, unknown, dirty, missing, or changed migration history is a
 visible startup failure.
 
 ## Upgrade and rollback
+
+### Upgrade sequence
+
+For an existing deployment, retain its runtime file, credentials and volumes.
+Do not repeat initial database setup or load the development seed.
+
+1. Ask active testers to reconnect and wait for saved-on-server status before
+   reloading or leaving. Server backups cannot capture unsent device edits.
+2. Record the running Git SHA/image tag, create a verified backup and copy the
+   dump plus checksum off-host. Use the [backup procedure](#backup).
+3. Check out the intended release and set its immutable `GOLFSIDEN_IMAGE_TAG` in
+   the existing private runtime file. Read the schema notes below for every
+   version crossed, then build the new images before the maintenance window.
+4. Stop API/web while applying migrations so old binaries do not serve the new
+   schema. If writes continued after the backup, repeat the verified off-host
+   backup now, before migration. Start PostgreSQL, migrate with owner authority,
+   then refresh grants.
+5. Start the matching API/web images and complete the
+   [post-deployment checks](#post-deployment-checks). Reopen or reload clients
+   online after their pending entries have synced.
+
+After the backup, release selection and runtime-file update, run from the
+repository root:
+
+```bash
+docker compose --env-file .env.production -f compose.production.yml --profile tools build
+docker compose --env-file .env.production -f compose.production.yml stop web api
+# Repeat the verified backup here if writes continued since the previous dump.
+docker compose --env-file .env.production -f compose.production.yml up -d --wait postgres
+docker compose --env-file .env.production -f compose.production.yml --profile tools run --rm migrate
+docker compose --env-file .env.production -f compose.production.yml --profile tools run --rm permissions
+docker compose --env-file .env.production -f compose.production.yml up -d --wait api web
+docker compose --env-file .env.production -f compose.production.yml ps
+curl --fail https://YOUR_HOST/api/health
+curl --fail https://YOUR_HOST/api/ready
+```
+
+Run each command only after the previous one succeeds. On a migration, grant or
+readiness failure, leave traffic stopped and inspect the failure before proceeding.
+Keep the existing volumes; neither upgrade nor rollback uses `down --volumes`.
+
+Application-only rollback is a checkout/image-tag rollback followed by
+recreating `api` and `web`, and is valid only when the older binary embeds exactly
+the schema already present. SQL migrations are forward-only. Do not improvise a
+schema downgrade. If an older application cannot use the migrated schema,
+declare downtime and restore the pre-upgrade dump into a fresh PostgreSQL volume
+using the recovery procedure below.
 
 ### Schema 19 completion preflight
 
@@ -271,21 +337,171 @@ check. The page refreshes every 15 seconds while visible; revocation prevents ne
 reads but cannot recall results already delivered. This iteration used disposable
 local services and does not itself deploy or expose production results.
 
-### Upgrade sequence
+### Schema 27 durable conditional score delivery
 
-Before every upgrade:
+Migration 0027 adds score revisions and immutable delivery receipts. It initializes
+existing scores at revision 1 without changing their strokes, timestamps, audits,
+confirmation or handicap snapshots. Apply the migration and refresh runtime grants
+before starting matching API/frontend builds. The new scoring client requires the
+conditional endpoint and required revision strings on authorized scoring responses;
+member and public result projections are unchanged. Older API binaries fail exact
+schema readiness after this migration. Rollback uses the documented backup/restore
+procedure with matching binaries; do not edit or remove an applied migration.
 
-1. create and copy off-host a verified backup;
-2. record the running Git SHA and image tag;
-3. build the new immutable tag;
-4. start PostgreSQL, run the explicit migration action, then permissions;
-5. recreate API and web and verify `/api/ready` plus a login and tournament read.
+Receipts acknowledge past writes and must not be pruned while their parent account,
+round and score exist: a later retry must remain deduplicated. No receipt cleanup
+job is introduced. Ordinary score changes, including the legacy endpoint and
+explicit database correction path, advance revisions on actual stroke changes.
 
-Application-only rollback is a checkout/image-tag rollback followed by
-recreating `api` and `web`. SQL migrations are forward-only. Do not improvise a
-schema downgrade. If an older application cannot use the migrated schema,
-declare downtime and restore the pre-upgrade dump into a fresh PostgreSQL volume
-using the recovery procedure below.
+Unsent edits reside in the user's browser IndexedDB, isolated by account. Server
+backups do not contain those pending edits. Logging out pauses delivery but keeps
+that account's device copy; clearing browser site data removes it. Queue delivery
+requires the app's private workspace to be running with an authorized session.
+Cold offline launch and background sync are outside this release. Confirmation is
+online-only; locked rounds and revoked access cannot be bypassed through replay.
+
+### Schema 28 four-ball scoring
+
+Migration 0028 adds the four-ball format and dedicated player inputs, audits and
+delivery receipts. Back up the database, apply the forward migration with the
+owner connection, refresh runtime grants, then start matching API and web builds.
+Existing numeric scores, revisions, audits, confirmations, snapshots and immutable
+offline request bodies are preserved. Older API binaries fail exact schema
+readiness after migration. Rollback requires the documented backup/restore process
+and matching binaries; never edit an applied migration.
+
+Four-ball numeric/no-score inputs retain their identity and revision history.
+Delivery receipts must remain while their parent account, round and input exist;
+do not add a receipt-pruning job. Intentional parent deletion retains the defined
+cascade behavior. The legacy numeric queue and new four-ball queue protocol share
+the browser's account-isolated storage. Server backups do not include unsent
+device edits. Confirmation requires an online authorized session, and locked
+rounds reject ordinary four-ball corrections.
+
+### Schema 29 individual Stableford
+
+Migration 0029 adds `individual_stableford`, dedicated player inputs, audits and
+immutable receipts, plus state-aware confirmation/completion guards. Apply it with
+the owner connection after a verified backup, refresh runtime grants and deploy
+matching API and web builds together. The API still requires exact schema
+compatibility; do not start older binaries against schema 29 or edit a published
+migration. Rollback uses the documented backup/restore procedure and matching
+binaries, not an in-place downgrade of retained input states.
+
+The populated schema-28 upgrade was tested with both legacy numeric and four-ball
+scores, snapshots, confirmations, audits and receipts. Rows and accepted-request
+replay remain unchanged. Fresh migration and repeat seeding also passed on
+PostgreSQL 17.11. New Stableford inputs retain UUID identity and positive revisions
+through numeric/pickup corrections. Keep receipts for the lifetime of their
+parents; pruning them could turn a delayed retry into a new operation.
+
+The browser adds `stableford_v1` in the existing account-isolated queue without
+rewriting legacy or four-ball request heads. Server backups do not contain unsent
+device edits. Confirmation remains online-only, and ordinary replay cannot bypass
+a locked round or revoked authority. Stableford settings are editable only before
+round opening; historical calculations use frozen snapshots.
+
+Stableford and mixed result responses use tagged version-1 point/equivalent
+values rather than reinterpreting actual-stroke fields. Deploy the corresponding
+strict decoders and UI at the same time. Existing stroke-only result and delivery
+contracts retain their meaning. Public sharing keeps its existing overall-only
+scope, with a non-private converted-value label; it does not expose player cards.
+
+### Schemas 30–32 singles match play
+
+Migrations 0030–0031 add the singles format, round-local matches/opponents,
+player-owned numeric notes, immutable command receipts, append-only audit and
+ledger/confirmation integrity guards. Migration 0032 makes `counted_rounds`
+explicitly nullable for match-only plans and adds deferred eligibility validation
+with an internal `tournament_overall_configuration_guards` generation row. This
+row serializes cross-table changes under snapshot isolation without advancing
+public configuration timestamps.
+
+Take and verify a backup, apply all forward migrations with the owner connection,
+refresh runtime grants using the documented permissions command, and deploy matching
+API and web builds together. New tables/functions require the normal runtime DML
+and execution grants. Exact schema readiness rejects old binaries against schema
+32. Do not edit applied migrations or attempt an in-place downgrade. Rollback uses
+a pre-upgrade backup restored into a fresh volume and its matching binaries.
+
+Schema 0032 deterministically normalizes only plans containing the new match format
+that could exist at schema 30/31: all-match N/mandatory becomes null, mixed N is
+capped to eligible rounds, and a mandatory match is cleared. Existing non-match
+configuration and score/snapshot/audit/receipt rows are preserved. The old
+configuration guard is disabled only inside the migration's transaction for this
+normalization and re-enabled before completion. Populated schema-29 preservation,
+schema-31 normalization, fresh migration through all 32 versions and seeding twice
+passed on disposable PostgreSQL 17.11. This step did not run a Docker deployment
+or a new production restore exercise.
+
+Retain match receipts for the lifetime of their parent records; a delayed original
+request must not become a new write. Corrections retain superseded audit facts and
+clear confirmation/points atomically. Locked corrections require the dedicated
+exact-admin command path; operator SQL must not bypass lifecycle integrity.
+
+The frontend adds the separate `golf-match-notes-v1` IndexedDB database and
+`match_notes_v1` protocol without rewriting the existing `golf-pending-scores-v1`
+queues. Server backups omit unsent browser drafts. Clearing site data removes
+those copies; unknown delivery must be reconciled using its original identity.
+Only numeric notes can wait offline. Accepted reports, concessions, awards,
+corrections and confirmation require connectivity and current authorization.
+Deploy strict nullable overall and match decoders with the API: match-only private
+overall reads are explicitly not applicable and public overall sharing unavailable.
+Mixed public summaries keep their existing allowlist and exclude match facts.
+
+### Schema 33 draft tournament details
+
+Deploy migration `0033_tournament_details.sql` with its matching API and frontend.
+Use the owner connection for forward migrations and refresh runtime grants using
+this guide's existing permissions command. Exact schema readiness requires the
+matching binary. Migration 0033 adds guards/functions only; it does not rewrite
+existing tournament details, round dates or historical results. Existing date
+inconsistencies remain untouched, but later detail edits must choose a range
+containing every round. New round inserts/date changes must fit the parent range.
+
+The new edit endpoint uses READ COMMITTED. Direct changed-detail SQL requires the
+same exact-admin session context and rejects snapshot isolation. Administrators
+should use the application form. Unchanged development seed upserts remain
+idempotent; reapplying seed after editing its tournament is not a restoration
+workflow and may be rejected. Never run development seed against production.
+
+Back up before migration and deploy API/web builds together. This migration has
+no in-place downgrade. Restore a pre-upgrade backup into a fresh volume with
+matching binaries if rollback is needed. Local clean migration, schema-32 upgrade
+preservation and unchanged seeding twice were exercised for this step; hosted
+rollout and recovery remain the operator's responsibility.
+
+## Post-deployment checks
+
+Use designated test accounts and a separate test tournament. Record the deployed
+Git SHA/image tag and the browser/device used so later reports identify the build.
+
+- Check Compose health and public HTTPS `/api/health` and `/api/ready`. A successful
+  readiness response does not verify login, browser assets or scoring by itself.
+- Sign in as an organizer and a player in separate sessions. Open an existing
+  tournament, its rounds and a saved scorecard; check that scores and gross/net
+  results survived the upgrade.
+- On a draft test tournament, save its name/description/date range, reload and
+  verify the changes. Its dates must contain existing rounds. Save pairings,
+  start the tournament and open a ready round. Details become read-only on start.
+- Enter a test score, wait for **Lagret på serveren**, and verify it from the
+  other session. Confirm the intended tournament, round and card stay selected
+  when navigating to results and back.
+- Run the checklist's [coverage-gap test](testing_checklist.md#testing-a-coverage-gap)
+  on a phone. Verify queued values reach the server after reconnection before
+  reloading, signing out or confirming the card.
+- Inspect unexpected browser errors, API 5xx responses and repeated reconnects.
+  An unavailable optional course provider should still leave manual course entry
+  usable. Follow [the full checklist](testing_checklist.md) for the formats and
+  optional sharing/recovery flows you intend to use.
+
+Offline return is an in-memory convenience, not an installed offline app. It
+requires an authorized card opened online, the same app/session and retained
+query data. **Tilbake til åpnet scorekort** returns to the remembered card and
+hole; it cannot reopen after browser closure, reload or cache loss. Known expiry,
+denial or locking also removes the option. Pending device edits are separate:
+they remain for later authorized delivery but are absent from server backups.
+Confirmation stays online-only. Do not clear browser site data as an upgrade step.
 
 ## Health, logs, and routine operation
 
@@ -338,13 +554,18 @@ requires an explicit confirmation phrase. It verifies the checksum when the
 sidecar is present, restores in one transaction with `--exit-on-error`, and
 reapplies runtime grants.
 
-For a replacement host with fresh Docker storage:
+For a replacement host with fresh Docker storage, use the release images matching
+that backup's schema and configure the owner/runtime roles in the private runtime
+file. Build or make those images available before starting the commands below.
+Do not run migrations before restoring: the restore target must be empty. If the
+restored release then needs an upgrade, verify it first and use the normal upgrade
+sequence afterward.
 
 ```bash
-docker compose --env-file .env.production -f compose.production.yml up -d postgres
+docker compose --env-file .env.production -f compose.production.yml up -d --wait postgres
 CONFIRM_EMPTY_RESTORE=RESTORE_TO_EMPTY_DATABASE \
   scripts/restore-production.sh .env.production /secure-staging/golfsiden-YYYYMMDD-HHMM.dump
-docker compose --env-file .env.production -f compose.production.yml up -d api web
+docker compose --env-file .env.production -f compose.production.yml up -d --wait api web
 curl --fail https://YOUR_HOST/api/ready
 ```
 
@@ -450,250 +671,43 @@ invent a web administrator account as a recovery shortcut.
 Keep `.env.production`, dumps, and checksums out of Git. The repository ignores
 `.env.*` except the documented example.
 
-### Schema 27 durable conditional score delivery
+## Validation evidence and remaining acceptance
 
-Migration 0027 adds score revisions and immutable delivery receipts. It initializes
-existing scores at revision 1 without changing their strokes, timestamps, audits,
-confirmation or handicap snapshots. Apply the migration and refresh runtime grants
-before starting matching API/frontend builds. The new scoring client requires the
-conditional endpoint and required revision strings on authorized scoring responses;
-member and public result projections are unchanged. Older API binaries fail exact
-schema readiness after this migration. Rollback uses the documented backup/restore
-procedure with matching binaries; do not edit or remove an applied migration.
+The current checkout is ready for continued functional testing within the limits
+below. Reports describe their own commit and environment; they are not proof that
+gg26.no runs that release. Hosting and deployment remain operator-managed.
 
-Receipts acknowledge past writes and must not be pruned while their parent account,
-round and score exist: a later retry must remain deduplicated. No receipt cleanup
-job is introduced. Ordinary score changes, including the legacy endpoint and
-explicit database correction path, advance revisions on actual stroke changes.
+| Evidence | What it establishes |
+| --- | --- |
+| [Local proxy and friends-deployment checks](validation/friends-2026-09-23/README.md) | Production frontend, restricted database role and local HTTPS/SSE checks; no public DNS/ACME acceptance |
+| [Recovery rehearsal](validation/recovery-2026-09-23/README.md) | Images at that revision, 47-table restore with exact parity and browser checks on rootless Podman; not a schema-33 restore drill |
+| [Functional readiness](validation/test-ready-2026-09-29/README.md) | Real organizer/player workflows and exact score/result persistence after local database/API/frontend restarts |
+| [Draft tournament editing](validation/tournament-details-2026-09-29/README.md) | Schema-32 upgrade preservation, fresh schema-33 migration, concurrent edits and real browser save/start behavior |
+| [Offline return](validation/offline-return-2026-09-29/README.md) | Same-session return, queued delivery and access/expiry checks in local Chrome at phone and desktop widths |
 
-Unsent edits reside in the user's browser IndexedDB, isolated by account. Server
-backups do not contain those pending edits. Logging out pauses delivery but keeps
-that account's device copy; clearing browser site data removes it. Queue delivery
-requires the app's private workspace to be running with an authorized session.
-Cold offline launch and background sync are outside this release. Confirmation is
-online-only; locked rounds and revoked access cannot be bypassed through replay.
+The following earlier findings have subsequent repairs in the current release:
 
-### Schema 28 four-ball scoring
+- Authentication: [rate-limit capacity](validation/rate-limit-capacity-2026-09-23/README.md)
+  and [handicap-correction session expiry](validation/handicap-session-expiry-2026-09-23/README.md).
+- Public-link mutations: [session recheck before commit](validation/result-share-session-expiry-2026-09-23/README.md).
+- Browser persistence: [match-note retention](validation/match-note-retention-2026-09-23/README.md),
+  [bounded storage retry](validation/score-storage-retry-2026-09-23/README.md) and
+  [Stableford editor response ownership](validation/stableford-settings-lifetime-2026-09-23/README.md).
+- Other stale editor responses: [final visibility](validation/visibility-lifetime-2026-09-29/README.md),
+  [pairing editing and tournament start](validation/management-lifetime-2026-09-29/README.md).
+- The recorded scorecard-read serialization conflict:
+  [one bounded retry with fresh authority](validation/score-read-retry-2026-09-29/README.md).
+  Exhaustion returns a non-cacheable 503; this does not retry score mutations.
+- [Keyboard focus and navigation clearance](validation/navigation-accessibility-2026-09-23/README.md).
 
-Migration 0028 adds the four-ball format and dedicated player inputs, audits and
-delivery receipts. Back up the database, apply the forward migration with the
-owner connection, refresh runtime grants, then start matching API and web builds.
-Existing numeric scores, revisions, audits, confirmations, snapshots and immutable
-offline request bodies are preserved. Older API binaries fail exact schema
-readiness after migration. Rollback requires the documented backup/restore process
-and matching binaries; never edit an applied migration.
+These repairs require the updated API and/or frontend, with no additional schema
+beyond the migrations listed above. They do not complete the broader operational
+security assessment. The [recovery security report](validation/recovery-security-2026-09-23/README.md)
+and match-note report retain their specific coverage gaps; later database-backed
+core-flow checks do not imply every session-replacement scenario was exercised.
 
-Four-ball numeric/no-score inputs retain their identity and revision history.
-Delivery receipts must remain while their parent account, round and input exist;
-do not add a receipt-pruning job. Intentional parent deletion retains the defined
-cascade behavior. The legacy numeric queue and new four-ball queue protocol share
-the browser's account-isolated storage. Server backups do not include unsent
-device edits. Confirmation requires an online authorized session, and locked
-rounds reject ordinary four-ball corrections.
-
-### Schema 29 individual Stableford
-
-Migration 0029 adds `individual_stableford`, dedicated player inputs, audits and
-immutable receipts, plus state-aware confirmation/completion guards. Apply it with
-the owner connection after a verified backup, refresh runtime grants and deploy
-matching API and web builds together. The API still requires exact schema
-compatibility; do not start older binaries against schema 29 or edit a published
-migration. Rollback uses the documented backup/restore procedure and matching
-binaries, not an in-place downgrade of retained input states.
-
-The populated schema-28 upgrade was tested with both legacy numeric and four-ball
-scores, snapshots, confirmations, audits and receipts. Rows and accepted-request
-replay remain unchanged. Fresh migration and repeat seeding also passed on
-PostgreSQL 17.11. New Stableford inputs retain UUID identity and positive revisions
-through numeric/pickup corrections. Keep receipts for the lifetime of their
-parents; pruning them could turn a delayed retry into a new operation.
-
-The browser adds `stableford_v1` in the existing account-isolated queue without
-rewriting legacy or four-ball request heads. Server backups do not contain unsent
-device edits. Confirmation remains online-only, and ordinary replay cannot bypass
-a locked round or revoked authority. Stableford settings are editable only before
-round opening; historical calculations use frozen snapshots.
-
-Stableford and mixed result responses use tagged version-1 point/equivalent
-values rather than reinterpreting actual-stroke fields. Deploy the corresponding
-strict decoders and UI at the same time. Existing stroke-only result and delivery
-contracts retain their meaning. Public sharing keeps its existing overall-only
-scope, with a non-private converted-value label; it does not expose player cards.
-
-### Schema 33 draft tournament details
-
-Deploy migration `0033_tournament_details.sql` with its matching API and frontend.
-Use the owner connection for forward migrations and refresh runtime grants using
-this guide's existing permissions command. Exact schema readiness requires the
-matching binary. Migration 0033 adds guards/functions only; it does not rewrite
-existing tournament details, round dates or historical results. Existing date
-inconsistencies remain untouched, but later detail edits must choose a range
-containing every round. New round inserts/date changes must fit the parent range.
-
-The new edit endpoint uses READ COMMITTED. Direct changed-detail SQL requires the
-same exact-admin session context and rejects snapshot isolation. Administrators
-should use the application form. Unchanged development seed upserts remain
-idempotent; reapplying seed after editing its tournament is not a restoration
-workflow and may be rejected. Never run development seed against production.
-
-Back up before migration and deploy API/web builds together. This migration has
-no in-place downgrade. Restore a pre-upgrade backup into a fresh volume with
-matching binaries if rollback is needed. Local clean migration, schema-32 upgrade
-preservation and unchanged seeding twice were exercised for this step; hosted
-rollout and recovery remain the operator's responsibility.
-
-### Schemas 30–32 singles match play
-
-Migrations 0030–0031 add the singles format, round-local matches/opponents,
-player-owned numeric notes, immutable command receipts, append-only audit and
-ledger/confirmation integrity guards. Migration 0032 makes `counted_rounds`
-explicitly nullable for match-only plans and adds deferred eligibility validation
-with an internal `tournament_overall_configuration_guards` generation row. This
-row serializes cross-table changes under snapshot isolation without advancing
-public configuration timestamps.
-
-Take and verify a backup, apply all forward migrations with the owner connection,
-refresh runtime grants using the documented permissions command, and deploy matching
-API and web builds together. New tables/functions require the normal runtime DML
-and execution grants. Exact schema readiness rejects old binaries against schema
-32. Do not edit applied migrations or attempt an in-place downgrade. Rollback uses
-a pre-upgrade backup restored into a fresh volume and its matching binaries.
-
-Schema 0032 deterministically normalizes only plans containing the new match format
-that could exist at schema 30/31: all-match N/mandatory becomes null, mixed N is
-capped to eligible rounds, and a mandatory match is cleared. Existing non-match
-configuration and score/snapshot/audit/receipt rows are preserved. The old
-configuration guard is disabled only inside the migration's transaction for this
-normalization and re-enabled before completion. Populated schema-29 preservation,
-schema-31 normalization, fresh migration through all 32 versions and seeding twice
-passed on disposable PostgreSQL 17.11. This step did not run a Docker deployment
-or a new production restore exercise.
-
-Retain match receipts for the lifetime of their parent records; a delayed original
-request must not become a new write. Corrections retain superseded audit facts and
-clear confirmation/points atomically. Locked corrections require the dedicated
-exact-admin command path; operator SQL must not bypass lifecycle integrity.
-
-The frontend adds the separate `golf-match-notes-v1` IndexedDB database and
-`match_notes_v1` protocol without rewriting the existing `golf-pending-scores-v1`
-queues. Server backups omit unsent browser drafts. Clearing site data removes
-those copies; unknown delivery must be reconciled using its original identity.
-Only numeric notes can wait offline. Accepted reports, concessions, awards,
-corrections and confirmation require connectivity and current authorization.
-Deploy strict nullable overall and match decoders with the API: match-only private
-overall reads are explicitly not applicable and public overall sharing unavailable.
-Mixed public summaries keep their existing allowlist and exclude match facts.
-
-## Current friends-deployment validation
-
-The [2026-09-23 assessment](validation/friends-2026-09-23/README.md) covers
-application commit `38e3eef` using production frontend assets, local Caddy,
-disposable PostgreSQL and a restricted runtime role. Its separate HTTPS smoke
-exercised production API mode, secure cookies and native score events through
-the proxy. It used an internal local certificate and did not assemble the full
-production Compose deployment or validate public DNS/ACME.
-
-The subsequent [disposable recovery rehearsal](validation/recovery-2026-09-23/README.md)
-built all current production images, restored 47 tables with exact data parity,
-and passed Chrome checks on both stacks. It used Docker Compose on rootless
-Podman and local TLS; Docker Engine and public DNS/ACME acceptance remain untested.
-The report's OPS-1 documentation finding is resolved: the Backup example now
-verifies from the dump directory. The restore script already handled this correctly.
-
-The [local authentication assessment](validation/authentication-2026-09-23/README.md)
-is complete for authentication, sessions, CSRF and tournament access. It confirmed
-two P2 issues: active throttle eviction and session expiry during a
-handicap-correction wait. The subsequent AUTH-1 repair preserves live throttle
-counters under capacity pressure. The subsequent
-[AUTH-2 repair](validation/handicap-session-expiry-2026-09-23/README.md) rechecks
-session validity immediately before handicap-correction commit after database
-waits; detected expiry rolls back the handicap/audit and emits no event. Shared
-limiter saturation temporarily rejects new client/resource buckets until space
-expires, using 429 and a retry hint. Existing keys retain their remaining quota.
-These repairs do not complete the wider security assessment.
-
-The subsequent [local recovery security assessment](validation/recovery-security-2026-09-23/README.md)
-found no confirmed new defects. Existing local PostgreSQL tests and installed
-Chrome recovery flows passed, including target-session invalidation and unrelated
-session preservation. The report records remaining operator-output failure,
-configured-runtime CLI and late-write expiry coverage gaps. Its loopback HTTP
-checks do not establish public TLS, deployment-role or physical-device acceptance.
-
-The [local result-projection assessment](validation/result-projection-security-2026-09-23/README.md)
-confirmed SHARE-1 (P2): public-link issuance can complete after session expiry
-during a late audit-table wait. The reproducer required a maintenance-style lock;
-no anonymous mechanism for inducing it was shown. The subsequent
-[SHARE-1 repair](validation/result-share-session-expiry-2026-09-23/README.md)
-rechecks session validity after writes and immediately before commit. Expired
-issue/replacement/revoke requests roll back with 401 and no invalidation event;
-failed replacement/revoke preserves the old grant unchanged. No migration or operator
-configuration change is required.
-
-The [browser/offline persistence assessment](validation/browser-persistence-2026-09-23/README.md)
-confirmed PERSIST-1 (transient match input loss), PERSIST-2 (uncontrolled retry on
-storage failure) and PERSIST-3 (late mutation recreating cleared memory cache).
-The [match-note retention repair](validation/match-note-retention-2026-09-23/README.md)
-resolves PERSIST-1 without migration or operator configuration changes. Unsaved
-input remains memory-only until a device write commits. The
-[score retry repair](validation/score-storage-retry-2026-09-23/README.md) resolves
-PERSIST-2 with no operator/configuration change: failed storage ends the immediate
-drain, preserves pending operations, and waits for polling or an explicit wake.
-An existing lease still governs retry timing. The
-[Stableford callback repair](validation/stableford-settings-lifetime-2026-09-23/README.md)
-resolves the confirmed PERSIST-3 path without configuration changes. Late responses
-from that departed editor are ignored; a fresh authorized read recovers server
-settings. Similar pairing, tournament-start and visibility callbacks remain
-source-supported concerns requiring separate reproduction. These findings do not
-establish a server authorization bypass or another account's UI disclosure.
-Frontend repair validation used real Chrome with synthetic API responses. The
-PERSIST-1 PostgreSQL-backed repeat remains blocked by its documented Docker socket
-permissions.
-
-Hosted deployment has not been independently verified here. The user reports
-hosting at gg26.no and owns further deployment/setup work. The current priority
-in `PLANS.md` is application readiness through practical core-flow and persistence
-checks, followed by continued hands-on testing. Related unverified callback
-concerns and broader operational assessment are deferred rather than automatic
-prerequisites for that work. Public-host acceptance, native 200% browser zoom and
-physical Android Chrome remain unverified in the recorded evidence. This priority
-change supplies no new deployment evidence and does not claim production sign-off.
-The report's three frontend
-accessibility defects were repaired in the subsequent
-[navigation accessibility step](validation/navigation-accessibility-2026-09-23/README.md).
-The deployment checks in this guide remain available to the user as operator;
-local browser results alone do not establish hosted readiness.
-
-The [2026-09-29 functional-readiness check](validation/test-ready-2026-09-29/README.md)
-subsequently passed real local core workflows and exact score/result comparisons
-after PostgreSQL/API/frontend restarts. Its
-[manual checklist](testing_checklist.md) is intended for continued testing on the
-user-managed deployment. That readiness step recorded one transient local
-scorecard-read concurrency error and made no application, migration or server
-changes.
-
-The subsequent [SCORE-READ-1 repair](validation/score-read-retry-2026-09-29/README.md)
-retries that scoring-read serialization-conflict path once with fresh authority
-checks. Deploy the updated API normally; no migration, runtime grants, environment
-variables or frontend contract changes are required. Exhausted retries return a
-non-cacheable 503 instead of a generic 500. This does not deploy to gg26.no or
-extend retry behavior to score writes or other read endpoints.
-
-The [VISIBILITY-1 frontend repair](validation/visibility-lifetime-2026-09-29/README.md)
-prevents departed sessions' final-visibility responses from updating client state.
-Include the rebuilt frontend assets in the normal deployment. No database
-migration, API change or environment/configuration change is required.
-
-The [ADMIN-LIFETIME-1 repair](validation/management-lifetime-2026-09-29/README.md)
-extends session-owned response handling to pairing editing and tournament start.
-Deploy rebuilt frontend assets normally; no API, migration or configuration change
-is required. The accompanying offline assessment and tournament-editing plan do
-not add runtime functionality or require deployment changes.
-
-The subsequent [OFFLINE-RETURN-1 update](validation/offline-return-2026-09-29/README.md)
-adds explicit return to a previously opened scorecard during a coverage gap.
-Deploy rebuilt frontend assets against the existing schema-33 API; this update
-requires no new migration, runtime grant or configuration. Golfers must open the
-card online first and keep the app open with its required data still cached.
-Reloading, closing the app or losing cached data requires connectivity before
-reopening the card. Pending score delivery and online-only confirmation retain
-their existing behavior.
+Public DNS/TLS and Docker Engine deployment, physical Android/iOS behavior, native
+200% browser zoom and a recovery drill for the current schema remain operator
+acceptance work. They do not prevent continued testing with the
+[practical checklist](testing_checklist.md). No hosted deployment or new recovery
+exercise was performed as part of this documentation update.
