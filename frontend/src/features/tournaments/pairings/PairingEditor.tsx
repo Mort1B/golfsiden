@@ -1,3 +1,4 @@
+import { useAuth } from '../../auth/authContext'
 import { AlertTriangle, LockKeyhole, RefreshCw, Save } from 'lucide-react'
 import type { PairingDraftGroup, PairingDraft } from './draft'
 import type { Round } from '../../../api/types'
@@ -26,11 +27,17 @@ function ScheduleTransfers({ draft, disabled, onChange }: { draft: PairingDraft;
   })}</fieldset>
 }
 
-export function PairingEditor({ tournamentId, round, expanded }: Props) {
+export function PairingEditor(props: Props) {
+  const { session } = useAuth()
+  if (!session) return null
+  return <OwnedPairingEditor key={`${session.user_id}:${session.csrf_token}:${props.tournamentId}:${props.round.id}`} {...props} />
+}
+
+function OwnedPairingEditor({ tournamentId, round, expanded }: Props) {
   const state = usePairingEditor({ tournamentId, round, expanded })
   const pairings = state.query.data
   if (state.query.isPending) return <p className="pairing-read-state">Laster spillegrupper…</p>
-  if (state.query.error) return <div className="pairing-read-error" role="alert"><p>Spillegruppene kunne ikke lastes.</p><button type="button" onClick={() => void state.query.refetch()}><RefreshCw aria-hidden="true" /> Prøv igjen</button></div>
+  if (state.query.error) return <div className="pairing-read-error" role="alert"><p>Spillegruppene kunne ikke lastes.</p><button type="button" onClick={() => void state.refetch()}><RefreshCw aria-hidden="true" /> Prøv igjen</button></div>
   if (!pairings || !state.draft) return <p className="pairing-read-state">Ingen spillegruppedata er tilgjengelig.</p>
   const draft = state.draft
   const saving = state.mutation.isPending

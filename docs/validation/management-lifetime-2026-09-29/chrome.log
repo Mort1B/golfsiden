@@ -1,0 +1,31 @@
+
+> golf-web@0.1.0 test:browser:lifecycle
+> playwright test --config playwright.lifecycle.config.ts managementLifetime.browser.ts
+
+
+Running 20 tests using 1 worker
+
+(node:1021259) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+  ✓   1 e2e/managementLifetime.browser.ts:64:3 › pairing ignores late success after session renewal at 320px (1.0s)
+  ✓   2 e2e/managementLifetime.browser.ts:64:3 › pairing ignores late stale after session renewal at 320px (848ms)
+  ✓   3 e2e/managementLifetime.browser.ts:64:3 › pairing ignores late success after session renewal at 390px (875ms)
+  ✓   4 e2e/managementLifetime.browser.ts:64:3 › pairing ignores late stale after session renewal at 390px (855ms)
+  ✓   5 e2e/managementLifetime.browser.ts:64:3 › pairing ignores late success after session renewal at 1280px (903ms)
+  ✓   6 e2e/managementLifetime.browser.ts:64:3 › pairing ignores late stale after session renewal at 1280px (889ms)
+  ✓   7 e2e/managementLifetime.browser.ts:64:3 › start ignores late success after session renewal at 320px (753ms)
+  ✓   8 e2e/managementLifetime.browser.ts:64:3 › start ignores late stale after session renewal at 320px (705ms)
+  ✓   9 e2e/managementLifetime.browser.ts:64:3 › start ignores late success after session renewal at 390px (760ms)
+  ✓  10 e2e/managementLifetime.browser.ts:64:3 › start ignores late stale after session renewal at 390px (818ms)
+  ✓  11 e2e/managementLifetime.browser.ts:64:3 › start ignores late success after session renewal at 1280px (721ms)
+  ✓  12 e2e/managementLifetime.browser.ts:64:3 › start ignores late stale after session renewal at 1280px (754ms)
+  ✓  13 e2e/managementLifetime.browser.ts:96:3 › pairing ignores late success after logout (686ms)
+  ✓  14 e2e/managementLifetime.browser.ts:96:3 › pairing ignores late success after account (674ms)
+  ✓  15 e2e/managementLifetime.browser.ts:96:3 › pairing ignores late success after navigation (614ms)
+  ✓  16 e2e/managementLifetime.browser.ts:96:3 › start ignores late success after logout (538ms)
+  ✓  17 e2e/managementLifetime.browser.ts:96:3 › start ignores late success after account (539ms)
+  ✓  18 e2e/managementLifetime.browser.ts:96:3 › start ignores late success after navigation (541ms)
+  ✓  19 e2e/managementLifetime.browser.ts:121:51 › pairing preserves explicit retry after a current-session failure (686ms)
+  ✓  20 e2e/managementLifetime.browser.ts:121:51 › start preserves explicit retry after a current-session failure (589ms)
+
+  20 passed (16.1s)

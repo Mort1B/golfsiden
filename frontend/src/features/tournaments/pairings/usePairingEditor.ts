@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { authKeys, type AuthSession } from '../../../api/auth'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiHttpError } from '../../../api/http'
 import { pairingApi, pairingKeys } from '../../../api/pairings'
@@ -55,6 +56,15 @@ export function usePairingEditor({ tournamentId, round, expanded }: Input) {
   const auth = useAuth()
   const userId = auth.session?.user_id ?? ''
   const queryClient = useQueryClient()
+  const csrfToken = auth.session?.csrf_token
+  const alive = useRef(false)
+  useLayoutEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
+  // PairingEditor keys the owner by account, CSRF and target. Canonical
+  // publication may precede React replacement, so mounted state is not enough.
+  const isCurrent = useCallback(() => {
+    const current = queryClient.getQueryData<AuthSession | null>(authKeys.session)
+    return alive.current && !!csrfToken && current?.user_id === userId && current.csrf_token === csrfToken
+  }, [queryClient, userId, csrfToken])
   const submitting = useRef(false)
   const [draft, setDraft] = useState<PairingDraft | null>(null)
   const [dirty, setDirty] = useState(false)
@@ -64,54 +74,56 @@ export function usePairingEditor({ tournamentId, round, expanded }: Input) {
     queryFn: () => pairingApi.get(round.id, tournamentId),
     enabled: expanded && userId.length > 0,
   })
-  const mutation = useMutation({ mutationFn: (replacement: PairingReplacement) => {
-    const csrfToken = auth.session?.csrf_token
-    if (!csrfToken) throw new Error('Økten mangler. Logg inn på nytt.')
+  const mutation = useMutation({ retry: false, gcTime: 0, mutationFn: (replacement: PairingReplacement) => {
+    if (!csrfToken || !isCurrent()) throw new Error('Økten mangler. Logg inn på nytt.')
     return pairingApi.replace(round.id, tournamentId, replacement, csrfToken)
   } })
 
   useEffect(() => {
     const authoritative = query.data
-    if (!authoritative || draft?.sourceFingerprint === pairingsFingerprint(authoritative)) return
+    if (!isCurrent() || !authoritative || draft?.sourceFingerprint === pairingsFingerprint(authoritative)) return
     if (dirty) {
       setReloadConflict(true)
       return
     }
     setDraft(draftFromPairings(authoritative))
     setReloadConflict(false)
-  }, [dirty, draft?.sourceFingerprint, query.data])
+  }, [dirty, draft?.sourceFingerprint, query.data, isCurrent])
 
   const adopt = (authoritative: RoundPairings) => {
+    if (!isCurrent()) return
     setDraft(draftFromPairings(authoritative))
     setDirty(false)
     setReloadConflict(false)
   }
 
   const edit = (update: (current: PairingDraft) => PairingDraft) => {
+    if (!isCurrent()) return
     setDraft((current) => current ? update(current) : current)
     setDirty(true)
     mutation.reset()
   }
 
-  const invalidateRoundFacts = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: pairingKeys.detail(userId, round.id), exact: true }),
-      queryClient.invalidateQueries({ queryKey: tournamentKeys.round(userId, round.id), exact: true }),
-      queryClient.invalidateQueries({ queryKey: tournamentKeys.rounds(userId, tournamentId), exact: true }),
-    ])
-  }
+  const invalidateRoundFacts = () => Promise.all([
+    pairingKeys.detail(userId, round.id),
+    tournamentKeys.round(userId, round.id),
+    tournamentKeys.rounds(userId, tournamentId),
+  ].map(queryKey => isCurrent()
+    ? queryClient.invalidateQueries({ queryKey, exact: true }) : Promise.resolve()))
 
   const save = async (replacement: PairingReplacement): Promise<RoundPairings | null> => {
-    if (submitting.current) return null
+    if (!isCurrent() || submitting.current) return null
     submitting.current = true
     mutation.reset()
     try {
       const saved = await mutation.mutateAsync(replacement)
+      if (!isCurrent()) return null
       queryClient.setQueryData(pairingKeys.detail(userId, round.id), saved)
       adopt(saved)
       await invalidateRoundFacts()
-      return saved
+      return isCurrent() ? saved : null
     } catch (error) {
+      if (!isCurrent()) return null
       const failure = pairingFailure(error)
       if (failure === 'stale' || failure === 'not-draft' || failure === 'access' || failure === 'roster') {
         setReloadConflict(true)
@@ -119,21 +131,23 @@ export function usePairingEditor({ tournamentId, round, expanded }: Input) {
       }
       return null
     } finally {
-      submitting.current = false
+      if (isCurrent()) submitting.current = false
     }
   }
 
   const discardAndReload = async () => {
+    if (!isCurrent()) return
     mutation.reset()
     setDirty(false)
     setReloadConflict(false)
     if (query.data) adopt(query.data)
     const result = await query.refetch()
-    if (result.data) adopt(result.data)
+    if (isCurrent() && result.data) adopt(result.data)
   }
 
   return {
     query, mutation, draft, dirty, reloadConflict, edit, save, discardAndReload,
     failure: pairingFailure(mutation.error),
+    refetch: () => { if (isCurrent()) return query.refetch() },
   }
 }

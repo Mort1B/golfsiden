@@ -29,6 +29,21 @@ contains those procedures.
    them. For offline testing, wait for the explicit saved-on-device state before
    leaving and check that reconnecting eventually saves to the server.
 
+## Testing a coverage gap
+
+Open the intended scorecard while connected, then disable connectivity and enter
+a few holes. Keep the score page open and wait for **saved on device** after each
+entry. Restore connectivity, verify **Lagret på serveren**, and check the same
+values from a second online session before confirmation. Match result reporting
+and card confirmation require connectivity.
+
+The current app cannot reliably reopen offline after reload, closure or phone
+browser eviction. Returning through the main Score link also needs fresh reads.
+Avoid navigation away, reload and logout during this first offline test. Saved
+local edits can recover when online again, but that does not make the whole
+scorecard reopen offline. See the [assessment](validation/offline-course-assessment-2026-09-29/README.md)
+for the planned improvements and evidence limits.
+
 For a bug report, give the page/round/format, phone or browser, the steps taken,
 what you expected and what happened. Include whether the app said saved on the
 device or saved on the server. Do not include passwords or invitation/recovery

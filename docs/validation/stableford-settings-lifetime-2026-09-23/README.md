@@ -9,7 +9,9 @@ editor unmounts. The repair is ready within this bounded scope; deployment remai
 
 Follow-up: [VISIBILITY-1](../visibility-lifetime-2026-09-29/README.md) subsequently
 reproduced and repaired the final-round visibility concern listed below. The
-remaining findings and original validation boundaries are preserved here.
+original validation boundaries are preserved here. The subsequent
+[ADMIN-LIFETIME-1](../management-lifetime-2026-09-29/README.md) reproduced and repaired
+the remaining pairing and tournament-start concerns listed below.
 
 ## Implementation
 

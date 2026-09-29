@@ -660,3 +660,9 @@ The [VISIBILITY-1 frontend repair](validation/visibility-lifetime-2026-09-29/REA
 prevents departed sessions' final-visibility responses from updating client state.
 Include the rebuilt frontend assets in the normal deployment. No database
 migration, API change or environment/configuration change is required.
+
+The [ADMIN-LIFETIME-1 repair](validation/management-lifetime-2026-09-29/README.md)
+extends session-owned response handling to pairing editing and tournament start.
+Deploy rebuilt frontend assets normally; no API, migration or configuration change
+is required. The accompanying offline assessment and tournament-editing plan do
+not add runtime functionality or require deployment changes.

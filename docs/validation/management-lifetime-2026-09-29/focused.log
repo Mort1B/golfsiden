@@ -1,0 +1,13 @@
+
+> golf-web@0.1.0 test
+> vitest run --reporter=dot src/features/tournaments/TournamentStartPanel.lifetime.test.tsx src/features/tournaments/pairings/PairingEditor.lifetime.test.tsx
+
+
+ RUN  v3.2.7 /home/morten/Prog/guttasgolfside/golfsiden/frontend
+
+····················································
+
+ Test Files  2 passed (2)
+      Tests  52 passed (52)
+   Start at  11:00:57
+   Duration  2.74s (transform 249ms, setup 0ms, collect 735ms, tests 1.98s, environment 1.29s, prepare 158ms)

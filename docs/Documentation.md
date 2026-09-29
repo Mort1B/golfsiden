@@ -642,6 +642,14 @@ online delivery, but reopening the whole site while offline is not guaranteed:
 there is no offline app shell, service worker or background sync. Clearing browser
 site data removes pending device edits.
 
+For course coverage gaps, open the intended card while connected and keep it
+open until connectivity returns. The main Score resume route deliberately requires
+fresh reads, so navigating away and returning while offline is not a supported
+fallback. Reopening after browser closure/eviction is also unsupported, even if
+pending edits were saved on the device. See the
+[offline course assessment](validation/offline-course-assessment-2026-09-29/README.md)
+for the distinction between durable edits, in-app return and offline app launch.
+
 The owner, tournament, and round identity precede the active hole or summary.
 Hole selection and the view toggle stay visible below it. The labeled tournament,
 round, and player/team selectors expand under **Bytt turnering, runde eller
@@ -762,8 +770,13 @@ refreshes after session or editor departure. Visibility controls reset for a new
 account/session/target; only the current mounted session may apply a response.
 Normal save, stale-status refresh and explicit retry remain available. Ignoring
 an old response does not undo a server update; fresh authorized reads recover it.
-Pairing and tournament-start callbacks remain source-supported concerns awaiting
-separate reproduction; these repairs do not establish their safety. No other-account UI disclosure or
+The subsequent [management callback repair](validation/management-lifetime-2026-09-29/README.md)
+reproduces and resolves the pairing-editor and tournament-start concerns too.
+Session/target replacement creates independent draft, mutation and receipt state;
+late responses cannot insert cache data, refresh old queries or finish a departed
+pairing discard operation. Current-session conflict handling and explicit retry
+remain available. These are bounded repairs, not a claim of complete application
+callback coverage. No other-account UI disclosure or
 server authorization bypass was demonstrated. Durable queues
 remain account-scoped and intentionally survive logout; the report records
 passing controls and exact limitations. Operational assessment remains open.

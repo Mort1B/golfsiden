@@ -75,8 +75,9 @@ service is stopped at closeout. The browser's SSE fixtures close after each test
 
 ## Limits
 
-Only final-round visibility was repaired. Pairing and tournament-start callback
-concerns remain separately queued and unverified. No global cache/query ownership
+Only final-round visibility was repaired in this step. The later
+[management repair](../management-lifetime-2026-09-29/README.md) subsequently
+reproduced and repaired pairing and tournament-start callbacks. No global cache/query ownership
 redesign or server/database/dependency change is included. Backend/PostgreSQL
 ladders are not rerun for this frontend-only change. gg26.no and existing databases
 were not accessed; physical-device and native zoom acceptance remain unverified.

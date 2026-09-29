@@ -805,6 +805,16 @@ and reapplies runtime grants before the API is started.
   busy guards. Current-session conflict refresh and retry remain available,
   including on locked finals. This fence does not roll back an accepted server
   update and does not extend to other management mutation callbacks.
+- Pairing editing and tournament start use separate account/CSRF/target-keyed
+  owners. PairingEditor is the lifetime boundary for usePairingEditor; collapsing
+  its section does not destroy the current draft. Session/target replacement or
+  unmount retires it synchronously. Submission, save-response cache insertion,
+  draft adoption, refresh calls and post-discard-refresh adoption all compare
+  canonical session ownership. A departed save returns no usable result after
+  reconciliation. Tournament start applies the same boundary to response cache
+  insertion, receipts, error refreshes and busy state. Current-session validation,
+  explicit retry, manual team composition and server version checks are unchanged.
+  Ignoring late callbacks does not undo a server-accepted mutation.
 - The tournament list filters the unmodified user-scoped membership collection
   locally, using URL view selection. Current includes every non-archived status;
   archived/all views retain direct private history links. Failed authoritative

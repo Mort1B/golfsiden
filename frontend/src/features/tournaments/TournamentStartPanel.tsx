@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { authKeys, type AuthSession } from '../../api/auth'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, CircleAlert, LoaderCircle, LockKeyhole, Play, RefreshCw } from 'lucide-react'
 import { tournamentApi, tournamentKeys } from '../../api/tournaments'
@@ -43,9 +44,21 @@ function ReadinessItem(props: { state: ReadinessState; children: React.ReactNode
 }
 
 export function TournamentStartPanel(props: TournamentStartPanelProps) {
-  const auth = useAuth()
+  const { session } = useAuth()
+  if (!session) return null
+  return <OwnedStartPanel key={`${session.user_id}:${session.csrf_token}:${props.tournament.id}`} {...props} session={session} />
+}
+
+function OwnedStartPanel(props: TournamentStartPanelProps & { session: AuthSession }) {
   const queryClient = useQueryClient()
-  const userId = auth.session?.user_id ?? ''
+  const { session } = props
+  const userId = session.user_id
+  const alive = useRef(false), busy = useRef(false)
+  useLayoutEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
+  const isCurrent = () => {
+    const current = queryClient.getQueryData<AuthSession | null>(authKeys.session)
+    return alive.current && current?.user_id === userId && current.csrf_token === session.csrf_token
+  }
   const [receipt, setReceipt] = useState<string | null>(null)
   const readiness = tournamentStartReadiness({
     tournament: props.tournament,
@@ -58,9 +71,10 @@ export function TournamentStartPanel(props: TournamentStartPanelProps) {
   })
 
   const mutation = useMutation({
+    retry: false, gcTime: 0,
     mutationFn: () => {
-      const csrfToken = auth.session?.csrf_token
-      if (!csrfToken) throw new Error('Økten mangler. Logg inn på nytt.')
+      const csrfToken = session.csrf_token
+      if (!csrfToken || !isCurrent()) throw new Error('Økten mangler. Logg inn på nytt.')
       return tournamentApi.start(props.tournament.id, {
         expected_tournament_updated_at: props.tournament.updated_at,
       }, csrfToken)
@@ -69,30 +83,33 @@ export function TournamentStartPanel(props: TournamentStartPanelProps) {
 
   const refreshAfterFailure = async (refresh: 'none' | 'tournament' | 'all') => {
     if (refresh === 'none') return
-    const requests = [queryClient.invalidateQueries({
-      queryKey: tournamentKeys.detail(userId, props.tournament.id),
-    })]
-    if (refresh === 'all') {
-      requests.push(
-        queryClient.invalidateQueries({ queryKey: tournamentKeys.rounds(userId, props.tournament.id) }),
-        queryClient.invalidateQueries({ queryKey: tournamentKeys.players(userId, props.tournament.id) }),
-      )
-    }
-    await Promise.all(requests)
+    const keys: ReadonlyArray<readonly unknown[]> = [
+      tournamentKeys.detail(userId, props.tournament.id),
+      ...(refresh === 'all' ? [tournamentKeys.rounds(userId, props.tournament.id),
+        tournamentKeys.players(userId, props.tournament.id)] : []),
+    ]
+    await Promise.all(keys.map(queryKey => isCurrent()
+      ? queryClient.invalidateQueries({ queryKey }) : Promise.resolve()))
   }
 
   const start = async () => {
-    if (!readiness.canStart || mutation.isPending || props.tournament.status !== 'draft') return
+    if (!isCurrent() || busy.current || !readiness.canStart || mutation.isPending || props.tournament.status !== 'draft') return
+    busy.current = true
     mutation.reset()
     setReceipt(null)
     try {
       const saved = await mutation.mutateAsync()
+      if (!isCurrent()) return
       queryClient.setQueryData(tournamentKeys.detail(userId, saved.id), saved)
+      if (!isCurrent()) return
       setReceipt('Turneringen er startet. Alle rundene er fortsatt i kladd.')
-      await queryClient.invalidateQueries({ queryKey: tournamentKeys.root(userId) })
+      if (isCurrent()) await queryClient.invalidateQueries({ queryKey: tournamentKeys.root(userId) })
     } catch (error) {
+      if (!isCurrent()) return
       const failure = tournamentStartFailure(error instanceof Error ? error : new Error('Ukjent feil'))
       await refreshAfterFailure(failure?.refresh ?? 'none')
+    } finally {
+      if (isCurrent()) busy.current = false
     }
   }
 
@@ -138,7 +155,7 @@ export function TournamentStartPanel(props: TournamentStartPanelProps) {
       {readFailed && (
         <div className="tournament-start-message error" role="alert">
           <p>Kunne ikke kontrollere alle startkravene. Start er deaktivert til oppdateringen lykkes.</p>
-          <button type="button" onClick={() => { props.rounds.retry(); props.roster.retry() }}>
+          <button type="button" onClick={() => { if (isCurrent()) props.rounds.retry(); if (isCurrent()) props.roster.retry() }}>
             <RefreshCw aria-hidden="true" /> Prøv kontrollen igjen
           </button>
         </div>
