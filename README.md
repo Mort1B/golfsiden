@@ -10,21 +10,25 @@ access independently.
 
 ## Features
 
-- **Tournament management:** Create tournaments, plan rounds, choose how many
-  results count toward the standings, optionally require a specific round, and
-  choose shared places or a final-round comparison for equal tournament totals.
-  Manage each tournament from draft through completion and archive.
-- **Individual and team formats:** Play individual stroke play, two-player
-  scramble, two-player foursomes, or 18-hole four-ball. Four-ball records each
-  partner's own scores and selects the team's best gross/net score on each hole.
-  Organizers assign teams and flights for each
-  round, with team membership able to change between rounds.
+- **Tournament management:** Create tournaments, configure rounds, and edit a
+  draft's name, description and date range. Choose how many results count, an
+  optional mandatory round, and shared places or a final-round tie-break.
+  Start the tournament, then open, complete and lock rounds separately before
+  completing and archiving the event.
+- **Six scoring formats:** Individual stroke play, two-player scramble,
+  two-player foursomes, four-ball, individual Stableford and singles match play.
+  Each uses its own scoring and confirmation flow; see the format table below.
+- **Round-specific pairings:** Organizers assign teams, flights, starting holes
+  and singles opponents manually. The pairing editor checks readiness before a
+  round opens. Players belong to the tournament independently of teams, and
+  team membership can change between rounds.
 - **Courses and handicaps:** Select a saved course layout or configure course,
   tee, and hole data. Preserve tournament and round handicap snapshots so later
   profile changes do not alter historical results.
-- **Mobile scoring:** Enter and confirm scores for authorized cards, with per-hole
-  handicap stroke indicators, automatic refresh on return, and durable offline
-  edits on an already-open scorecard with explicit conflict resolution.
+- **Mobile scoring:** Enter authorized player or team cards with per-hole handicap
+  indicators, saved-on-device/server status, and explicit conflict resolution.
+  Continue through coverage gaps and return to the last opened card and hole
+  while the app and required cached data remain available.
 - **Live standings and history:** Follow separate gross and net leaderboards,
   inspect a player's counting rounds, and open preserved individual or team
   scorecards from the results.
@@ -39,10 +43,67 @@ access independently.
   can create private recovery links for ordinary players without email
   integration; administrator accounts are recovered by the site operator.
 
+## Supported formats
+
+| Format | Holes | Scores and results |
+| --- | --- | --- |
+| Individual stroke play | 9 or 18 | Player scores; separate gross and net standings |
+| Two-player scramble | 9 or 18 | One team card; contributions follow the round's preserved team membership |
+| Two-player foursomes | 9 or 18 | One team card; contributions follow the round's preserved team membership |
+| Four-ball | 18 | Each partner enters scores or pickups; the server selects the team's best gross/net result per hole |
+| Individual Stableford | 18 | Native gross/net points, including zero-point pickups; overall standings use labelled `36 − points` equivalents |
+| Singles match play | 18 | Manually assigned opponents, gross or net mode, and a separate win/draw/loss table worth 1/½/0 points |
+
+Stableford equivalents are distinct from actual stroke totals. Singles match
+points do not contribute to overall gross/net standings. Team composition and
+opponents are administrator-managed; there is no automatic team balancing or
+bracket generation.
+
+## Organizer and player workflow
+
+1. **Create and invite.** Create a tournament and its rounds, then invite players
+   to join with their own accounts.
+2. **Prepare the draft.** Choose courses and tees, configure standings, and assign
+   teams, flights or singles opponents. Under **Turneringsstyring → Innstillinger
+   → Navn og datoer**, edit the tournament details if needed; its date range must
+   contain every existing round date.
+3. **Start and open.** Start the tournament, then open a ready round from
+   **Rundestyring**. Opening freezes the round's handicap and team snapshots.
+4. **Score and follow results.** Players use **Score**; members follow
+   **Resultater**, gross/net views and private scorecards. Ordinary online return
+   refreshes the card and resumes at the first missing hole.
+5. **Confirm and finish.** Confirm completed scorecards online. Once the required
+   cards are confirmed, the organizer can complete and lock the round, then
+   complete and archive the tournament when eligible.
+
+## Scoring with poor connectivity
+
+Open the intended scorecard while connected before entering a coverage gap.
+Stroke/team, four-ball and Stableford entries use a durable device queue. Wait
+for the saved-on-device state before leaving the card; reconnection delivers
+pending entries, with explicit review if another score conflicts.
+
+If you navigate away while the app remains open, **Score → Tilbake til åpnet
+scorekort** returns to the same session's last visited writable card and hole
+when disconnected or reads fail. The required card data must still be cached.
+The returned card awaits server verification; confirmation and switching cards
+require fresh online access checks.
+
+Pending edits survive reload for later online delivery to the same account, but
+the full scorecard is not stored for offline reopening. Reloading, closing the
+app, browser cache eviction or session expiry can require connectivity before
+you can continue. There is no offline app shell or background sync. Clearing
+browser site data removes pending device edits.
+
+Singles match play queues numeric notes only. Match reports, concessions,
+confirmation and corrections require connectivity. See the
+[scoring documentation](docs/Documentation.md#mobile-score-entry) for recovery
+and conflict handling.
+
 ## Prerequisites
 
 - Rust 1.88 or newer
-- Node.js 20 or newer and npm
+- Node.js 22.12 or newer and npm (Node 20.19+ is also supported by the Vite toolchain)
 - PostgreSQL 15 or newer
 - Docker Compose (optional, for the supplied local database)
 
@@ -52,7 +113,7 @@ From the repository root:
 
 ```bash
 cp .env.example .env
-docker compose up -d postgres
+docker compose up -d --wait postgres
 cargo run -p golf-api --bin migrate
 cargo run -p golf-api --bin seed
 ```
@@ -71,7 +132,7 @@ In a second terminal, start the frontend:
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
@@ -96,6 +157,12 @@ Use [the production deployment and recovery guide](docs/deployment_guide.md) for
 the exact build, migration, permission, backup, restore, rollback, and launch
 procedure. Never reuse `.env.example` credentials or run the development seed in
 production.
+
+The current application requires schema 33, including
+`0033_tournament_details.sql`, with matching API and frontend builds. The later
+offline-return improvement needs only rebuilt frontend assets, with no additional
+migration. The hosted deployment at gg26.no is operator-managed; local validation
+does not establish which release is running there.
 
 ## Database commands
 
@@ -153,6 +220,19 @@ locked rounds remain read-only for course configuration.
 
 ## Verification
 
+Use a separate test tournament for hands-on testing: invite a player, prepare and
+open a round, enter and edit scores, compare results from another session, then
+confirm and lock. Revisit saved scores after reload and a normal service restart.
+For coverage-gap testing, follow the offline flow above and verify the same scores
+from another online session after reconnection.
+
+Recorded checks and their limits are available for
+[core workflows and restart persistence](docs/validation/test-ready-2026-09-29/README.md),
+[draft tournament editing](docs/validation/tournament-details-2026-09-29/README.md),
+and [offline scorecard return](docs/validation/offline-return-2026-09-29/README.md).
+These include local PostgreSQL-backed browser checks at phone and desktop widths;
+they do not replace testing the hosted site on physical phones.
+
 Run Rust formatting, unit tests, and Clippy:
 
 ```bash
@@ -187,9 +267,11 @@ npm run build
 - `backend/src/repositories`: SQLx database access
 - `backend/src/bin`: migration, development seed, and operator password-recovery commands
 - `backend/tests`: PostgreSQL integrity tests
+- `vendor/sqlx-postgres`: local SQLx patch for safe cancellation during transaction startup
 - `frontend/src/pages`: route-level application pages
 - `frontend/src/features`: focused mobile feature components and utilities
 - `frontend/src/api`: typed API client and resource types
+- `frontend/e2e`: browser workflow and recovery checks
 - `migrations`: PostgreSQL schema and integrity triggers
 - `docs`: current behavior, architecture, active work, workflow, and deployment guidance
 
@@ -197,14 +279,12 @@ See [Architecture](docs/ARCHITECTURE.md), [Project documentation](docs/Documenta
 
 ## Current limitations
 
-- Supported formats are individual stroke play, two-player scramble,
-  two-player foursomes, 18-hole four-ball, 18-hole individual Stableford and
-  18-hole singles match play. Singles uses manually assigned opponents and a
-  separate 1/½/0 match-points table; it contributes nothing to overall gross/net.
-  Only numeric match notes support offline drafts; result reports are online-only.
-- Offline scoring continues in an already-open authorized card. Pending edits
-  survive reload for later online delivery; cold offline launch and background
-  sync are not supported. Confirmation requires a connection.
+- Tournament detail editing is limited to drafts. It does not move round dates,
+  restructure the schedule or change started tournaments.
+- Singles match play does not include team matches, extra holes, byes or brackets.
+- Offline return depends on the same open app/session and retained card data.
+  Offline reload, closed-app launch and background sync are not supported.
+  Confirmation requires a connection.
 - Tournament workspaces and scorecards require membership. Revocable public
   links expose only the limited live overall standings.
 - Locked rounds reject ordinary score changes. Singles match play has an audited
