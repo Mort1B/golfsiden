@@ -640,3 +640,10 @@ accessibility defects were repaired in the subsequent
 [navigation accessibility step](validation/navigation-accessibility-2026-09-23/README.md).
 The deployment checks in this guide remain available to the user as operator;
 local browser results alone do not establish hosted readiness.
+
+The [2026-09-29 functional-readiness check](validation/test-ready-2026-09-29/README.md)
+subsequently passed real local core workflows and exact score/result comparisons
+after PostgreSQL/API/frontend restarts. Its
+[manual checklist](testing_checklist.md) is intended for continued testing on the
+user-managed deployment. One transient local scorecard-read concurrency error
+remains documented; the step made no application, migration or server changes.

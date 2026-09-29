@@ -76,7 +76,7 @@ test('non-admin failed device write remains recoverable when external lock denie
     await member.evaluate(()=>Object.defineProperty(window,'indexedDB',{configurable:true,get(){throw new Error('Device storage unavailable')}}))
     await member.getByRole('button',{name:'Lagre notat',exact:true}).nth(1).click();await expect(member.getByRole('button',{name:'Forkast ulagrede notater',exact:true})).toBeVisible()
     await f.command({type:'report',event:{type:'concession',conceding_player_id:f.firstId,communicated:true,after_hole:0}});await f.command({type:'confirm',result_agreed_or_awarded:true});await f.mutate(`/api/rounds/${f.round.id}/complete`);await f.mutate(`/api/rounds/${f.round.id}/lock`)
-    await expect(member.getByRole('heading',{name:'Ulagrede lokale notater',exact:true})).toBeVisible();await expect(member.getByText('Lokalt notat 1: 7',{exact:true})).toBeVisible();await expect(member.getByRole('heading',{name:/vant ved gitt match/})).toHaveCount(0)
+    await expect(member.getByRole('heading',{name:'Ulagrede lokale notater',exact:true})).toBeVisible();await expect(member.getByText('Lokalt notat 2: 7',{exact:true})).toBeVisible();await expect(member.getByRole('heading',{name:/vant ved gitt match/})).toHaveCount(0)
     await member.getByRole('button',{name:'Forkast ulagrede notater',exact:true}).click();await member.getByRole('link',{name:'Alle matcher',exact:true}).click();await expect(member.getByRole('link',{name:'Før match',exact:true})).toHaveCount(0);await noOverflow(member)
   } finally {await context.close()}
 })

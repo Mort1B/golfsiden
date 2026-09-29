@@ -8,6 +8,12 @@ strict TypeScript React client. Username/password accounts enter through atomic
 creator onboarding or tournament invitations; tournament membership, rather
 than a global role or player directory, owns access.
 
+For continued hands-on testing, use the [practical checklist](testing_checklist.md).
+The [2026-09-29 functional checks](validation/test-ready-2026-09-29/README.md)
+cover real local organizer/player flows and saved-data persistence through
+service restarts, with one recorded transient read-error limitation. Hosting at
+gg26.no remains user-managed and was not verified by those local checks.
+
 Exact tournament admins configure counted rounds, an optional mandatory round and
 the overall tie-break policy, select or manually register one immutable course/tee revision per draft round, manage
 teams and flights, start the tournament, and open, complete, or lock individual

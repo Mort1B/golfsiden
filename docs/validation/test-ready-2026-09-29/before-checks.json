@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "Organizer invitation and existing-player joining through UI",
+    "Saved courses, manual team/flight assignment, start/open, player score entry and editing for team and individual rounds",
+    "Exact team and individual scorecards retained after reload and sign-out/sign-in",
+    "No unexpected console, page, HTTP or request failures; no horizontal overflow at 320, 390 and 1280px"
+  ],
+  "errors": []
+}

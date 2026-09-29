@@ -1,0 +1,7 @@
+{
+  "checks": [
+    "Exact scorecards and gross/net results retained after API, frontend and PostgreSQL restart, in a fresh browser session",
+    "No unexpected console, page, HTTP or request failures; no horizontal overflow at 320, 390 and 1280px"
+  ],
+  "errors": []
+}

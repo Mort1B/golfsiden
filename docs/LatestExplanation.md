@@ -1,27 +1,32 @@
-# Prioritize working functionality for hands-on testing
+# Ready for continued functional testing
 
-The next priority is working functionality so the user can keep testing from a
-phone and with other testers. The user reports hosting at gg26.no and will handle
-deployment themselves. `docs/PLANS.md` now defines one bounded application
-test-readiness candidate instead of another callback investigation.
+**READY WITH KNOWN LIMITATIONS** for continued application testing. The main
+workflows passed against a fresh local PostgreSQL database and real Chrome:
+organizer/player login, tournament creation and invitations, saved-course setup,
+manual teams/flights, start/open, score entry/editing, results, confirmation,
+corrections and round locking. Team and individual scorecards and gross/net
+results remained exactly unchanged after restarting PostgreSQL, the API and the
+frontend and signing in from a fresh browser session.
 
-Practical acceptance covers organizer/player login, tournament setup and start,
-round opening, score entry and editing, confirmation, and gross/net results. It
-includes real database-backed local browser flows and persistence across service
-restarts. The handover provides a concise manual checklist and known limitations
-for the user's deployment. Local setup must preserve existing test progress;
-hosted mutations and server administration are outside the agent's scope.
+No application or schema changes were needed. Two browser tests were corrected:
+one now waits for confirmation cleanup before hard navigation, and one correctly
+expects the second opponent's preserved local-note slot. Existing format checks
+also passed for Stableford, four-ball and singles match play. The practical
+journey covers 320px, 390px and 1280px widths; lifecycle checks also use 1440px.
 
-Further broad assessment, unverified callback concerns and polish are deferred.
-Only reproduced blockers to the agreed flows, authorization or saved data belong
-in this step. Existing product invariants and affected validation/review
-requirements still apply to repairs. After handover, work follows concrete testing
-feedback rather than another general investigation.
+Validation passed: 215 ordinary backend tests; 615 database-enabled tests
+(including ordinary tests); 806 frontend tests; formatting, strict Clippy,
+frontend typecheck/lint/build, browser typecheck, and 19 final passing existing
+browser cases plus the before/after restart journey. The
+[report](validation/test-ready-2026-09-29/README.md) distinguishes real API flows,
+injected error states, initial failures, repeat runs and remaining limits.
 
-This iteration changes documentation only. No application behavior changed, no
-services were started, and no new runtime, browser or deployment checks were run.
-The prior [Stableford repair evidence](validation/stableford-settings-lifetime-2026-09-23/README.md)
-remains available; neighboring callback concerns are not claimed repaired.
-Application test readiness must be established by the practical checks, not
-inferred from this plan update or equated with hosted deployment sign-off or an
-exhaustive security assessment.
+One earlier journey recorded a transient scorecard-read HTTP 500 caused by a
+PostgreSQL concurrency conflict. Saved data remained correct and the repeat and
+restart checks passed. The precise overlapping action remains unconfirmed;
+this is recorded as an unresolved limitation, not claimed fixed.
+
+Use the [short checklist](testing_checklist.md) to continue testing. The user owns
+hosting at gg26.no; this step did not access or change it. Physical phone and
+hosted configuration acceptance remain unverified here. Further work follows
+concrete testing feedback; broader assessment and speculative repairs are deferred.

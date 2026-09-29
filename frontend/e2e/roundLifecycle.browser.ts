@@ -140,6 +140,9 @@ test('admin lifecycle, live readiness, corrections, permissions and final visibi
     await expect(page).toHaveURL(new RegExp(`owner=${firstOwner.owner.id}`))
     await page.getByRole('button', { name: 'Bekreft fullført scorekort', exact: true }).click()
     await expect(page.getByText('Scorekortet er bekreftet', { exact: true })).toBeVisible()
+    // A server event can reveal confirmation before the local lease is released.
+    // Wait for the user-ready control before hard navigation bypasses SPA guards.
+    await expect(page.getByRole('button', { name: 'Korriger score', exact: true })).toBeEnabled()
     await page.goto(manage(round.id))
     await layout(page, index === 1 ? 390 : 1440)
     await transition(page, 'Fullfør runden')
@@ -158,6 +161,7 @@ test('admin lifecycle, live readiness, corrections, permissions and final visibi
       await page.locator('.organizer-summary').getByRole('link', { name: `Bekreft scorekort for ${firstOwner.owner_name}`, exact: true }).click()
       await page.getByRole('button', { name: 'Bekreft fullført scorekort', exact: true }).click()
       await expect(page.getByText('Scorekortet er bekreftet', { exact: true })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Korriger score', exact: true })).toBeEnabled()
       await page.goto(manage(round.id))
       // Another admin locks while this page remains mounted; live state must follow.
       await otherPage.goto(manage(round.id))
