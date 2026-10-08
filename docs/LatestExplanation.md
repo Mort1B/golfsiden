@@ -1,44 +1,44 @@
-# Prepare players now and let them claim their accounts
+# Plan a separate all-round Fantasy competition
 
-Tournament admins can open **Administrasjon → Deltakere**, enter a name and
-handicap, and share a personal account link. The player can be assigned to rounds
-before registering. The recipient chooses a username and password; the account
-links to the exact prepared player, preserving teams, scores and handicap facts.
-No placeholder login or duplicate entrant is created.
+This iteration is documentation-only. Fantasy is not implemented; application
+behavior, schema 34, existing player claims and deployment remain unchanged.
 
-Links expire after seven days and work once. Admins can replace or revoke them;
-claimed accounts cannot receive another claim link. Active prepared entrants can
-still claim after tournament completion/archival. This narrow exception does not
-reopen ordinary registration. Links stay in temporary UI state, use URL fragments
-and are removed from the address immediately. The server stores only token hashes.
+The user-approved design is attached to a tournament but independent of its
+sporting results: four freely selected golfers each round, one captain doubling
+placement and hole points, no budgets or transfer penalties, net scoring and the
+same shared team result for both partners. A separate overall leaderboard sums
+every round, with round standings and per-golfer explanations. The initial event
+has nine two-person teams; the rules also cover smaller/larger fields.
 
-**Fjern fra turneringen** withdraws a player with confirmation. It preserves
-historical results, accounts and existing access/roles, including scorer access.
-It requires removing draft assignments first and locking participating rounds.
-Self/admin targets and completed/archived tournaments are protected. The database
-records the responsible administrator and invalidates outstanding claim links.
+The latest scoring clarification is explicit: actual ace or net albatross-or-better
++10 (never stacked), eagle +3, birdie +1, par 0, bogey -1, double -2, triple -3,
+quad-or-worse and pickup -5. Non-finishers retain recorded hole points without
+invented penalties for unplayed holes. Placement follows net rank with
+10/8/6/5/4/3/2/1 points for positions 1-8 and zero thereafter. Captain multiplication
+includes negative points.
 
-The implementation uses a dedicated claim boundary and forward migration 0034.
-Claiming, link replacement and withdrawal serialize on the same identity. Final
-expiry checks cover database waits, username conflicts roll back the whole claim,
-and contended withdrawal/account locks return a retryable conflict. Frontend
-callbacks are fenced by mounted lifetime and canonical account/session identity,
-including sign-out while a newer session appears. Unknown creation delivery asks
-the admin to check the refreshed roster before retrying.
+[PLANS.md](PLANS.md) sequences contract closure, pure scoring, persistence and
+selection APIs, result projections, the mobile-first UI, and release acceptance.
+Each implementation step has ownership, validation and a stop condition. The
+[planned architecture contract](ARCHITECTURE.md#fantasy-competition-design-planned-not-implemented)
+records rules, proposed defaults, data and authorization boundaries, source seams
+and concrete acceptance examples separately from implemented behavior.
 
-Example: create Kari with handicap 14.4, place her in the draft round, and send her
-personal link. When Kari registers, her login owns the same player already on the
-roster. If she drops out before play, remove her draft assignments and confirm
-withdrawal; the record remains labelled **Trukket**.
+Remaining decisions are explicitly gated: match outcome/net/concession treatment,
+authoritative non-finish settlement and invalid/missed lineup handling. “Every
+round” cannot be satisfied by silently excluding match play. Existing match
+reports are not always physical strokes, and current sporting withdrawal is not
+a live-round DNF action. These facts must not be papered over with invented scores.
 
-Validation passes 641 Rust/database tests covering authority, concurrency and
-history, plus 942 frontend tests, typecheck/lint/build, and three Chrome scenarios at mobile
-and desktop widths. The seeded schema-33 upgrade to 34 preserves existing players;
-fresh migrations and repeat seeding succeed. Independent source review has no
-remaining actionable findings. Full results and limits are in the
-[validation report](validation/player-claims-2026-10-08/README.md).
+Inspection verified the current net/round ownership, Stableford/four-ball score
+states, match provenance, round-opening lock, visibility and frontend invalidation
+boundaries. The plan calls for original/frozen handicap use, exactly four unique
+picks plus a selected captain, server-enforced locks, pre-deadline secrecy, atomic
+receipts and hidden-result noninterference in totals and rank.
 
-Deploy matching API/frontend with schema 34 and refreshed runtime grants. No
-email service or new environment setting is needed. This step does not send
-messages, merge accounts, revoke existing tournament access, restore withdrawals,
-or support withdrawal during live rounds. Production hosting remains user-owned.
+Validation passed for document/source consistency, arithmetic examples, six added
+local links/anchors, four-document scope and `git diff --check`. Independent
+read-only review reported no actionable findings. No Rust,
+frontend, database, browser or deployment checks are claimed: no runtime files
+changed. Implementation and the complete affected validation ladders remain
+future work requiring the next bounded user instruction.

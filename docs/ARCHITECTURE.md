@@ -2115,3 +2115,230 @@ Current evidence and limits are recorded in [LatestExplanation.md](LatestExplana
 Nine-hole/shotgun/extra-hole play, partner match variants, automatic brackets/byes,
 public match sharing, offline authoritative reports and handicap-system submission
 remain outside this variant.
+
+
+## Fantasy competition design (planned, not implemented)
+
+Status: user-approved product direction, recorded 2026-10-08. This section is a
+future design contract, not a claim that routes, tables or screens exist.
+[PLANS.md](PLANS.md) owns the bounded execution sequence and approval gates.
+The current application and schema 34 remain unchanged by this planning step.
+
+### Agreed game and scoring
+
+Fantasy is optional per tournament and has its own manager entries, selections,
+round standings and overall standings. It reads real tournament facts without
+altering golf scores, teams, handicaps, sporting standings or completion rules.
+A manager is an authenticated tournament member, independent of golf-player
+identity. Non-playing members may manage a Fantasy entry. Picks reference the
+existing tournament player, including an admin-prepared unclaimed player; later
+account claiming must not change the pick or create a second identity.
+
+For each round choose exactly four distinct eligible golfers, with exactly one
+of those four as captain. Different managers may choose the same golfers; selecting
+both partners is allowed. Free reselection each round, no budget, prices,
+transfer limit or transfer penalty. There are no automatic team assignments,
+auto-picks, bench, vice-captain, chips or captain substitutions in this version.
+
+Use net scoring with the round's existing handicap policy and preserved snapshots.
+Never recalculate from today's player handicap. Let d be the recorded net score
+minus the hole's par; Fantasy hole points are:
+
+| Recorded outcome | Fantasy points |
+| --- | ---: |
+| Actual hole-in-one | +10 |
+| Net albatross or better (d <= -3) | +10 |
+| Net eagle (d = -2) | +3 |
+| Net birdie (d = -1) | +1 |
+| Net par (d = 0) | 0 |
+| Net bogey (d = 1) | -1 |
+| Net double bogey (d = 2) | -2 |
+| Net triple bogey (d = 3) | -3 |
+| Net quadruple bogey or worse (d >= 4), or explicit pickup | -5 |
+
+Apply one category only. An actual ace always receives +10 even when its net
+category differs; never add an ace bonus on top of an albatross/eagle bonus.
+A net score of one alone is not evidence of a hole-in-one. The later user rule
+replaces the earlier -3 cap for triple-or-worse; the earlier +5 better-than-eagle
+category is replaced by +10 for albatross-or-better.
+
+Placement follows the round's official net competition standings, with shared
+competition positions (1, 2, 2, 4). Positions 1 through 8 receive respectively
+10, 8, 6, 5, 4, 3, 2, 1; positions 9 onward receive 0. Smaller fields use the same
+scale without invented positions; larger fields are not capped in capacity.
+Team placements are ranked once per real team, before awarding the same result
+to both partners. Nine two-player teams therefore mean nine placing units and
+18 selectable golfers, not an 18-player reranking of duplicated team results.
+
+A golfer's round points = placement points + sum of Fantasy hole points.
+A manager's round total = sum of four golfer results, multiplying the captain's
+whole result by two. Negative captain totals are doubled too. Overall Fantasy
+total = sum of every round total: no best-N, mandatory-round selection, dropped
+rounds or copied sporting-tournament tie-break. Equal Fantasy totals share rank;
+stable display order must not become an undisclosed tie-break.
+
+Non-finishers keep their recorded Fantasy hole points. Do not invent strokes,
+penalize unplayed holes, erase recorded points or award provisional placement
+as final. A non-finisher without an official completed placing gets no placement
+award. Missing data is pending, not a pickup or par. Fantasy cannot infer DNF
+from lack of score entry or from tournament withdrawal: the present withdrawal
+API deliberately rejects live-round participation. An explicit authoritative
+round non-finish disposition is needed before an incomplete result is treated as
+settled. Define that minimal boundary in FANTASY-1; do not silently relax sporting
+completion/withdrawal rules or create a general lifecycle-repair feature.
+
+### Format adapters and remaining decision gate
+
+All scheduled rounds must count. There is no first-release option to silently
+exclude match play or select only favorable formats. Match support remains an
+explicit rule gate before enabling the complete game, not permission to invent
+match placements or use stroke-play totals for a match.
+
+| Existing format | Planned Fantasy source |
+| --- | --- |
+| Individual stroke play | Actual numeric strokes, preserved per-hole net allocation and official net placing. |
+| Individual Stableford | Native net Stableford placing; hole categories from uncapped actual numeric strokes and net allocation, or explicit pickup (-5). Never reverse-engineer strokes from zero native points or `36 - points`. |
+| Scramble / foursomes | The shared team's recorded hole score and existing team net handicap calculation; identical hole and placement points for both round-specific partners. |
+| Four-ball | Existing per-hole counting net side result; identical side points for both partners. Inspect raw valid gross inputs for an actual ace, including an ace by the other partner from the net winner; award once per shared hole. One partner pickup cannot penalize a numeric counting side result. Both explicit no-scores can produce the shared pickup penalty; unresolved input stays pending. |
+| Singles match play | Unresolved: outcome-to-placement awards, full-handicap versus match-relative net allocation, numeric facts versus concessions/rulings, and legitimate early finishes. Never treat a conceded stroke or optional numeric note as proof of an actual ace. |
+
+For team rounds the shared side is the scoring unit, so both partners receive its
+recorded points. Do not manufacture separate individual strokes or infer when a
+partner personally stopped playing from a shared card. Match-play early finishes
+must not be confused with DNF or penalized as unplayed holes. The match decision
+must also handle gross-mode matches without changing their official gross rules:
+Fantasy's net promise needs its own explicitly agreed interpretation there.
+
+### Selection lifecycle and planned defaults
+
+These are proposed implementation defaults for matters not assigned special
+rules by the user; confirm the final contract in FANTASY-1.
+
+- Enable Fantasy before the first playing round; do not backfill historical
+  selections. Persist a versioned ruleset, frozen before the first lineup locks.
+  Turn off/cancel only through a deliberate audit-preserving policy, never by
+  deleting results. No arbitrary score-rule editor is required in version one.
+- Save one complete lineup atomically, with a revision and an idempotency key.
+  Reject fewer/more than four, duplicates, a captain outside the four, wrong-
+  tournament or ineligible entrants. Fewer than four eligible golfers gives an
+  explicit unavailable state, not placeholder or duplicated picks.
+- Default deadline is authoritative round opening; an optional earlier published
+  UTC deadline may close selections sooner. Use the server clock. Expiry at the
+  deadline is closed. A postponed round does not automatically reopen picks.
+  Deadline changes must never reopen revealed/locked selections.
+- Lock writes against the same round row as opening, then recheck live session,
+  membership, eligibility, revision, round state and current wall-clock deadline
+  before commit. Opening and a selection save have exactly one serial order.
+  Exact accepted-request replay may return its original receipt after lock;
+  a new or modified request must not use replay to submit late picks.
+- A manager sees their own lineup before lock. Other managers, including admins,
+  cannot inspect it through Fantasy APIs or exports until lock. After lock, current
+  tournament members can see lineups and captain. Administrators have no endpoint
+  to substitute another manager's picks or bypass the deadline.
+- Pick eligibility is rechecked on save and at effective close. Pre-close
+  withdrawals require replacement and a visible invalid-lineup state; no silent
+  substitution or captain promotion. Historical locked picks survive subsequent
+  withdrawal/account claiming. Resolve the invalid-at-close rule in FANTASY-1.
+- Picks are player identities, not permanent team identities. Shared scoring uses
+  the actual round's frozen partners at opening, preserving administrator-managed
+  pairing changes between rounds. Explain that relationship in the picker.
+- Proposed missed-lineup policy: a manager without a valid submitted lineup earns
+  0 for that round, visibly marked missed; no automatic carry-over. Late managers
+  cannot submit for past rounds. This can be advantageous when outcomes are
+  negative, so confirm it explicitly rather than hiding it as an arithmetic default.
+- Online-only selection submission and confirmation; do not queue a save that
+  could arrive after the deadline. An uncertain response is reconciled by reading
+  the accepted revision/receipt. Local input is never labelled submitted.
+
+### Result ownership, finality and privacy
+
+Create focused `domain/fantasy`, `repositories/fantasy`, `api/fantasy`, typed
+frontend API/decoder modules and `features/fantasy`. The server owns arithmetic;
+SQL enforces identity/uniqueness/lifecycle integrity rather than point formulas.
+Reuse verified existing net calculations and read necessary raw facts in batches.
+Do not expand every existing scoring DTO or duplicate the golf scoring engine.
+
+Proposed persistent entities: one game/ruleset per tournament, a manager entry
+keyed by tournament and user, round deadline/lock metadata, complete lineup
+revisions with four unique golfer references and a captain reference, and
+idempotency/audit receipts. Enforce tournament/round/player consistency with
+composite foreign keys; final schema must enforce complete lineups and captain
+membership at commit. Choose deletion behaviors deliberately: account access
+revocation must not erase historical lineups, and player claims must not remap
+manager identity. Do not equate Fantasy managers with tournament_players.
+
+Start with derived point projections from authoritative golf facts and immutable
+locked selections. Preserve source/result revisions in responses; if materialized
+results are later justified, version and update them atomically rather than
+maintaining an unverified second score ledger. Provisional placements are labelled,
+not irrevocable awards. A Fantasy round settles only when required source results
+are final or explicitly disposed; a locked round with unresolved Fantasy facts
+cannot be advertised as settled. Authorized sporting corrections recompute affected
+round and overall results without changing locked picks, with visible revision
+context. Pending or withheld totals are not silently coerced to zero.
+
+All reads require current tournament membership, private/no-store responses and
+transaction-consistent facts. Apply caller-authorized hole visibility before
+categories, progress, placement, captain multiplication, totals and ranking.
+Withhold placement and full-round contributions when their basis is hidden;
+overall can show a clearly labelled permitted/provisional total. Different hidden
+scores must yield identical allowed JSON, including rank/count/finality/revision
+metadata. Never expose a hidden final through Fantasy while merely hiding its
+hole breakdown. Existing anonymous results links do not gain Fantasy data.
+
+Publish committed lineup/configuration changes through structural invalidation.
+Golf score, correction, match and visibility signals must invalidate the Fantasy
+round and overall query family too. Add it to `api/liveInvalidation.ts`'s explicit
+score/visibility selectors and synchronous privacy clearing. Scope keys by current
+user, tournament and round; fence callbacks by mounted lifetime and canonical
+`authKeys.session`, including same-account renewal. Reauthorize on return and
+clear private projections on identity/authority loss.
+
+### UI and integration evidence
+
+Add a private Fantasy destination linked from the tournament and its management
+workspace. Main view: overall rank, manager, per-round totals, grand total and
+provisional/withheld state. Include a round leaderboard, My Four picker with an
+explicit captain marker, saved/unsaved/deadline feedback, and a per-golfer breakdown
+of net category, placement, captain factor and total. Managers can inspect why
+points changed. On phones, use a readable list/round switcher rather than forcing
+all round columns into a narrow table. Show rules and all-round inclusion clearly.
+
+Current integration seams verified for this plan:
+
+- `domain/leaderboards/round/` for format-specific net ownership/placement;
+  `repositories/leaderboards/load.rs` for batched facts. Its four-ball loader
+  currently drops explicit no-score rows: reuse/refactor the needed boundary,
+  not the incomplete aggregate as a Fantasy scoring source.
+- `domain/stableford` and `domain/four_ball_card` for explicit score states;
+  `domain/match_play` for report and concession provenance.
+- `repositories/round_lifecycle/opening.rs` and `tournament_authorization.rs`
+  for round-lock serialization and reauthorization.
+- `domain/score_visibility.rs` and private leaderboard wrappers for embargoes;
+  `frontend/src/api/liveInvalidation.ts` for score/match/visibility/return refresh.
+- `frontend/src/router.tsx`, `pages/TournamentPage.tsx` and
+  `features/tournaments/TournamentManagementSections.tsx` for private navigation.
+
+Acceptance examples to turn into tests during the corresponding implementation:
+
+| Case | Required result |
+| --- | --- |
+| Par 4, gross 5, two received strokes | Net birdie: +1. |
+| Net +2 / +3 / +4 / +8 | -2 / -3 / -5 / -5. |
+| Explicit pickup versus blank | -5 versus pending; never the same state. |
+| Actual gross 1 also qualifies as net albatross | +10 once, or +20 when captained. |
+| Net 1 on a par 3 from gross 3 | Net eagle +3; no physical-ace award. |
+| Second place, two birdies, an eagle, three bogeys, one double | 8 + 2 + 3 - 3 - 2 = 8; captain = 16. |
+| One team's result is 12; both partners selected, one captain | 24 + 12 = 36 across two slots. |
+| Captain's total is -4 | -8, with no zero floor. |
+| Net tied second teams | Both get 8 per partner; next team is fourth (5). |
+| Nine teams, 18 golfers; then smaller/larger fields | Rank teams once; unchanged points table and four unique picks. |
+| Non-finisher has +1, -3 and pickup recorded | Keeps -7; no invented remaining-hole penalties or placement award. |
+| Manager changes captain between rounds | Each round retains its own locked captain. |
+| User claims a selected prepared golfer after lineup lock | Same selected player and points; no extra manager entry. |
+| Hidden back-nine scores change | Identical permitted Fantasy totals/ranks/metadata. |
+| Selection competes with opening, expiry or membership revocation | Atomic accepted save or explicit rejection; no partial/late lineup. |
+
+Match outcomes/concessions, DNF settlement and invalid/missed selections require
+additional signed-off examples in FANTASY-1. This contract is not runtime
+validation; the affected full ladders and real browser acceptance remain future work.

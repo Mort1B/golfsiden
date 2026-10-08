@@ -1,5 +1,16 @@
 # Project documentation
 
+## Planned Fantasy side competition
+
+Fantasy is planned, not currently available. The agreed game has four selections
+per round, a double-points captain, net hole/placement points, shared team results
+and a separate all-round leaderboard. Explicit pickups and net quad bogey or
+worse are -5; non-finishers keep recorded hole points. No application or schema
+changes were made by this plan. The current runtime still uses schema 34.
+See the [execution plan](PLANS.md#next-candidate) and
+[planned rule contract](ARCHITECTURE.md#fantasy-competition-design-planned-not-implemented)
+for the complete rules, remaining decisions and implementation gates.
+
 ## Current product state
 
 The application is a private, mobile-first tournament workspace backed by a
