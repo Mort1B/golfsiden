@@ -2,6 +2,7 @@
 //! No input type here proves database authorization, locking or source-token freshness.
 pub mod holes;
 pub mod matches;
+pub mod projection;
 pub mod rounds;
 pub mod selections;
 pub mod totals;
@@ -15,7 +16,7 @@ pub struct ManagerId(pub Uuid);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RoundId(pub Uuid);
 
-/// Opaque owner-wide fingerprint from the future authoritative adapter. It must
+/// Opaque owner-wide fingerprint from the authoritative persistence adapter. It must
 /// include owner/round, preserved inputs, confirmations and a retained generation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SourceToken(pub [u8; 32]);

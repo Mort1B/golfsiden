@@ -2119,9 +2119,9 @@ remain outside this variant.
 
 ## Fantasy competition design
 
-Status: FANTASY-2 domain rules and FANTASY-3 persistence/private selection APIs
-are implemented at schema 37. Result projection APIs, UI and release acceptance
-remain planned; the complete game is not yet available in the application.
+Status: FANTASY-2 domain rules, FANTASY-3 persistence/private selection APIs and
+FANTASY-4 round/overall result APIs are implemented at schema 37. UI and release
+acceptance remain planned; the complete game is not yet available in the application.
 [PLANS.md](PLANS.md) owns the next bounded step. Sporting scoring and completion
 rules remain unchanged.
 
@@ -2138,7 +2138,8 @@ Manager identity references the user, not a golf-player or team identity.
 checks, receipt replay and lazy closure; `api/fantasy` owns typed extraction,
 CSRF/no-store/error mapping and post-commit notifications. The
 [private API inventory](Documentation.md#fantasy-selection-api) describes the
-currently callable contracts. No result adapter or frontend route is connected.
+currently callable selection contracts; the [result inventory](Documentation.md#fantasy-results-api)
+describes authoritative projections. No frontend Fantasy route is connected.
 
 Closure uses the earlier published deadline or authoritative draft-to-open
 timestamp. Due windows materialize in effective-time order, then round order.
@@ -2171,8 +2172,11 @@ matches take precedence. These records do not change sporting scores or completi
 
 Round responses bulk-load receipts. First materialization still performs per-entry
 resolution and writes for each due round under tournament round locks; subsequent
-reads reuse locked selections. Large-field closure latency has not been benchmarked.
-Bulk projection work must revisit this cost before claiming large-field capacity.
+reads reuse locked selections. Local debug fixtures with three scheduled rounds
+measured first/repeated result reads at 59/32 ms for 9 teams and 18 manager entries,
+and 108/52 ms for 20 teams and 40 entries. These fixtures have one played round,
+one submitted lineup and otherwise missed selections; they do not establish
+worst-case carry-forward latency or production capacity.
 
 ### Implemented pure domain foundation
 
@@ -2187,8 +2191,8 @@ Bulk projection work must revisit this cost before claiming large-field capacity
   settle only when the field is settled; until then their finisher-only placement
   is provisional. Incomplete cards retain recorded points and remain unranked.
   A matching opaque owner source token settles a non-finish without placement;
-  stale dispositions return pending. Persistence now generates owner source tokens;
-  result adapters must still supply them to these pure functions.
+  stale dispositions return pending. Persistence generates owner source tokens and
+  the result adapters supply them to these pure functions.
 - `matches` consumes the existing accepted `MatchState` and confirmation,
   awarding only +3/+1/-1. Notes/strokes cannot add points; accepted results take
   precedence over a prior non-finish disposition.
@@ -2205,14 +2209,55 @@ and `Withheld`. Explicit future rounds allow provisional earned-to-date overall
 ranks; an absent expected contribution remains pending, never final zero. Pending
 subtotals are not complete totals and receive no rank. Withheld contributions
 conservatively suppress their totals and board ranks rather than estimating
-hidden results. Both complete and partial projections require future adapters to
-apply caller visibility before supplying facts; no transport projection is wired.
+hidden results. Result adapters apply caller visibility before supplying facts.
 
-Future result adapters must supply the authoritative tournament roster/round
-inventory and preserved visible score facts. Persistence now supplies deadline
-eligibility, receipts and fresh owner source tokens. Pure unit tests exercise
-arithmetic; separate PostgreSQL/API tests exercise authorization, persistence and
-locking. Neither suite makes the unfinished UI available.
+### Implemented result projection boundary
+
+`domain/fantasy/projection` converts typed, preserved format facts into the existing
+pure scoring functions. Individual and four-ball rounds use frozen playing
+handicaps; scramble uses frozen course handicaps and its allowance; foursomes uses
+the frozen team handicap. Stableford placement uses native net points while hole
+categories use uncapped actual strokes. Four-ball requires both raw partner inputs:
+a missing partner remains unresolved even if sporting confirmation exists. Both
+pickups earn the shared penalty but do not fabricate a numeric finishing result.
+Match projection validates the accepted ledger with its configured mode and
+preserved opponent snapshots, then awards only the accepted outcome.
+
+`repositories/fantasy/results` owns transaction-consistent bulk reads, receipt
+integration and permitted response assembly. It locks tournament rounds in stable
+UUID order inside a repeatable-read transaction, checks current authorization,
+materializes due selection windows, validates scoped targets and rechecks the
+session before commit. Invalid scoped reads roll back any lazy materialization.
+The loader reads roster, rounds, owners and canonical source facts in bulk;
+projection query count does not grow per owner. First closure still has the
+per-entry resolution/write cost described above. The bulk source query preserves
+FANTASY-3 canonical JSON keys and ordering, verified against a frozen query fixture,
+so existing disposition fingerprints remain valid. No award ledger, cache or
+background worker is introduced.
+
+All tournament golfers, including historical withdrawn or unselected golfers,
+and all scheduled rounds belong to the projection inventory. The participation
+wrapper distinguishes future rounds, explicit nonparticipation and missing
+required results. Entirely future or nonparticipating entries have no earned rank;
+nonparticipation contributes no points to an otherwise earned season total. A
+current non-finish disposition omits unplayed holes without penalties or placement;
+stale dispositions become pending and natural confirmed results take precedence.
+Manager contributions alone apply the captain multiplier, including negatives.
+
+The loader removes hidden source tokens and dispositions before domain projection;
+hidden holes, settlement, sporting status and ranks cannot reveal concealed results.
+Result revisions hash only the caller-permitted serialized response, so hidden-only
+mutations leave the whole permitted response unchanged. Pre-lock manager breakdowns
+expose only the caller's lineup. Private no-store APIs return explicit state-tagged
+points and publish tournament invalidation after newly materialized selections
+commit. Existing score, match and visibility invalidations remain authoritative;
+FANTASY-5 must connect the frontend query family to them. Round notifications use
+the tournament ID as scope and the round ID as resource identity.
+
+Pure unit tests exercise arithmetic; PostgreSQL/API tests exercise all format
+adapters, source-token compatibility, authorization, temporal selections, hidden
+noninterference and transaction effects. Neither suite makes the unfinished UI
+available.
 
 ### Agreed game and scoring
 
@@ -2297,7 +2342,7 @@ placement scoring: its entire Fantasy award is +3 for a win, +1 for a draw and
 points or additional win bonuses. This later user decision supersedes the earlier
 proposal to retain earned hole points when a match ends early.
 
-| Existing format | Planned Fantasy source |
+| Existing format | Implemented Fantasy source |
 | --- | --- |
 | Individual stroke play | Actual numeric strokes, preserved per-hole net allocation and net placing. |
 | Individual Stableford | Native net Stableford placing; hole categories from uncapped actual numeric strokes and net allocation, or explicit pickup (-5). Never reverse-engineer strokes from zero native points or `36 - points`. |
@@ -2377,7 +2422,7 @@ silently ignore edits or erase earned points. Reversals and locked-round changes
 require an explicit reasoned administrator correction, preserving prior versions.
 Emit invalidation only after commit and apply the normal visibility rules to
 settlement status/revisions as well as points. FANTASY-3 stores this metadata;
-FANTASY-4 will resolve it and FANTASY-5 will expose the admin UI. Sporting DNF
+FANTASY-4 resolves it and FANTASY-5 will expose the admin UI. Sporting DNF
 completion is a separate feature and is not introduced by this contract.
 
 ### Selection lifecycle

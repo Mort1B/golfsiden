@@ -1,62 +1,66 @@
-# Persist Fantasy games and round selections
+# Authoritative Fantasy results
 
-FANTASY-3 adds private selection APIs and PostgreSQL persistence at schema 37.
-Members can enter an enabled game, save four golfers and a captain, recover an
-accepted save by retrying its request ID, and automatically carry eligible picks
-forward. Administrators configure games/deadlines and record audited non-finish
-dispositions. Fantasy result APIs and screens are still planned; this is not yet
-a playable game in the UI.
+FANTASY-4 adds private round and overall Fantasy leaderboards, with separate
+manager and golfer standings and detailed golfer/manager breakdowns. Results use
+preserved net scores, current accepted match outcomes and the locked selections
+from FANTASY-3. Schema remains 37. The Fantasy screens are the next step; these
+APIs alone do not make the game playable in the application.
 
-The database enforces complete lineups, captain membership, tenant identity and
-immutable receipts. Deadline closure uses the earlier published UTC deadline or
-actual golf-round opening. Temporal membership and golfer eligibility make lazy
-closure reflect the deadline itself. For example, a golfer withdrawn after a
-09:00 deadline still belongs to a valid lineup at that deadline even if the first
-read occurs at 09:15. A later round can carry that lineup only if all four are
-eligible at its own deadline. Captains and source-round provenance are preserved.
+Non-match adapters cover individual stroke play, Stableford, scramble, foursomes
+and four-ball. Teams receive placement once, then both partners receive the shared
+hole and placement points. Nine two-person teams therefore have nine placing
+units and 18 golfer rows. Stableford uses native net placement and uncapped actual
+strokes for Fantasy holes. Four-ball distinguishes unresolved partner input from
+explicit pickup and checks both raw inputs for a physical ace. Match play awards
+only +3/+1/-1, including early concessions and corrected outcomes.
 
-Pre-lock reads expose only the caller's lineup, including for administrators.
-After lock, current members can read participating selections. No entry can
-backfill a closed round. Accepted retries return their original receipt; changed
-bodies or revisions conflict. All routes use the existing authentication/CSRF
-boundaries, private no-store responses and post-commit invalidation.
+Captains double the entire manager contribution, including negative scores;
+golfer standings always retain base points. One test has base results of 22 and
+−58, plus two non-finishers with zero recorded points: captaining the −58 golfer
+produces a manager total of −94 while that golfer remains at −58. All scheduled
+rounds count, with future rounds, explicit nonparticipation, pending data,
+provisional results and settled results distinguished. An entirely future entry
+has no earned rank. Current non-finish dispositions retain recorded points and
+mark unplayed holes as omissions; stale dispositions return pending.
 
-Non-finish records bind to a canonical full-source token and retained mutation
-generation. Score changes, either four-ball partner, Stableford input, confirmation
-and accepted match changes invalidate earlier tokens. Empty cards and deleted
-inputs retain protection against stale re-attestation. Only exact administrators
-can read these tokens or write dispositions; locked changes, replacements and
-reversals require explicit corrections with reasons. This does not complete the
-golf round or override confirmed cards/accepted match results. Future projection
-work will apply these records to the tested domain scoring rules.
+Result reads use consistent bulk facts and the existing temporal selection
+closure. Scoped missing targets roll back any lazy closure. Pre-lock reads keep
+other managers' picks private. Hidden final-round facts are filtered before
+points, settlement, ranking and response revision calculation. Tests compare
+whole member responses through concealed score and match changes, confirmations
+and corrections. Canonical source-token compatibility with FANTASY-3 is tested
+against its frozen query, so batching does not invalidate existing dispositions.
+
+Review also corrected the existing Fantasy round notifications to use tournament
+scope and round resource identity. New result routes map malformed UUID paths to
+the normal JSON error contract. Regression tests cover both fixes, scoped-read
+rollback and non-finish omission states. Read-only scoring/owner and API/privacy
+reviews have no outstanding source findings.
 
 Validation:
 
-- Backend default ladder: 249 tests passed (247 library, two CLI).
-- Final database ladder: 695 tests passed, including the 20 new Fantasy tests.
-- Focused Fantasy PostgreSQL coverage: 20 tests, including controlled lock-wait
-  deadline/revocation/activity races, real opening, pre-lock privacy, exact replay,
-  carry-forward, membership moves, all format source generations and direct guards.
-- A populated schema-34-to-37 upgrade preserved exact player/round/tournament
-  contents; migration replay and repeated seed passed. Fresh final migrations and
-  CLI seed twice passed on disposable PostgreSQL 17.
-- Restricted non-owner role exercised configure/entry/save/lock/carry/open,
-  non-finish recording and later score invalidation. Runtime role initialization
-  and grant refresh passed, with only the disposable hostname substituted for
-  Compose's `postgres`; actual runtime login cannot write migration history.
-- Formatting and strict all-target/all-feature Clippy passed. Read-only schema,
-  API and durable-documentation reviews have no outstanding findings.
+- Default backend tests: 249 passed.
+- Focused PostgreSQL run: 36 tests passed across ten Fantasy suites, including
+  17 new result tests and existing selection, race, source and runtime-role tests.
+- Strict all-target/all-feature Clippy passed. Existing vendored SQLx warnings
+  remain; the new test fixture's collection lint was corrected.
+- Full PostgreSQL backend ladder: 712 tests passed, including existing sporting
+  regressions and the populated schema upgrade test. Migration replay and CLI seed
+  twice passed on disposable PostgreSQL 17; schema remains 37.
+- Formatting, whitespace checks, 92 local Markdown links and the production-file
+  size limit passed. Final read-only contract/documentation review found no
+  discrepancies.
 
-The first full database run caught a new identity guard blocking an existing
-password-recovery membership move. The fix records old/new membership history
-without changing recovery authority serialization; all 20 recovery tests pass.
-Review also closed direct timestamp fabrication and concurrent player-activity/
-roster history races. Two Clippy findings and one new test fixture's missing
-required display name were repaired. Existing vendored SQLx warnings remain.
+Informational local debug measurements on disposable PostgreSQL 17 were 59 ms for
+the first result read and 32 ms for the repeat with 9 teams/18 manager entries;
+20 teams/40 entries measured 108/52 ms. Each fixture has three scheduled rounds,
+one played round, one submitted lineup and otherwise missed selections. These
+single measurements do not establish production capacity or worst-case
+carry-forward latency. Projection facts load in bulk, while first closure still
+resolves and writes per entry.
 
-No frontend or browser checks ran because this step adds no screens or frontend
-contracts. No production deployment or new restore rehearsal was performed.
-Large-field closure latency is unmeasured: first materialization resolves/writes
-per entry under tournament round locks, while subsequent reads reuse selections
-and bulk-load receipts. The [next candidate](PLANS.md#next-candidate) is FANTASY-4:
-authoritative round/overall result projections, including the golfer points board.
+No frontend or browser validation ran because this step changes no frontend code
+or screens. No production deployment or new restore rehearsal was performed.
+The [next candidate](PLANS.md#next-candidate) is FANTASY-5: the complete mobile-first
+Fantasy UI, including live query invalidation and round/overall manager and golfer
+standings.

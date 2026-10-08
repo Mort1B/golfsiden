@@ -5,34 +5,33 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None.
+None. The next candidate requires a separate user instruction.
 
 ## Next candidate
 
-**FANTASY-4 — authoritative round and total projections.**
-See the [Fantasy contract](ARCHITECTURE.md#fantasy-competition-design).
+**FANTASY-5 — complete mobile-first Fantasy UI.**
+See the [Fantasy contract](ARCHITECTURE.md#fantasy-competition-design) and the
+[implemented APIs](Documentation.md#fantasy-backend-screens-planned).
 
-- Goal: expose current private Fantasy results from authoritative golf facts and
-  the persisted selections, with separate manager and golfer standings.
-- Scope: bulk format fact adapters, private round/overall/breakdown APIs, source
-  and visibility integration, backend/database tests and affected documentation.
-  Reuse FANTASY-2 domain rules and FANTASY-3 temporal selections/source tokens.
-- Behavior: include every tournament golfer regardless of selection; captain
-  multipliers apply only to manager totals. Apply preserved net calculations,
-  team ranking once before attribution, outcome-only match awards, independent
-  Fantasy settlement, finisher-only placement and correction recomputation.
-  Project permitted facts before every aggregation; publish post-commit
-  invalidation and label pending/provisional/settled/withheld states explicitly.
-- Invariants: all-round totals; immutable locked picks; preserved handicap/team
-  snapshots; no hidden-result inference through totals, ranks or metadata; no
-  fabricated scores or pending-as-zero awards; no sporting lifecycle changes.
-- Validation: 9-team and smaller/larger fields, every supported format and round,
-  hidden-result noninterference, corrections and disposition staleness, bulk read
-  behavior and unrelated sporting regressions; complete backend/database ladders,
-  read-only review and documentation checks. Revisit first-close per-entry cost
-  before claiming large-field capacity.
-- Stop: reviewed authoritative result contracts and published validation evidence.
-  No frontend, deployment or queued work in this step.
+- Goal: make the complete private Fantasy game usable inside its tournament.
+- Scope: strict runtime decoders, user/tournament-scoped queries, navigation,
+  admin setup and non-finish settlement, My Four, manager and golfer standings
+  and breakdowns, frontend tests and affected documentation.
+- Behavior: submit four picks and a captain with deadline/revision handling;
+  show carry-forward preview and locked origin; expose round and all-round
+  manager/golfer boards with explicit pending, provisional, settled, withheld,
+  future and nonparticipating states. Connect score/match/visibility and Fantasy
+  invalidations, return refresh and session clearing. Handle uncertain saves,
+  stale edits, expired deadlines, denied access and missed/invalid selections.
+- Invariants: preserve pre-lock lineup privacy and hidden-result noninterference;
+  server-authoritative deadlines, selections and scoring; captain multipliers
+  only on manager contributions; all scheduled rounds count; no offline writes.
+- Validation: full frontend ladder; real Chrome at 320/390/1280 widths with
+  loading/error/empty/populated/long-content states and API-backed selection,
+  settlement, standings, privacy, correction and return/session flows. Run any
+  additionally affected backend/database checks and resolve read-only review.
+- Stop: usable complete game, documented and published. Do not start release
+  acceptance or administer production hosting in this step.
 
 ## Fantasy implementation queue
 
@@ -40,17 +39,7 @@ Execute one bounded step after a separate user instruction; this is sequencing,
 not permission to run the whole queue. Revalidate the checkout and detailed
 scope at each intake. A partial foundation is not a playable feature.
 
-1. **FANTASY-5 — complete mobile-first Fantasy UI.** Add strict runtime decoders,
-   queries scoped to user/tournament, tournament navigation, admin setup/non-finish settlement, My
-   Four, carry-forward preview/origin and captain/deadline submission, manager
-   and golfer round/overall standings and explanations. Include Fantasy in
-   score/match/visibility invalidation and return/session clearing. Handle
-   loading/error/empty/populated/long content, stale edits, denied access,
-   uncertain saves, expired deadlines and missed/withheld results. Validate
-   full frontend ladder plus real Chrome at 320/390/1280 and API-backed flows.
-   Stop with a usable complete game, not a mock or disconnected picker.
-
-2. **FANTASY-6 — release acceptance and documentation.** Exercise a multi-round
+1. **FANTASY-6 — release acceptance and documentation.** Exercise a multi-round
    tournament with 9 two-person teams plus smaller/larger fixtures, changing
    partners/picks/captains and actual/net ace distinctions. Test the whole
    lifecycle, early-finished matches receiving outcome-only points, golfer

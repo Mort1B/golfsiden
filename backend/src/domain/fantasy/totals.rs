@@ -137,7 +137,7 @@ pub struct Standing<Id> {
     pub rank: Option<usize>,
 }
 
-fn standings<Id: Copy + Ord>(
+pub(crate) fn standings<Id: Copy + Ord>(
     expected_rounds: &[RoundId],
     roster: &[Id],
     entries: &[SeasonEntry<'_, Id>],

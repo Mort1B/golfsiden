@@ -19,7 +19,7 @@ Do not skip intermediate migrations when upgrading an older installation.
 
 | Change | Deployment requirement |
 | --- | --- |
-| Fantasy private selections and non-finish persistence | Schemas 35–37 and refreshed runtime grants; result APIs/UI remain planned |
+| Fantasy private selections, settlement and result APIs | Schemas 35–37 and refreshed runtime grants; Fantasy screens remain planned |
 | Admin-created players, personal claim links and withdrawal | Schema 34, refreshed runtime grants and matching API/frontend |
 | Draft tournament name, description and date editing | Schema 33, refreshed runtime grants and matching API/frontend |
 | Offline return to the last opened scorecard | Updated frontend against the schema-33 API; no further migration or configuration |
@@ -458,7 +458,17 @@ Apply `0035_fantasy_selections.sql`, `0036_fantasy_sources.sql` and
 grants before starting the matching API. No new secret, worker or scheduler is
 required. Games are opt-in: migrations do not enable Fantasy or create manager
 entries for existing tournaments. Enable only while all rounds are draft and
-before any Fantasy window expires. There is no Fantasy screen or result API yet.
+before any Fantasy window expires. Private selection, settlement, round/overall
+results and golfer/manager breakdown APIs are available; Fantasy screens remain
+planned.
+
+FANTASY-4 adds these result APIs without a new migration, configuration setting,
+worker or grant. Deploy the updated API against schema 37 using the existing
+runtime permissions. Canonical source fingerprints remain compatible with existing
+non-finish dispositions. Results derive from current preserved facts rather than
+a persisted award cache; authorized score corrections appear on subsequent reads.
+The unchanged frontend does not yet expose Fantasy or subscribe Fantasy queries
+to score/match/visibility invalidations.
 
 The migrations retain current roster/member facts in new temporal histories and
 install integrity/source-generation triggers. Existing sporting records are not

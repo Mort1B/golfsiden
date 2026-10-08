@@ -15,14 +15,8 @@ async fn fingerprint(
     if !valid {
         return Err(Error::Invalid);
     }
-    let facts: Value = sqlx::query_scalar(include_str!("source_facts.sql"))
-        .bind(r)
-        .bind(kind.as_str())
-        .bind(owner)
-        .fetch_one(&mut **tx)
-        .await?;
-    let encoded = serde_json::to_vec(&facts).map_err(|_| Error::Invalid)?;
-    Ok(Sha256::digest(encoded).into())
+    let mut facts = bulk_facts(tx, &[(r, kind.as_str().to_owned(), owner)]).await?;
+    hash_facts(&facts.pop().ok_or(Error::Invalid)?.facts)
 }
 async fn latest(
     tx: &mut Transaction<'_, Postgres>,
@@ -109,4 +103,30 @@ pub async fn dispose(
             .is_some_and(|d| d.source_token.as_slice() == token),
         disposition,
     })
+}
+
+#[derive(sqlx::FromRow)]
+pub(super) struct SourceFacts {
+    pub round_id: Uuid,
+    pub owner_kind: String,
+    pub owner_id: Uuid,
+    pub facts: Value,
+}
+pub(super) fn hash_facts(facts: &Value) -> Result<[u8; 32], Error> {
+    let encoded = serde_json::to_vec(facts).map_err(|_| Error::Invalid)?;
+    Ok(Sha256::digest(encoded).into())
+}
+pub(super) async fn bulk_facts(
+    tx: &mut Transaction<'_, Postgres>,
+    owners: &[(Uuid, String, Uuid)],
+) -> Result<Vec<SourceFacts>, Error> {
+    let rounds: Vec<_> = owners.iter().map(|o| o.0).collect();
+    let kinds: Vec<_> = owners.iter().map(|o| o.1.as_str()).collect();
+    let ids: Vec<_> = owners.iter().map(|o| o.2).collect();
+    Ok(sqlx::query_as(include_str!("source_facts.sql"))
+        .bind(rounds)
+        .bind(kinds)
+        .bind(ids)
+        .fetch_all(&mut **tx)
+        .await?)
 }

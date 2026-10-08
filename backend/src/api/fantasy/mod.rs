@@ -1,4 +1,5 @@
 mod handlers;
+mod results;
 use crate::{AppState, error::ApiError, repositories::fantasy::Error as RepositoryError};
 use axum::{
     Router,
@@ -11,6 +12,22 @@ use axum::{
 use std::sync::Arc;
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
+        .route(
+            "/api/tournaments/{t}/fantasy/results",
+            get(results::overall),
+        )
+        .route(
+            "/api/tournaments/{t}/fantasy/rounds/{r}/results",
+            get(results::round),
+        )
+        .route(
+            "/api/tournaments/{t}/fantasy/results/golfers/{p}",
+            get(results::golfer),
+        )
+        .route(
+            "/api/tournaments/{t}/fantasy/results/managers/{u}",
+            get(results::manager),
+        )
         .route(
             "/api/tournaments/{t}/fantasy",
             get(handlers::game).put(handlers::configure),

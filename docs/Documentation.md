@@ -1,19 +1,19 @@
 # Project documentation
 
-## Fantasy persistence; result integration planned
+## Fantasy backend; screens planned
 
-Fantasy has tested backend scoring rules and private selection APIs. It is not
-available as a complete game in the UI: result projection APIs and screens are
-still planned. Schema 37 is required. The agreed game remains four golfers each
+Fantasy has private selection, round/overall result and breakdown APIs. It is not
+available as a complete game in the UI: screens are still planned. Schema 37 is
+required. The game uses four golfers each
 round, a double-points captain, shared team results and separate manager/golfer
 round and overall leaderboards. Non-match rounds use net hole and placement points;
 pickups and net quad bogey or worse are -5. Non-finishers keep recorded points.
 Match play uses only the accepted result: win +3, draw +1, loss -1. Captain
 outcomes are +6/+2/-2, and every round contributes to the eventual total.
 
-The backend now stores entries, accepted lineups, deadline locks, carry-forward
-copies and admin non-finish records. It does not yet turn sporting scores into
-live Fantasy result responses. See the [next step](PLANS.md#next-candidate) and
+The backend stores entries, accepted lineups, deadline locks, carry-forward
+copies and admin non-finish records, and derives results from preserved golf
+facts. See the [next step](PLANS.md#next-candidate) and
 [full contract](ARCHITECTURE.md#fantasy-competition-design).
 
 ### Fantasy selection API
@@ -80,8 +80,8 @@ To record a non-finish, read the current source token and POST it with
 reason. Draft rounds are unavailable; confirmed cards and accepted terminal
 matches cannot be overridden. Source changes make an old disposition stale;
 refresh and explicitly review it. This records Fantasy settlement intent without
-completing the sporting round or changing golf scores. Result application follows
-in the projection step.
+completing the sporting round or changing golf scores. Result reads apply a
+current disposition and keep stale dispositions pending until reviewed.
 
 Errors keep `{error: {code, message}}`. Invalid bodies/lineups return 400;
 authentication, CSRF and membership use existing 401/403/404 behavior. State
@@ -89,6 +89,94 @@ conflicts return 409 with `fantasy_unavailable`, `fantasy_closed` or
 `fantasy_conflict`. Refresh before retrying a changed-state conflict. Successful
 writes and newly materialized closure publish structural SSE invalidations only
 after commit. No anonymous sharing or offline selection queue is added.
+
+### Fantasy results API
+
+These read-only result contracts use the same `/api/tournaments/{tournament_id}/fantasy`
+prefix and current member/no-store authorization as selections. Reading results
+may materialize due selection locks atomically; only newly materialized closure
+emits a post-commit tournament invalidation. Unknown round, golfer or manager
+targets return 404 without committing closure. Malformed result-path UUIDs return
+the JSON error envelope. A disabled or missing game returns `fantasy_unavailable`.
+
+| GET suffix | Response |
+| --- | --- |
+| `/results` | `tournament_id`, `rules_version`, `revision`, ordered `rounds`, and overall `golfers`/`managers` boards |
+| `/rounds/{round_id}/results` | `tournament_id`, `revision`, `round` summary, golfer and manager round boards |
+| `/results/golfers/{player_id}` | `tournament_id`, `revision`, overall `standing`, and ordered `{round, result}` breakdowns |
+| `/results/managers/{user_id}` | The corresponding manager standing and per-round breakdowns |
+
+Each overall standing has `id`, `display_name`, `points`, nullable `rank`, and
+ordered `{round_id, points}` contributions. Every tournament golfer is included,
+even when unselected or subsequently withdrawn. All scheduled rounds count;
+tournament best-N and mandatory-round rules do not apply. Equal earned totals
+share competition rank; UUID order only makes tied/unranked display stable.
+An entry without a played contribution has no earned rank.
+
+`points` is a tagged object with `state`:
+
+| State | Additional value and meaning |
+| --- | --- |
+| `not_started` | Scheduled sporting round remains draft, even if Fantasy picks locked earlier |
+| `not_participating` | Known absence from that round's frozen field or Fantasy participation; no invented score |
+| `pending` | `recorded`: permitted subtotal, not a complete total; no rank |
+| `provisional` | `total`: calculable but not fully settled |
+| `settled` | `total`: settled under the current authoritative facts; corrections may recompute it |
+| `withheld` | No hidden subtotal, finality or revision information |
+| `omitted_non_finish` | Hole-only state for an unplayed hole covered by a current non-finish disposition |
+
+Pending aggregate subtotals can contain other provisional contributions; they
+are not necessarily sums of hole points alone. Future rounds keep earned overall
+totals provisional. Known non-participation contributes nothing to the total;
+missing participant inputs remain pending. Missed/invalid locked lineups are the
+explicit zero-point exception. Captain multipliers apply only to manager results,
+including negative totals; golfer boards always show base points.
+
+A round summary contains `round_id`, `round_number`, `name`, `format`, nullable
+`sporting_status`, `visibility` (`mode: full` or `front_nine`), and `points`.
+Its points summarize the field's combined golfer contributions and finality;
+shared team contributions appear once per partner in this field sum. Sporting
+status is distinct from Fantasy settlement and is suppressed for concealed rounds.
+
+Golfer round rows contain `player_id`, `display_name`, `points`, nullable `rank`
+and `team_id`, `holes`, nullable `recorded_hole_points`, `placement_points`,
+`settlement`, and `match_outcome`. Each hole has `hole_id`, `hole_number`, `par`,
+nullable `category`/`net_strokes`, and `points`. Categories use snake-case names
+from `ace` and `albatross_or_better` through `quadruple_or_worse` and `pickup`.
+`recorded_hole_points` is the permitted hole subtotal, excluding placement.
+Settlement is `playing`, `unconfirmed`, `confirmed`, `non_finish`,
+`stale_non_finish`, or `withheld`; absence of a result has null settlement.
+Match outcomes are `win`, `draw` or `loss`, with no hole-category or placement award.
+
+Manager rows contain `user_id`, `display_name`, `points`, nullable `rank`,
+`selection_state`, nullable `lineup`, and `contributions`. A visible lineup has
+`picks`, `captain`, `origin` and nullable `source_round`; each contribution has
+`player_id`, `captain`, `multiplier`, `base_points` and multiplied `points`.
+Before lock, other managers' lineups remain null and contributions empty, even
+for admins. Result selection states include `unlocked`, the persisted locked/
+missed/invalid/not-participating states, and `pending` for unresolved selection data.
+
+Placements rank complete net finishing owners once before crediting partners.
+Four-ball needs both partners' input states resolved for a Fantasy hole: an
+absent partner stays pending, one explicit pickup can accompany a numeric counting
+result, and both pickups earn -5 but do not create a numeric placing result.
+A sporting-confirmed four-ball card can therefore remain Fantasy-pending.
+Stableford placement uses native net points while Fantasy holes use uncapped
+actual strokes or explicit pickup. Match results use the accepted sporting ledger,
+including early concessions and rulings; numeric notes add no Fantasy points.
+
+Hidden final-round holes are withheld before calculation. Only exact admins
+bypass the existing visibility policy. Non-admin front-nine breakdowns may show
+permitted holes, but full placement/round totals and affected overall totals are
+withheld; board ranks are suppressed when hidden contributions could influence
+them. Hidden matches expose no outcome award. `revision` fingerprints only the
+caller-permitted response, so hidden-only edits, confirmation and correction
+cannot change the permitted JSON or its revision. Raw source tokens and disposition
+audit details remain restricted to the admin settlement endpoints.
+
+Result projections are recomputed from current preserved facts. Existing score,
+match and visibility SSE events, plus Fantasy structural events, identify when
+clients should refresh; the Fantasy UI/query-family integration is the next step.
 
 ## Current product state
 

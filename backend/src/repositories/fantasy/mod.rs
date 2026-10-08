@@ -2,6 +2,7 @@ mod config;
 mod lifecycle;
 mod lineups;
 mod models;
+pub mod results;
 mod sources;
 
 use crate::repositories::{

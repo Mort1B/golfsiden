@@ -137,6 +137,14 @@ async fn restricted_runtime_role_saves_carries_and_records_dispositions(pool: Pg
     .unwrap();
     assert_ne!(changed.source_token, disposition.source_token);
     assert!(!changed.disposition_current);
+    let result =
+        fantasy::results::round_results(&runtime, f.base.session, f.base.tournament, f.rounds[1])
+            .await
+            .unwrap();
+    assert!(result.golfers.iter().any(|g| g.player_id == f.players[0]));
+    fantasy::results::overall(&runtime, f.base.session, f.base.tournament)
+        .await
+        .unwrap();
     assert!(
         sqlx::query("UPDATE fantasy_rounds SET opened_at=NULL WHERE round_id=$1")
             .bind(f.rounds[1])

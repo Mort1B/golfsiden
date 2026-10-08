@@ -159,9 +159,9 @@ procedure. Never reuse `.env.example` credentials or run the development seed in
 production.
 
 The current application requires schema 37 through `0037_fantasy_guards.sql`,
-with matching builds and refreshed runtime database grants. Fantasy selections
-and admin settlement records are available through private APIs; Fantasy result
-APIs and screens are still planned. The hosted deployment at gg26.no is
+with matching builds and refreshed runtime database grants. Fantasy selections,
+admin settlement records and round/overall manager and golfer results are available
+through private APIs; Fantasy screens are still planned. The hosted deployment at gg26.no is
 operator-managed; local validation does not establish which release runs there.
 
 ## Database commands
