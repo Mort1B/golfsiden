@@ -485,8 +485,11 @@ generations, disable guards or edit published migration files.
 
 Local acceptance includes fresh PostgreSQL databases, a populated schema-34 upgrade
 with preserved player/round/tournament rows, repeated migration/seed, and Fantasy
-operations under a restricted runtime role. This does not claim production
-deployment or a new backup/restore rehearsal. Source generations and selection
+operations under a restricted runtime role. The [2026-10-08 release acceptance](validation/fantasy-release-2026-10-08/README.md)
+also exercises the actual runtime login after the production initialization/grant
+scripts, health/readiness, and six real-Chrome scenarios. FANTASY-6 adds tests and
+documentation only; schema and deployment requirements remain unchanged. This
+does not claim production deployment or a new backup/restore rehearsal. Source generations and selection
 receipts must be backed up with their parent tournament for their full lifetime.
 
 ### Schema 34 prepared players and personal account claims

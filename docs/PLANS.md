@@ -5,32 +5,10 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The next candidate requires a separate user instruction.
-
-## Next candidate
-
-**FANTASY-6 — release acceptance and documentation.**
-See the [Fantasy contract](ARCHITECTURE.md#fantasy-competition-design) and the
-[current playing/admin flow](Documentation.md#playing-and-administering-fantasy).
-
-- Goal: verify the complete game across the intended multi-round tournament and
-  publish evidence of readiness and practical limits.
-- Scope: nine two-person teams plus smaller/larger fixtures; supported scoring
-  formats, real browser flows, regression repairs within the verified Fantasy
-  boundaries, tests and affected operator/release documentation.
-- Behavior to verify: changing partners/picks/captains; physical versus net aces;
-  early-finished outcome-only matches; all-round golfer totals independent of
-  selection; carry-forward chains, missed/invalid lineups, authorized corrections,
-  non-finish staleness, hidden-final release and return freshness.
-- Invariants: preserved net snapshots, team placement once, immutable locked
-  picks, current authorization, hidden-result noninterference and no sporting
-  scoring/lifecycle changes. No generated teams or replacement Fantasy picks.
-- Validation: complete affected ladders and browser scenarios; disposable
-  migration/upgrade and runtime-permission refresh checks; read-only review;
-  reproducible evidence and clearly stated remaining limits.
-- Stop: publish readiness/operator documentation and validated repairs, with
-  clean main aligned to origin. Production deployment remains user-owned; no
-  new Fantasy features or unrelated assessment in this step.
+None. The approved Fantasy implementation and local release acceptance are complete.
+See [current behavior](Documentation.md#fantasy-competition) and the
+[release evidence and limits](validation/fantasy-release-2026-10-08/README.md).
+No further implementation step is selected.
 
 Every implementation step updates affected durable docs and LatestExplanation,
 removes its completed plan item, commits only its scope and stops before the

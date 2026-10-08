@@ -2121,7 +2121,8 @@ remain outside this variant.
 
 Status: FANTASY-2 domain rules, FANTASY-3 persistence/private selection APIs and
 FANTASY-4 round/overall result APIs and FANTASY-5 private mobile UI are implemented
-at schema 37. FANTASY-6 broader release acceptance remains queued.
+at schema 37. FANTASY-6 local release acceptance is complete; see the
+[format, field-size and lifecycle evidence](validation/fantasy-release-2026-10-08/README.md).
 [PLANS.md](PLANS.md) owns the next bounded step. Sporting scoring and completion
 rules remain unchanged.
 
@@ -2633,5 +2634,6 @@ Acceptance examples to turn into tests during the corresponding implementation:
 | Withdrawal after an earlier deadline but before first Fantasy read | Previously valid locked lineup remains valid; later materialization uses deadline-time eligibility. |
 
 FANTASY-1's product decisions are resolved. These examples define the acceptance
-contract; current evidence is recorded in LatestExplanation.md. FANTASY-6 retains
-the broader format, field-size and multi-round lifecycle acceptance matrix.
+contract. The [release acceptance report](validation/fantasy-release-2026-10-08/README.md)
+maps them to automated and real-Chrome evidence, including the limits of field-size,
+viewport and hosted coverage.

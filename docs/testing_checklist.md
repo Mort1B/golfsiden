@@ -14,6 +14,10 @@ Fantasy is available from the tournament's **Fantasy · min firer og poengtavler
 link. Enable it before opening the first round; each manager must join and save
 four golfers plus a captain. See the [playing/admin flow](Documentation.md#playing-and-administering-fantasy).
 
+The [local release acceptance report](validation/fantasy-release-2026-10-08/README.md)
+records the automated checks already run, including nine teams over three rounds.
+Use the following checks to confirm your hosted release and devices.
+
 ## Optional Fantasy session
 
 - [ ] Enable while rounds are draft; join as two members, save different captains,

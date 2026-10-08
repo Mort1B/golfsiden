@@ -6,8 +6,9 @@ Fantasy is an optional private game inside each tournament, available from
 **Fantasy · min firer og poengtavler** on the tournament page and the Fantasy link
 in tournament management. The route is `/tournaments/:tournamentId/fantasy`.
 Schema 37 and matching API/frontend builds are required. Fantasy does not alter
-golf scores, teams or sporting standings. Broader release acceptance remains the
-[next planned step](PLANS.md#next-candidate).
+golf scores, teams or sporting standings. The [local release acceptance report](validation/fantasy-release-2026-10-08/README.md)
+covers all six formats, changing teams across rounds and both leaderboards; hosted
+acceptance remains a separate operator check.
 
 ### Playing and administering Fantasy
 
@@ -226,7 +227,8 @@ audit details remain restricted to the admin settlement endpoints.
 
 Result projections are recomputed from current preserved facts. Existing score,
 match and visibility SSE events, plus Fantasy structural events, identify when
-clients should refresh; the Fantasy UI/query-family integration is the next step.
+the private Fantasy query family refreshes. Browser return also revalidates results,
+and visibility or authorization changes clear private projections.
 
 ## Current product state
 

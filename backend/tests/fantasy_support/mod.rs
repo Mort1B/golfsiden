@@ -68,16 +68,32 @@ pub fn lineup(f: &Fantasy) -> Save {
     }
 }
 pub async fn close(pool: &PgPool, f: &Fantasy, r: Uuid) {
-    fantasy::set_deadline(
-        pool,
-        f.base.session,
-        f.base.tournament,
-        r,
-        Some(Utc::now() + Duration::milliseconds(100)),
-    )
-    .await
-    .unwrap();
-    tokio::time::sleep(std::time::Duration::from_millis(120)).await;
+    // This helper arranges a closed window; dedicated race tests own expiry races.
+    // Use the authoritative database clock and retry only an elapsed setup deadline.
+    for attempt in 0..3 {
+        let now: chrono::DateTime<Utc> = sqlx::query_scalar("SELECT clock_timestamp()")
+            .fetch_one(pool)
+            .await
+            .unwrap();
+        let deadline = now + Duration::seconds(1);
+        let result =
+            fantasy::set_deadline(pool, f.base.session, f.base.tournament, r, Some(deadline)).await;
+        loop {
+            let now: chrono::DateTime<Utc> = sqlx::query_scalar("SELECT clock_timestamp()")
+                .fetch_one(pool)
+                .await
+                .unwrap();
+            if matches!(&result, Err(Error::Invalid)) && now >= deadline && attempt < 2 {
+                break;
+            }
+            result.as_ref().unwrap();
+            if now >= deadline {
+                return;
+            }
+            tokio::time::sleep((deadline - now).to_std().unwrap()).await;
+        }
+    }
+    unreachable!("the final deadline setup attempt must succeed or report its error");
 }
 pub async fn read(pool: &PgPool, f: &Fantasy, r: Uuid) -> fantasy::RoundView {
     fantasy::read_round(pool, f.base.session, f.base.tournament, r)

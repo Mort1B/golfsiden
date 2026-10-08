@@ -1,70 +1,60 @@
-# Play Fantasy inside the tournament
+# Fantasy release acceptance
 
-FANTASY-5 adds the private Fantasy screen, linked from the tournament and its
-management workspace. Members can join, select four golfers and a captain, save
-before the deadline, inspect carry-forward provenance and browse manager/golfer
-round and overall standings. Administrators can enable the game, set earlier
-selection deadlines and record or correct non-finish dispositions. Schema remains
-37; this step changes the frontend only.
+FANTASY-6 completes local acceptance of the private Fantasy game. Three new
+persisted Chrome scenarios cover nine two-person teams across three rounds,
+Stableford net-versus-physical aces, and four-ball followed by early-finished
+match play. The existing selection, non-finish correction, privacy and recovery
+scenarios also passed. This step changes tests and documentation only; production
+behavior and schema 37 remain unchanged.
 
-The server remains authoritative for scores, deadlines and selections. Receipts
-separate accepted choices from unsaved input. An uncertain save preserves its
-exact request for deliberate replay, and an older receipt cannot replace a newer
-accepted lineup. A valid current lineup takes precedence over the carry preview.
-If a selected golfer becomes ineligible, they remain visible so the manager can
-remove and replace them. Captain multipliers, including negatives, affect only
-manager totals; every golfer has an independent base-points row.
+The nine-team tournament changes partnerships each round. One manager changes
+picks and captain, another carries the original lineup through two successive
+rounds, and a third misses selection. Their totals are 77, 123 and zero. All
+eighteen golfers appear independently of selection, including an unselected
+golfer with −15. Placement is awarded once per team before attribution to both
+partners; captain doubling applies only to the manager's contribution.
 
-Typed decoders reject mismatched round inventories and hidden-result details.
-Queries are scoped to user and tournament and consume cancellation signals.
-Score/match/visibility signals and browser return refresh the Fantasy family;
-visibility changes, denied access and session transitions clear private data.
-Callbacks check mounted lifetime and canonical user/CSRF identity. Only the exact
-retryable read response `409 fantasy_conflict` receives two bounded retries;
-mutations never retry automatically or queue offline.
+The smaller fixtures verify gross 3/net 1 on a par three earns eagle +3 while a
+physical ace earns +10. Quad bogey and pickup each earn −5. Four-ball credits both
+partners. Match play awards only +3/+1/−1, even when an ace was recorded before an
+early concession; a losing captain contributes −2.
 
-Review and browser checks repaired an ineligible-pick removal dead end, fabricated
-settlement owners for nonparticipants, and a refresh path that reset the selected
-owner and erased non-finish save feedback. The settlement controller now survives
-ordinary refresh while the source-bound reason/review form resets on changed
-facts. Source corrections require renewed acknowledgement and a reason.
+Acceptance repaired test setup rather than production logic: a 100 ms database
+fixture deadline was vulnerable to full-suite contention, the new match fixture
+assumed UUID-sorted results retained request order, and an existing browser
+response recorder hid body-read errors. The deadline helper now uses database
+time with bounded setup retries, matches are identified by opponent IDs, and
+response diagnostics preserve failures while separately counting explicitly
+canceled result reads. Dedicated deadline-race assertions remain unchanged.
 
-Validation:
+Validation completed:
 
-- Final frontend suite: 133 files, 977 tests passed, including 35 new focused
-  Fantasy tests. Coverage includes held callbacks across logout/CSRF renewal/
-  unmount, exact uncertain replay, stale revisions, source corrections, hidden
-  decoding, query cancellation, denial clearing and bounded read retries.
-- Final typecheck, lint and production build passed.
-- Three persisted real-Chrome tests passed against the local schema-37 API and
-  disposable PostgreSQL. Layout assertions/screenshots cover 320, 390 and 1280
-  pixels: disabled/empty, saved, populated, loading, error, denied and hidden states.
-- The real-data flow exercised enabling, enrollment, four picks/captain, deadline,
-  opening, 18 recorded scores, confirmation, three non-finish settlements, stale
-  source correction, both boards, manager/golfer breakdowns and carry preview.
-  Recorded points plus placement produced 22; correcting a captained non-finisher
-  to −1 changed the manager total to 20 while the first golfer stayed at 22.
-- A separate member account could not see another manager's draft. Hidden final
-  scores stayed concealed through edits, release/re-hide and tab return; logout
-  removed the private screen. Controlled 503/403 responses exercised retry/denial.
-- Rapid fixture score updates produced four observed 409 responses, all verified
-  as `fantasy_conflict` on result reads. Bounded retries recovered; final UI had
-  no error alerts and the result read returned 200. No unexpected page errors or
-  failed requests remained in the recorded main browser flow.
+- Backend: 249 default tests; formatting and strict Clippy passed.
+- PostgreSQL: 712 tests passed, including populated schema-34 upgrade, repeat seed,
+  authorization, scoring and races. Three unrelated match-list performance probes
+  remain explicitly ignored because they require exclusive `pg_stat_statements`.
+- A fresh disposable database migrated to schema 37 and was seeded twice. Runtime
+  initialization/grant scripts passed, and the API used the actual restricted
+  login with migration-history writes and schema creation denied. Health and
+  readiness passed.
+- Frontend: 133 test files / 977 tests passed; typecheck, lint, build and standalone
+  browser-test types passed.
+- Real Chrome: all six scenarios passed in the final combined run. Three decoded
+  `409 fantasy_conflict` result reads recovered; zero canceled 409 bodies were
+  observed. The three new scenarios had zero response conflicts or unexpected
+  console/request errors. Controlled 503/403 responses exercised retry and denial.
+- Rendered states at 320, 390 and 1280 pixels passed overflow and control-height
+  assertions. Representative mobile manager and desktop Stableford screenshots
+  were visually inspected. Entire flows are not independently rerun at each width.
 
-Read-only source and documentation review has no outstanding findings. Local
-Markdown links (91), whitespace and production-file size checks passed. Browser screenshots were
-inspected for readability and overflow. Backend/database validation ladders were
-not rerun because no backend, migration or persistence source changed; the previous
-FANTASY-4 step validated those contracts with 712 database-enabled tests. The local
-API health and schema readiness passed for this UI run.
+Read-only review checked expected arithmetic, fixture repairs and evidence scope.
+The [durable acceptance report](validation/fantasy-release-2026-10-08/README.md)
+contains reproduction commands and the format/field/lifecycle matrix. Twenty-team
+coverage is PostgreSQL-only; invalid carry is covered below the browser layer.
+These tests do not establish a load-capacity limit or resolve the separate SQLx
+transaction-cancellation investigation.
 
-Reproduce the browser suite with the local API on port 3000 and Vite on 5173:
-`GOLF_FANTASY_BROWSER=1 npx playwright test --config playwright.lifecycle.config.ts fantasy.browser.ts fantasyPrivacy.browser.ts`
-from `frontend/`, using disposable data.
-
-FANTASY-6 remains the next separate step: broader multi-round release acceptance
-with nine-team and smaller/larger fields and the full format/lifecycle matrix.
-This iteration does not claim that matrix, every failing-response/session-change
-permutation, physical-device testing or hosted gg26.no acceptance. No production
-deployment or new restore rehearsal was performed.
+The approved Fantasy implementation plan is complete. No production deployment,
+public DNS/TLS acceptance, new restore rehearsal, physical Android testing or
+native 200% zoom check ran. Hosted acceptance remains with the operator using the
+[deployment guide](deployment_guide.md) and [testing checklist](testing_checklist.md).

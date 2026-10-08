@@ -4,10 +4,24 @@ import { results } from '../src/api/fantasy/results'
 import { fantasyFixture, fantasyLayouts } from './fantasySupport'
 test.skip(process.env.GOLF_FANTASY_BROWSER!=='1','Requires disposable local database and GOLF_FANTASY_BROWSER=1.')
 test('Fantasy selection, settlement and both boards work at mobile and desktop widths',async({page})=>{
-  const errors:string[]=[],failed:string[]=[],responseChecks:Promise<void>[]=[],conflicts:{status:number;path:string;code:unknown}[]=[]
+  const errors:string[]=[],failed:string[]=[],canceledConflicts:string[]=[],responseChecks:Promise<void>[]=[],conflicts:{status:number;path:string;code:unknown}[]=[]
   page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push(m.text())})
   page.on('requestfailed',r=>{if(!r.url().includes('/live')&&!r.failure()?.errorText.includes('ERR_ABORTED'))failed.push(r.url())})
-  page.on('response',r=>{if(r.status()>=400)responseChecks.push((async()=>{const body:unknown=await r.json().catch(()=>null),envelope=decodeObject(body,'error'),error=decodeObject(envelope.error,'error.error');conflicts.push({status:r.status(),path:new URL(r.url()).pathname,code:error.code})})())})
+  page.on('response',r=>{if(r.status()>=400)responseChecks.push((async()=>{
+    const path=new URL(r.url()).pathname
+    try {
+      expect(r.status()).toBe(409)
+      expect(r.request().method()).toBe('GET')
+      expect(path).toMatch(/^\/api\/tournaments\/[^/]+\/fantasy\/(?:rounds\/[^/]+\/)?results$/)
+      const completionError=await r.finished()
+      if(r.request().failure()?.errorText==='net::ERR_ABORTED') { canceledConflicts.push(path); return }
+      if(completionError)throw completionError
+      const envelope=decodeObject(await r.json(),'error'),error=decodeObject(envelope.error,'error.error')
+      conflicts.push({status:r.status(),path,code:error.code})
+    } catch(error) {
+      failed.push(`HTTP ${r.status()} response: ${path}: ${error instanceof Error?error.message:String(error)}`)
+    }
+  })())})
   const f=await fantasyFixture(page),first=f.rounds[0],second=f.rounds[1],captain=f.players[1]
   if(!first||!second||!captain)throw new Error('Missing fixture round/player')
   await page.goto(f.url);await expect(page.getByText('Fantasy er ikke aktivert for denne turneringen.')).toBeVisible();await fantasyLayouts(page,'disabled')
@@ -47,6 +61,7 @@ test('Fantasy selection, settlement and both boards work at mobile and desktop w
   await expect(page.locator('.fantasy-page [role=alert]')).toHaveCount(0)
   const fresh=await page.request.get(`/api/tournaments/${f.tournament.id}/fantasy/results`);expect(fresh.status()).toBe(200)
   console.log('Concurrent Fantasy projection conflicts:',JSON.stringify(conflicts))
+  console.log('Canceled Fantasy result reads with HTTP 409 (body not verified):',canceledConflicts.length)
   expect(errors).toEqual([]);expect(failed).toEqual([])
 })
 
