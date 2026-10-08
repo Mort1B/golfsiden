@@ -9,28 +9,27 @@ None.
 
 ## Next candidate
 
-**FANTASY-2 — pure scoring and typed result states.**
-See the [resolved contract](ARCHITECTURE.md#fantasy-competition-design-planned-not-implemented).
+**FANTASY-3 — game and selection persistence/API.**
+See the [Fantasy contract](ARCHITECTURE.md#fantasy-competition-design).
 
-- Goal: provide deterministic Fantasy scoring and selection resolution before
-  persistence, transport and UI integration.
-- Scope: `backend/src/domain/fantasy`, its module export, focused unit tests and
-  affected documentation. No routes, migrations, database access or UI.
-- Behavior: non-match net hole categories/ace precedence, placement, shared-team
-  attribution, captain multiplication, golfer/manager all-round totals and ties.
-  Match results award only win +3, draw +1, loss -1; no hole or placement points.
-  Model pending/provisional/settled/withheld and non-finish dispositions explicitly.
-  Resolve valid current lineup before eligible previous-lineup carry-forward,
-  retaining the captain; no usable lineup yields an explicit missed/invalid zero.
-- Invariants: use supplied preserved facts, separate managers from golfers, preserve
-  negative points, never infer scores/results from missing facts, never rank or
-  total hidden facts. Keep source tokens and deadline-time eligibility as typed
-  inputs; locking, authorization and persistence belong to later steps.
-- Validation: focused domain examples and the complete backend format/test/Clippy
-  ladder, plus read-only scoring review. No PostgreSQL/browser validation applies
-  to a pure domain foundation.
-- Stop: reviewed deterministic domain tests pass and docs state the limited
-  foundation honestly. Publish only this scope and stop before FANTASY-3.
+- Goal: persist a private Fantasy game and immutable per-round selections, ready
+  for authoritative result projection and UI integration in subsequent steps.
+- Scope: forward migrations, focused Fantasy repositories/API/contracts, round
+  opening and required score/confirmation/match mutation hooks, backend/database
+  tests, and affected architecture/current API/deployment documentation. No UI.
+- Behavior: exact-admin game/deadline configuration; member entry, atomic four
+  picks and captain; automatic carry-forward with origin/receipt; revision-bound
+  admin non-finish dispositions. Maintain owner source generations on relevant
+  score, confirmation and accepted match-command mutations. Reuse FANTASY-2 rules.
+- Invariants: tenant and identity integrity; no pre-lock lineup disclosure;
+  server-clock deadline and opening serialization; preserved eligibility at close;
+  idempotent receipts; revocation checks; no ordinary locked-score changes; no
+  mutation of historical picks through claiming, withdrawal or carry-forward.
+- Validation: PostgreSQL fresh/upgrade migrations, repeated seed, direct
+  constraints, authorization/API tests and controlled deadline/revocation races;
+  complete backend and database ladders, read-only review, documentation checks.
+- Stop: reviewed persistence and selection contracts with validation evidence;
+  publish only this scope. No result endpoints, UI or deployment in this step.
 
 ## Fantasy implementation queue
 
@@ -40,18 +39,7 @@ scope at each intake. All steps retain the contract's all-round requirement and
 the root invariants; a partial foundation must never be advertised as a
 playable feature.
 
-1. **FANTASY-3 — game and selection persistence/API.** Add forward migrations,
-   repositories and handlers for exact-admin enable/rules/deadlines and member
-   entries/four picks/captain, automatic carry-forward origin/receipts and
-   revision-bound admin non-finish dispositions with owner-wide source
-   generations maintained by score/confirmation and accepted match-command writes. Enforce
-   complete atomic lineups, tenant identity, revisions/replay, carry-forward
-   eligibility, pre-lock secrecy and deadline/opening serialization. Respect
-   claiming/withdrawal and revoked sessions. Validate PostgreSQL fresh/upgrade,
-   repeated seed, direct constraints, API authority and controlled lock races,
-   plus the full backend ladder. Stop with reviewed usable selection contracts;
-   update architecture/current API/deployment docs, no Fantasy UI yet. 2.
-   **FANTASY-4 — authoritative round and total projections.** Add bulk format
+1. **FANTASY-4 — authoritative round and total projections.** Add bulk format
    fact adapters and private manager and golfer round/overall/breakdown APIs.
    Include all tournament golfers regardless of selection; never apply captain
    multipliers to the golfer board. Use raw score states and preserved net
@@ -62,17 +50,19 @@ playable feature.
    invalidations. Test 9-team and variable fields, all formats/rounds, hidden-
    result noninterference, correction recomputation and unrelated sporting
    regression; run backend/database ladders. Stop at reviewed result contracts
-   with no fabricated/pending-as-zero results. 3. **FANTASY-5 — complete
-   mobile-first Fantasy UI.** Add strict runtime decoders, user/tournament-
-   scoped queries, tournament navigation, admin setup/non-finish settlement, My
+   with no fabricated/pending-as-zero results.
+
+2. **FANTASY-5 — complete mobile-first Fantasy UI.** Add strict runtime decoders,
+   queries scoped to user/tournament, tournament navigation, admin setup/non-finish settlement, My
    Four, carry-forward preview/origin and captain/deadline submission, manager
    and golfer round/overall standings and explanations. Include Fantasy in
    score/match/visibility invalidation and return/session clearing. Handle
    loading/error/empty/populated/long content, stale edits, denied access,
    uncertain saves, expired deadlines and missed/withheld results. Validate
    full frontend ladder plus real Chrome at 320/390/1280 and API-backed flows.
-   Stop with a usable complete game, not a mock or disconnected picker. 4.
-   **FANTASY-6 — release acceptance and documentation.** Exercise a multi-round
+   Stop with a usable complete game, not a mock or disconnected picker.
+
+3. **FANTASY-6 — release acceptance and documentation.** Exercise a multi-round
    tournament with 9 two-person teams plus smaller/larger fixtures, changing
    partners/picks/captains and actual/net ace distinctions. Test the whole
    lifecycle, early-finished matches receiving outcome-only points, golfer

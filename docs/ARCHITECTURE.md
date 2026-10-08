@@ -2117,12 +2117,50 @@ public match sharing, offline authoritative reports and handicap-system submissi
 remain outside this variant.
 
 
-## Fantasy competition design (planned, not implemented)
+## Fantasy competition design
 
-Status: user-approved product direction, recorded 2026-10-08. This section is a
-future design contract, not a claim that routes, tables or screens exist.
-[PLANS.md](PLANS.md) owns the bounded execution sequence and approval gates.
-The current application and schema 34 remain unchanged by this planning step.
+Status: the FANTASY-2 pure domain foundation is implemented; the full Fantasy
+feature is not available. Persistence, API, UI and release acceptance remain
+planned. [PLANS.md](PLANS.md) owns the next bounded step. Schema 34 and existing
+sporting behavior remain unchanged.
+
+### Implemented pure domain foundation
+
+`backend/src/domain/fantasy/` has no database, HTTP, clock or UI dependencies:
+
+- `holes` scores preserved numeric inputs/pickups and four-ball counting results.
+  It reuses signed handicap allocation with widened net arithmetic, preserves
+  physical-ace precedence, and keeps unresolved/withheld inputs explicit.
+- `rounds` validates complete supplied owner/hole inventories and unique golfer
+  ownership, ranks finishing owners once with typed stroke/Stableford units,
+  and attributes identical shared results to both partners. Confirmed finishers
+  settle only when the field is settled; until then their finisher-only placement
+  is provisional. Incomplete cards retain recorded points and remain unranked.
+  A matching opaque owner source token settles a non-finish without placement;
+  stale dispositions return pending. Token generation itself is not implemented.
+- `matches` consumes the existing accepted `MatchState` and confirmation,
+  awarding only +3/+1/-1. Notes/strokes cannot add points; accepted results take
+  precedence over a prior non-finish disposition.
+- `selections` validates four unique golfers and a selected captain, then resolves
+  valid current submission before nearest earlier locked-lineup carry-forward.
+  Eligibility, membership and locked-at-deadline evidence are caller inputs;
+  these types are not proof of authorization, a deadline lock or saved data.
+- `totals` doubles the captain's whole result, sums the complete expected round
+  inventory, and produces distinct typed golfer/manager standings with shared
+  ranks and deterministic display order. Checked arithmetic rejects overflow.
+
+`Points` separates `NotStarted`, `Pending { recorded }`, `Provisional`, `Settled`
+and `Withheld`. Explicit future rounds allow provisional earned-to-date overall
+ranks; an absent expected contribution remains pending, never final zero. Pending
+subtotals are not complete totals and receive no rank. Withheld contributions
+conservatively suppress their totals and board ranks rather than estimating
+hidden results. Both complete and partial projections require future adapters to
+apply caller visibility before supplying facts; no transport projection is wired.
+
+Future adapters must supply the authoritative tournament roster/round inventory,
+consistent preserved source facts, eligibility at the deadline and fresh owner
+source tokens. Unit tests exercise these boundaries and arithmetic, not database
+authorization, receipt persistence, locking or user-facing availability.
 
 ### Agreed game and scoring
 

@@ -1,5 +1,6 @@
 pub mod accounts;
 pub mod course_revisions;
+pub mod fantasy;
 pub mod four_ball;
 pub mod handicap;
 pub mod invitations;

@@ -1,8 +1,9 @@
 # Project documentation
 
-## Planned Fantasy side competition
+## Fantasy domain foundation; integration planned
 
-Fantasy is planned, not currently available. Its rule contract is resolved:
+Fantasy is not currently available to users. A tested pure backend domain
+foundation now implements the agreed scoring and lineup resolution rules:
 four golfers per round, a double-points captain, shared team results and separate
 manager/golfer round and overall leaderboards. Non-match rounds use net hole and
 placement points; pickups and net quad bogey or worse are -5, and non-finishers
@@ -16,10 +17,13 @@ uses its own results, with captain doubling only in manager totals.
 The planned admin non-finish disposition preserves recorded points independently
 of golf completion, with no placement for declared non-finishers.
 
-No application or schema changes were made by this contract; the runtime still
-uses schema 34. See the [next implementation step](PLANS.md#next-candidate) and
-[planned rule contract](ARCHITECTURE.md#fantasy-competition-design-planned-not-implemented)
-for the complete rules and implementation boundaries.
+The foundation provides typed incomplete/withheld/future-round states and
+separate golfer/manager standings, including negative captain points. No Fantasy
+routes, stored lineups, deadline enforcement or screens are connected yet. Schema
+34 and existing application behavior are unchanged. See the
+[next implementation step](PLANS.md#next-candidate) and
+[domain and integration contract](ARCHITECTURE.md#fantasy-competition-design)
+for current boundaries and the remaining work.
 
 ## Current product state
 

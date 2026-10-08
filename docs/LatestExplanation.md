@@ -1,35 +1,44 @@
-# Finalize the Fantasy scoring and lineup contract
+# Implement the Fantasy domain foundation
 
-FANTASY-1 is complete as a documentation-only contract. No Fantasy runtime,
-migration or UI has been implemented. The next bounded step is the pure scoring
-foundation, FANTASY-2.
+FANTASY-2 adds pure backend scoring and lineup-resolution modules. The Fantasy
+game is not yet available: no routes, persistence, migrations or UI are included,
+and sporting behavior and schema 34 are unchanged.
 
-The user's final choice makes match play outcome-only: +3 for a win, +1 for a
-draw and -1 for a loss. Captain doubling produces +6/+2/-2. Match holes, aces,
-net calculations and placement do not add Fantasy points. Accepted sporting
-results supply the outcome, including early finishes and concessions; confirmation
-and visibility still govern whether the award is provisional, settled or withheld.
-This supersedes the earlier proposal to keep match hole points and removes the
-need for additional Fantasy match handicap inputs. Non-match scoring is unchanged.
+Non-match scoring applies preserved net hole categories, physical-ace precedence,
+pickup penalties, native-format placement and shared team attribution. Teams are
+ranked once before both partners receive their points. Match play consumes the
+accepted sporting result only: win +3, draw +1, loss -1. Captain multiplication
+includes negative totals; win/draw/loss/win with the loser captained totals five.
+Separate golfer and manager standings sum every expected round with shared ties.
 
-Missing a new valid submission automatically reuses the previous eligible locked
-four-player lineup and its captain. Current valid submissions take precedence.
-The copied lineup receives this round's results and partners, with its source and
-origin recorded. Reuse is atomic with deadline finalization and can continue
-across rounds. If there is no previous lineup or it contains an ineligible golfer,
-mark missed/invalid with zero; do not generate replacements or promote a captain.
-For example, match outcomes win/draw/loss/win with the loser captained total
-3 + 1 - 2 + 3 = 5. Golfer standings still show the base 3/1/-1/3.
+Lineups require four unique golfers and a captain among them. A valid current
+submission wins; otherwise the nearest earlier locked lineup carries forward
+when all four remain eligible. It retains the captain but uses current-round
+results. Missing or invalid fallbacks are explicit states, never generated picks.
 
-The existing Fantasy-only non-finish disposition, preserved scoring inputs,
-whole-card source generations, privacy and immutable selection boundaries remain.
-The [resolved contract](ARCHITECTURE.md#fantasy-competition-design-planned-not-implemented)
-contains the rules and acceptance examples; [PLANS.md](PLANS.md#next-candidate)
-records the next step and remaining integration sequence.
+The result types distinguish pending recorded points, provisional/final totals,
+withheld results and future rounds. Explicit future rounds permit provisional
+overall ranks; unexpected missing contributions do not become zero. Incomplete
+cards stay unranked, and concealed results conservatively suppress affected
+totals/ranks. Revision-bound non-finish handling retains recorded points without
+placement or invented remaining-hole penalties. Source tokens and deadline facts
+are adapter inputs; authorization, locking and persistence remain future work.
 
-Validation passed for four added links/anchors, captain/leaderboard arithmetic,
-four-document scope and `git diff --check`. Read-only review identified a missing
-match revision boundary for non-finish dispositions; the contract and acceptance
-example now cover it, and follow-up review confirmed no remaining findings.
-Runtime validation is not applicable because no application or migration files
-changed.
+The [architecture](ARCHITECTURE.md#fantasy-competition-design) documents module
+boundaries and limitations. [PLANS.md](PLANS.md#next-candidate) queues FANTASY-3
+persistence and selection APIs, with projection/UI integration after that.
+
+Validation passed:
+
+- `cargo test -p golf-api domain::fantasy --lib`: 34 Fantasy tests.
+- `cargo test --workspace --all-targets`: 249 tests (247 library, two CLI).
+- `cargo fmt --all -- --check` and strict all-target/all-feature Clippy.
+- Six added documentation links/anchors, source-size limits and whitespace.
+- Independent read-only source and documentation review: no blocking findings.
+
+The first full test attempt could not bind eight course-provider mock servers
+inside the sandbox; rerunning with local loopback access passed. Clippy identified
+one collapsible conditional, which was fixed; focused tests passed again afterward.
+Only existing vendored SQLx warnings remain. Database-feature tests, browser and
+frontend checks are not applicable to this pure-domain step; those layers did
+not change and no such validation is claimed.
