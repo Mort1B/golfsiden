@@ -1,44 +1,32 @@
-# Plan a separate all-round Fantasy competition
+# Clarify Fantasy early finishes and golfer standings
 
-This iteration is documentation-only. Fantasy is not implemented; application
-behavior, schema 34, existing player claims and deployment remain unchanged.
+This iteration updates the Fantasy plan only. Fantasy is not implemented;
+application behavior, schema 34, player claims and deployment remain unchanged.
 
-The user-approved design is attached to a tournament but independent of its
-sporting results: four freely selected golfers each round, one captain doubling
-placement and hole points, no budgets or transfer penalties, net scoring and the
-same shared team result for both partners. A separate overall leaderboard sums
-every round, with round standings and per-golfer explanations. The initial event
-has nine two-person teams; the rules also cover smaller/larger fields.
+A match that legitimately finishes early retains the points earned when it ends.
+Unplayed remaining holes add no points or penalties and do not stay pending or
+block settlement once the match facts are final. This is normal match completion,
+not DNF. For example, seven earned hole points after a match ends on hole 14 stay
+seven; holes 15-18 contribute nothing. Match placement, net allocation and
+concession scoring remain separate decisions before implementation.
 
-The latest scoring clarification is explicit: actual ace or net albatross-or-better
-+10 (never stacked), eagle +3, birdie +1, par 0, bogey -1, double -2, triple -3,
-quad-or-worse and pickup -5. Non-finishers retain recorded hole points without
-invented penalties for unplayed holes. Placement follows net rank with
-10/8/6/5/4/3/2/1 points for positions 1-8 and zero thereafter. Captain multiplication
-includes negative points.
+The plan now includes a golfer points leaderboard alongside Fantasy manager
+standings. It shows every tournament golfer's base Fantasy points by round and
+across all rounds, including golfers nobody selected. Placement and hole-point
+breakdowns explain each total. Captain multipliers apply only to managers:
+a golfer with 12 points still shows 12 even when a manager receives 24 for
+captaining them. A second round of -2 makes that golfer's overall total 10.
+Team partners retain the same shared round result, with separate golfer rows.
+The existing privacy, provisional-result and historical-retention rules apply
+to both leaderboards.
 
-[PLANS.md](PLANS.md) sequences contract closure, pure scoring, persistence and
-selection APIs, result projections, the mobile-first UI, and release acceptance.
-Each implementation step has ownership, validation and a stop condition. The
-[planned architecture contract](ARCHITECTURE.md#fantasy-competition-design-planned-not-implemented)
-records rules, proposed defaults, data and authorization boundaries, source seams
-and concrete acceptance examples separately from implemented behavior.
+The [planned contract](ARCHITECTURE.md#fantasy-competition-design-planned-not-implemented)
+records these rules and acceptance examples. [PLANS.md](PLANS.md) includes golfer
+projections, UI views and release checks in the existing bounded sequence.
+The early-finish decision is resolved; match placement/net/concession treatment,
+authoritative DNF settlement and invalid/missed lineups remain contract gates.
 
-Remaining decisions are explicitly gated: match outcome/net/concession treatment,
-authoritative non-finish settlement and invalid/missed lineup handling. “Every
-round” cannot be satisfied by silently excluding match play. Existing match
-reports are not always physical strokes, and current sporting withdrawal is not
-a live-round DNF action. These facts must not be papered over with invented scores.
-
-Inspection verified the current net/round ownership, Stableford/four-ball score
-states, match provenance, round-opening lock, visibility and frontend invalidation
-boundaries. The plan calls for original/frozen handicap use, exactly four unique
-picks plus a selected captain, server-enforced locks, pre-deadline secrecy, atomic
-receipts and hidden-result noninterference in totals and rank.
-
-Validation passed for document/source consistency, arithmetic examples, six added
-local links/anchors, four-document scope and `git diff --check`. Independent
-read-only review reported no actionable findings. No Rust,
-frontend, database, browser or deployment checks are claimed: no runtime files
-changed. Implementation and the complete affected validation ladders remain
-future work requiring the next bounded user instruction.
+Validation passed: two added local links/anchors, three arithmetic examples,
+four-document scope and `git diff --check`. Independent read-only review found
+no actionable issues. No runtime checks are required or claimed because no
+application or migration files changed.

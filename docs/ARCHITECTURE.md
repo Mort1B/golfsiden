@@ -2177,6 +2177,14 @@ total = sum of every round total: no best-N, mandatory-round selection, dropped
 rounds or copied sporting-tournament tie-break. Equal Fantasy totals share rank;
 stable display order must not become an undisclosed tie-break.
 
+Also provide a golfer Fantasy points leaderboard, separate from manager standings.
+Show every tournament golfer's base points for each round and summed across all
+rounds, whether or not anyone selected them. Include placement and hole-point
+breakdowns. Captain multipliers affect only the selecting manager's score, never
+the golfer's own points. Team partners each appear with their shared result;
+equal totals share rank. Apply the same privacy, pending and finality rules as
+manager standings, including preservation of historical withdrawn-player results.
+
 Non-finishers keep their recorded Fantasy hole points. Do not invent strokes,
 penalize unplayed holes, erase recorded points or award provisional placement
 as final. A non-finisher without an official completed placing gets no placement
@@ -2200,12 +2208,16 @@ match placements or use stroke-play totals for a match.
 | Individual Stableford | Native net Stableford placing; hole categories from uncapped actual numeric strokes and net allocation, or explicit pickup (-5). Never reverse-engineer strokes from zero native points or `36 - points`. |
 | Scramble / foursomes | The shared team's recorded hole score and existing team net handicap calculation; identical hole and placement points for both round-specific partners. |
 | Four-ball | Existing per-hole counting net side result; identical side points for both partners. Inspect raw valid gross inputs for an actual ace, including an ace by the other partner from the net winner; award once per shared hole. One partner pickup cannot penalize a numeric counting side result. Both explicit no-scores can produce the shared pickup penalty; unresolved input stays pending. |
-| Singles match play | Unresolved: outcome-to-placement awards, full-handicap versus match-relative net allocation, numeric facts versus concessions/rulings, and legitimate early finishes. Never treat a conceded stroke or optional numeric note as proof of an actual ace. |
+| Singles match play | Early finishes retain earned points, with no additions or penalties for unplayed holes. Still unresolved: outcome-to-placement awards, full-handicap versus match-relative net allocation, and numeric facts versus concessions/rulings. Never treat a conceded stroke or optional numeric note as proof of an actual ace. |
 
 For team rounds the shared side is the scoring unit, so both partners receive its
 recorded points. Do not manufacture separate individual strokes or infer when a
-partner personally stopped playing from a shared card. Match-play early finishes
-must not be confused with DNF or penalized as unplayed holes. The match decision
+partner personally stopped playing from a shared card. A legitimately completed
+match that finishes early retains the points earned when it ended: no extrapolation,
+automatic pars, remaining-hole bonuses or penalties. Those unplayed holes are not
+pending scores and must not block Fantasy settlement once the match facts are
+final. Early completion is not DNF. This settles the early-finish rule; it does not
+invent a match placement award or resolve concession scoring. The match decision
 must also handle gross-mode matches without changing their official gross rules:
 Fantasy's net promise needs its own explicitly agreed interpretation there.
 
@@ -2298,7 +2310,10 @@ clear private projections on identity/authority loss.
 
 Add a private Fantasy destination linked from the tournament and its management
 workspace. Main view: overall rank, manager, per-round totals, grand total and
-provisional/withheld state. Include a round leaderboard, My Four picker with an
+provisional/withheld state. Include manager and golfer leaderboards, each with
+round and overall views. The golfer board shows base points and links to hole and
+placement breakdowns; clearly distinguish it from managers' captain-adjusted
+totals. Include the My Four picker with an
 explicit captain marker, saved/unsaved/deadline feedback, and a per-golfer breakdown
 of net category, placement, captain factor and total. Managers can inspect why
 points changed. On phones, use a readable list/round switcher rather than forcing
@@ -2331,6 +2346,9 @@ Acceptance examples to turn into tests during the corresponding implementation:
 | Second place, two birdies, an eagle, three bogeys, one double | 8 + 2 + 3 - 3 - 2 = 8; captain = 16. |
 | One team's result is 12; both partners selected, one captain | 24 + 12 = 36 across two slots. |
 | Captain's total is -4 | -8, with no zero floor. |
+| Match ends after hole 14 with 7 earned hole points | Retains 7 hole points; holes 15-18 add nothing and do not remain pending. Any match placement award still follows the separately agreed policy. |
+| Golfer earns 12 in round one and -2 in round two | Golfer board shows 12, -2 and overall 10, regardless of selection or captain choices. |
+| Two partners each earn 12; one is captained by a manager | Each golfer board row shows 12; manager contributions are 24 and 12 if both are selected. |
 | Net tied second teams | Both get 8 per partner; next team is fourth (5). |
 | Nine teams, 18 golfers; then smaller/larger fields | Rank teams once; unchanged points table and four unique picks. |
 | Non-finisher has +1, -3 and pickup recorded | Keeps -7; no invented remaining-hole penalties or placement award. |
