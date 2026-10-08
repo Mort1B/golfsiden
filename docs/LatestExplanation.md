@@ -1,41 +1,44 @@
-# Return to a prepared scorecard during a coverage gap
+# Prepare players now and let them claim their accounts
 
-The Score page now offers **Tilbake til åpnet scorekort** when disconnected or
-when its reads fail. It returns to the current session's last visited writable
-card and hole, using existing in-memory data. Stroke/team, four-ball and Stableford
-are supported. Ordinary online resume still fetches fresh data and finds the first
-missing hole.
+Tournament admins can open **Administrasjon → Deltakere**, enter a name and
+handicap, and share a personal account link. The player can be assigned to rounds
+before registering. The recipient chooses a username and password; the account
+links to the exact prepared player, preserving teams, scores and handicap facts.
+No placeholder login or duplicate entrant is created.
 
-The returned card is labelled pending server verification. Golfers can continue
-entering holes into the existing device queue; confirmation and card switching
-wait for fresh access/status/card reads. Original request IDs and expected revisions
-are preserved. Reconnecting delivers queued entries through existing conflict
-checks and resumes the ordinary verified workspace.
+Links expire after seven days and work once. Admins can replace or revoke them;
+claimed accounts cannot receive another claim link. Active prepared entrants can
+still claim after tournament completion/archival. This narrow exception does not
+reopen ordinary registration. Links stay in temporary UI state, use URL fragments
+and are removed from the address immediately. The server stores only token hashes.
 
-Only actual visited writable cards are prepared. The marker contains IDs/hole,
-not a second cache. Known denial, noneditable rounds, missing caches, session expiry
-and account/session changes invalidate it. Revocation is sticky even when a later
-SSE disconnect clears the query error. A route parameter, prefetched neighbor or
-pending score alone cannot reopen a card. An unavailable returned card offers a
-fresh online retry without deleting pending edits.
+**Fjern fra turneringen** withdraws a player with confirmation. It preserves
+historical results, accounts and existing access/roles, including scorer access.
+It requires removing draft assignments first and locking participating rounds.
+Self/admin targets and completed/archived tournaments are protected. The database
+records the responsible administrator and invalidates outstanding claim links.
 
-Example: load the card before losing coverage, score holes 1 and 2, then move to
-hole 3. After leaving the page, choose Score and explicitly return to the opened
-card. Hole 3 remains selected; its entry joins the existing queue. Reconnection
-checks and delivers all three exact values.
+The implementation uses a dedicated claim boundary and forward migration 0034.
+Claiming, link replacement and withdrawal serialize on the same identity. Final
+expiry checks cover database waits, username conflicts roll back the whole claim,
+and contended withdrawal/account locks return a retryable conflict. Frontend
+callbacks are fenced by mounted lifetime and canonical account/session identity,
+including sign-out while a newer session appears. Unknown creation delivery asks
+the admin to check the refreshed roster before retrying.
 
-The controlled baseline reproduces the missing return action. Eight real Chrome/
-API/PostgreSQL scenarios pass, including all four formats, preserved request heads,
-exact server values, a real locked round, controlled denial/expiry and changed
-accounts. An additional offline results-navigation case and all 16 production
-route-loading cases pass, alongside 919 unit/component tests, TypeScript, ESLint
-and the production build. Phone and desktop layouts were checked. Results and limits
-are recorded in the [validation report](validation/offline-return-2026-09-29/README.md).
-Read-only review found no remaining actionable issue after the transport-error
-persistence repair.
+Example: create Kari with handicap 14.4, place her in the draft round, and send her
+personal link. When Kari registers, her login owns the same player already on the
+roster. If she drops out before play, remove her draft assignments and confirm
+withdrawal; the record remains labelled **Trukket**.
 
-**READY WITH KNOWN LIMITATIONS:** deploy the frontend update; no new migration is
-required. The app must remain open and required data must remain cached. Offline
-reload/closed-app launch, pinned/persisted private cards and background sync are
-not included. Hosting remains user-owned; further implementation should follow
-specific testing feedback or a separately scoped offline-preparation request.
+Validation passes 641 Rust/database tests covering authority, concurrency and
+history, plus 942 frontend tests, typecheck/lint/build, and three Chrome scenarios at mobile
+and desktop widths. The seeded schema-33 upgrade to 34 preserves existing players;
+fresh migrations and repeat seeding succeed. Independent source review has no
+remaining actionable findings. Full results and limits are in the
+[validation report](validation/player-claims-2026-10-08/README.md).
+
+Deploy matching API/frontend with schema 34 and refreshed runtime grants. No
+email service or new environment setting is needed. This step does not send
+messages, merge accounts, revoke existing tournament access, restore withdrawals,
+or support withdrawal during live rounds. Production hosting remains user-owned.

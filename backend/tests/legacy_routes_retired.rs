@@ -146,7 +146,14 @@ async fn legacy_player_routes_stay_retired_and_empty_creation_requests_write_not
             ))
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+        assert_eq!(
+            response.status(),
+            if token.is_some() {
+                StatusCode::BAD_REQUEST
+            } else {
+                StatusCode::UNAUTHORIZED
+            }
+        );
     }
 
     assert_eq!(

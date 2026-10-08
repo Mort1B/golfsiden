@@ -1,3 +1,4 @@
+import { PlayerManagement } from '../playerClaims/PlayerManagement'
 import { TournamentDetailsEditor } from './details/TournamentDetailsEditor'
 import { StablefordSettings } from './StablefordSettings'
 import { ResultShareControl } from '../resultSharing/ResultShareControl'
@@ -37,7 +38,6 @@ interface Props {
 }
 
 const dateFormatter = new Intl.DateTimeFormat('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' })
-const handicapFormatter = new Intl.NumberFormat('nb-NO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 function formatDate(value: string): string {
   return dateFormatter.format(new Date(`${value}T12:00:00`))
@@ -58,22 +58,6 @@ function RoundState({ state, children }: { state: ReadState<Round[]>; children: 
   if (state.error) return <ErrorState error={state.error} onRetry={state.retry} />
   if (!state.data?.length) return <EmptyState>Ingen runder er opprettet.</EmptyState>
   return children(state.data)
-}
-
-function RosterState({ state }: { state: ReadState<TournamentPlayerRoster> }) {
-  if (state.pending) return <LoadingState />
-  if (state.error) return <ErrorState error={state.error} onRetry={state.retry} />
-  if (!state.data?.players.length) return <EmptyState>Ingen deltakere er registrert.</EmptyState>
-  return (
-    <ul className="management-people">
-      {state.data.players.map((player) => (
-        <li key={player.player_id}>
-          <span>{player.display_name}</span>
-          <span>{player.status === 'withdrawn' ? 'Trukket' : `HCP ${handicapFormatter.format(player.tournament_handicap)}`}</span>
-        </li>
-      ))}
-    </ul>
-  )
 }
 
 export function TournamentManagementSections({ tournament, roster, rounds, navigationKey, selectedRoundId, activeSection, onSelectRound, authorityRefreshing, completionSnapshotVersion }: Props) {
@@ -104,7 +88,7 @@ export function TournamentManagementSections({ tournament, roster, rounds, navig
 
       <section id="entrants" className="management-section" aria-labelledby="entrants-heading" tabIndex={-1}>
         <header><p className="eyebrow">Påmeldt spillerliste</p><h2 id="entrants-heading">Deltakere</h2></header>
-        <RosterState state={roster} />
+        <PlayerManagement tournament={tournament} roster={roster} authorityRefreshing={authorityRefreshing} />
       </section>
 
       <section id="invitations" className="management-section" aria-labelledby="invitations-heading" tabIndex={-1}>

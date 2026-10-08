@@ -9,6 +9,7 @@ mod live;
 mod match_play;
 mod onboarding;
 mod password_recovery;
+mod player_claims;
 mod profile;
 mod result_sharing;
 mod rounds;
@@ -45,6 +46,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .merge(course_catalog::routes())
         .merge(course_provider::routes())
         .merge(invitations::routes())
+        .merge(player_claims::routes())
         .merge(onboarding::routes())
         .merge(leaderboards::routes())
         .merge(tournaments::routes())

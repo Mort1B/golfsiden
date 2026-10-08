@@ -48,7 +48,7 @@ async fn issuance_denies_wrong_tournament_self_privileged_unlinked_inactive_and_
             "INSERT INTO tournament_memberships(tournament_id,user_id,role) SELECT tournament_id,$1,'player' FROM tournament_players WHERE player_id=$1",
         ),
     ] {
-        sqlx::query(change).bind(USER).execute(&pool).await.unwrap();
+        fixture_authority_change(&pool, change, USER).await;
         assert!(
             matches!(
                 password_recovery::admin_issue(&pool, &r, &token.hash()).await,
@@ -56,11 +56,7 @@ async fn issuance_denies_wrong_tournament_self_privileged_unlinked_inactive_and_
             ),
             "{change}"
         );
-        sqlx::query(restore)
-            .bind(USER)
-            .execute(&pool)
-            .await
-            .unwrap();
+        fixture_authority_change(&pool, restore, USER).await;
     }
     let other_trip:Uuid=sqlx::query_scalar("INSERT INTO tournaments(id,name,start_date,end_date,number_of_rounds,counted_rounds) VALUES(gen_random_uuid(),'Other','2026-09-10','2026-09-10',1,1) RETURNING id").fetch_one(&pool).await.unwrap();
     sqlx::query(
@@ -139,16 +135,8 @@ async fn authority_changes_away_and_back_never_revive_grants(pool: PgPool) {
         ),
     ] {
         let (grant, token) = issue(&pool, &r).await;
-        sqlx::query(change)
-            .bind(subject)
-            .execute(&pool)
-            .await
-            .unwrap();
-        sqlx::query(restore)
-            .bind(subject)
-            .execute(&pool)
-            .await
-            .unwrap();
+        fixture_authority_change(&pool, change, subject).await;
+        fixture_authority_change(&pool, restore, subject).await;
         assert!(
             matches!(
                 password_recovery::preview(&pool, grant.id, &token).await,
@@ -263,4 +251,33 @@ async fn operator_recovery_supports_admin_and_unlinked_accounts_with_explicit_pr
     )
     .await
     .unwrap();
+}
+
+// Recovery invalidation tests deliberately model historical status changes in both
+// directions; only the newer workflow guard is bypassed by this owner fixture.
+async fn fixture_authority_change(pool: &PgPool, query: &str, subject: Uuid) {
+    let mut tx = pool.begin().await.unwrap();
+    let entrant = query.starts_with("UPDATE tournament_players");
+    if entrant {
+        sqlx::query(
+            "ALTER TABLE tournament_players DISABLE TRIGGER tournament_players_guard_withdrawal",
+        )
+        .execute(&mut *tx)
+        .await
+        .unwrap();
+    }
+    sqlx::query(query)
+        .bind(subject)
+        .execute(&mut *tx)
+        .await
+        .unwrap();
+    if entrant {
+        sqlx::query(
+            "ALTER TABLE tournament_players ENABLE TRIGGER tournament_players_guard_withdrawal",
+        )
+        .execute(&mut *tx)
+        .await
+        .unwrap();
+    }
+    tx.commit().await.unwrap();
 }

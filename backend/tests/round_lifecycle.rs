@@ -133,12 +133,25 @@ async fn foursomes_opening_preserves_unrounded_team_handicap_and_db_guards(pool:
         .execute(&pool)
         .await
         .unwrap();
+    // Owner-only fixture: preserve this test of legacy ineligible entrant state.
+    sqlx::query(
+        "ALTER TABLE tournament_players DISABLE TRIGGER tournament_players_guard_withdrawal",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query("UPDATE tournament_players SET status = 'withdrawn' WHERE tournament_id = $1 AND player_id = $2")
         .bind(TOURNAMENT_ID)
         .bind(PLAYER_C)
         .execute(&pool)
         .await
         .unwrap();
+    sqlx::query(
+        "ALTER TABLE tournament_players ENABLE TRIGGER tournament_players_guard_withdrawal",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query("UPDATE rounds SET scoring_format = 'two_player_foursomes', handicap_allowance_percent = 50 WHERE id = $1")
         .bind(ROUND_ID)
         .execute(&pool)
@@ -464,11 +477,24 @@ async fn readiness_reports_pairing_eligibility_and_format_rules(pool: PgPool) {
         .execute(&pool)
         .await
         .unwrap();
+    // Owner-only fixture: preserve this test of legacy ineligible entrant state.
+    sqlx::query(
+        "ALTER TABLE tournament_players DISABLE TRIGGER tournament_players_guard_withdrawal",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query("UPDATE tournament_players SET status = 'withdrawn' WHERE player_id = $1")
         .bind(PLAYER_B)
         .execute(&pool)
         .await
         .unwrap();
+    sqlx::query(
+        "ALTER TABLE tournament_players ENABLE TRIGGER tournament_players_guard_withdrawal",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query("UPDATE players SET active = false WHERE id = $1")
         .bind(PLAYER_C)
         .execute(&pool)
@@ -512,11 +538,24 @@ async fn readiness_reports_pairing_eligibility_and_format_rules(pool: PgPool) {
         .execute(&pool)
         .await
         .unwrap();
+    // Owner-only fixture: preserve this test of legacy ineligible entrant state.
+    sqlx::query(
+        "ALTER TABLE tournament_players DISABLE TRIGGER tournament_players_guard_withdrawal",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query("UPDATE tournament_players SET status = 'active' WHERE player_id = $1")
         .bind(PLAYER_B)
         .execute(&pool)
         .await
         .unwrap();
+    sqlx::query(
+        "ALTER TABLE tournament_players ENABLE TRIGGER tournament_players_guard_withdrawal",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query("INSERT INTO flight_memberships (flight_id, round_id, tournament_id, player_id) VALUES ($1, $2, $3, $4)")
         .bind(FLIGHT_ID)
         .bind(ROUND_ID)

@@ -145,7 +145,7 @@ async fn cross_tournament_admin_is_denied_through_every_resource_shape(pool: PgP
 }
 
 #[sqlx::test(migrations = "../migrations")]
-async fn direct_roster_registration_is_retired_without_writes_or_events(pool: PgPool) {
+async fn legacy_player_id_registration_is_rejected_without_writes_or_events(pool: PgPool) {
     seed(&pool).await;
     let initial_counts = sqlx::query_as::<_, (i64, i64, i64, i64)>(
         "SELECT (SELECT count(*) FROM tournament_memberships),
@@ -197,9 +197,16 @@ async fn direct_roster_registration_is_retired_without_writes_or_events(pool: Pg
         ),
     ];
 
-    for request in requests {
+    for (index, request) in requests.into_iter().enumerate() {
         let response = app.clone().oneshot(request).await.unwrap();
-        assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+        assert_eq!(
+            response.status(),
+            if index < 2 {
+                StatusCode::UNAUTHORIZED
+            } else {
+                StatusCode::BAD_REQUEST
+            }
+        );
     }
 
     let final_counts = sqlx::query_as::<_, (i64, i64, i64, i64)>(

@@ -20,6 +20,8 @@ pub enum RateLimitRoute {
     Onboarding,
     TournamentCreation,
     InvitationPreview,
+    PlayerClaimPreview,
+    PlayerClaimRegister,
     InvitationRegister,
     InvitationAccept,
 }
@@ -69,6 +71,18 @@ impl RateLimiter {
         Self::with_rules(
             [
                 (RateLimitRoute::Login, Duration::from_secs(60), 10, 40),
+                (
+                    RateLimitRoute::PlayerClaimPreview,
+                    Duration::from_secs(60),
+                    30,
+                    100,
+                ),
+                (
+                    RateLimitRoute::PlayerClaimRegister,
+                    Duration::from_secs(600),
+                    5,
+                    20,
+                ),
                 (
                     RateLimitRoute::ResultShareAdmin,
                     Duration::from_secs(60),

@@ -12,13 +12,14 @@ are expected to survive loss of that host.
 
 ## Current release
 
-The current application requires **schema 33** through
-`0033_tournament_details.sql`, with matching API and frontend builds. The API
+The current application requires **schema 34** through
+`0034_player_claims.sql`, with matching API and frontend builds. The API
 checks every embedded migration and checksum, not only the largest version.
 Do not skip intermediate migrations when upgrading an older installation.
 
 | Change | Deployment requirement |
 | --- | --- |
+| Admin-created players, personal claim links and withdrawal | Schema 34, refreshed runtime grants and matching API/frontend |
 | Draft tournament name, description and date editing | Schema 33, refreshed runtime grants and matching API/frontend |
 | Offline return to the last opened scorecard | Updated frontend against the schema-33 API; no further migration or configuration |
 | Recent score-read, session, pairing/start and navigation repairs | Deploy the current API/frontend builds; retain the vendored SQLx patch |
@@ -448,6 +449,29 @@ corrections and confirmation require connectivity and current authorization.
 Deploy strict nullable overall and match decoders with the API: match-only private
 overall reads are explicitly not applicable and public overall sharing unavailable.
 Mixed public summaries keep their existing allowlist and exclude match facts.
+
+### Schema 34 prepared players and personal account claims
+
+Deploy `0034_player_claims.sql` with matching API/frontend builds. Run forward
+migrations with the owner connection and refresh runtime grants with the existing
+permissions command. No new environment variables, email service or background
+worker is needed. Secrets use the site's same-origin `/claim/{id}#token=…` links.
+
+The migration adds claim grants and append-only withdrawal audits, guards entrant
+status changes, and narrowly allows a prepared active entrant to claim its
+account after tournament completion/archival. Ordinary joining remains closed.
+It does not rewrite existing accounts, entrants, scores or handicap history.
+Existing withdrawn entrants remain unchanged. Use application withdrawal rather
+than direct status updates; the database now requires its admin/session context.
+
+SQLx supplies the transaction around migration 0034 and its migration-history
+record. A seeded schema-33 database upgrade, fresh SQLx test databases, and
+repeat seeding were checked locally against PostgreSQL 17. Public deployment is
+still operator-owned. Keep `RUN_MIGRATIONS=false`, take the normal verified
+pre-upgrade/off-host backup, migrate, refresh grants, deploy API/web together and
+check health/readiness. Schema-33 binaries cannot serve schema 34. Rollback
+requires restoring the pre-upgrade backup into a fresh volume with matching
+binaries; do not delete the new tables or edit published migrations in place.
 
 ### Schema 33 draft tournament details
 

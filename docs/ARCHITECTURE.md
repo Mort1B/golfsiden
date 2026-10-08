@@ -216,8 +216,9 @@ and reapplies runtime grants before the API is started.
   append-only `tournament_archives`. Actor deletion may null its FK without losing
   identity/time. Legacy closed rows are retained without fabricated audit evidence.
   Archiving does not filter API list reads, change memberships or release final results.
-- Invitation issue/rotation, redemption, entrant and membership creation hold a
+- Invitation issue/rotation, redemption, entrant and ordinary membership creation hold a
   shared parent lock through commit and reject completed/archived parents.
+  Prepared-player claims have the narrow membership-only exception described below.
   Identity-changing member/entrant updates also check the destination. Completion
   never locks/revokes invitation rows, avoiding a parent-to-invitation lock cycle.
   Closed round plans cannot be inserted into, moved or deleted. Existing member
@@ -343,10 +344,42 @@ and reapplies runtime grants before the API is started.
   active membership/entrant pair is idempotent before lifecycle checks; partial
   compatible state is repaired, while inactive or withdrawn identities fail
   closed. Joining never creates team or flight membership.
-- Direct `POST /api/tournaments/{tournament_id}/players` registration is retired.
-  Creator onboarding, signed-in creation and invitation registration/acceptance are the only HTTP
-  paths that establish participation, so no product route accepts an arbitrary
-  global player ID or exposes a global player search.
+- Exact tournament admins can prepare a new player through `POST
+  /api/tournaments/{tournament_id}/players`, with name and handicap only. Creation
+  atomically stores the player, entrant, both initial handicap histories and a
+  personal claim grant. Arbitrary global player IDs and global player discovery
+  remain unsupported. There is no placeholder account: claim redemption creates
+  the account linked to that exact player, without changing its sporting records.
+- `repositories/player_claims` owns claim and withdrawal transactions. A claim
+  secret has 256 random bits, is stored as a hash in PostgreSQL, expires after seven days,
+  and is delivered once. Reissue serializes through player/entrant locks and
+  revokes earlier unconsumed grants; linked accounts cannot receive claim grants.
+  Public preview/redemption authenticate before credential validation/hashing,
+  use canonical UUID rate-limit keys and no-store responses, and recheck the
+  grant under locks plus database wall-clock expiry before commit. Claim creates
+  user, player membership, consumption record and session atomically. Username
+  conflicts and expired waits roll back everything; cookies/events follow commit.
+- Prepared active entrants can claim after completion or archival. Migration
+  0034 permits only a player-role membership backed by a consumed grant from the
+  same transaction, matching linked account and existing active entrant. Ordinary
+  closed-tournament joining remains forbidden. Admin link reissue/revocation is
+  also available after closure; creation and withdrawal are not.
+- Withdrawal keeps the entrant and changes only participation status, records an
+  append-only actor audit and revokes unconsumed claim grants. It preserves
+  accounts, memberships/roles, historical scores, snapshots and standings.
+  Self/admin withdrawal, draft team/flight/match assignments, and participation
+  in open/completed rounds are rejected. Locked rounds remain untouched. The
+  repository locks rounds before parent/player/entrant; target account/member
+  locks use NOWAIT to avoid cycles with ordered password-recovery account locks.
+  Contention returns a retryable conflict. PostgreSQL independently checks the
+  exact-admin session context and withdrawal restrictions.
+- Claim UI is isolated in `features/playerClaims`. Private account metadata keys
+  are user/tournament scoped and participate in structural invalidation. Secrets
+  stay in component-local state and zero-retention mutations; public URLs use
+  `/claim/{id}#token={secret}` and immediately clear the fragment. Canonical
+  session plus mounted-lifetime checks fence late links, registration and logout
+  callbacks. Uncertain creation forces roster review before another creation;
+  the create endpoint does not provide request-id idempotency.
 - Public invitation handlers authenticate an extractable token before strict
   secondary-field decoding. Registration hashes outside the transaction after a
   cheap link preflight, then revalidates with database time after row-lock waits.
@@ -1017,6 +1050,12 @@ Implemented resources:
 | `POST` | `/api/tournaments/{tournament_id}/start` | Start a ready draft tournament as its exact admin without opening a round |
 | `GET`, `PATCH` | `/api/tournaments/{tournament_id}/final-round-visibility` | Read or change the exact-admin final-back-nine visibility setting |
 | `GET` | `/api/tournaments/{tournament_id}/players` | List the private roster and handicap-correction state |
+| `POST` | `/api/tournaments/{tournament_id}/players` | Exact admin creates a named entrant and one-time claim link |
+| `GET` | `/api/tournaments/{tournament_id}/player-accounts` | Exact admin reads claim/account metadata, without secrets |
+| `POST`, `DELETE` | `/api/tournaments/{tournament_id}/players/{player_id}/claim` | Replace or revoke an unclaimed player's link |
+| `DELETE` | `/api/tournaments/{tournament_id}/players/{player_id}` | Withdraw an eligible entrant while retaining history and access |
+| `POST` | `/api/player-claims/{claim_id}/preview` | Authenticate a personal link and return prepared player/tournament names |
+| `POST` | `/api/player-claims/{claim_id}/register` | Claim that player with a new username/password account |
 | `POST` | `/api/tournaments/{tournament_id}/players/{player_id}/handicap-corrections` | Audit a pre-opening tournament handicap correction |
 | `GET`, `POST` | `/api/tournaments/{tournament_id}/rounds` | List and create rounds |
 | `GET` | `/api/rounds/{round_id}` | Retrieve a round |

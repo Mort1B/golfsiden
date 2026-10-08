@@ -14,6 +14,7 @@ const TournamentPage = lazyPage(async () => (await import('./pages/TournamentPag
 const TournamentsPage = lazyPage(async () => (await import('./pages/TournamentsPage')).TournamentsPage)
 const LeaderboardPage = lazyPage(async () => (await import('./pages/LeaderboardPage')).LeaderboardPage)
 const ScorePage = lazyPage(async () => (await import('./pages/ScorePage')).ScorePage)
+const ClaimPage = lazyPage(async () => (await import('./pages/ClaimPage')).ClaimPage)
 const ResetPasswordPage = lazyPage(async () => (await import('./pages/ResetPasswordPage')).ResetPasswordPage)
 const TournamentOnboardingPage = lazyPage(async () => (await import('./pages/TournamentOnboardingPage')).TournamentOnboardingPage)
 const JoinPage = lazyPage(async () => (await import('./pages/JoinPage')).JoinPage)
@@ -28,6 +29,7 @@ const privatePage = (children: ReactNode) => <RequireSession>{children}</Require
 export const router = createBrowserRouter([
   { path: '/', element: <HomePage /> },
   { path: '/create', element: <TournamentOnboardingPage /> },
+  { path: '/claim/:claimId', element: <ClaimPage /> },
   { path: '/reset-password/:grantId', element: <ResetPasswordPage /> },
   { path: '/results/shared/:grantId', element: <SharedResultsPage /> },
   { path: '/login', element: <SignInPage /> },

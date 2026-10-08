@@ -868,12 +868,61 @@ former global player/profile/handicap routes and legacy
 `POST /api/tournaments` platform-admin contract are retired. The same POST path
 now exposes authenticated per-account creation, described below; it does not
 restore global administrator authority. Player discovery is available only from
-a target tournament's private roster. Direct `POST
-/api/tournaments/{tournament_id}/players` registration is also retired: admins
-enroll players through tournament invitations, never by submitting a global
-player identifier. `GET
+a target tournament's private roster. `POST
+/api/tournaments/{tournament_id}/players` now lets exact tournament admins prepare
+new players by name and handicap; the old global-player-ID registration payload
+remains rejected. General invitations remain available for self-registration.
+`GET
 /api/me/tournaments` returns only the active user's tournament roles and linked
 entrant identities.
+
+## Admin-created players and personal account links
+
+Open **Administrasjon → Deltakere**, or **Administrer spillere** on the tournament
+page. Enter the player's name and handicap, then choose **Opprett spiller og
+kontolenke**. This immediately creates the entrant and preserved tournament
+handicap, ready for normal round setup. It does not create a usable login yet.
+
+Copy the personal link and send it privately to the intended person using your
+usual messaging channel. The app does not send email or messages. The recipient
+opens the link, checks the prepared name, and chooses a username and password.
+The new account owns that same player identity, including any existing teams,
+scores and handicap snapshots; claiming never creates a duplicate entrant.
+A signed-in recipient must explicitly sign out before claiming. Linking or merging
+an already-existing account with a different player identity is not supported.
+
+Links last seven days and can be used once. Their secrets are shown only when
+created and are not stored in browser storage. **Lag ny kontolenke** replaces the
+previous link; **Tilbakekall kontolenke** invalidates it. Once the player has an
+account, claim actions disappear; the existing password-help flow handles lost
+passwords. Prepared active players can still claim after completion/archival, and
+admins can replace expired links then. Closed tournaments reject new players.
+
+If creation loses its response, the UI refreshes the roster and asks you to
+check it before enabling another creation. The player may already exist: use
+that row's new-link action instead of creating another player. Creation itself
+is not request-id idempotent.
+
+**Fjern fra turneringen** asks for confirmation and withdraws the player from
+active participation. It preserves the account, existing tournament access and
+roles (including scorer permissions), scores, standings and handicap history.
+The row remains marked **Trukket**. It is not account deletion or access
+revocation, and withdrawal cannot be undone through this interface.
+
+Remove the player's draft team, flight and match assignments using the existing
+round editors first. Participating open/completed rounds must be locked before
+withdrawal; the UI explains these blockers. Administrators, including yourself,
+cannot be withdrawn. Completed/archived tournaments reject withdrawals. A
+withdrawn entrant cannot rejoin using a general invitation, and outstanding
+personal claim links are invalidated. Future round readiness excludes the entrant.
+
+API creation accepts `{display_name, handicap_index}` and returns
+`{player_id, claim_id, expires_at, token}`. Public preview accepts `{token}`;
+registration accepts `{token, account: {username, password}}` and returns
+`{tournament_id, player_id, session}`. Every new endpoint returns no-store
+responses. Metadata and all admin mutations require exact tournament-admin
+membership; mutations also require the session CSRF token. No client-supplied
+account ID, role or existing global player ID is accepted.
 
 ## User profile
 

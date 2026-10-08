@@ -1,0 +1,15 @@
+.player-management, .claim-link, .claim-page .sign-in-panel { min-width: 0; overflow-wrap: anywhere; }
+.player-management, .player-management form, .player-management label, .claim-link, .managed-players li { display: grid; gap: 12px; }
+.player-management input { min-width: 0; width: 100%; min-height: 48px; padding: 10px; border: 1px solid #aeb8b1; border-radius: 6px; }
+.player-management button, .player-management a, .claim-page button, .claim-page a { min-height: 44px; padding: 10px 12px; }
+.player-management button { border: 1px solid #aeb8b1; border-radius: 6px; background: #fff; color: #176640; font-weight: 700; }
+.player-management button:disabled { opacity: .6; }
+.player-management :focus-visible { outline: 3px solid #63a984; outline-offset: 2px; }
+.player-management [role="alert"] { color: #7d241d; }
+.claim-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.claim-actions button { flex: 1 1 160px; }
+.managed-players { padding: 0; list-style: none; margin: 0; }
+.managed-players li, .claim-link, .claim-confirmation { border-top: 1px solid #d8ded8; padding: 16px 0; }
+.managed-players li span { font-size: .875rem; }
+.claim-page .sign-in-panel { display: grid; gap: 16px; }
+.claim-page a { display: flex; align-items: center; color: #176640; text-decoration: underline; }

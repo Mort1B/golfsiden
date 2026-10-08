@@ -456,8 +456,21 @@ async fn tournament_api_aggregates_completed_rounds_and_keeps_current_teams(pool
     open(&pool, ROUND_THREE).await;
     open_latest_round(&pool).await;
     round_completion::lock(&pool, ROUND_TWO).await.unwrap();
+    // Owner-only fixture: preserve this test of legacy ineligible entrant state.
+    sqlx::query(
+        "ALTER TABLE tournament_players DISABLE TRIGGER tournament_players_guard_withdrawal",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query("UPDATE tournament_players SET status = 'withdrawn' WHERE tournament_id = $1 AND player_id = $2")
         .bind(TOURNAMENT).bind(PLAYER_D).execute(&pool).await.unwrap();
+    sqlx::query(
+        "ALTER TABLE tournament_players ENABLE TRIGGER tournament_players_guard_withdrawal",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     save(
         &pool,
         ROUND_ONE,

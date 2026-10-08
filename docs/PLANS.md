@@ -9,9 +9,9 @@ None.
 
 ## Next candidate
 
-No further implementation is approved. Continue functional testing of the hosted
-site; scope a bounded repair from concrete feedback. The in-app offline return
-step is complete; it does not provide offline reload or closed-app launch.
+Continue functional testing of player creation, personal account claiming and
+withdrawal after deploying matching schema-34/API/frontend builds. No further
+implementation is approved; scope new work from concrete feedback.
 
 ## Later queue
 

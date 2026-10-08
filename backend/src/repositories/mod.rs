@@ -26,3 +26,5 @@ pub mod password_recovery;
 pub mod stableford;
 
 pub mod match_play;
+
+pub mod player_claims;

@@ -547,11 +547,24 @@ async fn empty_and_partial_draft_rosters_are_valid_for_both_formats(pool: PgPool
 #[sqlx::test(migrations = "../migrations")]
 async fn entrant_activity_is_effective_and_ineligible_submissions_write_nothing(pool: PgPool) {
     seed(&pool).await;
+    // Owner-only fixture: preserve this test of legacy ineligible entrant state.
+    sqlx::query(
+        "ALTER TABLE tournament_players DISABLE TRIGGER tournament_players_guard_withdrawal",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query(
         "UPDATE tournament_players SET status='withdrawn' WHERE tournament_id=$1 AND player_id=$2",
     )
     .bind(uuid!("b1000000-0000-0000-0000-000000000001"))
     .bind(P2)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "ALTER TABLE tournament_players ENABLE TRIGGER tournament_players_guard_withdrawal",
+    )
     .execute(&pool)
     .await
     .unwrap();

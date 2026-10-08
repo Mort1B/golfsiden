@@ -641,11 +641,24 @@ async fn incomplete_non_draft_and_entrantless_plans_are_not_ready(pool: PgPool) 
         "tournament_start_not_ready"
     );
 
+    // Owner-only fixture: preserve this test of legacy ineligible entrant state.
+    sqlx::query(
+        "ALTER TABLE tournament_players DISABLE TRIGGER tournament_players_guard_withdrawal",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query("UPDATE tournament_players SET status = 'withdrawn' WHERE tournament_id = $1")
         .bind(TOURNAMENT_B)
         .execute(&pool)
         .await
         .unwrap();
+    sqlx::query(
+        "ALTER TABLE tournament_players ENABLE TRIGGER tournament_players_guard_withdrawal",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     let entrantless = app
         .clone()
         .oneshot(start_request(
@@ -662,11 +675,24 @@ async fn incomplete_non_draft_and_entrantless_plans_are_not_ready(pool: PgPool) 
         "tournament_start_not_ready"
     );
 
+    // Owner-only fixture: preserve this test of legacy ineligible entrant state.
+    sqlx::query(
+        "ALTER TABLE tournament_players DISABLE TRIGGER tournament_players_guard_withdrawal",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query("UPDATE tournament_players SET status = 'active' WHERE tournament_id = $1")
         .bind(TOURNAMENT_B)
         .execute(&pool)
         .await
         .unwrap();
+    sqlx::query(
+        "ALTER TABLE tournament_players ENABLE TRIGGER tournament_players_guard_withdrawal",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     sqlx::query("DELETE FROM rounds WHERE tournament_id = $1 AND round_number = 2")
         .bind(TOURNAMENT_B)
         .execute(&pool)
