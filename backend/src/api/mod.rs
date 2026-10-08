@@ -2,6 +2,7 @@ mod auth;
 mod authorization;
 mod course_catalog;
 mod course_provider;
+mod fantasy;
 mod four_ball;
 mod invitations;
 mod leaderboards;
@@ -47,6 +48,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .merge(course_provider::routes())
         .merge(invitations::routes())
         .merge(player_claims::routes())
+        .merge(fantasy::routes())
         .merge(onboarding::routes())
         .merge(leaderboards::routes())
         .merge(tournaments::routes())

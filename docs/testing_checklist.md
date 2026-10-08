@@ -10,6 +10,10 @@ Start with the practical session below, then test the formats and optional flows
 you actually intend to use. These are manual checks to perform, not a claim that
 your hosted deployment has already passed them.
 
+Fantasy currently has private selection/settlement APIs and backend scoring rules.
+Its result APIs and screens are still planned, so it is not yet a playable flow
+in this checklist. See the [current API contracts](Documentation.md#fantasy-selection-api).
+
 ## A practical first session
 
 - [ ] **Create and invite.** As organizer, create a tournament with the intended

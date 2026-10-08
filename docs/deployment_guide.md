@@ -12,13 +12,14 @@ are expected to survive loss of that host.
 
 ## Current release
 
-The current application requires **schema 34** through
-`0034_player_claims.sql`, with matching API and frontend builds. The API
+The current application requires **schema 37** through
+`0037_fantasy_guards.sql`, with matching API and frontend builds. The API
 checks every embedded migration and checksum, not only the largest version.
 Do not skip intermediate migrations when upgrading an older installation.
 
 | Change | Deployment requirement |
 | --- | --- |
+| Fantasy private selections and non-finish persistence | Schemas 35–37 and refreshed runtime grants; result APIs/UI remain planned |
 | Admin-created players, personal claim links and withdrawal | Schema 34, refreshed runtime grants and matching API/frontend |
 | Draft tournament name, description and date editing | Schema 33, refreshed runtime grants and matching API/frontend |
 | Offline return to the last opened scorecard | Updated frontend against the schema-33 API; no further migration or configuration |
@@ -449,6 +450,30 @@ corrections and confirmation require connectivity and current authorization.
 Deploy strict nullable overall and match decoders with the API: match-only private
 overall reads are explicitly not applicable and public overall sharing unavailable.
 Mixed public summaries keep their existing allowlist and exclude match facts.
+
+### Schemas 35–37 Fantasy persistence
+
+Apply `0035_fantasy_selections.sql`, `0036_fantasy_sources.sql` and
+`0037_fantasy_guards.sql` with the owner migration command, then refresh runtime
+grants before starting the matching API. No new secret, worker or scheduler is
+required. Games are opt-in: migrations do not enable Fantasy or create manager
+entries for existing tournaments. Enable only while all rounds are draft and
+before any Fantasy window expires. There is no Fantasy screen or result API yet.
+
+The migrations retain current roster/member facts in new temporal histories and
+install integrity/source-generation triggers. Existing sporting records are not
+rewritten. SQLx wraps each forward migration and its history record in a transaction.
+Take the usual verified pre-upgrade backup; keep `RUN_MIGRATIONS=false`, migrate,
+refresh grants, deploy matching builds, and check `/api/health` and `/api/ready`.
+Older binaries reject schema 37. Rollback requires restoring the pre-upgrade backup
+into a fresh volume with matching binaries; do not remove histories, reset source
+generations, disable guards or edit published migration files.
+
+Local acceptance includes fresh PostgreSQL databases, a populated schema-34 upgrade
+with preserved player/round/tournament rows, repeated migration/seed, and Fantasy
+operations under a restricted runtime role. This does not claim production
+deployment or a new backup/restore rehearsal. Source generations and selection
+receipts must be backed up with their parent tournament for their full lifetime.
 
 ### Schema 34 prepared players and personal account claims
 

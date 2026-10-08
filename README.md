@@ -158,11 +158,11 @@ the exact build, migration, permission, backup, restore, rollback, and launch
 procedure. Never reuse `.env.example` credentials or run the development seed in
 production.
 
-The current application requires schema 33, including
-`0033_tournament_details.sql`, with matching API and frontend builds. The later
-offline-return improvement needs only rebuilt frontend assets, with no additional
-migration. The hosted deployment at gg26.no is operator-managed; local validation
-does not establish which release is running there.
+The current application requires schema 37 through `0037_fantasy_guards.sql`,
+with matching builds and refreshed runtime database grants. Fantasy selections
+and admin settlement records are available through private APIs; Fantasy result
+APIs and screens are still planned. The hosted deployment at gg26.no is
+operator-managed; local validation does not establish which release runs there.
 
 ## Database commands
 

@@ -1,29 +1,94 @@
 # Project documentation
 
-## Fantasy domain foundation; integration planned
+## Fantasy persistence; result integration planned
 
-Fantasy is not currently available to users. A tested pure backend domain
-foundation now implements the agreed scoring and lineup resolution rules:
-four golfers per round, a double-points captain, shared team results and separate
-manager/golfer round and overall leaderboards. Non-match rounds use net hole and
-placement points; pickups and net quad bogey or worse are -5, and non-finishers
-keep recorded points. Match play uses only the accepted outcome: win +3, draw +1,
-loss -1, with no hole or placement awards. Captain outcomes are +6/+2/-2.
+Fantasy has tested backend scoring rules and private selection APIs. It is not
+available as a complete game in the UI: result projection APIs and screens are
+still planned. Schema 37 is required. The agreed game remains four golfers each
+round, a double-points captain, shared team results and separate manager/golfer
+round and overall leaderboards. Non-match rounds use net hole and placement points;
+pickups and net quad bogey or worse are -5. Non-finishers keep recorded points.
+Match play uses only the accepted result: win +3, draw +1, loss -1. Captain
+outcomes are +6/+2/-2, and every round contributes to the eventual total.
 
-When no valid new lineup is submitted, automatically carry forward the previous
-eligible locked lineup and captain. If there is no usable previous lineup,
-mark missed/invalid and award zero; never invent replacement picks. Each round
-uses its own results, with captain doubling only in manager totals.
-The planned admin non-finish disposition preserves recorded points independently
-of golf completion, with no placement for declared non-finishers.
+The backend now stores entries, accepted lineups, deadline locks, carry-forward
+copies and admin non-finish records. It does not yet turn sporting scores into
+live Fantasy result responses. See the [next step](PLANS.md#next-candidate) and
+[full contract](ARCHITECTURE.md#fantasy-competition-design).
 
-The foundation provides typed incomplete/withheld/future-round states and
-separate golfer/manager standings, including negative captain points. No Fantasy
-routes, stored lineups, deadline enforcement or screens are connected yet. Schema
-34 and existing application behavior are unchanged. See the
-[next implementation step](PLANS.md#next-candidate) and
-[domain and integration contract](ARCHITECTURE.md#fantasy-competition-design)
-for current boundaries and the remaining work.
+### Fantasy selection API
+
+All routes below have the prefix `/api/tournaments/{tournament_id}/fantasy`.
+They require a current authenticated tournament member and return
+`Cache-Control: no-store`. Writes use the existing session/CSRF convention,
+strict JSON bodies and a 16 KiB body limit. Administrator actions require the
+exact tournament `admin` role. Non-playing members may manage an entry.
+
+| Method and suffix | Caller | Contract |
+| --- | --- | --- |
+| `GET` root | Member | Game `{tournament_id, enabled, rules_version}` or `null` |
+| `PUT` root | Admin | `{enabled: boolean}`; configure while all rounds are draft and no window has closed |
+| `POST /entry` | Member | Enroll once in the enabled game; no body; returns 204 |
+| `GET /rounds/{round_id}` | Member | Window, eligibility, own draft or locked member selections and carry-forward preview |
+| `PUT /rounds/{round_id}/deadline` | Admin | `{deadline: RFC3339 timestamp or null}`; future deadline, or clear it before close |
+| `PUT /rounds/{round_id}/lineup` | Enrolled member | `{request_id, expected_revision, picks, captain}`; returns an immutable receipt |
+| `GET /rounds/{round_id}/owners/{kind}/{owner_id}` | Admin | Current source token and latest non-finish disposition |
+| `POST /rounds/{round_id}/owners/{kind}/{owner_id}` | Admin | `{expected_source_token, disposed, correction, reason}`; returns current source/disposition |
+
+`picks` contains exactly four distinct tournament-player UUIDs, and `captain`
+must be among them. Any eligible four can be selected, including both partners.
+There is no budget or transfer penalty. First save uses `expected_revision: 0`;
+subsequent saves use the last accepted revision. Each new submission uses a new
+UUID `request_id`. To resolve uncertain delivery, retry the same request ID and
+identical body. A confirmed retry returns its original receipt even after lock;
+reusing it with changed content conflicts. Writes require connectivity.
+
+Receipts contain `id`, `round_id`, `user_id`, `revision`, `picks`, `captain`,
+`origin` (`submitted` or `carried_forward`), nullable `source_round`, nullable
+`request_id`/`expected_revision`, and server `accepted_at`. Receipts and historical
+picks survive later withdrawal or account claiming.
+
+A round view includes `window` (`round_id`, nullable `deadline`, `opened_at`,
+`locked_at`), `entered`, `eligible_players`, `selections`,
+`carry_forward_preview`, `carry_forward_eligible`, and `selection_availability`
+(`open`, `closed`, `not_entered`, `insufficient_players`). Selections contain
+`user_id`, `state`, nullable `locked_at` and nullable `receipt`. States are
+`draft`, `invalid_draft`, `locked`, `missed`, `invalid`, or `not_participating`.
+Before lock, even admins see only their own selection. After lock, members see
+participating entries; the caller may also see their own non-participating state.
+
+The earlier of the published UTC deadline and actual golf-round opening closes
+selection. The server materializes due windows on selection reads/saves; no
+scheduler is required. A late read uses membership and golfer eligibility at
+that deadline, not their current state. A valid current lineup wins; otherwise
+only the nearest earlier complete locked lineup available at that deadline can
+carry forward with the same captain if all four are eligible. Missing/invalid
+fallbacks remain explicit; no replacement golfers are generated. Late enrollment
+cannot backfill closed rounds. An expired window cannot be reopened by clearing
+or moving its deadline. Preview eligibility may change before close.
+
+`kind` is `player` for individual/Stableford/singles rounds or `team` for
+scramble/foursomes/four-ball. Source responses contain `round_id`, `owner_kind`,
+`owner_id`, opaque `source_token`, nullable `disposition`, and
+`disposition_current`. The disposition contains `id`, `disposed`, `correction`,
+`reason`, `actor_id`, and `created_at`. These tokens and audit facts are admin-only.
+
+To record a non-finish, read the current source token and POST it with
+`disposed: true`, a nonblank reason (at most 500 UTF-8 bytes) and
+`correction: false` for the first record in an open round. Replacement, reversal
+(`disposed: false`) or any locked-round change requires `correction: true` and a
+reason. Draft rounds are unavailable; confirmed cards and accepted terminal
+matches cannot be overridden. Source changes make an old disposition stale;
+refresh and explicitly review it. This records Fantasy settlement intent without
+completing the sporting round or changing golf scores. Result application follows
+in the projection step.
+
+Errors keep `{error: {code, message}}`. Invalid bodies/lineups return 400;
+authentication, CSRF and membership use existing 401/403/404 behavior. State
+conflicts return 409 with `fantasy_unavailable`, `fantasy_closed` or
+`fantasy_conflict`. Refresh before retrying a changed-state conflict. Successful
+writes and newly materialized closure publish structural SSE invalidations only
+after commit. No anonymous sharing or offline selection queue is added.
 
 ## Current product state
 

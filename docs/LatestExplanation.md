@@ -1,44 +1,62 @@
-# Implement the Fantasy domain foundation
+# Persist Fantasy games and round selections
 
-FANTASY-2 adds pure backend scoring and lineup-resolution modules. The Fantasy
-game is not yet available: no routes, persistence, migrations or UI are included,
-and sporting behavior and schema 34 are unchanged.
+FANTASY-3 adds private selection APIs and PostgreSQL persistence at schema 37.
+Members can enter an enabled game, save four golfers and a captain, recover an
+accepted save by retrying its request ID, and automatically carry eligible picks
+forward. Administrators configure games/deadlines and record audited non-finish
+dispositions. Fantasy result APIs and screens are still planned; this is not yet
+a playable game in the UI.
 
-Non-match scoring applies preserved net hole categories, physical-ace precedence,
-pickup penalties, native-format placement and shared team attribution. Teams are
-ranked once before both partners receive their points. Match play consumes the
-accepted sporting result only: win +3, draw +1, loss -1. Captain multiplication
-includes negative totals; win/draw/loss/win with the loser captained totals five.
-Separate golfer and manager standings sum every expected round with shared ties.
+The database enforces complete lineups, captain membership, tenant identity and
+immutable receipts. Deadline closure uses the earlier published UTC deadline or
+actual golf-round opening. Temporal membership and golfer eligibility make lazy
+closure reflect the deadline itself. For example, a golfer withdrawn after a
+09:00 deadline still belongs to a valid lineup at that deadline even if the first
+read occurs at 09:15. A later round can carry that lineup only if all four are
+eligible at its own deadline. Captains and source-round provenance are preserved.
 
-Lineups require four unique golfers and a captain among them. A valid current
-submission wins; otherwise the nearest earlier locked lineup carries forward
-when all four remain eligible. It retains the captain but uses current-round
-results. Missing or invalid fallbacks are explicit states, never generated picks.
+Pre-lock reads expose only the caller's lineup, including for administrators.
+After lock, current members can read participating selections. No entry can
+backfill a closed round. Accepted retries return their original receipt; changed
+bodies or revisions conflict. All routes use the existing authentication/CSRF
+boundaries, private no-store responses and post-commit invalidation.
 
-The result types distinguish pending recorded points, provisional/final totals,
-withheld results and future rounds. Explicit future rounds permit provisional
-overall ranks; unexpected missing contributions do not become zero. Incomplete
-cards stay unranked, and concealed results conservatively suppress affected
-totals/ranks. Revision-bound non-finish handling retains recorded points without
-placement or invented remaining-hole penalties. Source tokens and deadline facts
-are adapter inputs; authorization, locking and persistence remain future work.
+Non-finish records bind to a canonical full-source token and retained mutation
+generation. Score changes, either four-ball partner, Stableford input, confirmation
+and accepted match changes invalidate earlier tokens. Empty cards and deleted
+inputs retain protection against stale re-attestation. Only exact administrators
+can read these tokens or write dispositions; locked changes, replacements and
+reversals require explicit corrections with reasons. This does not complete the
+golf round or override confirmed cards/accepted match results. Future projection
+work will apply these records to the tested domain scoring rules.
 
-The [architecture](ARCHITECTURE.md#fantasy-competition-design) documents module
-boundaries and limitations. [PLANS.md](PLANS.md#next-candidate) queues FANTASY-3
-persistence and selection APIs, with projection/UI integration after that.
+Validation:
 
-Validation passed:
+- Backend default ladder: 249 tests passed (247 library, two CLI).
+- Final database ladder: 695 tests passed, including the 20 new Fantasy tests.
+- Focused Fantasy PostgreSQL coverage: 20 tests, including controlled lock-wait
+  deadline/revocation/activity races, real opening, pre-lock privacy, exact replay,
+  carry-forward, membership moves, all format source generations and direct guards.
+- A populated schema-34-to-37 upgrade preserved exact player/round/tournament
+  contents; migration replay and repeated seed passed. Fresh final migrations and
+  CLI seed twice passed on disposable PostgreSQL 17.
+- Restricted non-owner role exercised configure/entry/save/lock/carry/open,
+  non-finish recording and later score invalidation. Runtime role initialization
+  and grant refresh passed, with only the disposable hostname substituted for
+  Compose's `postgres`; actual runtime login cannot write migration history.
+- Formatting and strict all-target/all-feature Clippy passed. Read-only schema,
+  API and durable-documentation reviews have no outstanding findings.
 
-- `cargo test -p golf-api domain::fantasy --lib`: 34 Fantasy tests.
-- `cargo test --workspace --all-targets`: 249 tests (247 library, two CLI).
-- `cargo fmt --all -- --check` and strict all-target/all-feature Clippy.
-- Six added documentation links/anchors, source-size limits and whitespace.
-- Independent read-only source and documentation review: no blocking findings.
+The first full database run caught a new identity guard blocking an existing
+password-recovery membership move. The fix records old/new membership history
+without changing recovery authority serialization; all 20 recovery tests pass.
+Review also closed direct timestamp fabrication and concurrent player-activity/
+roster history races. Two Clippy findings and one new test fixture's missing
+required display name were repaired. Existing vendored SQLx warnings remain.
 
-The first full test attempt could not bind eight course-provider mock servers
-inside the sandbox; rerunning with local loopback access passed. Clippy identified
-one collapsible conditional, which was fixed; focused tests passed again afterward.
-Only existing vendored SQLx warnings remain. Database-feature tests, browser and
-frontend checks are not applicable to this pure-domain step; those layers did
-not change and no such validation is claimed.
+No frontend or browser checks ran because this step adds no screens or frontend
+contracts. No production deployment or new restore rehearsal was performed.
+Large-field closure latency is unmeasured: first materialization resolves/writes
+per entry under tournament round locks, while subsequent reads reuse selections
+and bulk-load receipts. The [next candidate](PLANS.md#next-candidate) is FANTASY-4:
+authoritative round/overall result projections, including the golfer points board.

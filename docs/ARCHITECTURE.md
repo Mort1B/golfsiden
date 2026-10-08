@@ -2119,10 +2119,60 @@ remain outside this variant.
 
 ## Fantasy competition design
 
-Status: the FANTASY-2 pure domain foundation is implemented; the full Fantasy
-feature is not available. Persistence, API, UI and release acceptance remain
-planned. [PLANS.md](PLANS.md) owns the next bounded step. Schema 34 and existing
-sporting behavior remain unchanged.
+Status: FANTASY-2 domain rules and FANTASY-3 persistence/private selection APIs
+are implemented at schema 37. Result projection APIs, UI and release acceptance
+remain planned; the complete game is not yet available in the application.
+[PLANS.md](PLANS.md) owns the next bounded step. Sporting scoring and completion
+rules remain unchanged.
+
+### Implemented persistence and selection boundary
+
+Migrations 0035–0037 add games, manager entries, round windows, immutable lineup
+revisions, selection pointers, configuration audits, temporal eligibility and
+membership histories, owner generations and audited non-finish dispositions.
+Four explicit non-null player columns, distinctness/captain checks and composite
+tenant keys enforce atomic lineup identity independently of HTTP validation.
+Manager identity references the user, not a golf-player or team identity.
+
+`repositories/fantasy` owns authorization, deterministic round locks, server-clock
+checks, receipt replay and lazy closure; `api/fantasy` owns typed extraction,
+CSRF/no-store/error mapping and post-commit notifications. The
+[private API inventory](Documentation.md#fantasy-selection-api) describes the
+currently callable contracts. No result adapter or frontend route is connected.
+
+Closure uses the earlier published deadline or authoritative draft-to-open
+timestamp. Due windows materialize in effective-time order, then round order.
+Append-only roster/player-activity/member histories supply eligibility and
+participation at that instant, so a later read cannot reinterpret earlier picks.
+Enabling drains existing roster/member mutations; history triggers lock relevant
+Fantasy rounds and serialize roster changes with player activity. Reverse-order
+contention fails with a retryable conflict. Tournaments without enabled Fantasy
+do not acquire Fantasy round locks for those histories. History identity and
+opening timestamps cannot be fabricated by ordinary direct table updates.
+
+Every save has a user-bound request ID, expected revision and immutable receipt.
+Exact retries return the accepted receipt even after close; changed retry bodies
+conflict. Current valid picks win; otherwise only the nearest earlier locked
+complete lineup available at the destination deadline may carry forward. Copies
+preserve four golfer IDs, captain and source-round provenance. Enrollment after
+close cannot create earlier selections. Pre-lock reads expose only the caller's
+picks, including when that caller is an admin; post-lock member reads expose
+participating entries. Source fingerprints and disposition audits remain admin-only.
+
+Database hooks increment retained owner generations for scores, either four-ball
+partner, Stableford inputs, confirmations and accepted match aggregate changes.
+`source_facts.sql` supplies ordered full facts, including empty holes, frozen
+handicap/course context, both partners/opponents and the match ledger; repositories
+hash canonical serialized facts plus generation. Deleting/recreating inputs cannot
+restore an old token. A disposition compares that token under the round lock,
+requires an exact current admin and reason, and needs an explicit correction for
+locked rounds, replacement or reversal. Confirmed cards and accepted terminal
+matches take precedence. These records do not change sporting scores or completion.
+
+Round responses bulk-load receipts. First materialization still performs per-entry
+resolution and writes for each due round under tournament round locks; subsequent
+reads reuse locked selections. Large-field closure latency has not been benchmarked.
+Bulk projection work must revisit this cost before claiming large-field capacity.
 
 ### Implemented pure domain foundation
 
@@ -2137,7 +2187,8 @@ sporting behavior remain unchanged.
   settle only when the field is settled; until then their finisher-only placement
   is provisional. Incomplete cards retain recorded points and remain unranked.
   A matching opaque owner source token settles a non-finish without placement;
-  stale dispositions return pending. Token generation itself is not implemented.
+  stale dispositions return pending. Persistence now generates owner source tokens;
+  result adapters must still supply them to these pure functions.
 - `matches` consumes the existing accepted `MatchState` and confirmation,
   awarding only +3/+1/-1. Notes/strokes cannot add points; accepted results take
   precedence over a prior non-finish disposition.
@@ -2157,10 +2208,11 @@ conservatively suppress their totals and board ranks rather than estimating
 hidden results. Both complete and partial projections require future adapters to
 apply caller visibility before supplying facts; no transport projection is wired.
 
-Future adapters must supply the authoritative tournament roster/round inventory,
-consistent preserved source facts, eligibility at the deadline and fresh owner
-source tokens. Unit tests exercise these boundaries and arithmetic, not database
-authorization, receipt persistence, locking or user-facing availability.
+Future result adapters must supply the authoritative tournament roster/round
+inventory and preserved visible score facts. Persistence now supplies deadline
+eligibility, receipts and fresh owner source tokens. Pure unit tests exercise
+arithmetic; separate PostgreSQL/API tests exercise authorization, persistence and
+locking. Neither suite makes the unfinished UI available.
 
 ### Agreed game and scoring
 
@@ -2324,11 +2376,11 @@ again; preserve the new recorded points and require admin re-attestation. Do not
 silently ignore edits or erase earned points. Reversals and locked-round changes
 require an explicit reasoned administrator correction, preserving prior versions.
 Emit invalidation only after commit and apply the normal visibility rules to
-settlement status/revisions as well as points. Store this metadata in FANTASY-3;
-resolve it in FANTASY-4 and expose the admin flow in FANTASY-5. Sporting DNF
+settlement status/revisions as well as points. FANTASY-3 stores this metadata;
+FANTASY-4 will resolve it and FANTASY-5 will expose the admin UI. Sporting DNF
 completion is a separate feature and is not introduced by this contract.
 
-### Selection lifecycle and planned defaults
+### Selection lifecycle
 
 The following lifecycle defaults and the user's automatic carry-forward rule
 complete the FANTASY-1 contract.
@@ -2397,21 +2449,22 @@ complete the FANTASY-1 contract.
 
 ### Result ownership, finality and privacy
 
-Create focused `domain/fantasy`, `repositories/fantasy`, `api/fantasy`, typed
-frontend API/decoder modules and `features/fantasy`. The server owns arithmetic;
+The backend has focused `domain/fantasy`, `repositories/fantasy` and `api/fantasy`
+modules. Add typed frontend API/decoders and `features/fantasy` in the UI step.
+The server owns arithmetic;
 SQL enforces identity/uniqueness/lifecycle integrity rather than point formulas.
 Reuse verified existing net calculations and read necessary raw facts in batches.
 Do not expand every existing scoring DTO or duplicate the golf scoring engine.
 
-Proposed persistent entities: one game/ruleset per tournament, a manager entry
+Implemented persistent entities: one game/ruleset per tournament, a manager entry
 keyed by tournament and user, round deadline/lock metadata, complete lineup
 revisions with four unique golfer references, captain and manual/carried-forward
 origin/source-round metadata, revision-bound
 non-finish dispositions and owner generations, and idempotency/audit receipts.
 All relevant ordinary/correction score and accepted match-command write paths
 must advance the owner generation transactionally. Enforce tournament/round/player consistency with
-composite foreign keys; final schema must enforce complete lineups and captain
-membership at commit. Choose deletion behaviors deliberately: account access
+composite foreign keys; the schema enforces complete lineups and captain
+membership at commit. Restrictive deletion preserves records: account access
 revocation must not erase historical lineups, and player claims must not remap
 manager identity. Do not equate Fantasy managers with tournament_players.
 
