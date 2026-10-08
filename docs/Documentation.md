@@ -2,22 +2,24 @@
 
 ## Planned Fantasy side competition
 
-Fantasy is planned, not currently available. The agreed game has four selections
-per round, a double-points captain, net hole/placement points, shared team results
-and a separate all-round leaderboard. Explicit pickups and net quad bogey or
-worse are -5; non-finishers keep recorded hole points. Early-finished matches
-retain earned points without additions or penalties for unplayed holes.
-A separate golfer points leaderboard
-will show each player's round and overall base Fantasy points, independent of
-selection and captain multipliers. No application or schema changes were made by
-this plan. The current runtime still uses schema 34.
-The contract step is active. Its planned admin non-finish disposition retains
-recorded points independently of golf completion; settled finishers receive net
-placement awards while declared non-finishers do not. Match scoring and missed
-lineup choices are still awaiting user decisions.
-See the [execution plan](PLANS.md#active-step) and
+Fantasy is planned, not currently available. Its rule contract is resolved:
+four golfers per round, a double-points captain, shared team results and separate
+manager/golfer round and overall leaderboards. Non-match rounds use net hole and
+placement points; pickups and net quad bogey or worse are -5, and non-finishers
+keep recorded points. Match play uses only the accepted outcome: win +3, draw +1,
+loss -1, with no hole or placement awards. Captain outcomes are +6/+2/-2.
+
+When no valid new lineup is submitted, automatically carry forward the previous
+eligible locked lineup and captain. If there is no usable previous lineup,
+mark missed/invalid and award zero; never invent replacement picks. Each round
+uses its own results, with captain doubling only in manager totals.
+The planned admin non-finish disposition preserves recorded points independently
+of golf completion, with no placement for declared non-finishers.
+
+No application or schema changes were made by this contract; the runtime still
+uses schema 34. See the [next implementation step](PLANS.md#next-candidate) and
 [planned rule contract](ARCHITECTURE.md#fantasy-competition-design-planned-not-implemented)
-for the complete rules, remaining decisions and implementation gates.
+for the complete rules and implementation boundaries.
 
 ## Current product state
 
