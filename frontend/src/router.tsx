@@ -10,6 +10,7 @@ const MatchPage = lazyPage(async () => (await import('./pages/MatchPage')).Match
 const MatchResultsPage = lazyPage(async () => (await import('./pages/MatchResultsPage')).MatchResultsPage)
 const SharedResultsPage = lazyPage(async () => (await import('./pages/SharedResultsPage')).SharedResultsPage)
 const RoundPage = lazyPage(async () => (await import('./pages/RoundPage')).RoundPage)
+const FantasyPage = lazyPage(async () => (await import('./pages/FantasyPage')).FantasyPage)
 const TournamentPage = lazyPage(async () => (await import('./pages/TournamentPage')).TournamentPage)
 const TournamentsPage = lazyPage(async () => (await import('./pages/TournamentsPage')).TournamentsPage)
 const LeaderboardPage = lazyPage(async () => (await import('./pages/LeaderboardPage')).LeaderboardPage)
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
       { path: '/profile', element: privatePage(<ProfilePage />) },
       { path: '/tournaments', element: privatePage(<TournamentsPage />) },
       { path: '/tournaments/:tournamentId', element: privatePage(<TournamentPage />) },
+      { path: '/tournaments/:tournamentId/fantasy', element: privatePage(<FantasyPage />) },
       { path: '/tournaments/:tournamentId/invitations', element: privatePage(<InvitationAdminPage />) },
       { path: '/manage/tournaments/:tournamentId', element: privatePage(<TournamentManagementPage />) },
       { path: '/rounds/:roundId', element: privatePage(<RoundPage />) },

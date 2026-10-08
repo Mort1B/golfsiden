@@ -1,0 +1,39 @@
+.fantasy-page { max-width: 1000px; }
+.fantasy-page .detail-header { min-width: 0; }
+.fantasy-page .detail-header > div { min-width: 0; flex: 1; }
+.fantasy-page h1,.fantasy-page h2,.fantasy-page h3,.fantasy-page strong,.fantasy-page p,.fantasy-page span { overflow-wrap: anywhere; }
+.fantasy-page button,.fantasy-page select,.fantasy-page input:not([type=checkbox]),.fantasy-page summary { min-height: 44px; }
+.fantasy-page button { white-space: normal; max-width: 100%; }
+.fantasy-page button:focus-visible,.fantasy-page summary:focus-visible,.fantasy-page input:focus-visible,.fantasy-page select:focus-visible,.fantasy-page textarea:focus-visible { outline: 3px solid #247655; outline-offset: 3px; }
+.fantasy-page select,.fantasy-page input:not([type=checkbox]),.fantasy-page textarea { display: block; width: 100%; max-width: 100%; box-sizing: border-box; border: 1px solid #a7b5aa; border-radius: 8px; padding: 10px; background: #fff; color: #172b22; margin: 8px 0 16px; font: inherit; }
+.fantasy-page textarea { min-height: 100px; }
+.fantasy-page label { display: block; font-weight: 600; }
+.fantasy-page button { cursor: pointer; border: 1px solid #bccbc1; border-radius: 8px; padding: 10px 14px; color: #173e2b; background: #fff; font: inherit; }
+.fantasy-page button:disabled { cursor: not-allowed; opacity: .55; }
+.fantasy-section { border-top: 1px solid #d5dfd8; padding: 24px 0; }
+.fantasy-section > h2 { margin-top: 0; }
+.fantasy-page fieldset { min-width: 0; border: 0; padding: 0; margin: 18px 0; }
+.fantasy-page legend { font-weight: 700; }
+.fantasy-picks { display: grid; gap: 8px; margin: 12px 0 20px; }
+.fantasy-picks label,.fantasy-check { display: flex !important; align-items: center; gap: 12px; min-height: 48px; border-bottom: 1px solid #e2e8e3; padding: 8px 0; }
+.fantasy-picks input,.fantasy-check input { width: 22px; height: 22px; flex: 0 0 22px; }
+.fantasy-receipt,.fantasy-notice { border-left: 3px solid #4a7a58; padding: 8px 14px; margin: 16px 0; background: #f0f5f1; }
+.fantasy-tabs,.fantasy-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.fantasy-tabs button { flex: 1; }
+.fantasy-tabs [aria-pressed=true] { background: #244c35; color: #fff; }
+.fantasy-standings,.fantasy-holes,.fantasy-contributions { list-style: none; padding: 0; margin: 12px 0; }
+.fantasy-standings > li { display: grid; grid-template-columns: 32px minmax(0,1fr); border-bottom: 1px solid #d5dfd8; padding: 12px 0; gap: 6px; }
+.fantasy-standings button { text-align: left; display: grid; gap: 5px; border: 0; padding: 4px 8px; }
+.fantasy-standings small { text-decoration: underline; }
+.fantasy-rank { padding-top: 8px; font-weight: 700; }
+.fantasy-round-totals { grid-column: 2; list-style: none; padding: 0 8px; display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: .85rem; color: #4d5b51; }
+.fantasy-page details { border-top: 1px solid #d5dfd8; padding: 12px 0; }
+.fantasy-page summary { cursor: pointer; overflow-wrap: anywhere; padding: 8px 0; font-weight: 600; }
+.fantasy-holes li,.fantasy-contributions li { display: grid; gap: 5px; padding: 12px 0; border-bottom: 1px solid #e2e8e3; }
+.fantasy-detail { margin-top: 24px; }
+.fantasy-detail .fantasy-section { border-top: 0; }
+.fantasy-refresh { flex: 0 0 44px; }
+@media (min-width: 650px) {
+  .fantasy-picks { grid-template-columns: repeat(2,minmax(0,1fr)); column-gap: 24px; }
+  .fantasy-holes li { grid-template-columns: 130px minmax(0,1fr) 180px; }
+}

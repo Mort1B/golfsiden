@@ -13,7 +13,7 @@ function record(value: unknown): value is Record<string, unknown> {
 }
 function resultKey(key: QueryKey): boolean {
   return key[2] === 'leaderboards'
-    || key[2] === 'tournaments' && ['rounds', 'match-table'].includes(String(key[4]))
+    || key[2] === 'tournaments' && ['rounds', 'match-table', 'fantasy'].includes(String(key[4]))
     || key[2] === 'rounds' && (key[4] === 'detail'
       || key[4] === 'scorecards' && key[5] === 'read'
       || key[4] === 'match-play' && ['read', 'read-list'].includes(String(key[5])))

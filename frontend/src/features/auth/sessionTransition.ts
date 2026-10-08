@@ -28,6 +28,9 @@ export function publishSessionTransition(
 
 function clearForIdentityTransition(queryClient: QueryClient, next: AuthSession | null): void {
   const current = queryClient.getQueryData<AuthSession | null>(authKeys.session)
+  if (current?.user_id === next?.user_id && current?.csrf_token !== next?.csrf_token) {
+    queryClient.removeQueries({ predicate: query => query.queryKey[0] === 'private-workspace' && query.queryKey[2] === 'tournaments' && query.queryKey[4] === 'fantasy' })
+  }
   if (current === undefined || current?.user_id !== next?.user_id) {
     clearPrivateWorkspace(queryClient)
   }

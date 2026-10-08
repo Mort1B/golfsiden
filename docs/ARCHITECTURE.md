@@ -2120,8 +2120,8 @@ remain outside this variant.
 ## Fantasy competition design
 
 Status: FANTASY-2 domain rules, FANTASY-3 persistence/private selection APIs and
-FANTASY-4 round/overall result APIs are implemented at schema 37. UI and release
-acceptance remain planned; the complete game is not yet available in the application.
+FANTASY-4 round/overall result APIs and FANTASY-5 private mobile UI are implemented
+at schema 37. FANTASY-6 broader release acceptance remains queued.
 [PLANS.md](PLANS.md) owns the next bounded step. Sporting scoring and completion
 rules remain unchanged.
 
@@ -2139,7 +2139,7 @@ checks, receipt replay and lazy closure; `api/fantasy` owns typed extraction,
 CSRF/no-store/error mapping and post-commit notifications. The
 [private API inventory](Documentation.md#fantasy-selection-api) describes the
 currently callable selection contracts; the [result inventory](Documentation.md#fantasy-results-api)
-describes authoritative projections. No frontend Fantasy route is connected.
+describes authoritative projections. The private Fantasy route connects both APIs.
 
 Closure uses the earlier published deadline or authoritative draft-to-open
 timestamp. Due windows materialize in effective-time order, then round order.
@@ -2251,13 +2251,12 @@ mutations leave the whole permitted response unchanged. Pre-lock manager breakdo
 expose only the caller's lineup. Private no-store APIs return explicit state-tagged
 points and publish tournament invalidation after newly materialized selections
 commit. Existing score, match and visibility invalidations remain authoritative;
-FANTASY-5 must connect the frontend query family to them. Round notifications use
+The frontend Fantasy query family subscribes to them. Round notifications use
 the tournament ID as scope and the round ID as resource identity.
 
 Pure unit tests exercise arithmetic; PostgreSQL/API tests exercise all format
 adapters, source-token compatibility, authorization, temporal selections, hidden
-noninterference and transaction effects. Neither suite makes the unfinished UI
-available.
+noninterference and transaction effects. The separate frontend and Chrome suites validate the private UI integration.
 
 ### Agreed game and scoring
 
@@ -2422,7 +2421,7 @@ silently ignore edits or erase earned points. Reversals and locked-round changes
 require an explicit reasoned administrator correction, preserving prior versions.
 Emit invalidation only after commit and apply the normal visibility rules to
 settlement status/revisions as well as points. FANTASY-3 stores this metadata;
-FANTASY-4 resolves it and FANTASY-5 will expose the admin UI. Sporting DNF
+FANTASY-4 resolves it and FANTASY-5 exposes the admin UI. Sporting DNF
 completion is a separate feature and is not introduced by this contract.
 
 ### Selection lifecycle
@@ -2495,7 +2494,8 @@ complete the FANTASY-1 contract.
 ### Result ownership, finality and privacy
 
 The backend has focused `domain/fantasy`, `repositories/fantasy` and `api/fantasy`
-modules. Add typed frontend API/decoders and `features/fantasy` in the UI step.
+modules. Typed frontend API/decoders live under `api/fantasy`; `features/fantasy`
+owns focused UI components and query/mutation coordination.
 The server owns arithmetic;
 SQL enforces identity/uniqueness/lifecycle integrity rather than point formulas.
 Reuse verified existing net calculations and read necessary raw facts in batches.
@@ -2533,26 +2533,52 @@ scores must yield identical allowed JSON, including rank/count/finality/revision
 metadata. Never expose a hidden final through Fantasy while merely hiding its
 hole breakdown. Existing anonymous results links do not gain Fantasy data.
 
-Publish committed lineup/configuration changes through structural invalidation.
-Golf score, correction, match and visibility signals must invalidate the Fantasy
-round and overall query family too. Add it to `api/liveInvalidation.ts`'s explicit
-score/visibility selectors and synchronous privacy clearing. Scope keys by current
-user, tournament and round; fence callbacks by mounted lifetime and canonical
-`authKeys.session`, including same-account renewal. Reauthorize on return and
-clear private projections on identity/authority loss.
+Committed lineup/configuration changes publish structural invalidation. Golf
+score, correction, match and visibility signals invalidate the Fantasy family in
+`api/liveInvalidation.ts`. Visibility/open/disconnection synchronously erase its
+private projections; sibling denial clearing includes Fantasy as well. Browser
+return refreshes canonical authentication before private reads. Same-account CSRF
+renewal removes Fantasy queries without broadening unrelated workspace behavior.
+
+### Implemented frontend boundary
+
+`FantasyPage` is a lazy private route linked from tournament and management pages.
+The workspace is keyed by tournament, user and CSRF identity. Membership controls
+admin rendering; APIs retain actual authority. Query keys are
+`private-workspace / user / tournaments / tournament / fantasy / resource` with
+round/owner identifiers as needed. TanStack Query owns all server state. Reads
+consume abort signals and check canonical `authKeys.session` before and after the
+request. Mutation callbacks check mounted lifetime and the same identity before
+publishing feedback or invalidating queries. A mutation checks again at dispatch.
+Only the exact retryable read error `409 fantasy_conflict` gets two bounded retries;
+mutations have no automatic retries or offline queue.
+
+Runtime decoders validate UUID/context identities, complete picks, captain and
+source provenance, typed result states, round inventories and hidden-response
+consistency. The browser never recomputes scoring. `MyFour` owns transient draft
+input and the exact uncertain request; it distinguishes accepted current receipts
+from historical replay receipts and from carry previews. A changed server revision
+blocks stale submission. Selected ineligible golfers remain removable. A valid
+current lineup suppresses the fallback preview. The deadline display uses a local
+advisory clock; the server decides acceptance and immutable lock state.
+
+The settlement controller preserves owner selection and outcome during routine
+refetch and disables controls while facts refresh. The reason/acknowledgement form
+is keyed by canonical source token and disposition identity, requiring deliberate
+review after changed facts. It lists actual round owners, excluding known
+nonparticipants; team owners are deduplicated. Denial or privacy clearing still
+removes private data immediately. Rules and point-state labels keep zero,
+nonparticipation, pending subtotals, provisional/settled totals and withheld data
+separate.
 
 ### UI and integration evidence
 
-Add a private Fantasy destination linked from the tournament and its management
-workspace. Main view: overall rank, manager, per-round totals, grand total and
-provisional/withheld state. Include manager and golfer leaderboards, each with
-round and overall views. The golfer board shows base points and links to hole and
-placement or match-outcome breakdowns; clearly distinguish it from managers' captain-adjusted
-totals. Include the My Four picker with an
-explicit captain marker, saved/unsaved/deadline feedback, and a per-golfer breakdown
-of net category/placement or match outcome, captain factor and total. Managers can inspect why
-points changed. On phones, use a readable list/round switcher rather than forcing
-all round columns into a narrow table. Show rules and all-round inclusion clearly.
+The private destination shows **Min firer**, expandable admin controls, and
+**Poengtavler**. Managers and golfers each have round and overall views, with
+shared ranks, per-round totals and accessible inline breakdowns. Golfer holes and
+placement/match outcomes remain distinct from manager captain multipliers. Phones
+use readable lists and round selectors; longer names wrap. Loading, errors, retry,
+empty collections, saved/unsaved choices and locked/deadline states are explicit.
 
 Current integration seams verified for this plan:
 
@@ -2606,6 +2632,6 @@ Acceptance examples to turn into tests during the corresponding implementation:
 | Two confirmed finishers and one DNF | Rank only the two finishers for placement; DNF keeps recorded hole points without placement; sporting round state is unchanged. |
 | Withdrawal after an earlier deadline but before first Fantasy read | Previously valid locked lineup remains valid; later materialization uses deadline-time eligibility. |
 
-FANTASY-1's product decisions are resolved. These examples define the future
-implementation contract, not runtime validation; the affected full ladders and
-real browser acceptance remain future work.
+FANTASY-1's product decisions are resolved. These examples define the acceptance
+contract; current evidence is recorded in LatestExplanation.md. FANTASY-6 retains
+the broader format, field-size and multi-round lifecycle acceptance matrix.

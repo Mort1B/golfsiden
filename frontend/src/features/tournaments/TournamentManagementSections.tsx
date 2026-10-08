@@ -72,6 +72,7 @@ export function TournamentManagementSections({ tournament, roster, rounds, navig
           <div><dt>Poengvisning</dt><dd>{scoringMode(tournament.scoring_mode)}</dd></div>
           <div><dt>Planlagte runder</dt><dd>{tournament.number_of_rounds}</dd></div>
         </dl>
+        <Link className="management-link" to={`/tournaments/${tournament.id}/fantasy`}>Fantasy · oppsett, frister og poeng <ArrowRight aria-hidden="true" /></Link>
         <TournamentDetailsEditor tournament={tournament} rounds={rounds.data}
           loading={authorityRefreshing || rounds.pending} readError={rounds.error} retry={rounds.retry} />
         <CountedRoundsEditor

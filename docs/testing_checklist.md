@@ -10,9 +10,26 @@ Start with the practical session below, then test the formats and optional flows
 you actually intend to use. These are manual checks to perform, not a claim that
 your hosted deployment has already passed them.
 
-Fantasy currently has private selection/settlement and round/overall result APIs.
-Its screens are still planned, so it is not yet a playable flow in this checklist.
-See the [current API contracts](Documentation.md#fantasy-results-api).
+Fantasy is available from the tournament's **Fantasy · min firer og poengtavler**
+link. Enable it before opening the first round; each manager must join and save
+four golfers plus a captain. See the [playing/admin flow](Documentation.md#playing-and-administering-fantasy).
+
+## Optional Fantasy session
+
+- [ ] Enable while rounds are draft; join as two members, save different captains,
+  and verify each sees only their own picks before lock, including the admin.
+- [ ] Set an earlier deadline or open the round. Verify locked picks, the captain
+  and automatic carry-forward preview/origin in the next round.
+- [ ] Enter scores, check both **Fantasy-lag** and **Spillerpoeng**, and open round
+  and overall explanations. Captain multipliers must affect only manager totals;
+  both team partners must receive shared base points.
+- [ ] Test a genuine non-finish in the separate test tournament. Confirm retained
+  points, no remaining-hole penalty, and no placement. Change a source score and
+  verify that the stale disposition requires a new reason and correction review.
+- [ ] Check hidden-final results as the player, release/re-hide as admin, and
+  return from another tab. No concealed result may remain visible.
+- [ ] Verify failed/uncertain submissions, retry and expired-deadline feedback.
+  Log out and use the other account; no previous member's private draft may remain.
 
 ## A practical first session
 

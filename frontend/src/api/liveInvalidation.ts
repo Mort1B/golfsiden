@@ -52,14 +52,14 @@ export function invalidateLiveQueries(queryClient: QueryClient, userId: string):
 
 function isScoreInvalidationTarget(queryKey: readonly unknown[], userId: string): boolean {
   if (!isLiveInvalidationTarget(queryKey, userId)) return false
-  if (queryKey[2] === 'leaderboards' || queryKey[2] === 'tournaments' && queryKey[4] === 'match-table') return true
+  if (queryKey[2] === 'leaderboards' || queryKey[2] === 'tournaments' && (queryKey[4] === 'match-table' || queryKey[4] === 'fantasy')) return true
   return queryKey[2] === 'rounds'
     && (queryKey[4] === 'completion-validation' || queryKey[4] === 'scorecards' || queryKey[4] === 'match-play')
 }
 
 export function isVisibilityProjectionTarget(queryKey: readonly unknown[], userId: string): boolean {
   if (queryKey[0] !== privateWorkspaceKeys.root[0] || queryKey[1] !== userId) return false
-  if (queryKey[2] === 'leaderboards' || queryKey[2] === 'tournaments' && queryKey[4] === 'match-table') return true
+  if (queryKey[2] === 'leaderboards' || queryKey[2] === 'tournaments' && (queryKey[4] === 'match-table' || queryKey[4] === 'fantasy')) return true
   if (queryKey[2] !== 'rounds') return false
   return queryKey[4] === 'match-play' && queryKey[5] !== 'scoring' || queryKey[4] === 'completion-validation'
     || (queryKey[4] === 'scorecards' && queryKey[5] === 'read')

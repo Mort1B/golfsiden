@@ -1,20 +1,70 @@
 # Project documentation
 
-## Fantasy backend; screens planned
+## Fantasy competition
 
-Fantasy has private selection, round/overall result and breakdown APIs. It is not
-available as a complete game in the UI: screens are still planned. Schema 37 is
-required. The game uses four golfers each
-round, a double-points captain, shared team results and separate manager/golfer
-round and overall leaderboards. Non-match rounds use net hole and placement points;
-pickups and net quad bogey or worse are -5. Non-finishers keep recorded points.
-Match play uses only the accepted result: win +3, draw +1, loss -1. Captain
-outcomes are +6/+2/-2, and every round contributes to the eventual total.
+Fantasy is an optional private game inside each tournament, available from
+**Fantasy · min firer og poengtavler** on the tournament page and the Fantasy link
+in tournament management. The route is `/tournaments/:tournamentId/fantasy`.
+Schema 37 and matching API/frontend builds are required. Fantasy does not alter
+golf scores, teams or sporting standings. Broader release acceptance remains the
+[next planned step](PLANS.md#next-candidate).
 
-The backend stores entries, accepted lineups, deadline locks, carry-forward
-copies and admin non-finish records, and derives results from preserved golf
-facts. See the [next step](PLANS.md#next-candidate) and
-[full contract](ARCHITECTURE.md#fantasy-competition-design).
+### Playing and administering Fantasy
+
+1. Before opening any round, an exact tournament administrator selects **Aktiver
+   Fantasy**. Each member who wants to play selects **Meld meg på Fantasy**;
+   non-playing tournament members may also enter. Earlier closed rounds cannot
+   be backfilled. Disable is available only before any Fantasy window closes.
+2. Choose a round under **Runde for Min firer**, select four distinct eligible
+   golfers and choose **Kaptein · doble poeng**, then **Lagre firer og kaptein**.
+   Both partners may be selected. There is no budget or transfer penalty. The
+   accepted receipt, revision and captain distinguish saved picks from local
+   edits. An ineligible selected golfer remains visible for removal/replacement.
+3. The server locks picks at the earlier explicit deadline or actual round
+   opening. An admin can set/clear an earlier deadline under **Administrer denne
+   Fantasy-runden** using local date/time; it is sent as an explicit UTC instant.
+   A closed deadline cannot be reopened. The local clock is advisory.
+4. A valid saved current lineup wins. Without one, the screen previews the
+   nearest earlier locked lineup and captain that could be reused; eligibility
+   is checked again at the destination deadline. The locked receipt labels the
+   source round. No complete eligible fallback means missed/invalid and zero;
+   replacement golfers are never invented.
+5. Under **Poengtavler**, switch between **Fantasy-lag** and **Spillerpoeng**, then
+   choose a round or **Sammenlagt · alle runder**. Manager totals double the
+   captain's whole result, including negatives. Golfer totals show everyone's
+   base points, including unselected and historical withdrawn golfers. Open a
+   row for per-round picks/contributions or hole/placement/match explanations.
+6. Administrators can settle a genuine non-finish under the selected round's
+   administration section. Choose the real player/team owner, check the card and
+   supply a reason. Shared team disposition affects both partners. A stale source,
+   replacement, reversal or locked-round change requires renewed review and an
+   explicit correction acknowledgement. The screen preserves selection and
+   save/error feedback during ordinary refresh; changed source facts reset the
+   reason and acknowledgement. Sporting completion is unchanged.
+
+Non-match Fantasy uses net hole points and finisher placement. Pickups and net
+quad bogey or worse are −5; non-finishers retain recorded points without penalties
+for remaining holes. Match play awards only win +3, draw +1, loss −1. All rounds
+count. The expandable **Regler og poeng** section explains the complete scale.
+
+**Avventer** is a recorded subtotal, **foreløpig** may change, and **avgjort** may
+still be corrected through authorized golf/admin paths. Future rounds and known
+nonparticipation are distinct from zero or missing scores. Hidden final results
+remain hidden in totals, rankings and drilldowns. Other managers' selections are
+private before lock, even from admins.
+
+Fantasy writes require connectivity and are never queued offline. If a lineup
+response is uncertain, **Avklar samme innsending** retries the exact request and
+keeps changed submissions disabled until resolved; an older replay receipt never
+replaces a newer accepted lineup. Refreshed conflicting revisions require the
+user to discard/review the stale draft. Score/match/visibility events and browser
+return refresh authoritative results. Visibility/disconnection, denied access,
+logout and session replacement clear private Fantasy projections. Queries retry
+only `409 fantasy_conflict`, at most twice; mutations are never automatically
+retried. Other failures have visible retry/recovery controls.
+
+See the [full scoring and lifecycle contract](ARCHITECTURE.md#fantasy-competition-design)
+and the exact API contracts below.
 
 ### Fantasy selection API
 
