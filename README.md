@@ -32,6 +32,9 @@ access independently.
 - **Live standings and history:** Follow separate gross and net leaderboards,
   inspect a player's counting rounds, and open preserved individual or team
   scorecards from the results.
+- **Tournament Fantasy:** Run an optional private game alongside the golf. Pick
+  four golfers and a captain each round, then follow manager and golfer points
+  for individual rounds and the whole tournament. See [Fantasy](#fantasy).
 - **Private tournament access:** Invite players into membership-protected
   workspaces and control when an 18-hole final round's back-nine results become
   visible to members. Scoring permissions and read-only result access remain
@@ -75,6 +78,80 @@ bracket generation.
 5. **Confirm and finish.** Confirm completed scorecards online. Once the required
    cards are confirmed, the organizer can complete and lock the round, then
    complete and archive the tournament when eligible.
+
+## Fantasy
+
+Fantasy is a separate game within a tournament: it uses the recorded golf results
+without changing scores, teams or sporting standings. Any tournament member can
+manage a Fantasy entry, including a member who is not playing golf. It supports
+all six formats and varying field sizes; nine two-person teams means eighteen
+selectable golfers and nine teams competing for placement points.
+
+### Join, select and follow
+
+1. The tournament administrator opens **Fantasy · min firer og poengtavler** and
+   selects **Aktiver Fantasy** while every round is still draft and no Fantasy
+   deadline has passed. Each interested member selects **Meld meg på Fantasy**.
+2. For each round, choose four distinct eligible golfers, select one as
+   **Kaptein · doble poeng**, and save. Both partners can be selected, and different
+   managers can choose the same golfers. There is no budget or transfer penalty.
+3. Picks lock when the round opens or at an earlier administrator-set deadline.
+   Without a new valid lineup, the previous eligible locked lineup and captain
+   are reused automatically. With no complete eligible fallback, the entry gets
+   zero for that round; the app does not choose replacements. Late entrants do
+   not receive points for rounds whose selection windows have already closed.
+4. Use **Fantasy-lag** for manager standings and **Spillerpoeng** for every
+   golfer's base points, whether selected or not. Both boards offer a round view,
+   **Sammenlagt · alle runder**, and expandable point breakdowns.
+
+The captain doubles their entire contribution, including negative points. All
+rounds count toward Fantasy totals, independently of the golf tournament's
+best-round or tie-break settings. Equal totals share rank. Captain multipliers
+never change a golfer's own points leaderboard.
+
+### Points
+
+Except in match play, each golfer receives net hole points plus placement points.
+Net scores use preserved round handicap calculations, not the player's current
+profile handicap.
+
+| Hole outcome | Points |
+| --- | ---: |
+| Actual hole-in-one, or net albatross or better | +10 |
+| Net eagle | +3 |
+| Net birdie | +1 |
+| Net par | 0 |
+| Net bogey | −1 |
+| Net double bogey | −2 |
+| Net triple bogey | −3 |
+| Net quadruple bogey or worse, or explicit pickup | −5 |
+
+Only one category applies per hole. A physical ace earns +10; a net score of one
+does not by itself count as an ace. Placement follows the format's net ranking:
+positions 1–8 receive **10, 8, 6, 5, 4, 3, 2, 1** points; later positions receive
+zero. Tied positions share points and skip the next position (1, 2, 2, 4).
+Stableford uses native net points for placing and uncapped net strokes for hole
+categories, so a zero-point Stableford hole can still incur a Fantasy penalty.
+
+In scramble, foursomes and four-ball, both partners receive the same shared
+hole and placement points. Each team is ranked once before its points are
+attributed to the two golfers; changing partners next round preserves history.
+
+**Match play awards only +3 for a win, +1 for a draw and −1 for a loss**, using
+the accepted match outcome. There are no hole, ace or placement points, including
+when a match finishes early. A captain therefore receives +6, +2 or −2.
+
+Non-finishers in other formats keep recorded hole points, receive no placement
+award, and incur no penalty for unplayed holes. An administrator must explicitly
+record the non-finish; missing scores alone remain pending.
+
+Selections stay private until lock, even from other administrators. Hidden final
+results remain concealed in both boards. Fantasy selection and settlement writes
+require connectivity and are not queued offline. See the
+[playing and administrator guide](docs/Documentation.md#playing-and-administering-fantasy)
+for deadlines, uncertain saves, result states and corrections, and the
+[deployment checks](docs/deployment_guide.md#fantasy-setup-and-release-checks)
+for enabling Fantasy after an upgrade.
 
 ## Scoring with poor connectivity
 
@@ -158,12 +235,27 @@ the exact build, migration, permission, backup, restore, rollback, and launch
 procedure. Never reuse `.env.example` credentials or run the development seed in
 production.
 
-The current application requires schema 37 through `0037_fantasy_guards.sql`,
-with matching builds and refreshed runtime database grants. Fantasy selections,
-admin settlement records and round/overall manager and golfer results are available
-through the private Fantasy screens and APIs. See the [local Fantasy acceptance evidence](docs/validation/fantasy-release-2026-10-08/README.md).
-The hosted deployment at gg26.no is
-operator-managed; local validation does not establish which release runs there.
+The current application requires **schema 37** through `0037_fantasy_guards.sql`.
+For an existing installation:
+
+1. Record the current release, verify a backup and copy it off-host.
+2. Build the chosen immutable release tag and stop API/web for the upgrade.
+3. Run the owner migration action, then the runtime `permissions` action.
+4. Start matching API/frontend builds and verify `/api/health` and `/api/ready`.
+5. Complete the [Fantasy setup and release checks](docs/deployment_guide.md#fantasy-setup-and-release-checks)
+   in a separate test tournament with two member accounts.
+
+Use the [exact upgrade commands](docs/deployment_guide.md#upgrade-sequence).
+Fantasy needs no additional service, scheduler, secret or environment variable.
+Installing it does not enable games or enroll members automatically. On an
+installation already at schema 37, the Fantasy UI and acceptance work adds no
+further migration. An incompatible-schema rollback requires restoring a verified
+backup into a fresh volume; see [Upgrade and rollback](docs/deployment_guide.md#upgrade-and-rollback).
+
+The [local Fantasy acceptance report](docs/validation/fantasy-release-2026-10-08/README.md)
+covers all six formats and nine teams over three rounds. The hosted deployment
+at gg26.no is operator-managed; local validation does not establish which release
+runs there.
 
 ## Database commands
 

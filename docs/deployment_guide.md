@@ -25,6 +25,15 @@ Do not skip intermediate migrations when upgrading an older installation.
 | Offline return to the last opened scorecard | Updated frontend against the schema-33 API; no further migration or configuration |
 | Recent score-read, session, pairing/start and navigation repairs | Deploy the current API/frontend builds; retain the vendored SQLx patch |
 
+Fantasy includes four picks and a double-points captain, automatic eligible
+carry-forward, and round/overall manager and golfer leaderboards. Non-match
+rounds use net hole and placement points; match play uses +3/+1/−1 outcomes only.
+See the [README rules](../README.md#fantasy) and the
+[Fantasy setup and release checks](#fantasy-setup-and-release-checks).
+No additional Fantasy environment variable, secret, service or scheduler is
+required. A schema-37 installation needs matching current API/frontend builds;
+the UI and acceptance work introduced no later migration.
+
 For an existing installation, use [Upgrade and rollback](#upgrade-and-rollback).
 For a new host, follow configuration and initial deployment below. Finish with
 [Post-deployment checks](#post-deployment-checks), then the
@@ -461,18 +470,14 @@ entries for existing tournaments. Enable only while all rounds are draft and
 before any Fantasy window expires. Private selection, settlement, round/overall
 results and golfer/manager breakdown APIs and screens are available.
 
-FANTASY-4 adds these result APIs without a new migration, configuration setting,
-worker or grant. Deploy the updated API against schema 37 using the existing
-runtime permissions. Canonical source fingerprints remain compatible with existing
-non-finish dispositions. Results derive from current preserved facts rather than
-a persisted award cache; authorized score corrections appear on subsequent reads.
-FANTASY-5 adds the private Fantasy route and subscribes its query family to
-score/match/visibility invalidations. Deploy the matching frontend with the schema-37
-API. No new migration, grant, worker, environment variable or secret is needed.
-Games remain opt-in; deploying the screen does not enroll members or enable games.
-After deployment, use a separate test tournament for selection/captain saving and
-both result boards, and verify privacy with a second member account. The local
-Chrome evidence does not substitute for hosted DNS/TLS/device acceptance.
+Result APIs and the private Fantasy screen use these same schema-37 permissions;
+they require no additional migration or grant beyond the refresh above. Results
+derive from preserved facts rather than a persisted award cache, so authorized
+score corrections appear on subsequent reads. Existing non-finish source
+fingerprints remain compatible. The screen refreshes on score/match/visibility
+events and browser return. Deploy matching API/frontend builds, then perform the
+[Fantasy checks](#fantasy-setup-and-release-checks) below with two member accounts.
+The local Chrome evidence does not substitute for hosted DNS/TLS/device acceptance.
 
 The migrations retain current roster/member facts in new temporal histories and
 install integrity/source-generation triggers. Existing sporting records are not
@@ -489,8 +494,10 @@ operations under a restricted runtime role. The [2026-10-08 release acceptance](
 also exercises the actual runtime login after the production initialization/grant
 scripts, health/readiness, and six real-Chrome scenarios. FANTASY-6 adds tests and
 documentation only; schema and deployment requirements remain unchanged. This
-does not claim production deployment or a new backup/restore rehearsal. Source generations and selection
-receipts must be backed up with their parent tournament for their full lifetime.
+does not claim production deployment or a new backup/restore rehearsal. Source
+generations and selection receipts must be backed up with their parent tournament
+for their full lifetime. Restore the complete application database: selections,
+eligibility histories and settlement records must stay consistent with golf data.
 
 ### Schema 34 prepared players and personal account claims
 
@@ -568,6 +575,63 @@ hole; it cannot reopen after browser closure, reload or cache loss. Known expiry
 denial or locking also removes the option. Pending device edits are separate:
 they remain for later authorized delivery but are absent from server backups.
 Confirmation stays online-only. Do not clear browser site data as an upgrade step.
+
+### Fantasy setup and release checks
+
+Use a separate tournament with at least four eligible golfers and two authenticated
+member accounts. Keep its rounds draft until Fantasy is enabled and the first
+lineups are saved. Administrators prepare teams/opponents as usual; Fantasy does
+not generate sporting pairings. These are operator checks to perform after
+deployment, not a claim that the hosted release has already passed them.
+
+1. **Enable and join.** Open **Fantasy · min firer og poengtavler** from the
+   tournament, or **Fantasy** from tournament management. As tournament admin,
+   choose **Aktiver Fantasy**. Each interested member chooses **Meld meg på Fantasy**;
+   non-playing members can participate too. Deployment does not do this for them.
+   Activation requires all rounds to be draft and no expired Fantasy window.
+2. **Save and verify privacy.** Each account chooses four golfers and a captain,
+   then saves. Check the accepted receipt and reload. Before lock, each account
+   sees only its own lineup, including the administrator. There is no budget or
+   transfer penalty, and both partners may be selected.
+3. **Lock and carry.** Set an earlier deadline under **Administrer denne
+   Fantasy-runden** and let it expire, or open the prepared round. Verify the
+   lineup becomes locked.
+   Leave the next round without a new submission: the prior lineup and captain
+   should carry when that round closes for selection, provided all picks remain
+   eligible. A saved valid new lineup takes precedence. Without an eligible
+   complete fallback the entry is missed/invalid and scores zero. Closed selection
+   windows cannot be reopened or backfilled for late entrants.
+4. **Check both boards.** Record and confirm test golf results. Inspect
+   **Fantasy-lag** and **Spillerpoeng**, for a round and **Sammenlagt · alle runder**.
+   Verify both team partners receive shared points, captains double only manager
+   contributions (including negatives), and unselected golfers still appear.
+   Every Fantasy round counts, regardless of sporting best-round settings.
+   Match rounds award only win +3, draw +1, loss −1, including early finishes;
+   there are no additional match hole/ace/placement points.
+5. **Check settlement and concealment.** In the test tournament, record a genuine
+   non-finish with a reason through the Fantasy administration section. Recorded
+   non-match hole points remain, without placement or unplayed-hole penalties.
+   A changed source must require renewed review before settlement. Test hidden
+   final results with the member account, release/re-hide as admin, and return
+   from another tab. Concealed scores must not leak into totals or rankings.
+6. **Check return and recovery.** Reload, switch accounts and verify saved history
+   persists without exposing another member's draft. Fantasy writes require an
+   online connection. If a save response is uncertain, use **Avklar samme
+   innsending** to resolve that exact submission before changing it. Ordinary
+   failed reads have retry controls; see the [playing/admin flow](Documentation.md#playing-and-administering-fantasy).
+
+If activation is unavailable on an already-started tournament, use a new draft
+test tournament; do not rewrite round history to enable it. If the Fantasy screen
+or APIs are missing after upgrade, verify that API and web use the intended same
+release and that migrations, runtime grants and readiness succeeded. Pending or
+hidden totals are distinct product states, not evidence of a failed deployment;
+inspect the per-round breakdown and confirmation/visibility state first.
+
+Full scoring details are in the [README](../README.md#points). The
+[local acceptance report](validation/fantasy-release-2026-10-08/README.md) covers
+nine teams across three rounds, smaller fields, all six formats and both boards;
+larger twenty-team coverage is database-only. Record hosted/device findings using
+the [testing checklist](testing_checklist.md#optional-fantasy-session).
 
 ## Health, logs, and routine operation
 
