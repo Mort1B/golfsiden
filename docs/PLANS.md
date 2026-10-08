@@ -5,12 +5,10 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None.
-
-## Next candidate
-
 **FANTASY-1 — finalize the Fantasy rule and lifecycle contract (documentation only).**
-The implementation plan is requested; runtime implementation is not yet approved.
+Started on user instruction. This bounded step finalizes the contract; it does
+not change runtime code. Product choices about match scoring and missed lineups
+have been presented to the user and remain pending until answered.
 See the [planned contract](ARCHITECTURE.md#fantasy-competition-design-planned-not-implemented).
 
 - Goal: make every scheduled round and incomplete-result state unambiguous before
@@ -24,10 +22,10 @@ See the [planned contract](ARCHITECTURE.md#fantasy-competition-design-planned-no
   Early-finished matches retain earned points without additions or penalties for
   unplayed holes. Include a golfer points leaderboard for each round and overall,
   showing base Fantasy points before any manager's captain multiplier.
-- Required decisions: match outcome/placement/net/concession rules; authoritative
-  non-finish settlement without weakening golf completion; invalid-at-deadline and
-  missed-lineup policy. Match rounds must not be silently excluded from “all rounds.”
-  Confirm the proposed server-opening/earlier-deadline and visibility defaults.
+- Pending user decisions: match outcome/placement/net/concession rules and
+  invalid-at-deadline/missed-lineup policy. Match rounds must not be silently
+  excluded from “all rounds.” Lifecycle defaults and the Fantasy-only non-finish
+  disposition boundary are defined in the architecture contract.
 - Invariants: Fantasy stays separate from sporting results, uses preserved
   handicaps, never fabricates scores, respects privacy and cannot mutate locked
   sporting facts. Distinguish manager accounts from selected golfer identities.
@@ -52,7 +50,9 @@ invariants; a partial foundation must never be advertised as a playable feature.
    domain boundary: no new routes, database tables or UI.
 2. **FANTASY-3 — game and selection persistence/API.** Add forward migrations,
    repositories and handlers for exact-admin enable/rules/deadlines and member
-   entries/four picks/captain. Enforce complete atomic lineups, tenant identity,
+   entries/four picks/captain, preserved Fantasy handicap inputs and revision-bound
+   admin non-finish dispositions with owner-wide source generations maintained by
+   relevant score/confirmation writes. Enforce complete atomic lineups, tenant identity,
    revisions/replay, pre-lock secrecy and deadline/opening serialization. Respect
    claiming/withdrawal and revoked sessions. Validate PostgreSQL fresh/upgrade,
    repeated seed, direct constraints, API authority and controlled lock races,
@@ -63,13 +63,15 @@ invariants; a partial foundation must never be advertised as a playable feature.
    all tournament golfers regardless of selection; never apply captain multipliers
    to the golfer board. Use raw score states and preserved net calculations,
    including team ranking once before attribution.
-   Implement agreed finality/DNF/match/correction handling and privacy projection
+   Implement agreed finality/DNF/match/correction handling, including independent
+   Fantasy settlement and finisher-only placement, and privacy projection
    before every aggregation. Integrate post-commit invalidations. Test 9-team and
    variable fields, all formats/rounds, hidden-result noninterference, correction
    recomputation and unrelated sporting regression; run backend/database ladders.
    Stop at reviewed result contracts with no fabricated/pending-as-zero results.
 4. **FANTASY-5 — complete mobile-first Fantasy UI.** Add strict runtime decoders,
-   user/tournament-scoped queries, tournament navigation, admin setup, My Four and
+   user/tournament-scoped queries, tournament navigation, admin setup/non-finish
+   settlement, My Four and
    captain/deadline submission, manager and golfer round/overall standings and
    explanations. Include Fantasy in score/match/visibility invalidation and
    return/session clearing.

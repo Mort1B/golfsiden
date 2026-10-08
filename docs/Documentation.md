@@ -11,7 +11,11 @@ A separate golfer points leaderboard
 will show each player's round and overall base Fantasy points, independent of
 selection and captain multipliers. No application or schema changes were made by
 this plan. The current runtime still uses schema 34.
-See the [execution plan](PLANS.md#next-candidate) and
+The contract step is active. Its planned admin non-finish disposition retains
+recorded points independently of golf completion; settled finishers receive net
+placement awards while declared non-finishers do not. Match scoring and missed
+lineup choices are still awaiting user decisions.
+See the [execution plan](PLANS.md#active-step) and
 [planned rule contract](ARCHITECTURE.md#fantasy-competition-design-planned-not-implemented)
 for the complete rules, remaining decisions and implementation gates.
 

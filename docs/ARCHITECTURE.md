@@ -2162,7 +2162,7 @@ A net score of one alone is not evidence of a hole-in-one. The later user rule
 replaces the earlier -3 cap for triple-or-worse; the earlier +5 better-than-eagle
 category is replaced by +10 for albatross-or-better.
 
-Placement follows the round's official net competition standings, with shared
+Placement follows the round's net competition ranking policy, with shared
 competition positions (1, 2, 2, 4). Positions 1 through 8 receive respectively
 10, 8, 6, 5, 4, 3, 2, 1; positions 9 onward receive 0. Smaller fields use the same
 scale without invented positions; larger fields are not capped in capacity.
@@ -2192,8 +2192,8 @@ award. Missing data is pending, not a pickup or par. Fantasy cannot infer DNF
 from lack of score entry or from tournament withdrawal: the present withdrawal
 API deliberately rejects live-round participation. An explicit authoritative
 round non-finish disposition is needed before an incomplete result is treated as
-settled. Define that minimal boundary in FANTASY-1; do not silently relax sporting
-completion/withdrawal rules or create a general lifecycle-repair feature.
+settled. The Fantasy-only settlement boundary below supplies this disposition;
+it never relaxes sporting completion/withdrawal rules.
 
 ### Format adapters and remaining decision gate
 
@@ -2221,15 +2221,66 @@ invent a match placement award or resolve concession scoring. The match decision
 must also handle gross-mode matches without changing their official gross rules:
 Fantasy's net promise needs its own explicitly agreed interpretation there.
 
+### Fantasy non-finish settlement boundary
+
+Use an explicit Fantasy disposition for the real score owner (individual or
+shared team), recorded by an exact tournament administrator with a reason,
+expected source revision, actor, timestamp and auditable history. This is not a
+sporting withdrawal, invented score, confirmation, or round-completion action.
+For shared team cards the disposition applies to both partners; do not infer an
+individual DNF from a team score. A naturally terminal match uses its accepted
+match result instead of this mechanism.
+
+An admin may settle a genuine non-finish only against the current score revision.
+Retain every recorded eligible hole outcome, assign no placement award, and mark
+unplayed holes as non-finish omissions contributing nothing. Preserve numeric
+negative points and explicit pickup penalties. A missing card without disposition
+remains pending; a disposition with no recorded holes explicitly settles zero.
+Other owners remain independent: the Fantasy round settles only when every
+required owner has a final result or a valid disposition. If a sporting round
+cannot complete because of DNF, Fantasy may settle from confirmed complete cards
+and explicit Fantasy dispositions; the sporting round remains in its existing
+state and must be shown separately. Once all owners are settled, compute Fantasy
+placements among confirmed complete finishers using the existing format's net
+ranking and tie policy, excluding declared non-finishers before assigning ranks.
+This creates final Fantasy awards without changing official golf standings or
+pretending that the sporting round has completed. Until that condition holds,
+placement remains provisional; never finalize a current partial-card ranking.
+An all-DNF field receives no placement awards.
+
+The expected source revision is a card/side-wide fingerprint of canonically
+serialized typed facts, not the largest per-hole row revision. Include round and
+owner identity, format, frozen handicap/course inputs, partner identities, every
+relevant hole input identity/state/revision (both partners for four-ball), explicit
+absence markers and confirmation state. Include an owner generation that advances
+on relevant score/confirmation mutations and is retained after input deletion;
+this prevents an insert-then-delete from restoring an old empty-card token.
+Empty cards still have a fingerprint. Any insertion, update, deletion or
+confirmation change must produce a different token. Compute and compare it from transaction-consistent locked facts; never
+accept a client-selected subset. Tokens are internal/admin-authorized metadata,
+not an exception to hidden-result noninterference.
+
+Serialize disposition writes with score writes on the same round/owner locks.
+A later source edit invalidates the revision-bound settlement and makes it pending
+again; preserve the new recorded points and require admin re-attestation. Do not
+silently ignore edits or erase earned points. Reversals and locked-round changes
+require an explicit reasoned administrator correction, preserving prior versions.
+Emit invalidation only after commit and apply the normal visibility rules to
+settlement status/revisions as well as points. Store this metadata in FANTASY-3;
+resolve it in FANTASY-4 and expose the admin flow in FANTASY-5. Sporting DNF
+completion is a separate feature and is not introduced by this contract.
+
 ### Selection lifecycle and planned defaults
 
-These are proposed implementation defaults for matters not assigned special
-rules by the user; confirm the final contract in FANTASY-1.
+The following lifecycle defaults are selected for implementation in FANTASY-1.
+The missed/invalid-lineup scoring choice is still pending the user's answer;
+it is explicitly distinguished below.
 
 - Enable Fantasy before the first playing round; do not backfill historical
   selections. Persist a versioned ruleset, frozen before the first lineup locks.
-  Turn off/cancel only through a deliberate audit-preserving policy, never by
-  deleting results. No arbitrary score-rule editor is required in version one.
+  Disable only before any lineup locks; retain saved drafts/audit history. After
+  the first lock, no cancel/reset endpoint in version one. No arbitrary score-rule
+  editor is required.
 - Save one complete lineup atomically, with a revision and an idempotency key.
   Reject fewer/more than four, duplicates, a captain outside the four, wrong-
   tournament or ineligible entrants. Fewer than four eligible golfers gives an
@@ -2237,7 +2288,9 @@ rules by the user; confirm the final contract in FANTASY-1.
 - Default deadline is authoritative round opening; an optional earlier published
   UTC deadline may close selections sooner. Use the server clock. Expiry at the
   deadline is closed. A postponed round does not automatically reopen picks.
-  Deadline changes must never reopen revealed/locked selections.
+  Deadline changes must never reopen revealed/locked selections. They are allowed
+  only while the old window is open and the new deadline remains in the future;
+  never close retroactively or clear accepted picks.
 - Lock writes against the same round row as opening, then recheck live session,
   membership, eligibility, revision, round state and current wall-clock deadline
   before commit. Opening and a selection save have exactly one serial order.
@@ -2250,7 +2303,11 @@ rules by the user; confirm the final contract in FANTASY-1.
 - Pick eligibility is rechecked on save and at effective close. Pre-close
   withdrawals require replacement and a visible invalid-lineup state; no silent
   substitution or captain promotion. Historical locked picks survive subsequent
-  withdrawal/account claiming. Resolve the invalid-at-close rule in FANTASY-1.
+  withdrawal/account claiming. Apply the pending missed/invalid-lineup policy
+  consistently at effective close; never silently shorten the lineup. Persist
+  eligibility as of the actual deadline, not the time a later reader happens to
+  materialize the lock. Relevant roster mutations serialize with lock finalization
+  so a withdrawal after expiry cannot invalidate a previously valid locked pick.
 - Picks are player identities, not permanent team identities. Shared scoring uses
   the actual round's frozen partners at opening, preserving administrator-managed
   pairing changes between rounds. Explain that relationship in the picker.
@@ -2272,8 +2329,10 @@ Do not expand every existing scoring DTO or duplicate the golf scoring engine.
 
 Proposed persistent entities: one game/ruleset per tournament, a manager entry
 keyed by tournament and user, round deadline/lock metadata, complete lineup
-revisions with four unique golfer references and a captain reference, and
-idempotency/audit receipts. Enforce tournament/round/player consistency with
+revisions with four unique golfer references and a captain reference, revision-bound
+non-finish dispositions and owner generations, and idempotency/audit receipts.
+All relevant ordinary and correction score-write paths must advance the owner
+generation transactionally. Enforce tournament/round/player consistency with
 composite foreign keys; final schema must enforce complete lineups and captain
 membership at commit. Choose deletion behaviors deliberately: account access
 revocation must not erase historical lineups, and player claims must not remap
@@ -2356,7 +2415,13 @@ Acceptance examples to turn into tests during the corresponding implementation:
 | User claims a selected prepared golfer after lineup lock | Same selected player and points; no extra manager entry. |
 | Hidden back-nine scores change | Identical permitted Fantasy totals/ranks/metadata. |
 | Selection competes with opening, expiry or membership revocation | Atomic accepted save or explicit rejection; no partial/late lineup. |
+| DNF disposition at revision 6, followed by score edit revision 7 | Revision 6 disposition remains in history; result becomes pending and uses recorded revision 7 points until re-attested. |
+| DNF card has no recorded holes | Explicit disposition settles zero hole points; an ordinary empty card remains pending. |
+| First score inserted after empty-card DNF settlement | Source token changes; disposition becomes stale even if the new score is later deleted. |
+| Either four-ball partner's input changes after shared DNF settlement | Side token changes and both attributed results become pending until re-attested. |
+| Two confirmed finishers and one DNF | Rank only the two finishers for placement; DNF keeps recorded hole points without placement; sporting round state is unchanged. |
+| Withdrawal after an earlier deadline but before first Fantasy read | Previously valid locked lineup remains valid; later materialization uses deadline-time eligibility. |
 
-Match outcomes/concessions, DNF settlement and invalid/missed selections require
-additional signed-off examples in FANTASY-1. This contract is not runtime
+Match scoring and invalid/missed selections still await user answers in
+FANTASY-1. DNF settlement examples above define the implementation boundary. This contract is not runtime
 validation; the affected full ladders and real browser acceptance remain future work.

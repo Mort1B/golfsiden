@@ -1,32 +1,38 @@
-# Clarify Fantasy early finishes and golfer standings
+# FANTASY-1 contract closure in progress
 
-This iteration updates the Fantasy plan only. Fantasy is not implemented;
-application behavior, schema 34, player claims and deployment remain unchanged.
+The user started the plan. FANTASY-1 is active and remains documentation-only;
+no Fantasy runtime, migration or UI has been implemented. Match-result bonuses,
+match net/concession scoring and missed-lineup behavior have been presented as
+concrete choices and are awaiting user answers. FANTASY-2 has not started.
 
-A match that legitimately finishes early retains the points earned when it ends.
-Unplayed remaining holes add no points or penalties and do not stay pending or
-block settlement once the match facts are final. This is normal match completion,
-not DNF. For example, seven earned hole points after a match ends on hole 14 stay
-seven; holes 15-18 contribute nothing. Match placement, net allocation and
-concession scoring remain separate decisions before implementation.
+The contract now defines Fantasy-only non-finish settlement. An exact tournament
+admin records a reasoned, revision-bound disposition for an individual or shared
+team score owner. Recorded points remain, unplayed holes add nothing, and the
+non-finisher receives no placement. Once every owner is confirmed complete or
+explicitly disposed, Fantasy ranks complete finishers using the format's net
+ranking policy. The golf round keeps its own state and completion rules.
+Later source edits invalidate the disposition until re-attested, preserving
+history and preventing a stale final result. Both partners retain the shared
+result in team formats. All-DNF fields have no placement awards.
 
-The plan now includes a golfer points leaderboard alongside Fantasy manager
-standings. It shows every tournament golfer's base Fantasy points by round and
-across all rounds, including golfers nobody selected. Placement and hole-point
-breakdowns explain each total. Captain multipliers apply only to managers:
-a golfer with 12 points still shows 12 even when a manager receives 24 for
-captaining them. A second round of -2 makes that golfer's overall total 10.
-Team partners retain the same shared round result, with separate golfer rows.
-The existing privacy, provisional-result and historical-retention rules apply
-to both leaderboards.
+Lifecycle defaults use authoritative opening or an earlier published deadline,
+private picks before lock, online-only atomic submissions and no admin pick
+replacement. Expiry eligibility is preserved so a later withdrawal cannot
+retroactively invalidate a locked selection. Disabling is allowed only before
+any lineup locks and never deletes history. These boundaries are included in
+the future persistence, projection and admin UI steps.
+
+Source inspection confirmed separate match numeric/concession provenance,
+opponent-relative match handicap allocation, zero playing-handicap snapshots in
+gross mode, and distinct sporting completion requirements. Fantasy match scoring
+must explicitly preserve any full net handicap it needs at opening, rather than
+reuse zero gross-mode or opponent-relative values or today's handicap.
 
 The [planned contract](ARCHITECTURE.md#fantasy-competition-design-planned-not-implemented)
-records these rules and acceptance examples. [PLANS.md](PLANS.md) includes golfer
-projections, UI views and release checks in the existing bounded sequence.
-The early-finish decision is resolved; match placement/net/concession treatment,
-authoritative DNF settlement and invalid/missed lineups remain contract gates.
-
-Validation passed: two added local links/anchors, three arithmetic examples,
-four-document scope and `git diff --check`. Independent read-only review found
-no actionable issues. No runtime checks are required or claimed because no
-application or migration files changed.
+and [active step](PLANS.md#active-step) distinguish settled technical defaults
+from the product decisions still pending. Documentation checks passed for three
+added links/anchors, four-document scope, DNF/placement examples and whitespace.
+Read-only review identified a missing whole-card revision definition; the contract
+now covers absence, both partners and retained owner generations, with acceptance
+examples. Follow-up review confirmed closure with no remaining findings. No
+application, database, browser or deployment tests are applicable.
