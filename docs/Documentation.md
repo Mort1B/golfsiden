@@ -16,11 +16,13 @@ acceptance remains a separate operator check.
    Fantasy**. Each member who wants to play selects **Meld meg på Fantasy**;
    non-playing tournament members may also enter. Earlier closed rounds cannot
    be backfilled. Disable is available only before any Fantasy window closes.
-2. Choose a round under **Runde for Min firer**, select four distinct eligible
+2. Open **Min firer**, choose a round under **Runde for Min firer**, select four distinct eligible
    golfers and choose **Kaptein · doble poeng**, then **Lagre firer og kaptein**.
    Both partners may be selected. There is no budget or transfer penalty. The
    accepted receipt, revision and captain distinguish saved picks from local
-   edits. An ineligible selected golfer remains visible for removal/replacement.
+   edits. A valid saved lineup is compact; **Endre valg** opens the editor and
+   moves keyboard focus into it. Unsaved, uncertain or rejected selections keep
+   editing/recovery visible. An ineligible golfer remains available for removal.
 3. The server locks picks at the earlier explicit deadline or actual round
    opening. An admin can set/clear an earlier deadline under **Administrer denne
    Fantasy-runden** using local date/time; it is sent as an explicit UTC instant.
@@ -39,7 +41,10 @@ acceptance remains a separate operator check.
    all rounds. **Lukk poengdetaljer** or Escape closes details and returns focus
    to the row. Board, selected row and round identifiers survive query clearing
    and reconnect in this session, are checked against fresh responses, and reset
-   when the account/session changes. No result data is stored in these preferences.
+   when the account/session changes. The **Min firer / Poengtavler** section
+   selection is retained too. Switching sections preserves draft/recovery state;
+   uncertain submissions remain signposted above both sections with a return
+   action. No result data is stored in these preferences.
 6. Administrators can settle a genuine non-finish under the selected round's
    administration section. Choose the real player/team owner, check the card and
    supply a reason. Shared team disposition affects both partners. A stale source,
@@ -790,6 +795,35 @@ hole/summary view in canonical URL parameters. It excludes draft rounds and uses
 completion validation as the stable authority for eligible players or teams.
 Gross and net values always come from decoded backend scorecards; the browser
 does not duplicate handicap calculations.
+
+Stroke/team, four-ball and Stableford share the playing hierarchy: tournament/
+round and owner, current hole, format-specific input, save status, previous/next,
+then secondary controls. The hole/summary toggle and quick writable-card rail
+precede the full summary. **Kontroller manglende hull** opens review while the
+card has gaps; **Se over scorekortet** appears when all distinct holes are entered,
+regardless of the currently selected hole. Keyboard review focuses the retained
+progress region. Neither action confirms the card or bypasses pending-edit guards.
+
+The progress region distinguishes holes entered on the card (server card plus
+pending/nondurable edits) from server-checked holes without local changes. A
+correction on an already entered hole never increments the distinct-hole count.
+Four-ball needs at least one numeric partner score; two pickups do not resolve
+a hole. A Stableford pickup resolves its hole. Local progress never changes server
+totals, standings, completeness or confirmation eligibility. Pending changes are
+labelled with their distinct-hole count and remain governed by existing delivery
+and confirmation checks. Important secondary labels use 14px; instructions use
+16px where appropriate, with wrapping and unchanged fixed-navigation clearance.
+
+The tournament overview distinguishes loading, failed reads with **Prøv igjen**,
+empty rounds and populated rounds. It offers one **Fortsett scoreføring** link
+after settled, connected round data and fresh scoring access permit it. It prefers
+a remembered eligible round in this tournament, otherwise the existing open/
+completed round preference. Singles uses its existing match-access listing.
+The action uses contextual `resume=1`; Score performs its full authoritative
+entry checks. During refresh/disconnection the link waits. Draft, locked, empty
+and inaccessible states explain the next action; access is never inferred from
+local progress. The overview checks one candidate and does not scan all rounds
+for write access.
 
 Under **Oppsummering**, each hole with a nonzero handicap allocation shows a small
 `+1`, `+2`, or larger badge beside Par/Index. Negative allocations show `−1`, `−2`,

@@ -1,0 +1,39 @@
+
+> golf-web@0.1.0 test:browser:lifecycle
+> playwright test --config playwright.lifecycle.config.ts playingDay.browser.ts fantasy.browser.ts fantasyPrivacy.browser.ts fantasyRelease.browser.ts fantasyReleaseFormats.browser.ts reliability.browser.ts reliabilityFollowup.browser.ts
+
+
+Running 21 tests using 1 worker
+
+(node:2455148) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+Concurrent Fantasy projection conflicts: [{"status":409,"path":"/api/tournaments/37afa43b-6af2-49ba-aa7e-190e1be35031/fantasy/rounds/d357ad0a-1738-4531-a0b0-d4f44ca9162a/results","code":"fantasy_conflict"},{"status":409,"path":"/api/tournaments/37afa43b-6af2-49ba-aa7e-190e1be35031/fantasy/rounds/d357ad0a-1738-4531-a0b0-d4f44ca9162a/results","code":"fantasy_conflict"},{"status":409,"path":"/api/tournaments/37afa43b-6af2-49ba-aa7e-190e1be35031/fantasy/results","code":"fantasy_conflict"},{"status":409,"path":"/api/tournaments/37afa43b-6af2-49ba-aa7e-190e1be35031/fantasy/rounds/d357ad0a-1738-4531-a0b0-d4f44ca9162a/results","code":"fantasy_conflict"}]
+Canceled Fantasy result reads with HTTP 409 (body not verified): 0
+  ✓   1 e2e/fantasy.browser.ts:6:1 › Fantasy selection, settlement and both boards work at mobile and desktop widths (6.0s)
+  ✓   2 e2e/fantasy.browser.ts:68:1 › Fantasy exposes loading, retry and denied-access states without retaining private boards (2.1s)
+  ✓   3 e2e/fantasyPrivacy.browser.ts:8:1 › Fantasy protects other drafts and hidden results across score changes, release, re-hide and return (3.5s)
+Fantasy release browser: no console or failed requests; 0 retryable projection conflicts.
+  ✓   4 e2e/fantasyRelease.browser.ts:6:1 › nine teams retain changing partners, picks, captains and two carry-forward generations (15.7s)
+Fantasy release browser: no console or failed requests; 0 retryable projection conflicts.
+  ✓   5 e2e/fantasyReleaseFormats.browser.ts:13:1 › Stableford distinguishes physical aces from net one and preserves uncapped penalties (4.0s)
+Fantasy release browser: no console or failed requests; 0 retryable projection conflicts.
+  ✓   6 e2e/fantasyReleaseFormats.browser.ts:53:1 › four-ball credits both partners and early match finishes award outcome points only (5.3s)
+  ✓   7 e2e/playingDay.browser.ts:23:73 › stroke: local distinct progress, keyboard review and server-only confirmation (12.8s)
+  ✓   8 e2e/playingDay.browser.ts:23:73 › team: local distinct progress, keyboard review and server-only confirmation (13.1s)
+  ✓   9 e2e/playingDay.browser.ts:23:73 › four-ball: local distinct progress, keyboard review and server-only confirmation (15.8s)
+  ✓  10 e2e/playingDay.browser.ts:23:73 › stableford: local distinct progress, keyboard review and server-only confirmation (13.8s)
+  ✓  11 e2e/playingDay.browser.ts:62:1 › real writable cards switch above summary without changing the selected hole (4.8s)
+  ✓  12 e2e/playingDay.browser.ts:77:1 › Fantasy compact editing and keyboard sections retain draft and expose uncertainty (2.5s)
+  ✓  13 e2e/playingDay.browser.ts:104:1 › overview loading, error retry, empty, populated and fresh continuation (2.8s)
+(node:2456570) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+  ✓  14 e2e/reliability.browser.ts:27:1 › Fantasy retains drafts, exact uncertain requests and acknowledged receipts across parent clearing (3.7s)
+  ✓  15 e2e/reliability.browser.ts:84:34 › committed player claim with lost response, cookie=true (2.3s)
+  ✓  16 e2e/reliability.browser.ts:84:34 › committed player claim with lost response, cookie=false (3.2s)
+  ✓  17 e2e/reliability.browser.ts:137:1 › precommit registration failure revalidates an available claim before deliberate resubmission (2.4s)
+  ✓  18 e2e/reliabilityFollowup.browser.ts:18:1 › competing session supersedes an unaccepted request; exact reconciliation then deliberate rebase (2.8s)
+  ✓  19 e2e/reliabilityFollowup.browser.ts:43:38 › acknowledged read failure permits Score (1.5s)
+  ✓  20 e2e/reliabilityFollowup.browser.ts:43:38 › acknowledged read failure permits logout (1.5s)
+  ✓  21 e2e/reliabilityFollowup.browser.ts:56:1 › inline manager and golfer details retain selected round after private query clearing (2.5s)
+
+  21 passed (2.1m)

@@ -83,7 +83,7 @@ test('resume fresh gaps, explicit history, quick cards, durable saves, async sta
   let release: () => void = () => undefined
   pending = new Promise<void>(resolve => { release = resolve })
   await nav.getByRole('link', { name: 'Score', exact: true }).click()
-  await expect(page.getByText('Laster …')).toBeVisible()
+  await expect(page.locator('.score-page').getByText('Laster …')).toBeVisible()
   await layout(page, 'loading')
   fail = true; release(); pending = null
   await expect(page.getByRole('alert')).toContainText('Midlertidig utilgjengelig')

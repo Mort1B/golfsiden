@@ -37,7 +37,7 @@ test('Stableford distinguishes physical aces from net one and preserves uncapped
     expect(g.recorded_hole_points).toBe(3); expect(g.placement_points).toBe(10); expect(g.points).toEqual({ state: 'settled', total: 13 })
   }
   expect(board.managers[0]?.points).toEqual({ state: 'settled', total: 65 })
-  await page.goto(f.url)
+  await page.goto(f.url); await page.getByRole('button', { name: 'Poengtavler', exact: true }).click()
   await expect(page.locator('.fantasy-standings button').first()).toContainText('65 p · avgjort')
   await page.locator('.fantasy-standings button').first().click()
   await expect(page.locator('.fantasy-contributions li').first()).toContainText('Bidrag ×2: 26 p · avgjort')
@@ -97,7 +97,7 @@ test('four-ball credits both partners and early match finishes award outcome poi
   }
   expect(match.managers[0]?.points).toEqual({ state: 'settled', total: 3 }); expect(match.managers[0]?.lineup?.origin).toBe('carried_forward')
   expect((await f.totals()).managers[0]?.points).toEqual({ state: 'settled', total: 52 })
-  await page.goto(f.url)
+  await page.goto(f.url); await page.getByRole('button', { name: 'Poengtavler', exact: true }).click()
   await expect(page.locator('.fantasy-standings button').first()).toContainText('52 p · avgjort')
   await page.locator('.fantasy-standings button').first().click()
   await expect(page.locator('.fantasy-contributions li').nth(5)).toContainText('Bidrag ×2: -2 p · avgjort')

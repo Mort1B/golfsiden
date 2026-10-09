@@ -1,0 +1,13 @@
+.tournament-score-action { margin-block: 18px; line-height: 1.5; overflow-wrap: anywhere; }
+.continue-scoring { display: grid; gap: 6px; min-height: 52px; padding: 14px 18px; border-radius: 8px; background: #176640; color: #fff; font-size: 1rem; font-weight: 750; text-decoration: none; }
+.continue-scoring span { font-size: .875rem; font-weight: 500; }
+.continue-scoring:focus-visible { outline: 3px solid #176640; outline-offset: 3px; }
+.tournament-overview .summary-strip span,.tournament-overview .section-heading span,.tournament-overview .round-row p { font-size: .875rem; }
+.tournament-overview .round-row h3,.tournament-overview .round-row p { overflow-wrap: anywhere; }
+.tournament-overview .round-row > div { min-width: 0; }
+.tournament-overview .round-row p { flex-wrap: wrap; }
+@media(max-width:420px) { .tournament-overview .round-row { grid-template-columns: 36px minmax(0,1fr); } .tournament-overview .round-end { grid-column: 2; justify-content: space-between; } }
+@media(max-width:420px) {
+  .tournament-overview .detail-header { grid-template-columns: 44px minmax(0,1fr); align-items: start; }
+  .tournament-overview .detail-header > .status { grid-column: 2; justify-self: start; }
+}

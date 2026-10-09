@@ -1,3 +1,7 @@
+import { CardReview } from '../CardReview'
+import { WritableCardSwitcher } from '../WritableCardSwitcher'
+import { writableOwnerProgress } from '../selection'
+import type { ScoreOwner } from '../../../api/scorecards'
 import { useEffect, useState } from 'react'
 import { useBlocker } from 'react-router-dom'
 import type { StablefordCard, StablefordScoringCard } from '../../../api/stableford'
@@ -12,6 +16,7 @@ import { StablefordReadView, StablefordResult, StablefordTotals } from './Stable
 import { useStablefordSync } from './useStablefordSync'
 import { useStablefordConfirmation } from './useStablefordConfirmation'
 interface Props {
+  writableOwners?: ScoreOwner[]; onQuickOwner?: (owner:ScoreOwner)=>void; onPrefetchOwner?: (owner:ScoreOwner)=>void
   tournaments: Tournament[]; rounds: Round[]; round: Round; owners: OwnerCompletionProgress[]
   card: StablefordCard; holeNumber: number; view: ScoreView; canWrite: boolean; recovering: boolean
   onTournament: (id: string) => void; onRound: (id: string) => void; onOwner: (id: string) => void
@@ -56,9 +61,7 @@ function CardInput(props: Props & { card: StablefordScoringCard; hole: Stablefor
   const editable = props.canWrite && Boolean(auth.session) && (props.round.status === 'open' || props.round.status === 'completed')
     && (!card.confirmed || correction) && !confirmation.confirming
   return <>
-    <header className="scorecard-owner"><div><p>Stableford · individuelt</p><h2>{card.owner_name}</h2></div></header>
-    {!props.recovering && <Selectors {...props} disabled={locked} />}
-    {props.recovering && <button className="score-recovery-toggle" type="button" disabled={locked} onClick={() => props.onView(props.view === 'hole' ? 'summary' : 'hole')}>{props.view === 'hole' ? 'Oppsummering' : 'Ett hull'}</button>}
+    <header className="scorecard-owner"><div><p>Stableford · individuelt</p><h2>{card.owner_name}</h2></div><span>{props.tournaments.find(t=>t.id===props.round.tournament_id)?.name}<br/>Runde {props.round.round_number}: {props.round.name}</span></header>
     {props.recovering && <p role="status">Oppdaterer tilgang og rundestatus. Endringer lagres først på enheten. Bekreftelse venter.</p>}
     {navigationWarning && <p role="alert">Fullfør eller forkast den ulagrede endringen før du går videre.</p>}
     {props.round.status === 'completed' && <p>Runden er fullført. Score kan korrigeres frem til låsing.</p>}
@@ -72,8 +75,13 @@ function CardInput(props: Props & { card: StablefordScoringCard; hole: Stablefor
       <StablefordResult hole={hole} />
       <div className="four-ball-actions"><button type="button" disabled={locked || hole.hole_number <= 1} onClick={() => props.onHole(hole.hole_number - 1)}>Forrige hull</button>
         <button type="button" disabled={locked || hole.hole_number >= 18} onClick={() => props.onHole(hole.hole_number + 1)}>Neste hull</button></div>
-      <StablefordTotals card={card} />
-    </> : <>
+    </> : null}
+    <CardReview card={card} tournament={props.round.tournament_id} disabled={locked} review={props.view==='hole'} onReview={()=>props.onView('summary')}/>
+    {!props.recovering && <Selectors {...props} disabled={locked} />}
+    {props.recovering && <button className="score-recovery-toggle" type="button" disabled={locked} onClick={() => props.onView(props.view === 'hole' ? 'summary' : 'hole')}>{props.view === 'hole' ? 'Oppsummering' : 'Ett hull'}</button>}
+    {!props.recovering&&props.onQuickOwner&&<WritableCardSwitcher owners={writableOwnerProgress(props.owners,props.writableOwners??[])} selectedOwner={card.owner} disabled={locked} onSelect={props.onQuickOwner} onPrefetch={props.onPrefetchOwner??(()=>{})}/>}
+    {props.view==='hole'&&<StablefordTotals card={card}/>}
+    {props.view === 'summary' && <>
       <StablefordReadView card={card} view="summary" holeNumber={props.holeNumber} onHole={props.onHole} disabled={locked} />
       <section className="four-ball-confirm" aria-label="Bekreft scorekort">
         {!card.complete && <p>Alle 18 hull må ha numerisk score eller eksplisitt «Plukket opp» før bekreftelse. Tomme hull fylles ikke automatisk.</p>}

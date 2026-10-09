@@ -71,7 +71,7 @@ export function HoleEntry(props: HoleEntryProps) {
 
       <footer>
         <button type="button" disabled={props.navigationLocked || props.hole.hole_number === 1} onClick={props.onPrevious}><ChevronLeft aria-hidden="true" />Forrige</button>
-        <span>{props.card.holes_scored} av {props.card.number_of_holes} registrert</span>
+        <span>Hull {props.hole.hole_number} av {props.card.number_of_holes}</span>
         <button type="button" disabled={props.navigationLocked || props.hole.hole_number === props.card.holes.length} onClick={props.onNext}>Neste<ChevronRight aria-hidden="true" /></button>
       </footer>
     </section>

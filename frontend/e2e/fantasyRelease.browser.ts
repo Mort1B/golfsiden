@@ -41,7 +41,7 @@ test('nine teams retain changing partners, picks, captains and two carry-forward
     expect(total.golfers.find(g => g.id === at(f.players, 0))?.points).toEqual({ state: 'settled', total: 30 })
     expect(total.golfers.find(g => g.id === at(f.players, 1))?.points).toEqual({ state: 'settled', total: 24 })
     expect(total.golfers.find(g => g.id === at(f.players, 17))?.points).toEqual({ state: 'settled', total: -15 })
-    await page.goto(f.url)
+    await page.goto(f.url); await page.getByRole('button', { name: 'Poengtavler', exact: true }).click()
     await expect(page.locator('.fantasy-standings > li')).toHaveCount(3)
     await expect(page.locator('.fantasy-standings button').filter({ hasText: at(f.names, 1) })).toContainText('123 p · avgjort')
     await page.locator('.fantasy-standings button').filter({ hasText: at(f.names, 1) }).click()

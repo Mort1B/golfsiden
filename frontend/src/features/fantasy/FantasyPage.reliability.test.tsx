@@ -86,6 +86,7 @@ it('does not let an older manual refresh replace a later uncertain write outcome
  await tree();choose()
  vi.mocked(fantasyApi.round).mockResolvedValue({...view,selections:[{user_id:session.user_id,state:'draft',locked_at:null,receipt}]})
  fireEvent.click(screen.getByText('Lagre firer og kaptein'));await screen.findByText('Handlingen er bekreftet. Visningen er oppdatert.')
+ fireEvent.click(await screen.findByRole('button',{name:'Endre valg'}))
  await waitFor(()=>expect(screen.getByLabelText('Kaptein · doble poeng').closest('fieldset')).toHaveProperty('disabled',false))
  let finish:()=>void=()=>{}
  const held=new Promise<void>(resolve=>{finish=resolve})
@@ -102,4 +103,18 @@ it('does not let an older manual refresh replace a later uncertain write outcome
  expect(screen.queryByText('Handlingen er bekreftet. Visningen er oppdatert.')).toBeNull()
  expect(screen.getByText(/Kunne ikke hente en bekreftelse fra serveren/)).toBeTruthy()
  expect(fantasyApi.save).toHaveBeenCalledTimes(2)
+})
+
+it('shows a valid saved lineup compactly and retains edits across section switches',async()=>{
+ vi.mocked(fantasyApi.round).mockResolvedValue({...view,selections:[{user_id:session.user_id,state:'draft',locked_at:null,receipt}]})
+ const router=createMemoryRouter([{path:'/tournaments/:tournamentId/fantasy',element:<FantasyPage/>}],{initialEntries:[`/tournaments/${tournament}/fantasy`]})
+ render(<QueryClientProvider client={client}><SessionHarness><ScoringGuardProvider><RouterProvider router={router}/></ScoringGuardProvider></SessionHarness></QueryClientProvider>)
+ fireEvent.click(await screen.findByRole('button',{name:'Endre valg'}))
+ expect(screen.getByRole('group',{name:/Velg fire spillere/})).toBe(document.activeElement)
+ fireEvent.change(screen.getByLabelText('Kaptein · doble poeng'),{target:{value:picks[1]}})
+ fireEvent.click(screen.getByRole('button',{name:'Poengtavler'}))
+ expect(screen.queryByRole('checkbox')).toBeNull()
+ expect(screen.getByText(/Fantasy-valgene beholdes/)).toBeTruthy()
+ fireEvent.click(screen.getByRole('button',{name:'Min firer'}))
+ expect(screen.getByLabelText('Kaptein · doble poeng')).toHaveProperty('value',picks[1])
 })

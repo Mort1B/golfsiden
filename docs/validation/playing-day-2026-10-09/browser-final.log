@@ -1,0 +1,19 @@
+
+> golf-web@0.1.0 test:browser:lifecycle
+> playwright test --config playwright.lifecycle.config.ts playingDay.browser.ts scoringFlow.browser.ts
+
+
+Running 8 tests using 1 worker
+
+(node:2459767) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+  ✓  1 e2e/playingDay.browser.ts:24:73 › stroke: local distinct progress, keyboard review and server-only confirmation (11.8s)
+  ✓  2 e2e/playingDay.browser.ts:24:73 › team: local distinct progress, keyboard review and server-only confirmation (12.9s)
+  ✓  3 e2e/playingDay.browser.ts:24:73 › four-ball: local distinct progress, keyboard review and server-only confirmation (13.8s)
+  ✓  4 e2e/playingDay.browser.ts:24:73 › stableford: local distinct progress, keyboard review and server-only confirmation (15.1s)
+  ✓  5 e2e/playingDay.browser.ts:63:1 › real writable cards switch above summary without changing the selected hole (4.8s)
+  ✓  6 e2e/playingDay.browser.ts:78:1 › Fantasy compact editing and keyboard sections retain draft and expose uncertainty (2.6s)
+  ✓  7 e2e/playingDay.browser.ts:107:1 › overview loading, error retry, empty, populated and fresh continuation (2.8s)
+  ✓  8 e2e/scoringFlow.browser.ts:21:1 › resume fresh gaps, explicit history, quick cards, durable saves, async states and responsive composition (14.5s)
+
+  8 passed (1.3m)

@@ -4,7 +4,7 @@ import type { useFantasyAction } from './useFantasy'
 export interface FantasyDraft { picks:string[]; captain:string; revision:number }
 export interface FantasyRecovery { draft:FantasyDraft|null; uncertain:Save|null; receipt:Receipt|null; rejected?:Save|null }
 export const emptyRecovery:FantasyRecovery={draft:null,uncertain:null,receipt:null}
-export interface FantasyViewing {kind:'managers'|'golfers';round:string;detail:string|null;lineupRound:string}
+export interface FantasyViewing {section:'lineup'|'boards';kind:'managers'|'golfers';round:string;detail:string|null;lineupRound:string}
 export const FantasyDraftContext=createContext<{
   viewing:FantasyViewing
   setViewing:(patch:Partial<FantasyViewing>)=>void

@@ -2570,10 +2570,13 @@ source provenance, typed result states, round inventories and hidden-response
 consistency. The browser never recomputes scoring. `FantasyDraftProvider`, keyed
 by tournament/user/CSRF identity above query-driven branches, owns per-round local
 input, exact uncertain/rejected requests and own acknowledged receipts. Separate
-viewing state holds only board kind, row ID and lineup/board round IDs; fresh
+viewing state holds only lineup/boards section, board kind, row ID and lineup/board round IDs; fresh
 inventories prune missing identifiers. Expanded details live within their row and
 filter to the selected board round. Account/CSRF replacement resets this context.
-It retains no
+Section panels remain mounted when hidden, keeping read targets and recovery
+stable; privacy clearing still removes protected children. A valid saved lineup
+uses a compact receipt until explicit editing; drafts/uncertainty/rejection expand
+the editor. Warnings remain outside the section panels. It retains no
 roster, eligibility, visibility, carry-preview or result projection. `MyFour`
 renders those local records against current authorized reads and distinguishes
 accepted current receipts from historical replay receipts and carry previews.
@@ -2680,3 +2683,21 @@ FANTASY-1's product decisions are resolved. These examples define the acceptance
 contract. The [release acceptance report](validation/fantasy-release-2026-10-08/README.md)
 maps them to automated and real-Chrome evidence, including the limits of field-size,
 viewport and hosted coverage.
+
+### Playing-day presentation boundaries
+
+`CardReview` derives display-only distinct-hole progress through `cardProgress`
+from the current writable card and existing pending/refreshing/nondurable intent.
+Edits are matched by account, tournament, round, protocol and owner/side; four-ball
+partners share one hole count. Nondurable intent takes precedence over durable
+intent. A hole with local intent is excluded from the server-checked count.
+Neither count is copied into query data, confirmation state, totals or results.
+Review navigation uses the existing guard and focuses a retained region. All
+three editors keep their format-specific sync/confirmation hooks unchanged.
+
+`TournamentScoreAction` selects one eligible current round, preferring the same-
+tournament resume identifier, and checks existing score-access or match listing
+queries. It requires current connected round reads and a successful post-mount
+access fetch, and remounts for account/CSRF changes. Its contextual resume link is
+advisory navigation; Score still performs full fresh authority checks. It stores
+no protected result projection or permission in navigation memory.

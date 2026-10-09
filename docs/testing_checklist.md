@@ -18,6 +18,25 @@ The [local release acceptance report](validation/fantasy-release-2026-10-08/READ
 records the automated checks already run, including nine teams over three rounds.
 Use the following checks to confirm your hosted release and devices.
 
+## Playing-day consistency checks
+
+- [ ] On stroke/team, four-ball and Stableford, compare context → hole → input →
+  save state → previous/next → secondary controls at phone and desktop widths.
+- [ ] Review an incomplete card from hole 18 and a complete card from another
+  hole. The action must follow actual progress and never confirm automatically.
+  Keyboard activation keeps focus visible; switching and view controls sit above
+  the full summary. Pending changes continue to block confirmation.
+- [ ] Offline, correct one entered hole, then enter a new hole: progress increases
+  only for the new hole. Server-checked progress and totals remain distinct.
+- [ ] Check long player/team names, 44px targets, wrapping and fixed-navigation
+  overlap. Quick card switching opens the selected hole on the other card.
+- [ ] Tournament overview: loading, retryable failure, no rounds, populated,
+  draft/locked and unavailable access. Continue scoring appears only after fresh
+  access and resumes within that tournament/round.
+- [ ] Fantasy: save a lineup, reopen with **Endre valg**, change captain and switch
+  **Min firer / Poengtavler**. Draft and uncertainty survive view/reconnect;
+  warnings remain visible and exact reconciliation never changes request identity.
+
 ## Optional Fantasy session
 
 - [ ] Enable while rounds are draft; join as two members, save different captains,

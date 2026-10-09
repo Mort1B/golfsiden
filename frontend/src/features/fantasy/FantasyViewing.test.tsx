@@ -31,7 +31,7 @@ beforeEach(()=>{
 })
 afterEach(()=>{cleanup();client.clear();vi.restoreAllMocks()})
 function SessionHarness({children}:{children:ReactNode}){const {data}=useQuery<AuthSession|null>({queryKey:authKeys.session,queryFn:async()=>session,enabled:false});return <AuthContext value={{session:data??null,loading:false,error:null,signIn:vi.fn(),establishSession:vi.fn(),signOut:vi.fn(),retry:vi.fn()}}>{children}</AuthContext>}
-async function tree(){const router=createMemoryRouter([{path:'/tournaments/:tournamentId/fantasy',element:<FantasyPage/>}],{initialEntries:[`/tournaments/${tournament}/fantasy`]});render(<QueryClientProvider client={client}><SessionHarness><ScoringGuardProvider><RouterProvider router={router}/></ScoringGuardProvider></SessionHarness></QueryClientProvider>);fireEvent.click(await screen.findByText('Spillerpoeng'));return router}
+async function tree(){const router=createMemoryRouter([{path:'/tournaments/:tournamentId/fantasy',element:<FantasyPage/>}],{initialEntries:[`/tournaments/${tournament}/fantasy`]});render(<QueryClientProvider client={client}><SessionHarness><ScoringGuardProvider><RouterProvider router={router}/></ScoringGuardProvider></SessionHarness></QueryClientProvider>);fireEvent.click(await screen.findByRole('button',{name:'Poengtavler'}));fireEvent.click(await screen.findByText('Spillerpoeng'));return router}
 async function open(){const button=await screen.findByRole('button',{name:new RegExp(golfer.display_name)});fireEvent.click(button);await screen.findByRole('heading',{name:`${golfer.display_name} · spillerpoeng`});return button}
 it('opens breakdown inside its row and restores focus when closing',async()=>{await tree();const button=await open();const row=button.closest('li');if(!row)throw new Error('row');expect(within(row).getByRole('heading',{name:/spillerpoeng/})).toBeTruthy();fireEvent.click(within(row).getByText('Lukk poengdetaljer'));expect(button).toBe(document.activeElement)})
 it('limits detail to the selected round',async()=>{await tree();fireEvent.change(screen.getByLabelText('Vis poeng for'),{target:{value:roundId}});await open();expect(screen.queryByText(/Runde 2: Andre runde ·/)).toBeNull();expect(screen.getByText(/Runde 1: Første runde ·/)).toBeTruthy()})
@@ -47,8 +47,9 @@ it('drops removed row/round identifiers only after fresh inventory and never sho
 it.each(['csrf','account'])('clears viewing context after %s replacement',async mode=>{
  await tree();fireEvent.change(screen.getByLabelText('Vis poeng for'),{target:{value:roundId}});await open()
  await act(async()=>client.setQueryData(authKeys.session,{...session,user_id:mode==='account'?id(99):session.user_id,csrf_token:'new-session'}))
- await waitFor(()=>expect(screen.getByText('Fantasy-lag').getAttribute('aria-pressed')).toBe('true'))
- expect(screen.getByLabelText('Vis poeng for')).toHaveProperty('value','');expect(screen.queryByRole('heading',{name:/· spillerpoeng/})).toBeNull()
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Min firer'}).getAttribute('aria-pressed')).toBe('true'))
+ fireEvent.click(screen.getByRole('button',{name:'Poengtavler'}))
+ expect(await screen.findByLabelText('Vis poeng for')).toHaveProperty('value','');expect(screen.queryByRole('heading',{name:/· spillerpoeng/})).toBeNull()
 })
 
 it('clears acknowledged failure after a successful inline detail retry without another write',async()=>{
@@ -56,11 +57,13 @@ it('clears acknowledged failure after a successful inline detail retry without a
  const detail=await vi.mocked(fantasyApi.golfer).mock.results[0]?.value
  if(!detail)throw new Error('detail fixture')
  vi.spyOn(fantasyApi,'save').mockResolvedValue(receipt)
+ fireEvent.click(screen.getByRole('button',{name:'Min firer'}))
  for(const p of players.slice(0,4))fireEvent.click(screen.getByRole('checkbox',{name:p.display_name}))
  fireEvent.change(screen.getByLabelText('Kaptein · doble poeng'),{target:{value:picks[0]}})
  vi.mocked(fantasyApi.golfer).mockRejectedValue(new TypeError('detail read failed'))
  fireEvent.click(screen.getByText('Lagre firer og kaptein'))
  await screen.findByText(/Handlingen er bekreftet, men visningen/)
+ fireEvent.click(screen.getByRole('button',{name:'Poengtavler'}))
  vi.mocked(fantasyApi.golfer).mockResolvedValue(detail)
  fireEvent.click(within(screen.getByRole('region',{name:/poengdetaljer/})).getByText('Prøv igjen'))
  await screen.findByText('Handlingen er bekreftet. Visningen er oppdatert.')

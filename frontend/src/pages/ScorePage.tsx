@@ -152,6 +152,7 @@ function ScoreWorkspace({ resume, preparedReturn }: { resume: boolean; preparedR
       )}
       {'format' in cardQuery.data && cardQuery.data.format === 'individual_stableford' ? <StablefordExperience tournaments={tournaments} rounds={eligibleRounds}
         round={{ ...round, status: effectiveRoundStatus ?? round.status }} owners={verificationPending ? [] : progressOwners} card={cardQuery.data}
+        writableOwners={writableOwners} onQuickOwner={next=>navigate(quickOwnerSelection(base(),next),'quick-owner')} onPrefetchOwner={prefetchOwner}
         holeNumber={hole.hole_number} view={view} canWrite={canWrite} recovering={verificationPending || retainingScorer || connectionLost || accessQuery.error !== null}
         onTournament={id => navigate({ tournamentId: id, view: 'hole' }, 'tournament')}
         onRound={id => navigate({ tournamentId: tournament.id, roundId: id, view: 'hole' }, 'round')}
@@ -160,6 +161,7 @@ function ScoreWorkspace({ resume, preparedReturn }: { resume: boolean; preparedR
         onView={nextView => navigate(base(nextView), 'view')} />
         : 'format' in cardQuery.data && cardQuery.data.format === 'four_ball_stroke_play' ? <FourBallExperience tournaments={tournaments} rounds={eligibleRounds}
         round={{ ...round, status: effectiveRoundStatus ?? round.status }} owners={verificationPending ? [] : progressOwners} card={cardQuery.data}
+        writableOwners={writableOwners} onQuickOwner={next=>navigate(quickOwnerSelection(base(),next),'quick-owner')} onPrefetchOwner={prefetchOwner}
         holeNumber={hole.hole_number} view={view} canWrite={canWrite} recovering={verificationPending || retainingScorer || connectionLost || accessQuery.error !== null}
         onTournament={id => navigate({ tournamentId: id, view: 'hole' }, 'tournament')}
         onRound={id => navigate({ tournamentId: tournament.id, roundId: id, view: 'hole' }, 'round')}

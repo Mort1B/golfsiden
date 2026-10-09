@@ -1,4 +1,8 @@
 // @vitest-environment jsdom
+import { fourBallApi } from '../api/fourBall'
+import { stablefordApi } from '../api/stableford'
+import { fourBallFixture } from '../api/fourBall/fixtures'
+import { stablefordFixture } from '../api/stableford/fixtures'
 import { PreparedScoreProvider } from '../features/scoring/prepared/PreparedScoreProvider'
 import { authKeys } from '../api/auth'
 import { IDBFactory } from 'fake-indexeddb'
@@ -356,4 +360,62 @@ describe('prepared offline return', () => {
     expect(screen.queryByRole('button', { name: 'Tilbake til åpnet scorekort' })).toBeNull()
     expect(screen.getByText(/Ingen klargjorte scorekort/)).toBeTruthy()
   })
+})
+
+it('offers missing-hole review at hole 18 and keeps selectors before the full summary',async()=>{
+ mount(explicit(18));await expectHole(18)
+ fireEvent.click(screen.getByRole('button',{name:'Kontroller manglende hull'}))
+ const summary=await screen.findByRole('heading',{name:'Oppsummering'})
+ expect(screen.getByRole('region',{name:'Fremdrift på scorekortet'})).toBe(document.activeElement)
+ const toggle=screen.getByRole('button',{name:'Ett hull'})
+ expect(toggle.compareDocumentPosition(summary)&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+ expect(screen.queryByRole('button',{name:'Bekreft fullført scorekort'})).toBeNull()
+})
+it('offers review for a complete card even away from hole 18',async()=>{
+ vi.mocked(api.scorecardScoring).mockResolvedValue(card(Array.from({length:18},(_,i)=>i+1)))
+ mount(explicit(4));await expectHole(4)
+ expect(screen.getByRole('button',{name:'Se over scorekortet'})).toBeTruthy()
+})
+
+it('counts local stroke holes distinctly while server totals and confirmation stay authoritative',async()=>{
+ vi.mocked(api.scorecardScoring).mockResolvedValue(card([1]))
+ mount(explicit(1));await expectHole(1)
+ vi.spyOn(navigator,'onLine','get').mockReturnValue(false);onlineManager.setOnline(false)
+ fireEvent.click(screen.getByRole('button',{name:'Legg til ett slag'}))
+ await screen.findByText('1 av 18 hull ført på kortet')
+ await screen.findByText(/1 hull har lokale endringer/)
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Neste'}).hasAttribute('disabled')).toBe(false))
+ fireEvent.click(screen.getByRole('button',{name:'Neste'}));await expectHole(2)
+ fireEvent.click(screen.getByRole('button',{name:/Registrer par/}))
+ await screen.findByText('2 av 18 hull ført på kortet')
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Kontroller manglende hull'})).toHaveProperty('disabled',false))
+ fireEvent.click(screen.getByRole('button',{name:'Kontroller manglende hull'}))
+ await screen.findByRole('heading',{name:'Oppsummering'})
+ expect(screen.queryByRole('button',{name:'Bekreft fullført scorekort'})).toBeNull()
+ expect(screen.getByLabelText('Summer fra serveren').textContent).toContain('Brutto4')
+})
+it.each(['four_ball_stroke_play','individual_stableford'] as const)('keeps %s context and controls in the playing-day hierarchy',async format=>{
+ const source=format==='four_ball_stroke_play'?fourBallFixture():stablefordFixture()
+ const scoring={...source,round_id:round.id}
+ vi.mocked(api.rounds).mockResolvedValue([{...round,scoring_format:format}])
+ vi.mocked(api.scoreAccess).mockResolvedValue({round_id:round.id,writable_owners:[scoring.owner]})
+ vi.mocked(api.completionValidation).mockResolvedValue({...completion(),owners:[{owner:scoring.owner,owner_name:scoring.owner_name,holes_scored:0,required_holes:18,complete:false,confirmed:false}]})
+ if(scoring.format==='four_ball_stroke_play')vi.spyOn(fourBallApi,'scoring').mockResolvedValue(scoring)
+ else vi.spyOn(stablefordApi,'scoring').mockResolvedValue(scoring)
+ mount(`/score?tournament=${tournament.id}&round=${round.id}&owner_type=${scoring.owner.type}&owner=${scoring.owner.id}&hole=1&view=hole`)
+ const hole=await screen.findByRole('heading',{name:'Hull 1 · par 4 · indeks 1'})
+ expect(screen.getAllByText(`Runde 1: ${round.name}`,{exact:false}).length).toBeGreaterThan(0)
+ const toggle=screen.getByRole('button',{name:'Oppsummering'})
+ expect(hole.compareDocumentPosition(toggle)&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+ vi.spyOn(navigator,'onLine','get').mockReturnValue(false);onlineManager.setOnline(false)
+ const par=screen.getAllByRole('button',{name:'Registrer par (4)'})
+ await waitFor(()=>expect(par[0]).toHaveProperty('disabled',false));if(!par[0])throw new Error('input');fireEvent.click(par[0])
+ await screen.findByText('1 av 18 hull ført på kortet')
+ await waitFor(()=>expect(screen.getByRole('button',{name:'Kontroller manglende hull'})).toHaveProperty('disabled',false))
+ if(format==='four_ball_stroke_play'&&par[1]){fireEvent.click(par[1]);await waitFor(()=>expect(screen.getByRole('button',{name:'Kontroller manglende hull'})).toHaveProperty('disabled',false));expect(screen.getByText('1 av 18 hull ført på kortet')).toBeTruthy()}
+ fireEvent.click(screen.getByRole('button',{name:'Kontroller manglende hull'}))
+ expect(screen.getByRole('region',{name:'Fremdrift på scorekortet'})).toBe(document.activeElement)
+ const summary=screen.getByRole('region',{name:format==='four_ball_stroke_play'?'Oppsummering av four-ball':'Stableford-scorekort'})
+ expect(toggle.compareDocumentPosition(summary)&Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+ expect(screen.queryByRole('button',{name:/^Bekreft.*scorekort$/})).toBeNull()
 })

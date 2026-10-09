@@ -59,6 +59,7 @@ test('inline manager and golfer details retain selected round after private quer
  const signal=async(name:string)=>page.evaluate(value=>{if('followupSignal'in window&&typeof window.followupSignal==='function')window.followupSignal(value)},name)
  await page.goto(f.url)
  await page.getByLabel('Runde for Min firer').selectOption(round.id)
+ await page.getByRole('button',{name:'Poengtavler',exact:true}).click()
  await page.getByLabel('Vis poeng for').selectOption(round.id)
  for(const kind of ['Fantasy-lag','Spillerpoeng']){
   await page.getByRole('button',{name:kind,exact:true}).click()

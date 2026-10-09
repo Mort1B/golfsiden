@@ -1,0 +1,74 @@
+
+> golf-web@0.1.0 build
+> tsc -b && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 2023 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                      0.58 kB │ gzip:   0.34 kB
+dist/assets/TournamentsPage-By3L3DFO.css             0.66 kB │ gzip:   0.36 kB
+dist/assets/RoundPage-wcT7C6DS.css                   0.83 kB │ gzip:   0.36 kB
+dist/assets/TournamentPage-Dh4osc3B.css              1.09 kB │ gzip:   0.46 kB
+dist/assets/playerClaims-ERD1KNWH.css                1.15 kB │ gzip:   0.49 kB
+dist/assets/ProfilePage-0ILpLUhR.css                 1.27 kB │ gzip:   0.48 kB
+dist/assets/ScorecardSummaryView-Cg64VuNe.css        2.92 kB │ gzip:   0.89 kB
+dist/assets/resultSharing-BXTnhsUo.css               3.28 kB │ gzip:   1.02 kB
+dist/assets/FantasyPage-r8y2tUq_.css                 3.34 kB │ gzip:   1.08 kB
+dist/assets/TournamentManagementPage-yENwXhpB.css    5.37 kB │ gzip:   1.29 kB
+dist/assets/index-BT0vqckr.css                      73.61 kB │ gzip:  12.79 kB
+dist/assets/check-LT1zHu3o.js                        0.13 kB │ gzip:   0.14 kB
+dist/assets/chevron-right-DTMg4SzH.js                0.13 kB │ gzip:   0.14 kB
+dist/assets/chevron-left-Dzb9Qs2k.js                 0.13 kB │ gzip:   0.15 kB
+dist/assets/plus-bz_Y0CNn.js                         0.15 kB │ gzip:   0.15 kB
+dist/assets/x-Y-8l3mbT.js                            0.16 kB │ gzip:   0.15 kB
+dist/assets/circle-check-DNeX4783.js                 0.18 kB │ gzip:   0.17 kB
+dist/assets/usePrivateResultQuery-1ZBsuRmJ.js        0.25 kB │ gzip:   0.22 kB
+dist/assets/flag-CXh6_4xG.js                         0.26 kB │ gzip:   0.22 kB
+dist/assets/StatusBadge-BhGpfhDU.js                  0.26 kB │ gzip:   0.23 kB
+dist/assets/map-pin-CyCF-_mn.js                      0.26 kB │ gzip:   0.23 kB
+dist/assets/finalRoundExplanation-DIiFCWmu.js        0.27 kB │ gzip:   0.22 kB
+dist/assets/users-DAl6kKqf.js                        0.31 kB │ gzip:   0.23 kB
+dist/assets/refresh-cw-C1yIcaJt.js                   0.32 kB │ gzip:   0.23 kB
+dist/assets/refreshRecoverySession-CCqPwsLo.js       0.33 kB │ gzip:   0.24 kB
+dist/assets/trash-2-PMvQgkZt.js                      0.33 kB │ gzip:   0.22 kB
+dist/assets/resultExplanations-vi8djnSL.js           0.36 kB │ gzip:   0.25 kB
+dist/assets/overallConfiguration-D3prNBQe.js         0.38 kB │ gzip:   0.25 kB
+dist/assets/password-CbC00kx7.js                     0.43 kB │ gzip:   0.30 kB
+dist/assets/drilldownRoutes-RBLfWGPT.js              0.46 kB │ gzip:   0.29 kB
+dist/assets/format-CAgFkmGX.js                       0.47 kB │ gzip:   0.35 kB
+dist/assets/calendar-days-COttkCWF.js                0.50 kB │ gzip:   0.27 kB
+dist/assets/tieBreakExplanation-BDPa7Azd.js          0.55 kB │ gzip:   0.32 kB
+dist/assets/tournamentLoader-BE_lZQVx.js             0.83 kB │ gzip:   0.53 kB
+dist/assets/messages-DRXAWOUu.js                     1.02 kB │ gzip:   0.57 kB
+dist/assets/passwordRecovery-CPei4Wuy.js             1.40 kB │ gzip:   0.73 kB
+dist/assets/format-BJysboft.js                       1.65 kB │ gzip:   0.81 kB
+dist/assets/privateResults-Bklk_eHf.js               1.94 kB │ gzip:   0.91 kB
+dist/assets/TournamentsPage-CmmeJ1Df.js              2.91 kB │ gzip:   1.35 kB
+dist/assets/MatchResultsPage-Co9h1VA5.js             2.91 kB │ gzip:   1.33 kB
+dist/assets/useTournamentLive-BeCWBNra.js            3.12 kB │ gzip:   1.39 kB
+dist/assets/MatchRound-hrW4FhJO.js                   3.32 kB │ gzip:   1.46 kB
+dist/assets/playerClaims-QxiqbCID.js                 4.11 kB │ gzip:   1.72 kB
+dist/assets/invitations-CPF_ha9G.js                  4.16 kB │ gzip:   1.21 kB
+dist/assets/ResetPasswordPage-Dyeejtdp.js            4.16 kB │ gzip:   1.85 kB
+dist/assets/pairings-DMcMAJ4d.js                     5.84 kB │ gzip:   2.24 kB
+dist/assets/SharedResultsPage-CjL8GgZZ.js            6.00 kB │ gzip:   2.52 kB
+dist/assets/resultSharing-DA4vJ9bB.js                6.38 kB │ gzip:   2.42 kB
+dist/assets/PlayerHistoryPage-2s048596.js            6.98 kB │ gzip:   2.63 kB
+dist/assets/ClaimPage-DudEABVM.js                    7.40 kB │ gzip:   2.77 kB
+dist/assets/DirectScorecardPage-DRuyPMwr.js          7.76 kB │ gzip:   2.71 kB
+dist/assets/RoundPage-CYNfMDKb.js                    8.56 kB │ gzip:   2.98 kB
+dist/assets/InvitationAdminPage-CYt49Amb.js          9.23 kB │ gzip:   3.32 kB
+dist/assets/ScorecardSummaryView-Czn1xWd8.js         9.51 kB │ gzip:   2.52 kB
+dist/assets/ProfilePage-B1lj5duy.js                  9.66 kB │ gzip:   3.47 kB
+dist/assets/JoinPage-CTxHsiXK.js                    10.71 kB │ gzip:   3.50 kB
+dist/assets/LeaderboardPage-SJGP6EJR.js             12.53 kB │ gzip:   3.95 kB
+dist/assets/TournamentPage-BpEyeK_X.js              15.03 kB │ gzip:   5.25 kB
+dist/assets/MatchPage-DOJlt6Cb.js                   17.54 kB │ gzip:   5.69 kB
+dist/assets/TournamentOnboardingPage-DdaVufKf.js    28.10 kB │ gzip:   8.60 kB
+dist/assets/FantasyPage-BNh6BdZx.js                 45.81 kB │ gzip:  14.54 kB
+dist/assets/ScorePage-hBifrsM0.js                   55.30 kB │ gzip:  13.41 kB
+dist/assets/TournamentManagementPage-O58vIP8N.js   130.36 kB │ gzip:  35.89 kB
+dist/assets/index-B8HGSs6G.js                      463.73 kB │ gzip: 143.14 kB
+✓ built in 3.23s

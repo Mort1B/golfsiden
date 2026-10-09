@@ -1,3 +1,7 @@
+import { CardReview } from '../CardReview'
+import { WritableCardSwitcher } from '../WritableCardSwitcher'
+import { writableOwnerProgress } from '../selection'
+import type { ScoreOwner } from '../../../api/scorecards'
 import { useEffect, useState } from 'react'
 import { useBlocker } from 'react-router-dom'
 import type { FourBallCard, FourBallScoringCard } from '../../../api/fourBall'
@@ -14,6 +18,7 @@ import { useFourBallSync } from './useFourBallSync'
 import { useFourBallConfirmation } from './useFourBallConfirmation'
 
 interface Props {
+  writableOwners?: ScoreOwner[]; onQuickOwner?: (owner:ScoreOwner)=>void; onPrefetchOwner?: (owner:ScoreOwner)=>void
   tournaments: Tournament[]; rounds: Round[]; round: Round; owners: OwnerCompletionProgress[]
   card: FourBallCard; holeNumber: number; view: ScoreView; canWrite: boolean; recovering: boolean
   onTournament: (id: string) => void; onRound: (id: string) => void; onOwner: (id: string) => void
@@ -67,9 +72,7 @@ function SideInput(props: Props & { card: FourBallScoringCard; hole: FourBallSco
   const blanks = card.holes.some(item => item.players.some(player => player.score === null))
   const syncs = [first, second]
   return <>
-    <header className="scorecard-owner"><div><p>Four-ball · lagscore</p><h2>{card.owner_name}</h2></div></header>
-    {!props.recovering && <SideSelectors {...props} disabled={locked} />}
-    {props.recovering && <button className="score-recovery-toggle" type="button" disabled={locked} onClick={() => props.onView(props.view === 'hole' ? 'summary' : 'hole')}>{props.view === 'hole' ? 'Oppsummering' : 'Ett hull'}</button>}
+    <header className="scorecard-owner"><div><p>Four-ball · lagscore</p><h2>{card.owner_name}</h2></div><span>{props.tournaments.find(t=>t.id===props.round.tournament_id)?.name}<br/>Runde {props.round.round_number}: {props.round.name}</span></header>
     {props.recovering && <p role="status">Oppdaterer tilgang og rundestatus. Endringer lagres først på enheten. Bekreftelse venter.</p>}
     {navigationWarning && <p role="alert">Fullfør eller forkast den ulagrede endringen før du går videre.</p>}
     {props.round.status === 'completed' && <p>Runden er fullført. Score kan korrigeres frem til låsing.</p>}
@@ -88,8 +91,13 @@ function SideInput(props: Props & { card: FourBallScoringCard; hole: FourBallSco
       <FourBallResult card={card} hole={hole} />
       <div className="four-ball-actions"><button type="button" disabled={locked || hole.hole_number <= 1} onClick={() => props.onHole(hole.hole_number - 1)}>Forrige hull</button>
         <button type="button" disabled={locked || hole.hole_number >= card.visible_hole_count} onClick={() => props.onHole(hole.hole_number + 1)}>Neste hull</button></div>
-      <FourBallTotals card={card} />
-    </> : <>
+    </> : null}
+    <CardReview card={card} tournament={props.round.tournament_id} disabled={locked} review={props.view==='hole'} onReview={()=>props.onView('summary')}/>
+    {!props.recovering && <SideSelectors {...props} disabled={locked} />}
+    {props.recovering && <button className="score-recovery-toggle" type="button" disabled={locked} onClick={() => props.onView(props.view === 'hole' ? 'summary' : 'hole')}>{props.view === 'hole' ? 'Oppsummering' : 'Ett hull'}</button>}
+    {!props.recovering&&props.onQuickOwner&&<WritableCardSwitcher owners={writableOwnerProgress(props.owners,props.writableOwners??[])} selectedOwner={card.owner} disabled={locked} onSelect={props.onQuickOwner} onPrefetch={props.onPrefetchOwner??(()=>{})}/>}
+    {props.view==='hole'&&<FourBallTotals card={card}/>}
+    {props.view === 'summary' && <>
       <FourBallSummary card={card} disabled={locked} onHole={props.onHole} />
       <section className="four-ball-confirm" aria-label="Bekreft lagets scorekort">
         {!card.complete && <p>Minst én partner må ha en numerisk score på hvert av de 18 hullene før laget kan bekrefte.</p>}

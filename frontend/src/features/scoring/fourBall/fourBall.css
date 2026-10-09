@@ -26,3 +26,5 @@
 .four-ball-confirm input { min-width: 24px; min-height: 24px; }
 .four-ball-confirm button { min-height: 44px; }
 @media (min-width: 700px) { .four-ball-partners { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; } }
+.four-ball-partner > p, .handicap-stroke-badge { font-size: .875rem; }
+.four-ball-partner [role=status], .four-ball-summary > p, .four-ball-confirm p { font-size: 1rem; line-height: 1.5; }

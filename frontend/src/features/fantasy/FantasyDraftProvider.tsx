@@ -9,7 +9,7 @@ import { useFantasyAction } from './useFantasy'
 // submission receipts, never roster, visibility, eligibility or result projections.
 export function FantasyDraftProvider({tournament,children}:{tournament:string;children:ReactNode}){
   const [records,setRecords]=useState<Record<string,FantasyRecovery>>({})
-  const [viewing,setPreferences]=useState<FantasyViewing>({kind:'managers',round:'',detail:null,lineupRound:''})
+  const [viewing,setPreferences]=useState<FantasyViewing>({section:'lineup',kind:'managers',round:'',detail:null,lineupRound:''})
   const setViewing=useCallback((patch:Partial<FantasyViewing>)=>setPreferences(previous=>({...previous,...patch})),[])
   const action=useFantasyAction(tournament)
   const update=useCallback((round:string,patch:Partial<FantasyRecovery>)=>setRecords(previous=>({...previous,[round]:{...(previous[round]??emptyRecovery),...patch}})),[])
@@ -26,12 +26,13 @@ export function FantasyDraftProvider({tournament,children}:{tournament:string;ch
   return <FantasyDraftContext value={{records,update,action,viewing,setViewing}}>{children}</FantasyDraftContext>
 }
 export function FantasyRecoveryStatus(){
-  const {records,update,action}=useFantasyDrafts()
+  const {records,update,action,viewing,setViewing}=useFantasyDrafts()
   const blocked=action.phase==='writing'||Object.values(records).some(record=>record.draft||record.uncertain)
   return <>
     {blocked&&<p role="status">Fantasy-valgene beholdes i denne økten. Avklar innsendingen eller forkast ulagrede valg før du forlater siden. Ikke lukk nettleseren.</p>}
     {!action.pending&&Object.values(records).some(record=>record.draft&&!record.uncertain)&&<button type="button" onClick={()=>{for(const [round,record] of Object.entries(records))if(!record.uncertain)update(round,{draft:null,rejected:null})}}>Forkast ulagrede Fantasy-valg</button>}
     {action.phase==='refresh_failed'&&Object.entries(records).filter(([,record])=>record.receipt).map(([round,record])=><p key={round}>Kvittering beholdt: innsending revisjon {record.receipt?.revision} er bekreftet.</p>)}
+    {viewing.section==='boards'&&Object.entries(records).filter(([,record])=>record.uncertain||record.rejected).map(([round])=><button key={round} onClick={()=>setViewing({section:'lineup',lineupRound:round})}>Se innsendingen i Min firer</button>)}
     <FantasyActionFeedback action={action}/>
   </>
 }

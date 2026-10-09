@@ -128,3 +128,24 @@
 .prepared-return button { min-height: 44px; padding: 12px 16px; font: inherit; font-weight: 700; border: 1px solid #176640; border-radius: 6px; background: #176640; color: #fff; }
 .prepared-return p { line-height: 1.5; overflow-wrap: anywhere; }
 .prepared-return button:focus-visible { outline: 3px solid #176640; outline-offset: 3px; }
+
+/* Playing-day hierarchy: readable facts, compact controls and explicit review. */
+.score-selectors label, .score-view-toggle legend, .writable-card-switcher > p,
+.writable-card-switcher span, .scorecard-owner p, .scorecard-owner > span,
+.scorecard-strip dt, .hole-entry > header p, .hole-entry dt,
+.score-stepper .record-par, .score-stepper output span, .score-sync,
+.hole-entry > footer button, .hole-entry > footer span, .scorecard-summary > header p,
+.score-totals dt, .scorecard-holes small, .scorecard-holes .hole-handicap { font-size: .875rem; }
+.scoring-notice, .background-query-error, .score-save-error p, .confirmation-error p,
+.correction-gate p, .handicap-strokes-explanation, .confirmation-state { font-size: 1rem; }
+.writable-card-switcher strong { font-size: 1rem; white-space: normal; overflow-wrap: anywhere; }
+.writable-card-switcher span { white-space: normal; }
+.hole-entry > footer { grid-template-columns: minmax(88px, 1fr) minmax(64px, 1fr) minmax(88px, 1fr); }
+.background-query-error, .correction-gate { flex-wrap: wrap; }
+.card-review { margin-block: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.card-review p { font-size: .875rem; margin-block: 6px; }
+.card-review p:first-child, .card-review p[role=status] { font-size: 1rem; }
+.card-review button { min-height: 48px; padding: 10px 14px; border: 1px solid #176640; border-radius: 6px; background: #fff; color: #155f3a; font: inherit; font-weight: 750; }
+.card-review button:disabled { opacity: .62; }
+.card-review button:focus-visible { outline: 3px solid #176640; outline-offset: 3px; }
+.card-review:focus { outline: 3px solid #176640; outline-offset: 3px; }

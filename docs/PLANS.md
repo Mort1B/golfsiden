@@ -5,7 +5,7 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The bounded reliability/usability step is complete.
+None. No implementation step is active.
 
 Every implementation step updates affected durable docs and LatestExplanation,
 removes its completed plan item, commits only its scope and stops before the

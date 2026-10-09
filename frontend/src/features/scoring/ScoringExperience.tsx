@@ -1,3 +1,4 @@
+import { CardReview } from './CardReview'
 import type { OwnerCompletionProgress, ScoreOwner, ScorecardHole, ScoringScorecard } from '../../api/scorecards'
 import type { Round, Tournament } from '../../api/types'
 import { useAuth } from '../auth/authContext'
@@ -120,7 +121,7 @@ export function ScoringExperience(props: ScoringExperienceProps) {
       )}
       {correctionMode && props.card.confirmed && <div className="scoring-notice warning">Korrigeringsmodus er aktiv. Første endring fjerner bekreftelsen.</div>}
 
-      {props.view === 'hole' ? (
+      {props.view === 'hole' && (
         <HoleEntry
           card={props.card}
           hole={props.hole}
@@ -134,21 +135,8 @@ export function ScoringExperience(props: ScoringExperienceProps) {
           onPrevious={() => props.onHole(props.hole.hole_number - 1, true)}
           onNext={() => props.onHole(props.hole.hole_number + 1, true)}
         />
-      ) : (
-        <ScorecardSummaryView
-          card={props.card}
-          localScores={localScores}
-          disabled={navigationLocked}
-          readOnly={!editableRound || !csrfToken || !props.canWrite}
-          confirmationDisabled={confirmation.blocked || props.recovering === true}
-          confirming={confirmation.confirming}
-          confirmationError={confirmation.errorMessage}
-          confirmationRetryable={confirmation.retryable}
-          onHole={(number) => props.onHole(number)}
-          onConfirm={confirmation.confirm}
-        />
       )}
-
+      <CardReview card={props.card} tournament={props.round.tournament_id} disabled={navigationLocked} review={props.view==='hole'} onReview={()=>props.onView('summary')}/>
       {props.recovering && <button className="score-recovery-toggle" type="button" disabled={navigationLocked} onClick={() => props.onView(props.view === 'hole' ? 'summary' : 'hole')}>{props.view === 'hole' ? 'Oppsummering' : 'Ett hull'}</button>}
       {!props.recovering && <ScoreSelectors
         tournaments={props.tournaments}
@@ -176,10 +164,25 @@ export function ScoringExperience(props: ScoringExperienceProps) {
         onPrefetch={props.onPrefetchOwner}
       />}
 
+      {props.view === 'summary' && (
+        <ScorecardSummaryView
+          card={props.card}
+          localScores={localScores}
+          disabled={navigationLocked}
+          readOnly={!editableRound || !csrfToken || !props.canWrite}
+          confirmationDisabled={confirmation.blocked || props.recovering === true}
+          confirming={confirmation.confirming}
+          confirmationError={confirmation.errorMessage}
+          confirmationRetryable={confirmation.retryable}
+          onHole={(number) => props.onHole(number)}
+          onConfirm={confirmation.confirm}
+        />
+      )}
+
       <dl className="scorecard-strip" aria-label="Summer fra serveren">
         <div><dt>Brutto</dt><dd>{props.card.holes_scored > 0 ? props.card.gross_total : '–'}</dd></div>
         <div><dt>Netto</dt><dd>{props.card.holes_scored > 0 ? props.card.net_total : '–'}</dd></div>
-        <div><dt>Hull</dt><dd>{props.card.holes_scored}/{props.card.number_of_holes}</dd></div>
+        <div><dt>Hull på serveren</dt><dd>{props.card.holes_scored}/{props.card.number_of_holes}</dd></div>
         <div><dt>Spille-HCP</dt><dd>{props.card.playing_handicap}</dd></div>
       </dl>
 

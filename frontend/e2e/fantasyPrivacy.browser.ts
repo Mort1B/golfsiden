@@ -33,6 +33,7 @@ test('Fantasy protects other drafts and hidden results across score changes, rel
     await member.goto(f.url)
     await expect(member.getByRole('heading', { name: 'Fantasy', exact: true })).toBeVisible()
     await expect(member.getByRole('heading', { name: 'Fantasy-oppsett' })).toHaveCount(0)
+    await member.getByRole('button', { name: 'Poengtavler', exact: true }).click()
     await member.locator('.fantasy-standings button').filter({ hasText: f.names[0] }).click()
     await expect(member.getByText('Andre deltakeres valg er private fram til fristen.')).toHaveCount(2)
     await expect(member.locator('.fantasy-detail .fantasy-contributions')).toHaveCount(0)

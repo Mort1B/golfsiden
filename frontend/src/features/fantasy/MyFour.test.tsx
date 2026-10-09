@@ -26,7 +26,7 @@ it.each(['csrf','logout','unmount'])('ignores held mutation completion after %s'
 it('keeps a rejected save unsaved and explains deadline closure',async()=>{vi.mocked(fantasyApi.save).mockRejectedValue(new ApiHttpError(409,'fantasy_closed','closed'));tree();choose();fireEvent.click(screen.getByRole('button',{name:'Lagre firer og kaptein'}));await screen.findByText(/Fristen er passert/);expect(screen.queryByText(/Innsending revisjon/)).toBeNull();expect(screen.getByText('Ulagrede endringer')).toBeTruthy()})
 it('renders locked origin, empty availability and explicit invalid selection',()=>{tree({...view,window:{...view.window,locked_at:'2026-01-01T12:00:00Z'},selection_availability:'closed',selections:[{user_id:session.user_id,state:'invalid',locked_at:'2026-01-01T12:00:00Z',receipt:null}]});expect(screen.getByText('Ugyldig lag ved fristen – 0 poeng')).toBeTruthy();expect(screen.queryByLabelText('Kaptein · doble poeng')).toBeNull()})
 it('does not automatically submit or retry offline',async()=>{vi.spyOn(navigator,'onLine','get').mockReturnValue(false);tree();choose();fireEvent.click(screen.getByRole('button',{name:'Lagre firer og kaptein'}));await screen.findByText(/Du er frakoblet/);expect(fantasyApi.save).not.toHaveBeenCalled()})
-it('shows stale-edit conflict instead of replacing newer server selection',async()=>{let input:Save|undefined;vi.mocked(fantasyApi.save).mockImplementation(async(_t,_r,_u,body)=>{input=body;throw new ApiHttpError(409,'fantasy_conflict','changed')});tree({...view,selections:[{user_id:session.user_id,state:'draft',locked_at:null,receipt}]});fireEvent.change(screen.getByLabelText('Kaptein · doble poeng'),{target:{value:picks[1]}});fireEvent.click(screen.getByRole('button',{name:'Lagre firer og kaptein'}));await screen.findByText(/Grunnlaget ble endret/);expect(input?.expected_revision).toBe(1);expect(screen.getByText('Ulagrede endringer')).toBeTruthy()})
+it('shows stale-edit conflict instead of replacing newer server selection',async()=>{let input:Save|undefined;vi.mocked(fantasyApi.save).mockImplementation(async(_t,_r,_u,body)=>{input=body;throw new ApiHttpError(409,'fantasy_conflict','changed')});tree({...view,selections:[{user_id:session.user_id,state:'draft',locked_at:null,receipt}]});fireEvent.click(screen.getByRole('button',{name:'Endre valg'}));fireEvent.change(screen.getByLabelText('Kaptein · doble poeng'),{target:{value:picks[1]}});fireEvent.click(screen.getByRole('button',{name:'Lagre firer og kaptein'}));await screen.findByText(/Grunnlaget ble endret/);expect(input?.expected_revision).toBe(1);expect(screen.getByText('Ulagrede endringer')).toBeTruthy()})
 
 it('reconciles an old accepted retry with a newer current lineup without claiming the old one is current',async()=>{
   vi.mocked(fantasyApi.save).mockRejectedValueOnce(new TypeError('network'))
@@ -35,7 +35,8 @@ it('reconciles an old accepted retry with a newer current lineup without claimin
   mounted.rerender(element({...view,selections:[{user_id:session.user_id,state:'draft',locked_at:null,receipt:newer}]}))
   fireEvent.click(screen.getByRole('button',{name:'Avklar samme innsending'}))
   await screen.findByText(/Et nyere lag er allerede lagret/)
-  expect(screen.getByLabelText('Kaptein · doble poeng')).toHaveProperty('value',picks[1])
+  expect(screen.queryByLabelText('Kaptein · doble poeng')).toBeNull()
+  expect(screen.getByText(new RegExp(`${players[1]?.display_name} \\(kaptein`))).toBeTruthy()
   expect(screen.getByText('Lagret lag · revisjon 2')).toBeTruthy()
 })
 

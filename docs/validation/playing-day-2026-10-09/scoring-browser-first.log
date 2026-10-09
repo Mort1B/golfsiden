@@ -1,0 +1,67 @@
+
+> golf-web@0.1.0 test:browser:lifecycle
+> playwright test --config playwright.lifecycle.config.ts offlineScoring.browser.ts offlineLifecycle.browser.ts fourBall.browser.ts stableford.browser.ts stablefordOffline.browser.ts scoringFlow.browser.ts
+
+
+Running 19 tests using 1 worker
+
+(node:2457376) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+  ✓   1 e2e/fourBall.browser.ts:7:1 › four-ball partner inputs, pickups, offline conflicts, confirmation and preserved history (25.9s)
+  ✓   2 e2e/fourBall.browser.ts:83:1 › four-ball loading and failed side reads offer retry without hiding the selected team (2.7s)
+  ✓   3 e2e/fourBall.browser.ts:101:1 › four-ball retains a lost acknowledgement and successor across reload and a second tab (6.7s)
+  ✓   4 e2e/fourBall.browser.ts:149:1 › four-ball storage failure keeps the unsaved edit guarded and discard remains usable (5.3s)
+  ✘   5 e2e/scoringFlow.browser.ts:21:1 › resume fresh gaps, explicit history, quick cards, durable saves, async states and responsive composition (6.3s)
+(node:2458084) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+  ✓   6 e2e/stableford.browser.ts:8:1 › Stableford draft settings, pickup, reconnect conflicts, zero-point confirmation, correction and history (34.0s)
+  ✓   7 e2e/stableford.browser.ts:85:1 › Stableford loading and server errors preserve retry, mixed points and equivalent results are labelled (6.3s)
+  ✓   8 e2e/stableford.browser.ts:114:1 › Stableford hidden private history and public equivalents do not change after hidden pickup (7.7s)
+  ✓   9 e2e/stableford.browser.ts:152:1 › the creation wizard exposes individual Stableford with an eighteen-hole course and no team setup (2.6s)
+  ✓  10 e2e/stablefordOffline.browser.ts:6:1 › Stableford storage failure blocks navigation and confirmation until deliberate discard (3.9s)
+  ✓  11 e2e/stablefordOffline.browser.ts:33:1 › Stableford lost acknowledgement survives reload and two tabs replay one immutable head (5.3s)
+  ✓  12 e2e/stablefordOffline.browser.ts:67:1 › Stableford confirmation holds the player lease across tabs and releases on failed fresh read (4.2s)
+(node:2458953) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+  ✓  13 e2e/offlineLifecycle.browser.ts:14:1 › retains queued data on logout but hides it from another account and resumes with a new session (7.6s)
+  ✓  14 e2e/offlineLifecycle.browser.ts:48:1 › device write failure never claims durability and guards navigation until explicitly discarded (2.7s)
+  ✓  15 e2e/offlineLifecycle.browser.ts:72:1 › confirmed completed cards support explicit offline correction; a later lock retains a discardable blocked edit (3.1s)
+  ✓  16 e2e/offlineLifecycle.browser.ts:99:1 › explicit local discard completes immediately while offline (1.4s)
+  ✓  17 e2e/offlineScoring.browser.ts:8:1 › real offline holes survive reload, resume and explicitly resolve both conflict choices (16.2s)
+  ✓  18 e2e/offlineScoring.browser.ts:72:1 › two tabs retry a lost response and conflict against the acknowledged revision without overwriting a later score (11.3s)
+  ✓  19 e2e/offlineScoring.browser.ts:118:1 › hanging post-ack reads time out without stopping other holes or showing stale values as saved (7.3s)
+
+
+  1) e2e/scoringFlow.browser.ts:21:1 › resume fresh gaps, explicit history, quick cards, durable saves, async states and responsive composition
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Laster …')
+    Expected: visible
+    Error: strict mode violation: getByText('Laster …') resolved to 2 elements:
+        1) <div role="status" class="state-message">Laster …</div> aka getByRole('region', { name: 'Mine turneringer' }).getByRole('status')
+        2) <div role="status" class="state-message">Laster …</div> aka getByText('Laster …').nth(1)
+
+    Call log:
+      - Expect "toBeVisible" getByText('Laster …') with timeout 5000ms
+      - waiting for getByText('Laster …')
+
+
+      84 |   pending = new Promise<void>(resolve => { release = resolve })
+      85 |   await nav.getByRole('link', { name: 'Score', exact: true }).click()
+    > 86 |   await expect(page.getByText('Laster …')).toBeVisible()
+         |                                            ^
+      87 |   await layout(page, 'loading')
+      88 |   fail = true; release(); pending = null
+      89 |   await expect(page.getByRole('alert')).toContainText('Midlertidig utilgjengelig')
+        at /home/morten/Prog/guttasgolfside/golfsiden/frontend/e2e/scoringFlow.browser.ts:86:44
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../../../tmp/golf-lifecycle-browser-results/scoringFlow.browser.ts-res-868b8--and-responsive-composition/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../../../../../tmp/golf-lifecycle-browser-results/scoringFlow.browser.ts-res-868b8--and-responsive-composition/error-context.md
+
+  1 failed
+    e2e/scoringFlow.browser.ts:21:1 › resume fresh gaps, explicit history, quick cards, durable saves, async states and responsive composition
+  18 passed (2.7m)

@@ -61,6 +61,7 @@ test('Fantasy retains drafts, exact uncertain requests and acknowledged receipts
   await page.getByRole('button',{name:'Avklar samme innsending'}).click()
   await expect(page.getByText('Handlingen er bekreftet. Visningen er oppdatert.')).toBeVisible()
   expect(bodies).toHaveLength(2);expect(bodies[1]).toEqual(bodies[0])
+  await page.getByRole('button',{name:'Endre valg',exact:true}).click()
   await page.getByLabel('Kaptein · doble poeng').selectOption(f.players[1])
   let failRead=true
   await page.route(`**/api/tournaments/${f.tournament.id}/fantasy/rounds/${round.id}`,async route=>failRead?route.fulfill({status:503,json:{error:{code:'unavailable',message:'Injected read failure'}}}):route.continue())

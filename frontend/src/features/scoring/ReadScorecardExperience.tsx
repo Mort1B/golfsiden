@@ -30,11 +30,7 @@ export function ReadScorecardExperience(props: ReadScorecardExperienceProps) {
       </header>
       <div className="scoring-notice">Du kan se dette scorekortet, men ikke føre score for det.</div>
       {hidden && <div className="scoring-notice warning" role="status">Hull 10–18 er skjult til administratoren frigir finalens bakni.</div>}
-      {props.view === 'hole' ? <ReadHole card={props.card} hole={props.hole} onHole={props.onHole} /> : (
-        <ScorecardSummaryView card={props.card} disabled={false} readOnly confirming={false}
-          confirmationError={null} confirmationRetryable={false} onHole={props.onHole} onConfirm={() => undefined} />
-      )}
-
+      {props.view === 'hole' && <ReadHole card={props.card} hole={props.hole} onHole={props.onHole} />}
       <ScoreSelectors
         tournaments={props.tournaments}
         rounds={props.rounds}
@@ -52,6 +48,10 @@ export function ReadScorecardExperience(props: ReadScorecardExperienceProps) {
         onHole={props.onHole}
         onView={props.onView}
       />
+      {props.view === 'summary' && (
+        <ScorecardSummaryView card={props.card} disabled={false} readOnly confirming={false}
+          confirmationError={null} confirmationRetryable={false} onHole={props.onHole} onConfirm={() => undefined} />
+      )}
       <dl className="scorecard-strip">
         <div><dt>Brutto</dt><dd>{props.card.holes_scored > 0 ? props.card.gross_total : '–'}</dd></div>
         <div><dt>Netto</dt><dd>{props.card.holes_scored > 0 ? props.card.net_total : '–'}</dd></div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { fantasyApi, type RoundView, type Save } from '../../api/fantasy'
 import { ApiHttpError } from '../../api/http'
 import type { Round, TournamentPlayer } from '../../api/types'
@@ -13,6 +13,8 @@ export function MyFour({tournament,round,view,players,rounds,refreshing}:Props){
   const setDraft=(draft:typeof emptyRecovery.draft)=>update(round,{draft})
   const setUncertain=(uncertain:Save|null)=>update(round,{uncertain})
   const setReceipt=(receipt:typeof emptyRecovery.receipt)=>update(round,{receipt})
+  const editor=useRef<HTMLFieldSetElement>(null),focusEditor=useRef(false)
+  const [editingRevision,setEditingRevision]=useState<number|null>(null)
   const [clock,setClock]=useState(Date.now())
   useEffect(()=>{const timer=setInterval(()=>setClock(Date.now()),1000);return()=>clearInterval(timer)},[])
   const deadline=view.window.deadline, locallyDue=!!deadline && Date.parse(deadline)<=clock
@@ -21,6 +23,8 @@ export function MyFour({tournament,round,view,players,rounds,refreshing}:Props){
   const picks=draft?.picks??accepted?.picks??[],captain=draft?.captain??accepted?.captain??''
   const acceptedValid=own?.state==='draft'&&!!accepted&&accepted.picks.every(p=>view.eligible_players.includes(p))
   const revision=accepted?.revision??0,stale=draft!==null && draft.revision!==revision
+  const showEditor=!acceptedValid||!!draft||!!uncertain||!!rejected||editingRevision===revision
+  useEffect(()=>{if(showEditor&&focusEditor.current){focusEditor.current=false;editor.current?.focus()}},[showEditor])
   const open=view.selection_availability==='open' && !view.window.locked_at
   const disabled=!!rejected||action.pending||action.phase==='refresh_failed'||refreshing||!!uncertain||!open
   const valid=picks.length===4&&picks.includes(captain)&&picks.every(p=>view.eligible_players.includes(p))
@@ -43,8 +47,9 @@ export function MyFour({tournament,round,view,players,rounds,refreshing}:Props){
     {open && !accepted && !view.carry_forward_preview && <p>Du har ingen tidligere firer å gjenbruke. Lever ditt første lag før fristen.</p>}
     {uncertain && <div role="alert" className="fantasy-notice"><p>Lagringen er ikke bekreftet. Laget kan være mottatt. Behold samme innsending til svaret er avklart; nye valg er sperret.</p><button disabled={action.pending||refreshing} onClick={()=>void submit(uncertain)}>Avklar samme innsending</button>{accepted?.request_id===uncertain.request_id && accepted.expected_revision===uncertain.expected_revision && accepted.captain===uncertain.captain && accepted.picks.length===uncertain.picks.length && accepted.picks.every((p,i)=>p===uncertain.picks[i]) && <button onClick={()=>{setUncertain(null);setDraft(null)}}>Bruk bekreftet lag fra serveren</button>}</div>}
     {rejected&&<div className="fantasy-notice" role="alert"><p>Den opprinnelige innsendingen ble ikke lagret. Gjeldende lag vises ovenfor. Du velger selv om de tidligere valgene skal beholdes.</p><button disabled={action.pending||refreshing} onClick={()=>{update(round,{draft:null,rejected:null});action.clear()}}>Bruk gjeldende lag</button>{open&&<button disabled={action.pending||refreshing} onClick={()=>{update(round,{draft:{picks:[...rejected.picks],captain:rejected.captain,revision},rejected:null});action.clear()}}>Behold valgene som nytt utkast</button>}</div>}
-    {open && <form onSubmit={e=>{e.preventDefault();if(!disabled&&!stale&&valid)void submit({request_id:crypto.randomUUID(),expected_revision:revision,picks:[...picks],captain})}}>
-      <fieldset disabled={disabled}><legend>Velg fire spillere ({picks.length}/4)</legend><p>Begge lagpartnere kan velges. Kapteinen dobler hele resultatet, også minuspoeng.</p><div className="fantasy-picks">{players.filter(p=>view.eligible_players.includes(p.player_id)||picks.includes(p.player_id)).map(p=><label key={p.player_id}><input type="checkbox" checked={picks.includes(p.player_id)} disabled={!picks.includes(p.player_id)&&picks.length===4} onChange={e=>{const next=e.target.checked?[...picks,p.player_id]:picks.filter(id=>id!==p.player_id);edit(next,next.includes(captain)?captain:'')}}/><span>{p.display_name}{!view.eligible_players.includes(p.player_id)?' · ikke valgbar – fjern dette valget':''}</span></label>)}</div>
+    {open&&!showEditor&&<button disabled={action.pending||refreshing||action.phase==='refresh_failed'} onClick={()=>{focusEditor.current=true;setEditingRevision(revision)}}>Endre valg</button>}
+    {open && showEditor && <form onSubmit={e=>{e.preventDefault();if(!disabled&&!stale&&valid)void submit({request_id:crypto.randomUUID(),expected_revision:revision,picks:[...picks],captain})}}>
+      <fieldset ref={editor} tabIndex={-1} disabled={disabled}><legend>Velg fire spillere ({picks.length}/4)</legend><p>Begge lagpartnere kan velges. Kapteinen dobler hele resultatet, også minuspoeng.</p><div className="fantasy-picks">{players.filter(p=>view.eligible_players.includes(p.player_id)||picks.includes(p.player_id)).map(p=><label key={p.player_id}><input type="checkbox" checked={picks.includes(p.player_id)} disabled={!picks.includes(p.player_id)&&picks.length===4} onChange={e=>{const next=e.target.checked?[...picks,p.player_id]:picks.filter(id=>id!==p.player_id);edit(next,next.includes(captain)?captain:'')}}/><span>{p.display_name}{!view.eligible_players.includes(p.player_id)?' · ikke valgbar – fjern dette valget':''}</span></label>)}</div>
       <label htmlFor="fantasy-captain">Kaptein · doble poeng</label><select id="fantasy-captain" value={captain} onChange={e=>edit(picks,e.target.value)}><option value="">Velg kaptein</option>{picks.map(id=><option key={id} value={id}>{names.get(id)??'Ikke lenger valgbar'}</option>)}</select></fieldset>
       {draft&&<p role="status">Ulagrede endringer</p>}{stale&&<p role="alert">Et annet lag er lagret siden du begynte å redigere. Hent gjeldende lag før du gjør nye valg.</p>}
       {draft&&<button type="button" disabled={action.pending||!!uncertain} onClick={()=>{setDraft(null);setReceipt(null);update(round,{rejected:null});action.clear()}}>Forkast utkast og bruk lagret lag</button>}
