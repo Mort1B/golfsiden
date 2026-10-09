@@ -15,7 +15,7 @@ export function FantasySettlement({tournament,results,refreshing}:{tournament:st
 function SourceEditor({tournament,round,kind,owner,locked,refreshing}:{tournament:string;round:string;kind:OwnerKind;owner:string;locked:boolean;refreshing:boolean}){
   const {action}=useFantasyDrafts()
   const query=useFantasyQuery(tournament,['source',round,kind,owner],signal=>fantasyApi.source(tournament,round,kind,owner,signal))
-  if(query.error)return <><ErrorState error={query.error} onRetry={()=>void query.refetch()}/></>
+  if(query.error)return <><ErrorState error={query.error} onRetry={()=>void action.refresh()}/></>
   if(!query.data)return <LoadingState/>
   return <>{(query.isFetching||refreshing)&&<p role="status">Oppdaterer scoregrunnlaget …</p>}<DispositionForm key={`${query.data.source_token}:${query.data.disposition?.id??''}`} tournament={tournament} source={query.data} locked={locked} action={action} refreshing={query.isFetching||refreshing}/></>
 }

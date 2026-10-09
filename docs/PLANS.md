@@ -5,10 +5,7 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The bounded Fantasy and player-claim reliability repair is complete.
-See [current behavior](Documentation.md#playing-and-administering-fantasy) and
-[verification evidence and limits](validation/reliability-2026-10-09/README.md).
-No further implementation step is selected.
+None. The bounded reliability/usability step is complete.
 
 Every implementation step updates affected durable docs and LatestExplanation,
 removes its completed plan item, commits only its scope and stops before the

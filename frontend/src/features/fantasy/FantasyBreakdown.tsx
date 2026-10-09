@@ -1,21 +1,24 @@
 import { fantasyApi, type GolferResult, type ManagerResult } from '../../api/fantasy'
 import { ErrorState, LoadingState } from '../../ui/AsyncState'
 import { categories, pointText, selectionLabels } from './format'
+import { useFantasyDrafts } from './fantasyDrafts'
 import { useFantasyQuery } from './useFantasy'
-export function FantasyBreakdown({tournament,kind,id,names}:{tournament:string;kind:'golfers'|'managers';id:string;names:Map<string,string>}){
-  return kind==='golfers'?<GolferBreakdown tournament={tournament} id={id}/>:<ManagerBreakdown tournament={tournament} id={id} names={names}/>
+export function FantasyBreakdown({tournament,kind,id,names,roundId=''}:{roundId?:string;tournament:string;kind:'golfers'|'managers';id:string;names:Map<string,string>}){
+  return kind==='golfers'?<GolferBreakdown tournament={tournament} id={id} roundId={roundId}/>:<ManagerBreakdown tournament={tournament} id={id} names={names} roundId={roundId}/>
 }
-function GolferBreakdown({tournament,id}:{tournament:string;id:string}){
+function GolferBreakdown({tournament,id,roundId}:{tournament:string;id:string;roundId:string}){
+  const {action}=useFantasyDrafts()
   const query=useFantasyQuery(tournament,['golfer',id],signal=>fantasyApi.golfer(tournament,id,signal))
-  if(query.error)return <ErrorState error={query.error} onRetry={()=>void query.refetch()}/>
+  if(query.error)return <ErrorState error={query.error} onRetry={()=>void action.refresh()}/>
   if(!query.data)return <LoadingState/>
-  return <section className="fantasy-section"><h3>{query.data.standing.display_name} · spillerpoeng</h3><p>{pointText(query.data.standing.points)} · uten kapteinmultiplikator</p>{query.isFetching&&<p role="status">Oppdaterer poeng …</p>}{query.data.rounds.map(({round,result})=><details key={round.round_id} open><summary>Runde {round.round_number}: {round.name} · {pointText(result.points)}</summary><GolferDetail result={result}/></details>)}</section>
+  return <section className="fantasy-section"><h3>{query.data.standing.display_name} · spillerpoeng</h3>{!roundId&&<p>{pointText(query.data.standing.points)} · uten kapteinmultiplikator</p>}{query.isFetching&&<p role="status">Oppdaterer poeng …</p>}{query.data.rounds.filter(item=>!roundId||item.round.round_id===roundId).map(({round,result})=><details key={round.round_id} open><summary>Runde {round.round_number}: {round.name} · {pointText(result.points)}</summary><GolferDetail result={result}/></details>)}</section>
 }
-function ManagerBreakdown({tournament,id,names}:{tournament:string;id:string;names:Map<string,string>}){
+function ManagerBreakdown({tournament,id,names,roundId}:{tournament:string;id:string;names:Map<string,string>;roundId:string}){
+  const {action}=useFantasyDrafts()
   const query=useFantasyQuery(tournament,['manager',id],signal=>fantasyApi.manager(tournament,id,signal))
-  if(query.error)return <ErrorState error={query.error} onRetry={()=>void query.refetch()}/>
+  if(query.error)return <ErrorState error={query.error} onRetry={()=>void action.refresh()}/>
   if(!query.data)return <LoadingState/>
-  return <section className="fantasy-section"><h3>{query.data.standing.display_name} · Fantasy-lag</h3><p>{pointText(query.data.standing.points)} · alle runder</p>{query.isFetching&&<p role="status">Oppdaterer poeng …</p>}{query.data.rounds.map(({round,result})=><details key={round.round_id} open><summary>Runde {round.round_number}: {round.name} · {pointText(result.points)}</summary><ManagerDetail result={result} names={names}/></details>)}</section>
+  return <section className="fantasy-section"><h3>{query.data.standing.display_name} · Fantasy-lag</h3>{!roundId&&<p>{pointText(query.data.standing.points)} · alle runder</p>}{query.isFetching&&<p role="status">Oppdaterer poeng …</p>}{query.data.rounds.filter(item=>!roundId||item.round.round_id===roundId).map(({round,result})=><details key={round.round_id} open><summary>Runde {round.round_number}: {round.name} · {pointText(result.points)}</summary><ManagerDetail result={result} names={names}/></details>)}</section>
 }
 export function GolferDetail({result}:{result:GolferResult}){
   return <div className="fantasy-breakdown"><p>{result.settlement==='non_finish'?'Ikke fullført: registrerte hull beholdes, uspilt hull gir ingen straff eller plassering.':result.settlement==='stale_non_finish'?'Ikke-fullført må vurderes på nytt etter en scoreendring.':result.settlement==='confirmed'?'Scorekortet er bekreftet.':result.settlement==='unconfirmed'?'Resultatet venter på bekreftelse.':result.settlement==='withheld'?'Resultatet er skjult.':''}</p>

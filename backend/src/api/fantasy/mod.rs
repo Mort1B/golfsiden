@@ -80,6 +80,10 @@ impl From<RepositoryError> for Error {
             RepositoryError::Invalid => {
                 ApiError::BadRequest("invalid Fantasy request, lineup or owner".into())
             }
+            RepositoryError::RevisionConflict => ApiError::DomainConflict {
+                code: "fantasy_revision_conflict",
+                message: "this request was not accepted; the lineup revision changed",
+            },
             RepositoryError::Conflict => ApiError::DomainConflict {
                 code: "fantasy_conflict",
                 message: "Fantasy state changed; refresh and retry",

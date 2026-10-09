@@ -34,7 +34,12 @@ acceptance remains a separate operator check.
    choose a round or **Sammenlagt · alle runder**. Manager totals double the
    captain's whole result, including negatives. Golfer totals show everyone's
    base points, including unselected and historical withdrawn golfers. Open a
-   row for per-round picks/contributions or hole/placement/match explanations.
+   row for picks/contributions or hole/placement/match explanations directly
+   beneath it. A selected round limits details to that round; the total view shows
+   all rounds. **Lukk poengdetaljer** or Escape closes details and returns focus
+   to the row. Board, selected row and round identifiers survive query clearing
+   and reconnect in this session, are checked against fresh responses, and reset
+   when the account/session changes. No result data is stored in these preferences.
 6. Administrators can settle a genuine non-finish under the selected round's
    administration section. Choose the real player/team owner, check the card and
    supply a reason. Shared team disposition affects both partners. A stale source,
@@ -65,12 +70,19 @@ is guarded while input or recovery remains unresolved, and closing/reloading the
 browser warns about losing that in-memory recovery. This is not offline storage.
 **Forkast ulagrede Fantasy-valg** discards unsent input; it cannot discard an
 uncertain request. An exact replay rejected as closed resolves nonacceptance;
-its unsent draft can then be discarded. Refreshed conflicting revisions require
-the user to discard/review the stale draft.
+its unsent draft can then be discarded. A definitive superseded-request response
+means the original request was never accepted and cannot be accepted with that
+revision. **Bruk gjeldende lag** adopts the fresh current lineup without a write;
+**Behold valgene som nytt utkast** rebases the original picks/captain for review.
+Only a subsequent deliberate save creates a new request ID. A generic conflict
+stays unresolved; it is not evidence that the original write failed.
 
 An acknowledged write remains acknowledged even if a subsequent read fails.
 The receipt is retained and **Prøv oppdatering igjen** retries reads only; it
-never repeats the write. Selection, configuration, deadline and settlement
+never repeats the write. This read failure alone does not block Score, logout or
+route departure; genuine unsaved input and unresolved submissions still do. A
+successful toolbar or inline error retry clears stale refresh-failure feedback.
+Selection, configuration, deadline and settlement
 feedback share the workspace lifetime. The UI confirms an updated display only
 after authoritative reads reconcile, including reads newly enabled by activation.
 
@@ -152,7 +164,14 @@ current disposition and keep stale dispositions pending until reviewed.
 Errors keep `{error: {code, message}}`. Invalid bodies/lineups return 400;
 authentication, CSRF and membership use existing 401/403/404 behavior. State
 conflicts return 409 with `fantasy_unavailable`, `fantasy_closed` or
-`fantasy_conflict`. Refresh before retrying a changed-state conflict. Successful
+`fantasy_conflict`, plus `fantasy_revision_conflict` for a never-accepted lineup
+request whose expected revision is older than the current revision. Immutable
+request lookup under the existing round locks precedes that check; historical
+accepted requests replay their exact receipt. Future revisions, request-ID content
+collisions and transient database conflicts retain `fantasy_conflict`. The HTTP
+status/envelope, request body and successful response are unchanged; older clients
+remain conservative for the new error code. Refresh before retrying a changed-state
+conflict. Successful
 writes and newly materialized closure publish structural SSE invalidations only
 after commit. No anonymous sharing or offline selection queue is added.
 
@@ -1141,9 +1160,15 @@ current session. It confirms success only for the prepared player and chosen
 username, without replacing a concurrent login. If no matching session can be
 confirmed, it explains that the account may already exist and offers **Logg inn
 med …**, with that username prefilled in ordinary login. Use the same password;
-the password and claim secret are cleared from the claim flow. Registration is
-not automatically retried, and an already-linked player does not need another
-claim. Single-use claim semantics are unchanged.
+the password field is cleared. **Kontroller kontolenken på nytt** deliberately
+rechecks the session and then the original claim. If still available for the same
+prepared player/tournament, the username remains and the user can enter a password
+and deliberately register. If unavailable, ordinary login/password-help guidance
+remains. A temporary read failure permits another read retry. The claim secret
+stays only in this mounted flow’s memory until success, definitive unavailability
+or departure; no registration is automatically replayed. Concurrent logins are
+never overwritten, and an already-linked player does not need another claim.
+Single-use claim semantics are unchanged.
 
 Links last seven days and can be used once. Their secrets are shown only when
 created and are not stored in browser storage. **Lag ny kontolenke** replaces the

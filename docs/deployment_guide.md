@@ -605,6 +605,9 @@ deployment, not a claim that the hosted release has already passed them.
    **Fantasy-lag** and **Spillerpoeng**, for a round and **Sammenlagt · alle runder**.
    Verify both team partners receive shared points, captains double only manager
    contributions (including negatives), and unselected golfers still appear.
+   Details should open directly under their row and show only the selected round.
+   Close/Escape returns focus to that row. Reconnect should restore board/row/round
+   preferences only after fresh reads, without retaining private projections.
    Every Fantasy round counts, regardless of sporting best-round settings.
    Match rounds award only win +3, draw +1, loss −1, including early finishes;
    there are no additional match hole/ace/placement points.
@@ -621,9 +624,23 @@ deployment, not a claim that the hosted release has already passed them.
    the live connection and restore it without reloading: unsent choices and the
    original uncertain request should survive while private projections clear.
    After an acknowledged save with failed refetch, **Prøv oppdatering igjen**
-   must issue reads only and retain the receipt. Local drafts/recovery are scoped
+   must issue reads only and retain the receipt. Score/logout must remain usable
+   when there is no unsaved/uncertain input, and successful toolbar/detail retry
+   must clear failure feedback. For competing sessions, an original unaccepted
+   older request receives `fantasy_revision_conflict`; inspect/use the current
+   lineup or deliberately rebase. Generic conflict remains unresolved, while an
+   accepted original replays its historical receipt. Deploy matching API/frontend
+   builds for this new error classification; no schema/grant change is needed.
+   Local drafts/recovery are scoped
    to the current page/account/session and are not durable across browser closure.
    Ordinary failed reads have retry controls; see the [playing/admin flow](Documentation.md#playing-and-administering-fantasy).
+
+For claim recovery, simulate failed delivery before and after registration commit
+in a disposable environment. A matching delivered cookie recovers the prepared
+player; without it, normal login uses the chosen username. **Kontroller kontolenken
+på nytt** must read the session first: an available claim restores deliberate
+registration, a consumed claim offers login, and neither path automatically repeats
+registration. Test a concurrent login without overwriting that session.
 
 If activation is unavailable on an already-started tournament, use a new draft
 test tournament; do not rewrite round history to enable it. If the Fantasy screen

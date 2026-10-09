@@ -70,7 +70,7 @@ test('Fantasy retains drafts, exact uncertain requests and acknowledged receipts
   await expect(page.getByText(/Lagringen er ikke bekreftet/)).toHaveCount(0)
   await fantasyLayouts(page,'reliability-refresh-failed')
   failRead=false
-  await page.getByRole('button',{name:'Prøv oppdatering igjen'}).click()
+  await page.getByRole('button',{name:'Oppdater Fantasy'}).click()
   await expect(page.getByText('Handlingen er bekreftet. Visningen er oppdatert.')).toBeVisible()
   await expect(page.getByText('Lagret lag · revisjon 2')).toBeVisible()
   expect(bodies).toHaveLength(3)
@@ -114,6 +114,9 @@ for(const cookie of [true,false])test(`committed player claim with lost response
       await recipient.screenshot({path:`/tmp/golf-reliability-claim-${cookie}-${width}.png`,fullPage:true})
     }
     if(!cookie){
+      await recipient.getByRole('button',{name:'Kontroller kontolenken på nytt'}).click()
+      await expect(recipient.getByText(/Kontolenken er ikke tilgjengelig/)).toBeVisible()
+      await expect(recipient.getByRole('button',{name:'Ta i bruk kontoen'})).toHaveCount(0)
       await recipient.getByRole('link',{name:`Logg inn med ${username}`}).click()
       await expect(recipient.getByLabel('Brukernavn',{exact:true})).toHaveValue(username)
       await recipient.getByLabel('Passord',{exact:true}).fill(password)
@@ -124,7 +127,31 @@ for(const cookie of [true,false])test(`committed player claim with lost response
     expect((await committer.post(`/api/player-claims/${claim.claim_id}/preview`,{data:{token:claim.token}})).status()).toBe(410)
     expect(registrations).toBe(1)
     expect(events.errors).toEqual([])
-    expect(events.responses.every(item=>item.path==='/api/auth/session'&&item.status===401)).toBe(true)
+    expect(events.responses.every(item=>item.path==='/api/auth/session'&&item.status===401||item.path.endsWith('/preview')&&item.status===410)).toBe(true)
     expect(events.failures.every(item=>item.error==='net::ERR_ABORTED')).toBe(true)
   }finally{await context.close();await committer.dispose()}
+})
+
+
+test('precommit registration failure revalidates an available claim before deliberate resubmission',async({page,browser})=>{
+ const f=await fantasyFixture(page),prepared=f.players[1];if(!prepared)throw new Error('player')
+ const claim=decodeClaimReceipt(await(await f.mutate(`/api/tournaments/${f.tournament.id}/players/${prepared}/claim`)).json())
+ const context=await browser.newContext({baseURL:'http://127.0.0.1:5173'})
+ try{
+  const recipient=await context.newPage(),events=observe(recipient),username=`precommit_${Date.now()}`
+  let registrations=0
+  await recipient.route(`**/api/player-claims/${claim.claim_id}/register`,async route=>{registrations++;if(registrations===1)return route.fulfill({status:503,json:{error:{code:'unavailable',message:'Injected before commit'}}});return route.continue()})
+  await recipient.goto(`/claim/${claim.claim_id}#token=${claim.token}`)
+  await recipient.getByLabel('Brukernavn',{exact:true}).fill(username);await recipient.getByLabel('Passord',{exact:true}).fill('reliability claim password');await recipient.getByRole('button',{name:'Ta i bruk kontoen'}).click()
+  await expect(recipient.getByText(/Kontoen kan allerede være opprettet/)).toBeVisible()
+  await recipient.getByRole('button',{name:'Kontroller kontolenken på nytt'}).click()
+  await expect(recipient.getByText(/Kontolenken er fortsatt tilgjengelig/)).toBeVisible();expect(registrations).toBe(1)
+  await expect(recipient.getByLabel('Brukernavn',{exact:true})).toHaveValue(username);await expect(recipient.getByLabel('Passord',{exact:true})).toHaveValue('')
+  expect(new URL(recipient.url()).hash).toBe('')
+  for(const width of [320,390,1280]){await recipient.setViewportSize({width,height:900});expect(await recipient.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);await recipient.screenshot({path:`/tmp/golf-followup-claim-available-${width}.png`,fullPage:true})}
+  await recipient.getByLabel('Passord',{exact:true}).fill('reliability claim password');await recipient.getByRole('button',{name:'Ta i bruk kontoen'}).click()
+  await expect(recipient.getByText(/Kontoen er klar/)).toBeVisible();expect(registrations).toBe(2)
+  expect(decodeAuthSession(await(await recipient.request.get('/api/auth/session')).json()).player_id).toBe(prepared)
+  expect(events.errors).toEqual([]);expect(events.responses.every(item=>item.path==='/api/auth/session'&&item.status===401||item.path.endsWith('/register')&&item.status===503)).toBe(true);expect(events.failures.every(item=>item.error==='net::ERR_ABORTED')).toBe(true)
+ }finally{await context.close()}
 })

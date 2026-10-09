@@ -29,6 +29,7 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
   const [feedback, setFeedback] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [invalid, setInvalid] = useState(false)
+  const expectedClaim = useRef<{playerId:string;tournamentId:string}|null>(null)
   const [uncertainAccount, setUncertainAccount] = useState<string|null>(null)
   const previewKey = ['player-claim-preview', claimId, instance]
   const valid = isCanonicalUuid(claimId) && captured !== null
@@ -37,7 +38,7 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
     window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}`)
     return () => { alive.current = false }
   }, [])
-  const preview = useQuery({ queryKey: previewKey, enabled: valid && !success && !invalid,
+  const preview = useQuery({ queryKey: previewKey, enabled: valid && !success && !invalid && !uncertainAccount,
     retry: false, gcTime: 0, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false,
     queryFn: async ({ signal }) => {
       if (!secret.current) throw new Error(invalidClaimMessage)
@@ -58,6 +59,7 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
     const supplied = password
     const accountName = username.trim()
     const expected = preview.data
+    expectedClaim.current = {playerId:expected.player.id,tournamentId:expected.tournament.id}
     busy.current = true; setPending(true); setFeedback(null); setPassword('')
     try {
       await client.cancelQueries({ queryKey: authKeys.session })
@@ -84,9 +86,9 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
           recovered = await api.session()
         } catch { /* Recovery failure is represented by the login fallback below. */ }
         if (!alive.current || !sameRecoverySession(client, initial)) return
-        secret.current = null; setCaptured(null)
         client.removeQueries({queryKey:previewKey,exact:true})
         if (recovered?.player_id === expected.player.id && recovered.username.toLowerCase() === accountName.toLowerCase()) {
+          secret.current = null; setCaptured(null)
           publishSessionTransition(client,recovered)
           setSuccess(expected.tournament.id)
         } else setUncertainAccount(accountName)
@@ -98,6 +100,41 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
         client.removeQueries({ queryKey: previewKey, exact: true })
       }
     } finally { mutation.reset(); busy.current = false; if (alive.current) setPending(false) }
+  }
+  const revalidateClaim = async () => {
+    const initial = client.getQueryData<AuthSession|null>(authKeys.session)
+    const expected = expectedClaim.current
+    if (busy.current || !uncertainAccount || !secret.current || !expected) return
+    if (initial) { setFeedback('Du er allerede innlogget. Kontroller kontoen før du fortsetter.'); return }
+    busy.current = true; setPending(true); setFeedback(null)
+    try {
+      await client.cancelQueries({queryKey:authKeys.session})
+      if (!alive.current || !sameRecoverySession(client,initial)) return
+      const recovered = await api.session()
+      if (!alive.current || !sameRecoverySession(client,initial)) return
+      if (recovered) {
+        if (recovered.player_id===expected.playerId && recovered.username.toLowerCase()===uncertainAccount.toLowerCase()) {
+          secret.current=null;setCaptured(null)
+          publishSessionTransition(client,recovered);setSuccess(expected.tournamentId)
+        } else setFeedback('En annen konto er innlogget. Kontroller innloggingen før du fortsetter.')
+        return
+      }
+      const result = await preview.refetch()
+      if (!alive.current || !sameRecoverySession(client,initial)) return
+      if (result.error) throw result.error
+      if (!result.data || result.data.player.id!==expected.playerId || result.data.tournament.id!==expected.tournamentId) {
+        throw new Error('Claim identity changed')
+      }
+      setUncertainAccount(null)
+      setFeedback('Kontolenken er fortsatt tilgjengelig. Skriv inn passordet og velg selv om du vil opprette kontoen.')
+    } catch (error) {
+      if (!alive.current || !sameRecoverySession(client,initial)) return
+      if (error instanceof ApiHttpError && ['claim_invalid','claim_unavailable'].includes(error.code)) {
+        secret.current=null;setCaptured(null)
+        client.removeQueries({queryKey:previewKey,exact:true})
+        setFeedback('Kontolenken er ikke tilgjengelig. Kontoen kan allerede være opprettet; bruk vanlig innlogging eller passordhjelp.')
+      } else setFeedback('Kontolenken kunne ikke kontrolleres. Prøv kontrollen igjen når forbindelsen er tilbake.')
+    } finally { busy.current=false;if(alive.current)setPending(false) }
   }
   const signOut = async () => {
     if (busy.current) return
@@ -118,7 +155,7 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
   const unavailable = !valid || invalid || (preview.error instanceof ApiHttpError && ['claim_invalid', 'claim_unavailable'].includes(preview.error.code))
   return <section className="sign-in-panel" aria-labelledby="claim-heading">
     <p className="brand">Guttas Golf</p><h1 id="claim-heading">Ta i bruk spillerkontoen</h1>
-    {success ? <><p role="status">Kontoen er klar. Du er logget inn som spilleren arrangøren opprettet.</p><Link to={`/tournaments/${success}`}>Åpne turneringen</Link></> : uncertainAccount ? <><p role="alert">Kontoen kan allerede være opprettet, men vi kunne ikke bekrefte innloggingen. Logg inn med brukernavnet du valgte og samme passord. Ikke be om en ny kontolenke for en spiller som allerede har konto.</p><Link to="/login" state={{claimUsername:uncertainAccount}}>Logg inn med {uncertainAccount}</Link></> : unavailable ? <><p role="alert">{invalidClaimMessage}</p><Link to="/login">Til innlogging</Link></> : <>
+    {success ? <><p role="status">Kontoen er klar. Du er logget inn som spilleren arrangøren opprettet.</p><Link to={`/tournaments/${success}`}>Åpne turneringen</Link></> : uncertainAccount ? <><p role="alert">Kontoen kan allerede være opprettet, men vi kunne ikke bekrefte innloggingen. Logg inn med brukernavnet du valgte og samme passord. Ikke be om en ny kontolenke for en spiller som allerede har konto.</p><Link to="/login" state={{claimUsername:uncertainAccount}}>Logg inn med {uncertainAccount}</Link>{captured&&<button disabled={pending||auth.loading||!!auth.session} onClick={()=>void revalidateClaim()}>{pending?'Kontrollerer kontolenken …':'Kontroller kontolenken på nytt'}</button>}{feedback&&<p role="alert">{feedback}</p>}</> : unavailable ? <><p role="alert">{invalidClaimMessage}</p><Link to="/login">Til innlogging</Link></> : <>
       {preview.isPending && <p role="status">Kontrollerer lenken …</p>}
       {preview.error && <><p role="alert">{claimMessage(preview.error)}</p><button disabled={preview.isFetching} onClick={() => void preview.refetch()}>Prøv igjen</button></>}
       {preview.data && !preview.error && <>

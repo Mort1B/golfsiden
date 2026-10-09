@@ -382,8 +382,13 @@ and reapplies runtime grants before the API is started.
   only the preview's prepared-player ID plus the chosen normalized username.
   Both sides of the read check the canonical initial session and mounted lifetime;
   a concurrent login is never overwritten. Without a matching recovered session,
-  secrets/preview are cleared and ordinary login receives only a validated username
-  through router state. Registration is never replayed. Uncertain creation forces
+  preview/password are cleared and ordinary login receives only a validated username
+  through router state. The original secret stays only in mounted memory for
+  deliberate revalidation: a fresh session read precedes claim preview, with
+  canonical-session/lifetime checks after each. Only an available preview for the
+  same player/tournament restores deliberate registration. Consumed/invalid claims
+  clear the secret and offer login; transient reads permit another read retry.
+  Registration is never automatically replayed. Uncertain creation forces
   roster review before another creation;
   the create endpoint does not provide request-id idempotency.
 - Public invitation handlers authenticate an extractable token before strict
@@ -2564,12 +2569,17 @@ Runtime decoders validate UUID/context identities, complete picks, captain and
 source provenance, typed result states, round inventories and hidden-response
 consistency. The browser never recomputes scoring. `FantasyDraftProvider`, keyed
 by tournament/user/CSRF identity above query-driven branches, owns per-round local
-input, exact uncertain requests and own acknowledged receipts. It retains no
+input, exact uncertain/rejected requests and own acknowledged receipts. Separate
+viewing state holds only board kind, row ID and lineup/board round IDs; fresh
+inventories prune missing identifiers. Expanded details live within their row and
+filter to the selected board round. Account/CSRF replacement resets this context.
+It retains no
 roster, eligibility, visibility, carry-preview or result projection. `MyFour`
 renders those local records against current authorized reads and distinguishes
 accepted current receipts from historical replay receipts and carry previews.
 The provider guards route departure/browser unload while local input, a pending
-write or unresolved recovery remains; round switches retain their separate records.
+write or uncertain submission remains; round switches retain their separate records.
+An acknowledged write with failed refresh alone never blocks navigation/logout.
 Nothing is written to browser storage or queued for offline transmission.
 
 All Fantasy mutations share that workspace lifetime. Write errors are caught
@@ -2580,9 +2590,19 @@ from identifiers, so unmounting/switching does not lose its reconciliation targe
 Activation explicitly checks the newly enabled results/round reads. The current
 canonical session and private-result denial/cancellation boundaries fence these
 reads too; no retained query closures or server projections substitute for them.
+Toolbar, detail and settlement read retries use the same refresh coordinator,
+clearing stale failure feedback only after successful reconciliation. Write and
+refresh generations fence obsolete refresh feedback from a later operation.
 An exact lineup replay rejected as `fantasy_closed` resolves uncertainty because
-backend receipt lookup precedes the closed-window rejection. A changed server revision
-blocks stale submission. Selected ineligible golfers remain removable. A valid
+backend receipt lookup precedes the closed-window rejection. The additive
+`409 fantasy_revision_conflict` classifies only an absent immutable request with
+an older expected revision, while the same round locks serialize all saves. This
+check precedes current golfer eligibility; withdrawn original picks cannot hide
+a definitive supersession. Future expected revisions, changed-body collisions
+and transient SQL conflicts keep `fantasy_conflict`. Accepted historical requests
+replay before these checks. A definitive rejection offers explicit current-lineup
+or draft-rebase choices, with a new ID only on a subsequent deliberate save. A
+changed server revision blocks stale submission. Selected ineligible golfers remain removable. A valid
 current lineup suppresses the fallback preview. The deadline display uses a local
 advisory clock; the server decides acceptance and immutable lock state.
 

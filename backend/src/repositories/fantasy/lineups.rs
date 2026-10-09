@@ -68,17 +68,23 @@ pub async fn save(
     if !entered {
         return Err(Error::Unavailable);
     }
+    let old = lifecycle::current(&mut tx, r, u).await?;
+    let revision = old.as_ref().map_or(0, |v| v.revision);
+    if revision > input.expected_revision {
+        // The immutable request lookup above found no receipt while holding the
+        // same round locks as every save. This request cannot be accepted later
+        // with its original expected revision; transient conflicts stay distinct.
+        return Err(Error::RevisionConflict);
+    }
+    if revision < input.expected_revision {
+        return Err(Error::Conflict);
+    }
     let now: DateTime<Utc> = sqlx::query_scalar("SELECT clock_timestamp()")
         .fetch_one(&mut *tx)
         .await?;
     let eligible = lifecycle::eligible(&mut tx, t, now).await?;
     if !lineup.picks().iter().all(|p| eligible.contains(p)) {
         return Err(Error::Invalid);
-    }
-    let old = lifecycle::current(&mut tx, r, u).await?;
-    let revision = old.as_ref().map_or(0, |v| v.revision);
-    if revision != input.expected_revision {
-        return Err(Error::Conflict);
     }
     let id = Uuid::new_v4();
     let mut values = lineup.picks().iter();

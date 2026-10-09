@@ -28,6 +28,8 @@ pub enum Error {
     Invalid,
     #[error("revision or request conflicts; refresh and retry")]
     Conflict,
+    #[error("unaccepted request has a stale expected revision")]
+    RevisionConflict,
     #[error("database operation failed")]
     Database(#[source] sqlx::Error),
 }
