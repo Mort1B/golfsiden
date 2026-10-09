@@ -6,13 +6,16 @@ import { authKeys } from '../../api/auth'
 import { fantasyApi, type RoundView, type Save } from '../../api/fantasy'
 import { ApiHttpError } from '../../api/http'
 import { AuthContext } from '../auth/authContext'
+import { FantasyDraftProvider, FantasyRecoveryStatus } from './FantasyDraftProvider'
+import { ScoringGuardProvider } from '../scoring/ScoringGuardProvider'
 import { MyFour } from './MyFour'
 import { id, picks, players, receipt, round, roundId, session, tournament, view } from './fixtures'
 vi.mock('../../api/fantasy',async original=>({...await original<typeof import('../../api/fantasy')>(),fantasyApi:{save:vi.fn(),enter:vi.fn()}}))
+vi.mock('react-router-dom',()=>({useBlocker:()=>({state:'unblocked'})}))
 let client:QueryClient
 beforeEach(()=>{vi.resetAllMocks();client=new QueryClient({defaultOptions:{queries:{retry:false},mutations:{retry:false}}});client.setQueryData(authKeys.session,session);vi.mocked(fantasyApi.save).mockImplementation(async(_t,_r,_u,body)=>({...receipt,...body,revision:body.expected_revision+1}));vi.stubGlobal('crypto',{randomUUID:()=>id(50)})})
 afterEach(()=>{cleanup();client.clear();vi.unstubAllGlobals()})
-function element(data:RoundView=view){return (<QueryClientProvider client={client}><AuthContext.Provider value={{session,loading:false,error:null,signIn:vi.fn(),establishSession:vi.fn(),signOut:vi.fn(),retry:vi.fn()}}><MyFour tournament={tournament} round={roundId} view={data} players={players} rounds={[round]} refreshing={false}/></AuthContext.Provider></QueryClientProvider>)}
+function element(data:RoundView=view){return (<QueryClientProvider client={client}><AuthContext.Provider value={{session,loading:false,error:null,signIn:vi.fn(),establishSession:vi.fn(),signOut:vi.fn(),retry:vi.fn()}}><ScoringGuardProvider><FantasyDraftProvider tournament={tournament}><MyFour tournament={tournament} round={roundId} view={data} players={players} rounds={[round]} refreshing={false}/><FantasyRecoveryStatus/></FantasyDraftProvider></ScoringGuardProvider></AuthContext.Provider></QueryClientProvider>)}
 function tree(data:RoundView=view){return render(element(data))}
 function choose(){for(const p of players.slice(0,4))fireEvent.click(screen.getByRole('checkbox',{name:p.display_name}));fireEvent.change(screen.getByLabelText('Kaptein · doble poeng'),{target:{value:picks[0]}})}
 it('requires four unique players and a selected captain before saving the whole lineup',async()=>{tree();expect(screen.getByRole('button',{name:'Lagre firer og kaptein'})).toHaveProperty('disabled',true);choose();fireEvent.click(screen.getByRole('button',{name:'Lagre firer og kaptein'}));await screen.findByText(/Innsending revisjon 1 er bekreftet/);expect(fantasyApi.save).toHaveBeenCalledWith(tournament,roundId,session.user_id,{request_id:id(50),expected_revision:0,picks,captain:picks[0]},session.csrf_token)})

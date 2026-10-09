@@ -617,8 +617,13 @@ deployment, not a claim that the hosted release has already passed them.
 6. **Check return and recovery.** Reload, switch accounts and verify saved history
    persists without exposing another member's draft. Fantasy writes require an
    online connection. If a save response is uncertain, use **Avklar samme
-   innsending** to resolve that exact submission before changing it. Ordinary
-   failed reads have retry controls; see the [playing/admin flow](Documentation.md#playing-and-administering-fantasy).
+   innsending** to resolve that exact submission before changing it. Interrupt
+   the live connection and restore it without reloading: unsent choices and the
+   original uncertain request should survive while private projections clear.
+   After an acknowledged save with failed refetch, **Prøv oppdatering igjen**
+   must issue reads only and retain the receipt. Local drafts/recovery are scoped
+   to the current page/account/session and are not durable across browser closure.
+   Ordinary failed reads have retry controls; see the [playing/admin flow](Documentation.md#playing-and-administering-fantasy).
 
 If activation is unavailable on an already-started tournament, use a new draft
 test tournament; do not rewrite round history to enable it. If the Fantasy screen

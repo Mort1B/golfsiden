@@ -1,23 +1,39 @@
-# Fantasy rules and deployment guidance
+# Fantasy and player-claim recovery
 
-The README now explains the implemented Fantasy game: four free picks and one
-double-points captain per round, eligible carry-forward, the full net hole and
-placement scales, shared team points, outcome-only match play, non-finish handling,
-and independent manager/golfer round and overall leaderboards. It also describes
-joining, selection deadlines, privacy and online-only writes.
+Three verified reliability defects are repaired without changing scoring rules,
+authorization, privacy contracts, APIs or single-use claims.
 
-The production section summarizes the existing backup, matching-build, migration,
-runtime-grant and health/readiness sequence and links to the exact commands.
-The deployment guide now includes a Fantasy setup and release checklist covering
-enablement, two-account draft privacy, locking/carry-forward, both boards,
-settlement, concealed results and recovery after an uncertain save. It distinguishes
-installing the feature from enabling it in a tournament and records that schema
-37 needs no additional Fantasy service, scheduler, secret or environment variable.
+Fantasy recovery now belongs to the tournament/account/session workspace above
+query-driven branches. Local picks, captain, exact uncertain request and own
+acknowledged receipts survive SSE clearing, failed queries and round switching.
+Private server projections still clear immediately. Navigation/unload guards
+protect unresolved input; the state remains in memory and does not create an
+offline write queue or survive a confirmed reload/session replacement.
 
-This is a documentation-only update. Current source rules and production Compose
-services were checked against the text; Markdown references and whitespace were
-validated, and the diff was reviewed. Runtime tests, browser checks and deployment
-commands were not rerun because no executable files or configuration changed.
-The earlier [Fantasy acceptance report](validation/fantasy-release-2026-10-08/README.md)
-retains the actual local execution evidence and its limits. No hosted deployment
-or server administration was performed.
+Write and refresh outcomes are separate. An acknowledged write followed by a
+failed read keeps its receipt and exposes read-only refresh retry. Shared action
+ownership covers selection and administrator controls. Reconciliation reconstructs
+the original target from identifiers, checks query state, and explicitly reads
+newly enabled activation dependencies. A failed read never invokes write-failure
+handling or repeats an acknowledged write.
+
+A lost player-registration response now triggers a session read. Only the
+expected prepared player and chosen username can establish recovered success;
+canonical-session and mounted-lifetime checks protect a concurrent login. Without
+a matching session, the page explains that the account may already exist and
+opens ordinary login with the chosen username. Password/claim secret are cleared,
+and the UI no longer tells an already-linked player to obtain another claim.
+
+For example, a lineup can commit revision 2 and then fail to refresh: its receipt
+remains visible, and **Prøv oppdatering igjen** sends GETs only. If registration
+commits without delivering its cookie, ordinary login reaches the original
+prepared player; registration is not repeated.
+
+The initial parent regressions failed before production edits. Final validation:
+134 frontend files / 996 tests, typecheck, lint and production build passed;
+12 Chrome scenarios passed against a fresh local PostgreSQL database, including
+real commits with deliberately broken responses both with and without cookies.
+Read-only review findings about parent action lifetime, switched targets,
+definitive rejected replay and newly enabled reads were resolved. See the
+[exact evidence, commands, screenshots and limits](validation/reliability-2026-10-09/README.md).
+No hosted deployment or physical-device acceptance was performed.

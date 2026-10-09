@@ -57,9 +57,24 @@ private before lock, even from admins.
 Fantasy writes require connectivity and are never queued offline. If a lineup
 response is uncertain, **Avklar samme innsending** retries the exact request and
 keeps changed submissions disabled until resolved; an older replay receipt never
-replaces a newer accepted lineup. Refreshed conflicting revisions require the
-user to discard/review the stale draft. Score/match/visibility events and browser
-return refresh authoritative results. Visibility/disconnection, denied access,
+replaces a newer accepted lineup. The original request ID, expected revision,
+pick order and captain survive query errors, SSE clearing/reconnect and round
+switching. Drafts and own receipts stay in memory for this tournament/account/
+session only; protected server projections are still erased. Leaving the page
+is guarded while input or recovery remains unresolved, and closing/reloading the
+browser warns about losing that in-memory recovery. This is not offline storage.
+**Forkast ulagrede Fantasy-valg** discards unsent input; it cannot discard an
+uncertain request. An exact replay rejected as closed resolves nonacceptance;
+its unsent draft can then be discarded. Refreshed conflicting revisions require
+the user to discard/review the stale draft.
+
+An acknowledged write remains acknowledged even if a subsequent read fails.
+The receipt is retained and **Prøv oppdatering igjen** retries reads only; it
+never repeats the write. Selection, configuration, deadline and settlement
+feedback share the workspace lifetime. The UI confirms an updated display only
+after authoritative reads reconcile, including reads newly enabled by activation.
+
+Score/match/visibility events and browser return refresh authoritative results. Visibility/disconnection, denied access,
 logout and session replacement clear private Fantasy projections. Queries retry
 only `409 fantasy_conflict`, at most twice; mutations are never automatically
 retried. Other failures have visible retry/recovery controls.
@@ -1120,6 +1135,15 @@ The new account owns that same player identity, including any existing teams,
 scores and handicap snapshots; claiming never creates a duplicate entrant.
 A signed-in recipient must explicitly sign out before claiming. Linking or merging
 an already-existing account with a different player identity is not supported.
+
+If registration may have committed but its response is lost, the page reads the
+current session. It confirms success only for the prepared player and chosen
+username, without replacing a concurrent login. If no matching session can be
+confirmed, it explains that the account may already exist and offers **Logg inn
+med …**, with that username prefilled in ordinary login. Use the same password;
+the password and claim secret are cleared from the claim flow. Registration is
+not automatically retried, and an already-linked player does not need another
+claim. Single-use claim semantics are unchanged.
 
 Links last seven days and can be used once. Their secrets are shown only when
 created and are not stored in browser storage. **Lag ny kontolenke** replaces the

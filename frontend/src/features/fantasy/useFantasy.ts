@@ -4,6 +4,7 @@ import { authKeys, type AuthSession } from '../../api/auth'
 import { fantasyKeys } from '../../api/fantasy'
 import { ApiHttpError } from '../../api/http'
 import { loadPrivateResult } from '../../api/privateResults'
+import { refreshFantasyTarget, type FantasyReadTarget } from './refreshFantasy'
 import { useAuth } from '../auth/authContext'
 export function fantasyError(error: unknown): string {
   if (error instanceof ApiHttpError) {
@@ -31,22 +32,58 @@ export function useFantasyQuery<T>(t: string, parts: string[], load: (signal: Ab
 }
 export function useFantasyAction(t: string) {
   const { session } = useAuth(), client=useQueryClient(), alive=useRef(false), busy=useRef(false)
+  const required=useRef<FantasyReadTarget|null>(null)
   const [feedback,setFeedback]=useState<{text:string;error:boolean}|null>(null)
   const [pending,setPending]=useState(false)
+  const [phase,setPhase]=useState<'idle'|'writing'|'write_failed'|'uncertain'|'refresh_failed'|'success'>('idle')
   useLayoutEffect(()=>{alive.current=true;return()=>{alive.current=false}},[])
   const current=useCallback(()=>{const cached=client.getQueryData<AuthSession|null>(authKeys.session);return alive.current && !!session && cached?.user_id===session.user_id && cached.csrf_token===session.csrf_token},[client,session])
   const mutation=useMutation({mutationFn:(operation:()=>Promise<unknown>)=>operation(),retry:false,gcTime:0,networkMode:'always'})
-  const refresh=useCallback(async()=>{if(current() && session) await client.invalidateQueries({queryKey:fantasyKeys.root(session.user_id,t)})},[client,current,session,t])
-  const execute=async<T,>(operation:(session:AuthSession)=>Promise<T>,success:(value:T)=>void=()=>{},failure?:(error:unknown)=>void):Promise<void>=>{
-    if(busy.current || !current() || !session) return
-    if(!navigator.onLine){setFeedback({error:true,text:'Du er frakoblet. Fantasy-valg lagres bare på nett.'});return}
-    busy.current=true;setPending(true);setFeedback(null)
-    try{await mutation.mutateAsync(async()=>{if(!current())throw new Error('Sesjonen er endret.');const value=await operation(session);if(current())success(value)})
-      if(!current())return
-      await refresh()
-      if(current())setFeedback({error:false,text:'Handlingen er bekreftet. Visningen er oppdatert.'})
-    }catch(error){if(!current())return;setFeedback({error:true,text:fantasyError(error)});failure?.(error);await refresh()}
-    finally{busy.current=false;mutation.reset();if(current())setPending(false)}
+  const refresh=useCallback(async():Promise<boolean>=>{
+    if(!current()||!session||!navigator.onLine)return false
+    const queryKey=fantasyKeys.root(session.user_id,t)
+    const targets=client.getQueryCache().findAll({queryKey,type:'active'}).map(query=>query.queryKey)
+    try {
+      await client.invalidateQueries({queryKey},{throwOnError:true})
+      if(required.current && current())await refreshFantasyTarget(client,t,session,required.current,current)
+      const visible=[...targets,...client.getQueryCache().findAll({queryKey,type:'active'}).map(query=>query.queryKey)]
+      return current() && visible.length>0 && visible.every(key=>{
+        const state=client.getQueryState(key)
+        return state?.status==='success' && state.data!==undefined && !state.isInvalidated && state.fetchStatus==='idle'
+      })
+    }catch{return false}
+  },[client,current,session,t])
+  const publishRefresh=(ok:boolean)=>{
+    if(!current())return
+    setPhase(ok?'success':'refresh_failed')
+    setFeedback({error:!ok,text:ok?'Handlingen er bekreftet. Visningen er oppdatert.':'Handlingen er bekreftet, men visningen kunne ikke oppdateres. Prøv oppdatering igjen; innsendingen sendes ikke på nytt.'})
   }
-  return {pending,feedback,current,refresh,execute,clear:()=>setFeedback(null)}
+  const retryRefresh=async()=>{
+    if(busy.current||!current())return
+    busy.current=true;setPending(true)
+    try{publishRefresh(await refresh())}finally{busy.current=false;if(current())setPending(false)}
+  }
+  const execute=async<T,>(operation:(session:AuthSession)=>Promise<T>,success:(value:T)=>void=()=>{},failure?:((error:unknown)=>void),target?:FantasyReadTarget):Promise<void>=>{
+    if(busy.current || phase==='refresh_failed' || !current() || !session) return
+    if(!navigator.onLine){setFeedback({error:true,text:'Du er frakoblet. Fantasy-valg lagres bare på nett.'});return}
+    required.current=target??{kind:'game'}
+    busy.current=true;setPending(true);setFeedback(null);setPhase('writing')
+    try{
+      let result:{value:T}|undefined
+      try{
+        await mutation.mutateAsync(async()=>{if(!current())throw new Error('Sesjonen er endret.');result={value:await operation(session)}})
+      }catch(error){
+        if(!current())return
+        setPhase(error instanceof ApiHttpError&&error.status<500?'write_failed':'uncertain')
+        setFeedback({error:true,text:fantasyError(error)});failure?.(error)
+        required.current=null
+        await refresh()
+        return
+      }
+      if(!current()||!result)return
+      success(result.value)
+      publishRefresh(await refresh())
+    }finally{busy.current=false;mutation.reset();if(current())setPending(false)}
+  }
+  return {pending,phase,feedback,current,refresh,retryRefresh,execute,clear:()=>{if(phase!=='refresh_failed'){setFeedback(null);setPhase('idle')}}}
 }

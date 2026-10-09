@@ -109,3 +109,34 @@ it('does not clear a concurrent login when held sign-out finishes', async () => 
   await act(async () => { finish() })
   expect(client.getQueryData(authKeys.session)).toEqual(replacement)
 })
+
+it.each([true,false])('recovers committed registration with lost response, cookie=%s',async cookie=>{
+ vi.mocked(playerClaimsApi.register).mockRejectedValue(new TypeError('lost response'))
+ vi.spyOn(api,'session').mockResolvedValue(cookie?{...session,username:'new_player'}:null)
+ tree();await screen.findByLabelText('Passord');fill()
+ if(cookie){await screen.findByText(/Kontoen er klar/);expect(client.getQueryData(authKeys.session)).toEqual({...session,username:'new_player'})}
+ else {await screen.findByText(/Kontoen kan allerede være opprettet/);expect(screen.getByRole('link',{name:/Logg inn med new_player/})).toBeTruthy();expect(screen.queryByLabelText('Passord')).toBeNull()}
+ expect(playerClaimsApi.register).toHaveBeenCalledTimes(1)
+})
+
+it.each(['mismatch','read-failure'])('offers normal login when session recovery gives %s',async mode=>{
+ vi.mocked(playerClaimsApi.register).mockRejectedValue(new TypeError('lost'))
+ const read=vi.spyOn(api,'session')
+ if(mode==='mismatch')read.mockResolvedValue({...session,player_id:id,username:'new_player'})
+ else read.mockRejectedValue(new TypeError('unreachable'))
+ tree();await screen.findByLabelText('Passord');fill()
+ await screen.findByText(/Kontoen kan allerede være opprettet/)
+ expect(client.getQueryData(authKeys.session)).toBeNull()
+ expect(screen.queryByLabelText('Passord')).toBeNull()
+})
+it.each(['concurrent-login','unmount'])('fences held lost-response reconciliation after %s',async mode=>{
+ vi.mocked(playerClaimsApi.register).mockRejectedValue(new TypeError('lost'))
+ let finish:(value:typeof session)=>void=()=>{}
+ const read=vi.spyOn(api,'session').mockImplementation(()=>new Promise(resolve=>{finish=resolve}))
+ const mounted=tree();await screen.findByLabelText('Passord');fill();await waitFor(()=>expect(read).toHaveBeenCalled())
+ const replacement={...session,csrf_token:'concurrent-login'}
+ if(mode==='unmount')mounted.unmount();else client.setQueryData(authKeys.session,replacement)
+ await act(async()=>finish({...session,username:'new_player'}))
+ expect(client.getQueryData(authKeys.session)).toEqual(mode==='unmount'?null:replacement)
+ expect(screen.queryByText(/Kontoen er klar/)).toBeNull()
+})

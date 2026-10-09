@@ -37,7 +37,7 @@ test('Fantasy selection, settlement and both boards work at mobile and desktop w
   for(const hole_id of holes)await f.mutate(`/api/rounds/${first.id}/scores`,{owner:{type:'player',id:f.players[0]},hole_id,gross_strokes:4},'PUT')
   await f.mutate(`${path}/confirm`)
   await expect(page.getByText('Låst lag',{exact:true})).toBeVisible()
-  for(const player of f.players.slice(1)){await page.getByLabel('Spiller eller lag',{exact:true}).selectOption(`player:${player}`);await page.getByLabel('Begrunnelse (maks. 500 byte)').fill('Ikke fullført i lokal nettlesertest');await page.getByRole('button',{name:'Registrer ikke fullført',exact:true}).click();await expect(page.getByText(/Registrert som ikke fullført/)).toBeVisible();await expect(page.locator('section').filter({has:page.getByRole('heading',{name:'Ikke fullført · Fantasy',exact:true})}).last().getByText('Handlingen er bekreftet. Visningen er oppdatert.')).toBeVisible()}
+  for(const player of f.players.slice(1)){await page.getByLabel('Spiller eller lag',{exact:true}).selectOption(`player:${player}`);await page.getByLabel('Begrunnelse (maks. 500 byte)').fill('Ikke fullført i lokal nettlesertest');await page.getByRole('button',{name:'Registrer ikke fullført',exact:true}).click();await expect(page.getByText(/Registrert som ikke fullført/)).toBeVisible();await expect(page.locator('.fantasy-page').getByText('Handlingen er bekreftet. Visningen er oppdatert.')).toBeVisible()}
   const total=results(await(await page.request.get(`/api/tournaments/${f.tournament.id}/fantasy/results`)).json(),f.tournament.id)
   expect(total.managers[0]?.points).toEqual({state:'provisional',total:22})
   const changedHole=holes[0];if(!changedHole)throw new Error('Missing correction hole')

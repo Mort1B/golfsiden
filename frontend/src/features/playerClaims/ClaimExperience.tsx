@@ -29,6 +29,7 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
   const [feedback, setFeedback] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [invalid, setInvalid] = useState(false)
+  const [uncertainAccount, setUncertainAccount] = useState<string|null>(null)
   const previewKey = ['player-claim-preview', claimId, instance]
   const valid = isCanonicalUuid(claimId) && captured !== null
   useEffect(() => {
@@ -73,6 +74,24 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
       })
     } catch (error) {
       if (!alive.current || !sameRecoverySession(client, initial)) return
+      if (!(error instanceof ApiHttpError) || error.status >= 500) {
+        // The claim may have committed. Never replay it: recover only the
+        // prepared identity, and never overwrite a login that won this race.
+        let recovered:AuthSession|null = null
+        try {
+          await client.cancelQueries({queryKey:authKeys.session})
+          if (!alive.current || !sameRecoverySession(client, initial)) return
+          recovered = await api.session()
+        } catch { /* Recovery failure is represented by the login fallback below. */ }
+        if (!alive.current || !sameRecoverySession(client, initial)) return
+        secret.current = null; setCaptured(null)
+        client.removeQueries({queryKey:previewKey,exact:true})
+        if (recovered?.player_id === expected.player.id && recovered.username.toLowerCase() === accountName.toLowerCase()) {
+          publishSessionTransition(client,recovered)
+          setSuccess(expected.tournament.id)
+        } else setUncertainAccount(accountName)
+        return
+      }
       setFeedback(claimMessage(error))
       if (error instanceof ApiHttpError && ['claim_invalid', 'claim_unavailable'].includes(error.code)) {
         setInvalid(true); secret.current = null; setCaptured(null)
@@ -99,7 +118,7 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
   const unavailable = !valid || invalid || (preview.error instanceof ApiHttpError && ['claim_invalid', 'claim_unavailable'].includes(preview.error.code))
   return <section className="sign-in-panel" aria-labelledby="claim-heading">
     <p className="brand">Guttas Golf</p><h1 id="claim-heading">Ta i bruk spillerkontoen</h1>
-    {success ? <><p role="status">Kontoen er klar. Du er logget inn som spilleren arrangøren opprettet.</p><Link to={`/tournaments/${success}`}>Åpne turneringen</Link></> : unavailable ? <><p role="alert">{invalidClaimMessage}</p><Link to="/login">Til innlogging</Link></> : <>
+    {success ? <><p role="status">Kontoen er klar. Du er logget inn som spilleren arrangøren opprettet.</p><Link to={`/tournaments/${success}`}>Åpne turneringen</Link></> : uncertainAccount ? <><p role="alert">Kontoen kan allerede være opprettet, men vi kunne ikke bekrefte innloggingen. Logg inn med brukernavnet du valgte og samme passord. Ikke be om en ny kontolenke for en spiller som allerede har konto.</p><Link to="/login" state={{claimUsername:uncertainAccount}}>Logg inn med {uncertainAccount}</Link></> : unavailable ? <><p role="alert">{invalidClaimMessage}</p><Link to="/login">Til innlogging</Link></> : <>
       {preview.isPending && <p role="status">Kontrollerer lenken …</p>}
       {preview.error && <><p role="alert">{claimMessage(preview.error)}</p><button disabled={preview.isFetching} onClick={() => void preview.refetch()}>Prøv igjen</button></>}
       {preview.data && !preview.error && <>

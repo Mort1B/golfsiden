@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
-import { fantasyApi, type Receipt, type RoundView, type Save } from '../../api/fantasy'
+import { fantasyApi, type RoundView, type Save } from '../../api/fantasy'
 import { ApiHttpError } from '../../api/http'
 import type { Round, TournamentPlayer } from '../../api/types'
 import { useAuth } from '../auth/authContext'
 import { fantasyDate, selectionLabels } from './format'
-import { useFantasyAction } from './useFantasy'
+import { emptyRecovery, useFantasyDrafts } from './fantasyDrafts'
 interface Props { tournament:string; round:string; view:RoundView; players:TournamentPlayer[]; rounds:Round[]; refreshing:boolean }
 export function MyFour({tournament,round,view,players,rounds,refreshing}:Props){
-  const {session}=useAuth(), action=useFantasyAction(tournament)
+  const {session}=useAuth(), {records,update,action}=useFantasyDrafts()
   const own=view.selections.find(s=>s.user_id===session?.user_id), accepted=own?.receipt
-  const [draft,setDraft]=useState<{picks:string[];captain:string;revision:number}|null>(null)
-  const [uncertain,setUncertain]=useState<Save|null>(null),[receipt,setReceipt]=useState<Receipt|null>(null)
+  const {draft,uncertain,receipt}=records[round]??emptyRecovery
+  const setDraft=(draft:typeof emptyRecovery.draft)=>update(round,{draft})
+  const setUncertain=(uncertain:Save|null)=>update(round,{uncertain})
+  const setReceipt=(receipt:typeof emptyRecovery.receipt)=>update(round,{receipt})
   const [clock,setClock]=useState(Date.now())
   useEffect(()=>{const timer=setInterval(()=>setClock(Date.now()),1000);return()=>clearInterval(timer)},[])
   const deadline=view.window.deadline, locallyDue=!!deadline && Date.parse(deadline)<=clock
@@ -20,18 +22,18 @@ export function MyFour({tournament,round,view,players,rounds,refreshing}:Props){
   const acceptedValid=own?.state==='draft'&&!!accepted&&accepted.picks.every(p=>view.eligible_players.includes(p))
   const revision=accepted?.revision??0,stale=draft!==null && draft.revision!==revision
   const open=view.selection_availability==='open' && !view.window.locked_at
-  const disabled=action.pending||refreshing||!!uncertain||!open
+  const disabled=action.pending||action.phase==='refresh_failed'||refreshing||!!uncertain||!open
   const valid=picks.length===4&&picks.includes(captain)&&picks.every(p=>view.eligible_players.includes(p))
   const names=new Map(players.map(p=>[p.player_id,p.display_name]))
   const edit=(next:string[],cap:string)=>{action.clear();setReceipt(null);setDraft({picks:next,captain:cap,revision:draft?.revision??revision})}
-  const submit=(body:Save)=>action.execute(s=>fantasyApi.save(tournament,round,s.user_id,body,s.csrf_token),rec=>{setUncertain(null);setDraft(null);setReceipt(rec)},error=>{
+  const submit=(body:Save)=>action.execute(s=>{setUncertain(body);return fantasyApi.save(tournament,round,s.user_id,body,s.csrf_token)},rec=>{setUncertain(null);setDraft(null);setReceipt(rec)},error=>{
     if(!(error instanceof ApiHttpError)||error.status>=500)setUncertain(body)
-    else setUncertain(null)
-  })
+    else if(!uncertain||error.code==='fantasy_closed')setUncertain(null)
+  },{kind:'round',round})
   return <section className="fantasy-section" aria-labelledby="my-four-heading"><h2 id="my-four-heading">Min firer</h2>
     <p>{view.window.locked_at?`Valgene ble låst ${fantasyDate(view.window.locked_at)}.`:deadline?`Frist ${fantasyDate(deadline)}, eller tidligere hvis golfrunden åpnes.`:'Valgene låses når golfrunden åpnes.'}</p>
     {locallyDue && open && <p role="status">Fristen ser ut til å være passert. Oppdaterer fra serveren; serverens klokke avgjør om nye valg godtas.</p>}
-    {!view.entered && <><p>Meld deg på Fantasy for å levere et lag. Allerede låste runder etterfylles ikke.</p><button disabled={action.pending||refreshing} onClick={()=>void action.execute(s=>fantasyApi.enter(tournament,s.csrf_token))}>Meld meg på Fantasy</button></>}
+    {!view.entered && <><p>Meld deg på Fantasy for å levere et lag. Allerede låste runder etterfylles ikke.</p><button disabled={action.pending||refreshing} onClick={()=>void action.execute(s=>fantasyApi.enter(tournament,s.csrf_token),undefined,undefined,{kind:'round',round})}>Meld meg på Fantasy</button></>}
     {own && <p>{selectionLabels[own.state]}</p>}
     {view.selection_availability==='insufficient_players'&&<p>Minst fire valgbare spillere kreves. Ingen reservevalg opprettes automatisk.</p>}
     {accepted && <div className="fantasy-receipt"><strong>{accepted.origin==='carried_forward'?'Gjenbrukt lag':'Lagret lag'} · revisjon {accepted.revision}</strong><p>{accepted.picks.map(p=>`${names.get(p)??'Tidligere spiller'}${p===accepted.captain?' (kaptein ×2)':''}`).join(', ')}</p>{accepted.source_round&&<p>Gjenbrukt fra {rounds.find(r=>r.id===accepted.source_round)?.name??'tidligere låst runde'}. Spillerne får denne rundens poeng.</p>}<p>Bekreftet {fantasyDate(accepted.accepted_at)}</p></div>}
@@ -47,6 +49,5 @@ export function MyFour({tournament,round,view,players,rounds,refreshing}:Props){
       <button type="submit" disabled={disabled||stale||!valid}>{action.pending?'Lagrer …':'Lagre firer og kaptein'}</button>
     </form>}
     {view.selection_availability==='closed'&&!accepted&&<p>Ingen endringer kan leveres. Et gyldig tidligere lag gjenbrukes automatisk; uten dette får runden 0 poeng.</p>}
-    {action.feedback&&<p role={action.feedback.error?'alert':'status'}>{action.feedback.text}</p>}
   </section>
 }

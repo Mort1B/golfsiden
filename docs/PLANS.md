@@ -5,9 +5,9 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The approved Fantasy implementation and local release acceptance are complete.
-See [current behavior](Documentation.md#fantasy-competition) and the
-[release evidence and limits](validation/fantasy-release-2026-10-08/README.md).
+None. The bounded Fantasy and player-claim reliability repair is complete.
+See [current behavior](Documentation.md#playing-and-administering-fantasy) and
+[verification evidence and limits](validation/reliability-2026-10-09/README.md).
 No further implementation step is selected.
 
 Every implementation step updates affected durable docs and LatestExplanation,

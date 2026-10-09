@@ -378,7 +378,13 @@ and reapplies runtime grants before the API is started.
   stay in component-local state and zero-retention mutations; public URLs use
   `/claim/{id}#token={secret}` and immediately clear the fragment. Canonical
   session plus mounted-lifetime checks fence late links, registration and logout
-  callbacks. Uncertain creation forces roster review before another creation;
+  callbacks. Ambiguous registration reads the typed session endpoint and accepts
+  only the preview's prepared-player ID plus the chosen normalized username.
+  Both sides of the read check the canonical initial session and mounted lifetime;
+  a concurrent login is never overwritten. Without a matching recovered session,
+  secrets/preview are cleared and ordinary login receives only a validated username
+  through router state. Registration is never replayed. Uncertain creation forces
+  roster review before another creation;
   the create endpoint does not provide request-id idempotency.
 - Public invitation handlers authenticate an extractable token before strict
   secondary-field decoding. Registration hashes outside the transaction after a
@@ -2556,9 +2562,26 @@ mutations have no automatic retries or offline queue.
 
 Runtime decoders validate UUID/context identities, complete picks, captain and
 source provenance, typed result states, round inventories and hidden-response
-consistency. The browser never recomputes scoring. `MyFour` owns transient draft
-input and the exact uncertain request; it distinguishes accepted current receipts
-from historical replay receipts and from carry previews. A changed server revision
+consistency. The browser never recomputes scoring. `FantasyDraftProvider`, keyed
+by tournament/user/CSRF identity above query-driven branches, owns per-round local
+input, exact uncertain requests and own acknowledged receipts. It retains no
+roster, eligibility, visibility, carry-preview or result projection. `MyFour`
+renders those local records against current authorized reads and distinguishes
+accepted current receipts from historical replay receipts and carry previews.
+The provider guards route departure/browser unload while local input, a pending
+write or unresolved recovery remains; round switches retain their separate records.
+Nothing is written to browser storage or queued for offline transmission.
+
+All Fantasy mutations share that workspace lifetime. Write errors are caught
+separately from refresh errors: a positive response records acknowledgement before
+refresh, and failed refresh cannot call the write-failure callback. Read-only retry
+checks active query state and reconstructs the original operation's read target
+from identifiers, so unmounting/switching does not lose its reconciliation target.
+Activation explicitly checks the newly enabled results/round reads. The current
+canonical session and private-result denial/cancellation boundaries fence these
+reads too; no retained query closures or server projections substitute for them.
+An exact lineup replay rejected as `fantasy_closed` resolves uncertainty because
+backend receipt lookup precedes the closed-window rejection. A changed server revision
 blocks stale submission. Selected ineligible golfers remain removable. A valid
 current lineup suppresses the fallback preview. The deadline display uses a local
 advisory clock; the server decides acceptance and immutable lock state.

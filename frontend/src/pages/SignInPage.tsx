@@ -14,7 +14,7 @@ export function SignInPage() {
   const recoveryComplete = typeof state === 'object' && state !== null && 'passwordRecoveryComplete' in state && state.passwordRecoveryComplete === true
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const [username, setUsername] = useState('')
+  const [username, setUsername] = useState(() => typeof state === 'object' && state !== null && 'claimUsername' in state && typeof state.claimUsername === 'string' && /^[A-Za-z0-9_-]{3,32}$/.test(state.claimUsername) ? state.claimUsername : '')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)

@@ -1,5 +1,5 @@
 import { ApiHttpError } from '../../api/http'
-export const invalidClaimMessage = 'Lenken er ugyldig, utløpt eller allerede brukt. Be arrangøren om en ny lenke.'
+export const invalidClaimMessage = 'Lenken er ugyldig, utløpt eller allerede brukt. Har du allerede opprettet kontoen, bruk vanlig innlogging eller passordhjelp. Kontakt arrangøren hvis lenken utløp før du opprettet konto.'
 export function claimMessage(error: unknown): string {
   if (error instanceof ApiHttpError) {
     switch (error.code) {
