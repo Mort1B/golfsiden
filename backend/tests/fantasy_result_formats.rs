@@ -147,14 +147,14 @@ async fn fourball_pickups_pending_partner_and_noncounting_ace(pool: PgPool) {
     );
     assert_eq!(
         golfer(&value, f.players[0])["points"],
-        json!({"state":"pending","recorded":-75})
+        json!({"state":"pending","recorded":-65})
     );
     assert!(golfer(&value, f.players[0])["placement_points"].is_null());
     disposition(&pool, &f, r, OwnerKind::Team, team, false).await;
     let value = scores(&pool, &f, r, f.base.session).await;
     assert_eq!(
         golfer(&value, f.players[0])["points"],
-        json!({"state":"settled","total":-75})
+        json!({"state":"settled","total":-65})
     );
     assert_eq!(
         golfer(&value, f.players[0])["points"],

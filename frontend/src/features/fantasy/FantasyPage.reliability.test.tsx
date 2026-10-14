@@ -55,7 +55,7 @@ it('does not report refreshed success when enabling Fantasy mounts a failing que
  await screen.findByText(/Handlingen er bekreftet, men visningen kunne ikke oppdateres/)
  expect(screen.queryByText('Handlingen er bekreftet. Visningen er oppdatert.')).toBeNull()
  vi.mocked(fantasyApi.round).mockResolvedValue(view)
- vi.mocked(fantasyApi.roundResults).mockResolvedValue({tournament_id:tournament,revision:'test',round:{round_id:roundId,round_number:1,name:round.name,format:round.scoring_format,sporting_status:'draft',visibility:{mode:'full'},points:{state:'not_started'}},golfers:[],managers:[]})
+ vi.mocked(fantasyApi.roundResults).mockResolvedValue({tournament_id:tournament,rules_version:1,revision:'test',round:{round_id:roundId,round_number:1,name:round.name,format:round.scoring_format,sporting_status:'draft',visibility:{mode:'full'},points:{state:'not_started'}},golfers:[],managers:[]})
  fireEvent.click(screen.getByText('Prøv oppdatering igjen'))
  await screen.findByText('Handlingen er bekreftet. Visningen er oppdatert.')
  expect(fantasyApi.configure).toHaveBeenCalledTimes(1)

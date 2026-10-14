@@ -12,13 +12,14 @@ are expected to survive loss of that host.
 
 ## Current release
 
-The current application requires **schema 38** through
-`0038_round_awards.sql`, with matching API and frontend builds. The API
+The current application requires **schema 39** through
+`0039_fantasy_scoring.sql`, with matching API and frontend builds. The API
 checks every embedded migration and checksum, not only the largest version.
 Do not skip intermediate migrations when upgrading an older installation.
 
 | Change | Deployment requirement |
 | --- | --- |
+| Versioned Fantasy scoring | Schema 39 and matching API/frontend; only effectively unlocked games upgrade to rules 2 |
 | Optional personal round awards | Schema 38, refreshed runtime grants and matching API/frontend |
 | Fantasy private selections, settlement and result APIs | Schemas 35–37 and refreshed runtime grants; matching API/frontend exposes the private game |
 | Admin-created players, personal claim links and withdrawal | Schema 34, refreshed runtime grants and matching API/frontend |
@@ -32,9 +33,9 @@ rounds use net hole and placement points; match play uses +3/+1/−1 outcomes on
 See the [README rules](../README.md#fantasy) and the
 [Fantasy setup and release checks](#fantasy-setup-and-release-checks).
 No additional Fantasy environment variable, secret, service or scheduler is
-required. A schema-37 installation must apply schema 38 and refresh runtime
-grants for the current optional-awards release. Fantasy scoring rules remain
-unchanged.
+required. A schema-38 installation must apply schema 39 and refresh runtime
+grants for this release. New and eligible unlocked games use rules 2; frozen
+games retain rules 1.
 
 For an existing installation, use [Upgrade and rollback](#upgrade-and-rollback).
 For a new host, follow configuration and initial deployment below. Finish with
@@ -461,6 +462,38 @@ corrections and confirmation require connectivity and current authorization.
 Deploy strict nullable overall and match decoders with the API: match-only private
 overall reads are explicitly not applicable and public overall sharing unavailable.
 Mixed public summaries keep their existing allowlist and exclude match facts.
+
+### Schema 39 versioned Fantasy scoring
+
+Apply `0039_fantasy_scoring.sql` using the owner migration action, refresh runtime
+permissions and deploy matching API/frontend builds. No new configuration,
+worker, scheduler or secret is required. Stop API/web as in the normal upgrade
+sequence: migration takes exclusive locks on rounds and Fantasy game/window/
+selection tables. It captures its cutoff after acquiring those locks. A deadline
+that expires during a wait preserves version 1; do not assume deployment start
+time is the eligibility cutoff. Let an aborted migration roll back, resolve the
+contention and rerun normally; never disable guards manually.
+
+New games use version 2: actual ace +20 and non-ace net albatross-or-better +5.
+Existing games upgrade only with all rounds still draft and no effective closure,
+including expired-but-unmaterialized deadlines. Locked/opened/expired games keep
+version 1 (+10/+10) throughout the tournament. Eligible disabled games also
+upgrade. Migration preserves golf facts, lineups, receipts and source tokens.
+The game version cannot be changed by an administrator afterward.
+
+All result endpoints now include required rule-version metadata, including
+round and player/manager breakdown responses. Old API/frontend combinations are
+unsupported. Verify health/readiness, then open a preserved locked game and an
+eligible upgraded/new game: rules text and every board/detail must report their
+own version. Verify captain doubling and a shared-team ace, unchanged match
+awards, and read-only recovery from an incompatible response. Local evidence is
+in the [scoring acceptance report](validation/fantasy-scoring-2026-10-14/README.md).
+
+Take the usual verified off-host backup before upgrading. Older schema-38
+binaries reject schema 39. Rollback requires the complete pre-upgrade backup in
+a fresh volume and matching binaries; do not reverse individual version values
+or edit applied migrations. Local tests establish clean/upgrade correctness, not
+hosted installation or a new backup/restore rehearsal.
 
 ### Schema 38 optional round awards
 

@@ -39,7 +39,7 @@ fn all_hole_categories_and_extremes_are_signed() {
         let HolePoints::Recorded(category) = score_hole(strokes(gross, 5, 0)).unwrap() else {
             panic!()
         };
-        assert_eq!(category.points(), expected);
+        assert_eq!(category.points(RulesVersion::Legacy), expected);
     }
     assert_eq!(
         score_hole(strokes(5, 4, 36)),
@@ -74,7 +74,7 @@ fn pickup_missing_and_hidden_are_distinct() {
         score_hole(HoleInput::Pickup),
         Ok(recorded(Category::Pickup))
     );
-    assert_eq!(Category::Pickup.points(), -5);
+    assert_eq!(Category::Pickup.points(RulesVersion::Legacy), -5);
     assert_eq!(score_hole(HoleInput::Pending), Ok(HolePoints::Pending));
     assert_eq!(score_hole(HoleInput::Withheld), Ok(HolePoints::Withheld));
 }
@@ -149,7 +149,7 @@ fn shared_competition_placement_uses_owner_field_once() {
             ..owner(1, &holes, *score)
         })
         .collect();
-    let result = score_non_match_round(9, 1, &owners).unwrap();
+    let result = score_non_match_round(RulesVersion::Legacy, 9, 1, &owners).unwrap();
     assert_eq!(result.len(), 18);
     let expected = [10, 8, 8, 5, 4, 3, 2, 1, 0];
     for (index, pair) in result.chunks(2).enumerate() {
@@ -166,7 +166,7 @@ fn smaller_and_larger_fields_keep_fixed_scale() {
         let owners: Vec<_> = (0..count)
             .map(|index| owner(index as u128 + 1, &holes, index as i64))
             .collect();
-        let result = score_non_match_round(count, 1, &owners).unwrap();
+        let result = score_non_match_round(RulesVersion::Legacy, count, 1, &owners).unwrap();
         assert_eq!(result.first().unwrap().points, Points::Settled(10));
         assert_eq!(
             result.last().unwrap().points,
@@ -187,7 +187,7 @@ fn stableford_ranks_native_points_descending_and_rejects_mixed_units() {
             ..owner(2, &holes, 0)
         },
     ];
-    let result = score_non_match_round(2, 1, &owners).unwrap();
+    let result = score_non_match_round(RulesVersion::Legacy, 2, 1, &owners).unwrap();
     assert_eq!(result[0].points, Points::Settled(3));
     assert_eq!(result[1].points, Points::Settled(5));
     let mixed = [
@@ -198,7 +198,7 @@ fn stableford_ranks_native_points_descending_and_rejects_mixed_units() {
         owner(2, &holes, 70),
     ];
     assert_eq!(
-        score_non_match_round(2, 1, &mixed),
+        score_non_match_round(RulesVersion::Legacy, 2, 1, &mixed),
         Err(FantasyError::InvalidFacts)
     );
 }
@@ -207,7 +207,7 @@ fn duplicate_golfer_team_and_partner_ownership_is_rejected() {
     let holes = [recorded(Category::Par)];
     let duplicate = [owner(1, &holes, 1), owner(1, &holes, 2)];
     assert_eq!(
-        score_non_match_round(2, 1, &duplicate),
+        score_non_match_round(RulesVersion::Legacy, 2, 1, &duplicate),
         Err(FantasyError::DuplicateIdentity)
     );
     let duplicate_partner = [NonMatchOwner {
@@ -218,7 +218,7 @@ fn duplicate_golfer_team_and_partner_ownership_is_rejected() {
         ..owner(1, &holes, 1)
     }];
     assert_eq!(
-        score_non_match_round(1, 1, &duplicate_partner),
+        score_non_match_round(RulesVersion::Legacy, 1, 1, &duplicate_partner),
         Err(FantasyError::DuplicateIdentity)
     );
     let duplicate_team: Vec<_> = [1, 3]
@@ -232,7 +232,7 @@ fn duplicate_golfer_team_and_partner_ownership_is_rejected() {
         })
         .collect();
     assert_eq!(
-        score_non_match_round(2, 1, &duplicate_team),
+        score_non_match_round(RulesVersion::Legacy, 2, 1, &duplicate_team),
         Err(FantasyError::DuplicateIdentity)
     );
 }
@@ -252,7 +252,7 @@ fn nonfinish_preserves_recorded_points_excludes_placement_and_omits_unplayed() {
         },
         owner(2, &complete, 80),
     ];
-    let result = score_non_match_round(2, 4, &owners).unwrap();
+    let result = score_non_match_round(RulesVersion::Legacy, 2, 4, &owners).unwrap();
     assert_eq!(result[0].points, Points::Settled(-7));
     assert_eq!(result[1].points, Points::Settled(10));
 }
@@ -264,7 +264,7 @@ fn stale_disposition_returns_pending_and_keeps_new_recorded_points() {
         ..owner(1, &holes, 0)
     }];
     assert_eq!(
-        score_non_match_round(1, 2, &owners).unwrap()[0].points,
+        score_non_match_round(RulesVersion::Legacy, 1, 2, &owners).unwrap()[0].points,
         Points::Pending { recorded: 3 }
     );
     let missing = [HolePoints::Pending; 2];
@@ -273,7 +273,7 @@ fn stale_disposition_returns_pending_and_keeps_new_recorded_points() {
         ..owner(1, &missing, 0)
     }];
     assert_eq!(
-        score_non_match_round(1, 2, &settled).unwrap()[0].points,
+        score_non_match_round(RulesVersion::Legacy, 1, 2, &settled).unwrap()[0].points,
         Points::Settled(0)
     );
 }
@@ -289,21 +289,21 @@ fn incomplete_fields_and_unconfirmed_cards_cannot_finalize_placement() {
             },
         ];
         assert_eq!(
-            score_non_match_round(2, 1, &owners).unwrap()[0].points,
+            score_non_match_round(RulesVersion::Legacy, 2, 1, &owners).unwrap()[0].points,
             Points::Provisional(10)
         );
     }
     let missing = [HolePoints::Pending];
     assert_eq!(
-        score_non_match_round(1, 1, &[owner(1, &missing, 0)]),
+        score_non_match_round(RulesVersion::Legacy, 1, 1, &[owner(1, &missing, 0)]),
         Err(FantasyError::InvalidFacts)
     );
     assert_eq!(
-        score_non_match_round(2, 1, &[owner(1, &holes, 0)]),
+        score_non_match_round(RulesVersion::Legacy, 2, 1, &[owner(1, &holes, 0)]),
         Err(FantasyError::InvalidFacts)
     );
     assert_eq!(
-        score_non_match_round(1, 2, &[owner(1, &holes, 0)]),
+        score_non_match_round(RulesVersion::Legacy, 1, 2, &[owner(1, &holes, 0)]),
         Err(FantasyError::InvalidFacts)
     );
 }
@@ -324,7 +324,7 @@ fn concealed_holes_do_not_leak_placement_or_finality() {
                 ..owner(2, &concealed, i64::MAX)
             },
         ];
-        outputs.push(score_non_match_round(2, 1, &owners).unwrap());
+        outputs.push(score_non_match_round(RulesVersion::Legacy, 2, 1, &owners).unwrap());
     }
     assert!(outputs.iter().all(|output| *output == outputs[0]));
     assert!(

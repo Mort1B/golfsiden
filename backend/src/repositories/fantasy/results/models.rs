@@ -57,7 +57,7 @@ pub struct Standing {
 #[derive(Debug, Serialize)]
 pub struct Results {
     pub tournament_id: Uuid,
-    pub rules_version: i16,
+    pub rules_version: crate::domain::fantasy::RulesVersion,
     pub revision: String,
     pub rounds: Vec<RoundSummary>,
     pub golfers: Vec<Standing>,
@@ -114,6 +114,7 @@ pub struct ManagerResult {
 }
 #[derive(Debug, Clone, Serialize)]
 pub struct RoundResult {
+    pub rules_version: crate::domain::fantasy::RulesVersion,
     pub tournament_id: Uuid,
     pub revision: String,
     pub round: RoundSummary,
@@ -124,6 +125,7 @@ pub struct RoundResult {
 }
 #[derive(Debug, Serialize)]
 pub struct GolferBreakdown {
+    pub rules_version: crate::domain::fantasy::RulesVersion,
     pub tournament_id: Uuid,
     pub revision: String,
     pub standing: Standing,
@@ -138,6 +140,7 @@ pub struct GolferRoundBreakdown {
 }
 #[derive(Debug, Serialize)]
 pub struct ManagerBreakdown {
+    pub rules_version: crate::domain::fantasy::RulesVersion,
     pub tournament_id: Uuid,
     pub revision: String,
     pub standing: Standing,

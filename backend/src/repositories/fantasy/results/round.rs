@@ -40,6 +40,7 @@ pub(super) fn project(data: &Loaded, r: &Round, t: Uuid, caller: Uuid) -> Result
             .map_err(invalid)?
     } else {
         projection::project_non_match(
+            data.rules,
             owners,
             usize::try_from(r.number_of_holes).map_err(|_| Error::Invalid)?,
             hidden,
@@ -74,7 +75,7 @@ pub(super) fn project(data: &Loaded, r: &Round, t: Uuid, caller: Uuid) -> Result
     for golfer in &data.golfers {
         let contribution = *golfers.get(&golfer.id).ok_or(Error::Invalid)?;
         let details = projected.get(&golfer.id);
-        let (holes, recorded) = hole_results(details)?;
+        let (holes, recorded) = hole_results(details, data.rules)?;
         golfer_rows.push(GolferResult {
             player_id: golfer.id,
             display_name: golfer.display_name.clone(),
@@ -128,6 +129,7 @@ pub(super) fn project(data: &Loaded, r: &Round, t: Uuid, caller: Uuid) -> Result
     };
     Ok(Projected {
         result: RoundResult {
+            rules_version: data.rules,
             tournament_id: t,
             revision: String::new(),
             round: summary,
@@ -139,7 +141,10 @@ pub(super) fn project(data: &Loaded, r: &Round, t: Uuid, caller: Uuid) -> Result
         managers,
     })
 }
-fn hole_results(details: Option<&GolferRound>) -> Result<(Vec<HoleResult>, Option<i64>), Error> {
+fn hole_results(
+    details: Option<&GolferRound>,
+    rules: fantasy::RulesVersion,
+) -> Result<(Vec<HoleResult>, Option<i64>), Error> {
     let Some(details) = details else {
         return Ok((vec![], None));
     };
@@ -153,8 +158,12 @@ fn hole_results(details: Option<&GolferRound>) -> Result<(Vec<HoleResult>, Optio
             }
             HolePoints::Pending => ResultPoints::Pending { recorded: 0 },
             HolePoints::Recorded(c) => {
-                recorded = recorded.checked_add(c.points()).ok_or(Error::Invalid)?;
-                ResultPoints::Settled { total: c.points() }
+                recorded = recorded
+                    .checked_add(c.points(rules))
+                    .ok_or(Error::Invalid)?;
+                ResultPoints::Settled {
+                    total: c.points(rules),
+                }
             }
         };
         holes.push(HoleResult {

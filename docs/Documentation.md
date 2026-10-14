@@ -91,10 +91,36 @@ carry their own summary. Stableford's native result object remains unchanged.
 Fantasy is an optional private game inside each tournament, available from
 **Fantasy · min firer og poengtavler** on the tournament page and the Fantasy link
 in tournament management. The route is `/tournaments/:tournamentId/fantasy`.
-The current release requires schema 38 and matching API/frontend builds. Fantasy does not alter
+The current release requires schema 39 and matching API/frontend builds. Fantasy does not alter
 golf scores, teams or sporting standings. The [local release acceptance report](validation/fantasy-release-2026-10-08/README.md)
 covers all six formats, changing teams across rounds and both leaderboards; hosted
 acceptance remains a separate operator check.
+
+### Fantasy scoring versions
+
+New games use version 2: an actual gross hole-in-one gives **+20**, while a
+non-ace net albatross or better gives **+5**. Exactly one category applies; an ace
+that also qualifies as net albatross earns 20, not 25. Net one alone does not prove
+an ace. Eagle +3, birdie +1, par 0, bogey/double/triple −1/−2/−3 and
+quadruple-or-worse/pickup −5 remain unchanged. Placement, match-only awards and
+captain doubling remain unchanged. A captain's ace contributes 40 hole points;
+both selected partners of a shared team ace contribute 40, or 60 with one as
+captain. These are deliberate game-balance choices, not statistical rarity weights.
+
+Migration 39 upgrades an existing game only when all rounds remain draft and no
+Fantasy window/selection is locked, opened or effectively expired at the
+migration cutoff. It checks the real deadline even if lazy lock materialization
+has not run. Eligible disabled games and games without rounds also upgrade.
+Every other game retains version 1, with +10 for both ace and net albatross, for
+all its rounds. No lineup, receipt, golf score or non-finish source token changes.
+There is no administrator version switch and no mixing versions inside a game.
+
+**Regler og poeng** displays the authorized game's actual version. Before a game
+exists it explicitly describes the rules for new games; loading, denied or failed
+game reads never silently substitute a version. Boards, selected rounds, player
+and manager details, and administrator settlement must agree with the game
+version. Incompatible responses hide those points and offer **Oppdater regelversjon
+og poeng**, using read-only refresh. Selection drafts and recovery stay intact.
 
 ### Playing and administering Fantasy
 
@@ -301,9 +327,18 @@ the JSON error envelope. A disabled or missing game returns `fantasy_unavailable
 | GET suffix | Response |
 | --- | --- |
 | `/results` | `tournament_id`, `rules_version`, `revision`, ordered `rounds`, and overall `golfers`/`managers` boards |
-| `/rounds/{round_id}/results` | `tournament_id`, `revision`, `round` summary, golfer and manager round boards |
-| `/results/golfers/{player_id}` | `tournament_id`, `revision`, overall `standing`, and ordered `{round, result}` breakdowns |
-| `/results/managers/{user_id}` | The corresponding manager standing and per-round breakdowns |
+| `/rounds/{round_id}/results` | `tournament_id`, `rules_version`, `revision`, `round` summary, golfer and manager round boards |
+| `/results/golfers/{player_id}` | `tournament_id`, `rules_version`, `revision`, overall `standing`, and ordered `{round, result}` breakdowns |
+| `/results/managers/{user_id}` | `tournament_id`, `rules_version`, `revision`, manager standing and per-round breakdowns |
+
+Every result envelope requires numeric `rules_version` equal to 1 or 2. Missing
+or unknown versions are rejected by the frontend. Result revisions include the
+version, so an eligible upgrade changes its revision even without earned points.
+Golfer-hole decoding verifies category awards against that version; classification,
+handicaps and aggregate arithmetic remain authoritative backend calculations.
+Deploy matching API/frontend builds because older round/detail responses lack
+this required metadata. Version-1 scores remain unchanged, though additive
+round/detail metadata changes those response fingerprints at release.
 
 Each overall standing has `id`, `display_name`, `points`, nullable `rank`, and
 ordered `{round_id, points}` contributions. Every tournament golfer is included,

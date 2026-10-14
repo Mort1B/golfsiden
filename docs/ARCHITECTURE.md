@@ -2133,7 +2133,8 @@ remain outside this variant.
 
 Status: FANTASY-2 domain rules, FANTASY-3 persistence/private selection APIs and
 FANTASY-4 round/overall result APIs and FANTASY-5 private mobile UI are implemented
-at schema 37. FANTASY-6 local release acceptance is complete; see the
+with persistence introduced at schema 37. Schema 39 adds immutable game-wide
+scoring versions. FANTASY-6 local release acceptance is complete; see the
 [format, field-size and lifecycle evidence](validation/fantasy-release-2026-10-08/README.md).
 [PLANS.md](PLANS.md) owns the next bounded step. Sporting scoring and completion
 rules remain unchanged.
@@ -2195,6 +2196,9 @@ worst-case carry-forward latency or production capacity.
 
 `backend/src/domain/fantasy/` has no database, HTTP, clock or UI dependencies:
 
+- `rules::RulesVersion` admits only legacy (1) and exceptional-ace (2). The
+  repository reads one version for the complete game snapshot and passes it
+  explicitly through non-match scoring and category awards.
 - `holes` scores preserved numeric inputs/pickups and four-ball counting results.
   It reuses signed handicap allocation with widened net arithmetic, preserves
   physical-ace precedence, and keeps unresolved/withheld inputs explicit.
@@ -2294,10 +2298,10 @@ and preserved snapshots. Match rounds use only the accepted match result below.
 Never recalculate from today's player handicap. Let d be the recorded net score
 minus the hole's par; Fantasy hole points are:
 
-| Recorded outcome | Fantasy points |
+| Recorded outcome | Version-2 Fantasy points |
 | --- | ---: |
-| Actual hole-in-one | +10 |
-| Net albatross or better (d <= -3) | +10 |
+| Actual hole-in-one | +20 |
+| Net albatross or better (d <= -3), without an actual ace | +5 |
 | Net eagle (d = -2) | +3 |
 | Net birdie (d = -1) | +1 |
 | Net par (d = 0) | 0 |
@@ -2306,13 +2310,17 @@ minus the hole's par; Fantasy hole points are:
 | Net triple bogey (d = 3) | -3 |
 | Net quadruple bogey or worse (d >= 4), or explicit pickup | -5 |
 
-Apply one category only. An actual ace always receives +10 even when its net
-category differs; never add an ace bonus on top of an albatross/eagle bonus.
-A net score of one alone is not evidence of a hole-in-one. The later user rule
-replaces the earlier -3 cap for triple-or-worse; the earlier +5 better-than-eagle
-category is replaced by +10 for albatross-or-better.
+Apply one category only. An actual ace receives +20 in version 2 even when its
+net category differs; never add an ace bonus to an albatross/eagle award. A net
+score of one alone is not evidence of an ace. Version 1 retains +10 for both ace
+and net albatross-or-better; all other values are identical between versions.
+Captain doubling gives 40 for an ace and 10 for a non-ace net albatross in version
+2. Both selected shared-team partners give 40 for an ace, or 60 with one captain.
+The scale deliberately values one ace as four net albatrosses or 20 birdies; it
+is not derived from representative probabilities or equal expected handicap value.
 
-For non-match rounds, placement follows the round's net competition ranking policy, with shared
+For non-match rounds, placement follows the round's native net ranking policy
+before optional personal round awards, with shared
 competition positions (1, 2, 2, 4). Positions 1 through 8 receive respectively
 10, 8, 6, 5, 4, 3, 2, 1; positions 9 onward receive 0. Smaller fields use the same
 scale without invented positions; larger fields are not capped in capacity.
@@ -2675,7 +2683,7 @@ Acceptance examples to turn into tests during the corresponding implementation:
 | Par 4, gross 5, two received strokes | Net birdie: +1. |
 | Net +2 / +3 / +4 / +8 | -2 / -3 / -5 / -5. |
 | Explicit pickup versus blank | -5 versus pending; never the same state. |
-| Actual gross 1 also qualifies as net albatross | +10 once, or +20 when captained. |
+| Actual gross 1 also qualifies as net albatross | Version 2: +20 once, or +40 when captained. Version 1: +10 or +20. |
 | Net 1 on a par 3 from gross 3 | Net eagle +3; no physical-ace award. |
 | Second place, two birdies, an eagle, three bogeys, one double | 8 + 2 + 3 - 3 - 2 = 8; captain = 16. |
 | One team's result is 12; both partners selected, one captain | 24 + 12 = 36 across two slots. |
@@ -2769,3 +2777,38 @@ and read failure never causes another write. Receipt identity/body/revision and
 actor are checked before acknowledgment. Optional award-query failures are
 excluded only from lifecycle readiness-failure classification, while their
 invalidation remains intact. No persistent offline award queue is introduced.
+
+
+### Game-wide scoring version boundary
+
+Migration 0039 changes the supported version constraint to 1/2 and the default
+to 2. In one transaction it locks `rounds`, `fantasy_games`, `fantasy_rounds` and
+`fantasy_selections` exclusively, then captures a single database-clock cutoff.
+Only games with all rounds draft and no opened, locked, expired or non-draft
+selection evidence upgrade. This includes eligible disabled/zero-round games.
+The cutoff is taken after lock waits; the migration therefore observes an opening
+that committed first and deadlines that expired while waiting. DDL and the
+version update roll back together on failure. Deploy with API/web stopped as the
+operator procedure specifies; lock contention can delay or abort migration.
+
+Only this forward migration changes existing versions. It temporarily removes
+and restores the game trigger inside the same locked transaction; the restored
+guard preserves lifecycle/identity checks, rejects new explicit version-1 games,
+and prohibits all runtime version changes. It does not rewrite selected picks,
+receipts, snapshots, scores, dispositions or source facts. Migration rollback
+requires a consistent pre-upgrade backup, not reverse updates to game versions.
+
+Result loading converts the database value to typed `RulesVersion`, under the
+same repeatable-read snapshot as all sporting/selection facts. Overall, round,
+golfer-breakdown and manager-breakdown envelopes expose that version and include
+it in permitted-response hashes. Source-token fingerprints remain independent
+of Fantasy scoring rules so existing non-finish evidence remains valid.
+Match awards still bypass hole categories. Hidden projections retain their
+existing erasure boundary and do not leak concealed points through revisions.
+
+Frontend envelopes require `RulesVersion = 1 | 2`. Category awards are validated
+against the declared version without reimplementing handicap or aggregate logic.
+The authorized game controls rules text; independent overall/round/detail/admin
+queries must match it before rendering points or settlement. A mismatch offers
+the existing read-only, session-fenced refresh. Provider-owned draft/recovery
+state and query privacy clearing are unchanged.

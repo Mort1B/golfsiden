@@ -83,6 +83,7 @@ pub fn placement_points(position: usize) -> Result<i64, FantasyError> {
 /// Rank complete finishing owners once, then attribute the identical award to
 /// each preserved partner. All owners of the round must be supplied by adapter.
 pub fn score_non_match_round(
+    rules: super::RulesVersion,
     expected_owners: usize,
     expected_holes: usize,
     owners: &[NonMatchOwner<'_>],
@@ -130,7 +131,7 @@ pub fn score_non_match_round(
             match hole {
                 HolePoints::Recorded(category) => {
                     points = points
-                        .checked_add(category.points())
+                        .checked_add(category.points(rules))
                         .ok_or(FantasyError::Overflow)?
                 }
                 HolePoints::Pending => missing = true,

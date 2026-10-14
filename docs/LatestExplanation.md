@@ -1,41 +1,43 @@
-# Optional closest-to-pin and longest-drive awards
+# Versioned Fantasy scoring
 
-Tournament administrators can now record either optional award after a non-match
-round is completed or locked. Each subtracts one from the winner's personal net
-result; both may go to the same player for −2. A reason accompanies every change,
-and replacements, removals and locked-round awards require explicit correction
-acknowledgment. Neither award is needed to complete or lock a round.
+New Fantasy games now award **20 points for an actual hole-in-one** and **5 for a
+non-ace net albatross or better**. One category applies per hole: a physical ace
+that also qualifies as net albatross earns 20, not 25. A net score of one alone
+is not an ace. Other hole categories, placement, match awards and captain rules
+are unchanged. This is a deliberate game-balance scale, not a claim of calibrated
+rarity or equal expected points across handicaps.
 
-For example, a player with net 72 who wins both competitions receives net 70.
-In a team round their partner still receives 72 and the shared team result stays
-72. Stableford instead shows a separate competition-point bonus: 36 native net
-points become 38 competition points, with an overall equivalent of −2. Actual
-strokes, native card points, handicap snapshots, gross results and all Fantasy
-points—including placement—remain unchanged.
+A captained ace contributes 40 hole points; a captained non-ace net albatross
+contributes 10. Selecting both partners of a shared team ace gives 40, or 60 with
+one as captain. The existing shared-team attribution and actual-shot precedence
+remain intact. Match play still awards only its final outcome.
 
-Schema 38 stores one current slot per round/type and immutable command receipts.
-Removing an award preserves its revision/history. Parent-round locking, exact
-admin/session checks, database guards and explicit revisions protect concurrent
-corrections. Identical replay returns the original receipt without another
-adjustment or live event. Net standings/history display base and adjusted values;
-hidden final results conceal awards, and public sharing keeps its allowlist.
+Schema 39 upgrades an existing game only if no selection window has effectively
+closed. An expired deadline counts even before lazy locking, as does an opened
+round or materialized lock. The migration locks relevant tables and establishes
+one cutoff after waits. Already-frozen games keep version 1, with +10 for both
+ace and net albatross, throughout their tournament. Eligible disabled and empty
+games upgrade too. Runtime changes to versions and new version-1 games are
+rejected. Scores, lineups, receipts and non-finish source tokens are preserved.
 
-The management provider retains only drafts, exact uncertain requests and own
-receipts across query-driven unmounts. A lost response offers exact replay even
-when award reads fail. Acknowledged submissions followed by failed refresh offer
-read-only retry. Account/session changes clear recovery. Optional award-read
-failure cannot block lifecycle readiness. Read-only review found three recovery
-and receipt-identity gaps; all were fixed with regression coverage.
+Every result envelope now identifies its game's rules version and includes it
+in its revision fingerprint. The UI displays version-specific rules and rejects
+missing/unknown metadata or category awards inconsistent with that version.
+Independently loaded boards and breakdowns must agree with the game's version;
+a mismatch hides incompatible points and offers read-only refresh. Selection
+recovery and privacy boundaries are unchanged.
 
-Validation passed: 254 backend tests, 725 PostgreSQL-enabled tests, strict Rust
-lint/format checks, clean and populated-schema upgrades, repeated seeds and the
-restricted runtime login. Frontend validation passed 1,083 tests across 140 files,
-typecheck, lint, build and strict browser TypeScript. Four new Chrome scenarios
-and 12 retained scenarios passed, with mobile/desktop evidence at 320/390/1280px.
-Three existing exclusive database performance probes remain ignored. See the
-[acceptance report and limits](validation/round-awards-2026-10-14/README.md).
+Validation passed: 256 backend tests, 732 PostgreSQL-enabled tests, formatting
+and strict Rust lint; clean schema-39 installation, populated schema-38 upgrade,
+repeated seeds and restricted-runtime API checks; 1,100 frontend tests across
+141 files, typecheck, lint, build and strict browser TypeScript. Three new browser
+scenarios and 13 retained scenarios passed at mobile/desktop widths. A real
+pre-upgrade legacy game returned exactly the same overall JSON after upgrade.
+Three existing exclusive database performance probes remain ignored. Read-only
+backend/frontend review found no remaining issues. See the
+[acceptance report](validation/fantasy-scoring-2026-10-14/README.md).
 
-Deploy schema 38, refresh runtime permissions and use matching API/frontend builds
-as described in the [deployment guide](deployment_guide.md#schema-38-optional-round-awards).
-No hosted infrastructure was changed. The Fantasy ace/albatross scale remains
-queued in [PLANS.md](PLANS.md); this step changes no Fantasy scoring rules.
+Deploy matching API/frontend builds with schema 39 and refreshed runtime grants;
+see the [deployment guide](deployment_guide.md#schema-39-versioned-fantasy-scoring).
+No hosted infrastructure was changed. This completes the requested presets,
+optional net awards and Fantasy scoring sequence; deferred work remains separate.

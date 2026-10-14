@@ -213,12 +213,12 @@ async fn hidden_final_full_json_invariant_and_release(pool: PgPool) {
     let admin = scores(&pool, &f, r, f.base.session).await;
     assert_eq!(
         golfer(&admin, f.players[0])["points"],
-        json!({"state":"settled","total":11})
+        json!({"state":"settled","total":21})
     );
     hide(&pool, &f, false).await;
     assert_eq!(
         golfer(&scores(&pool, &f, r, f.member_session).await, f.players[0])["points"],
-        json!({"state":"settled","total":11})
+        json!({"state":"settled","total":21})
     );
 }
 #[sqlx::test(migrations = "../migrations")]

@@ -123,6 +123,7 @@ fn prepare(input: &OwnerFacts, hidden: bool) -> Result<Prepared, FantasyError> {
     })
 }
 pub fn project_non_match(
+    rules: super::super::RulesVersion,
     inputs: &[OwnerFacts],
     expected_holes: usize,
     hidden: bool,
@@ -142,14 +143,14 @@ pub fn project_non_match(
             ranking: p.ranking,
         })
         .collect();
-    let scores = rounds::score_non_match_round(owners.len(), expected_holes, &owners)?;
+    let scores = rounds::score_non_match_round(rules, owners.len(), expected_holes, &owners)?;
     let mut results = vec![];
     for (p, input) in prepared.iter().zip(inputs) {
         let mut recorded = 0_i64;
         for hole in &p.hole_points {
             if let HolePoints::Recorded(c) = hole {
                 recorded = recorded
-                    .checked_add(c.points())
+                    .checked_add(c.points(rules))
                     .ok_or(FantasyError::Overflow)?;
             }
         }

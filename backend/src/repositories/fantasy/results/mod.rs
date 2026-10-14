@@ -108,7 +108,7 @@ async fn bundle(pool: &PgPool, session: Uuid, t: Uuid, target: Target) -> Result
     }
     let mut overall = Results {
         tournament_id: t,
-        rules_version: 1,
+        rules_version: data.rules,
         revision: String::new(),
         rounds: rounds.iter().map(|r| r.round.clone()).collect(),
         golfers,
@@ -191,6 +191,7 @@ pub async fn golfer_breakdown(
         })
         .collect::<Result<Vec<_>, Error>>()?;
     let mut result = GolferBreakdown {
+        rules_version: b.overall.rules_version,
         tournament_id: t,
         revision: String::new(),
         standing,
@@ -228,6 +229,7 @@ pub async fn manager_breakdown(
         })
         .collect::<Result<Vec<_>, Error>>()?;
     let mut result = ManagerBreakdown {
+        rules_version: b.overall.rules_version,
         tournament_id: t,
         revision: String::new(),
         standing,

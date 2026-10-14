@@ -1,23 +1,26 @@
-import { fantasyApi, type GolferResult, type ManagerResult } from '../../api/fantasy'
+import { fantasyApi, type GolferResult, type ManagerResult, type RulesVersion } from '../../api/fantasy'
 import { ErrorState, LoadingState } from '../../ui/AsyncState'
+import { FantasyVersionMismatch } from './FantasyVersionMismatch'
 import { categories, pointText, selectionLabels } from './format'
 import { useFantasyDrafts } from './fantasyDrafts'
 import { useFantasyQuery } from './useFantasy'
-export function FantasyBreakdown({tournament,kind,id,names,roundId=''}:{roundId?:string;tournament:string;kind:'golfers'|'managers';id:string;names:Map<string,string>}){
-  return kind==='golfers'?<GolferBreakdown tournament={tournament} id={id} roundId={roundId}/>:<ManagerBreakdown tournament={tournament} id={id} names={names} roundId={roundId}/>
+export function FantasyBreakdown({tournament,kind,id,names,rulesVersion,roundId=''}:{rulesVersion:RulesVersion;roundId?:string;tournament:string;kind:'golfers'|'managers';id:string;names:Map<string,string>}){
+  return kind==='golfers'?<GolferBreakdown tournament={tournament} id={id} roundId={roundId} rulesVersion={rulesVersion}/>:<ManagerBreakdown tournament={tournament} id={id} names={names} roundId={roundId} rulesVersion={rulesVersion}/>
 }
-function GolferBreakdown({tournament,id,roundId}:{tournament:string;id:string;roundId:string}){
+function GolferBreakdown({tournament,id,roundId,rulesVersion}:{rulesVersion:RulesVersion;tournament:string;id:string;roundId:string}){
   const {action}=useFantasyDrafts()
   const query=useFantasyQuery(tournament,['golfer',id],signal=>fantasyApi.golfer(tournament,id,signal))
   if(query.error)return <ErrorState error={query.error} onRetry={()=>void action.refresh()}/>
   if(!query.data)return <LoadingState/>
+  if(query.data.rules_version!==rulesVersion)return <FantasyVersionMismatch/>
   return <section className="fantasy-section"><h3>{query.data.standing.display_name} · spillerpoeng</h3>{!roundId&&<p>{pointText(query.data.standing.points)} · uten kapteinmultiplikator</p>}{query.isFetching&&<p role="status">Oppdaterer poeng …</p>}{query.data.rounds.filter(item=>!roundId||item.round.round_id===roundId).map(({round,result})=><details key={round.round_id} open><summary>Runde {round.round_number}: {round.name} · {pointText(result.points)}</summary><GolferDetail result={result}/></details>)}</section>
 }
-function ManagerBreakdown({tournament,id,names,roundId}:{tournament:string;id:string;names:Map<string,string>;roundId:string}){
+function ManagerBreakdown({tournament,id,names,roundId,rulesVersion}:{rulesVersion:RulesVersion;tournament:string;id:string;names:Map<string,string>;roundId:string}){
   const {action}=useFantasyDrafts()
   const query=useFantasyQuery(tournament,['manager',id],signal=>fantasyApi.manager(tournament,id,signal))
   if(query.error)return <ErrorState error={query.error} onRetry={()=>void action.refresh()}/>
   if(!query.data)return <LoadingState/>
+  if(query.data.rules_version!==rulesVersion)return <FantasyVersionMismatch/>
   return <section className="fantasy-section"><h3>{query.data.standing.display_name} · Fantasy-lag</h3>{!roundId&&<p>{pointText(query.data.standing.points)} · alle runder</p>}{query.isFetching&&<p role="status">Oppdaterer poeng …</p>}{query.data.rounds.filter(item=>!roundId||item.round.round_id===roundId).map(({round,result})=><details key={round.round_id} open><summary>Runde {round.round_number}: {round.name} · {pointText(result.points)}</summary><ManagerDetail result={result} names={names}/></details>)}</section>
 }
 export function GolferDetail({result}:{result:GolferResult}){

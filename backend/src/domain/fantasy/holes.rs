@@ -1,4 +1,4 @@
-use super::FantasyError;
+use super::{FantasyError, RulesVersion};
 use crate::domain::scoring::handicap_strokes_for_hole;
 
 /// The format adapter supplies its frozen individual or shared-team allocation.
@@ -34,9 +34,16 @@ pub enum Category {
 }
 
 impl Category {
-    pub const fn points(self) -> i64 {
+    pub const fn points(self, rules: RulesVersion) -> i64 {
         match self {
-            Self::Ace | Self::AlbatrossOrBetter => 10,
+            Self::Ace => match rules {
+                RulesVersion::Legacy => 10,
+                RulesVersion::ExceptionalAce => 20,
+            },
+            Self::AlbatrossOrBetter => match rules {
+                RulesVersion::Legacy => 10,
+                RulesVersion::ExceptionalAce => 5,
+            },
             Self::Eagle => 3,
             Self::Birdie => 1,
             Self::Par => 0,

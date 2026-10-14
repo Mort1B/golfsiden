@@ -12,3 +12,5 @@ fn token(n: u8) -> SourceToken {
 mod holes_and_rounds;
 mod matches_and_totals;
 mod selections;
+
+mod rules;

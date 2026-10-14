@@ -1,3 +1,4 @@
+import type { RulesVersion } from './types'
 import { decodeArray, decodeInteger, decodeString, decodeTimestamp, decodeUuid, invalidData } from '../decoder'
 export { decodeObject as object, decodeBoolean as boolean, decodeString as string, decodeUuid as uuid, decodeInteger as integer } from '../decoder'
 export function nullable<T>(v: unknown, p: string, decode: (v: unknown, p: string) => T): T | null { return v === null ? null : decode(v, p) }
@@ -15,5 +16,5 @@ export function ids(v: unknown, p: string): string[] { const result = array(v, p
 export function unique(ids: string[], p: string): void { if (new Set(ids).size !== ids.length) invalidData('Fantasy-data', p) }
 export function expected(v: unknown, p: string, id: string): string { const result = decodeUuid(v, p); if (result !== id) invalidData('Fantasy-data', p); return result }
 export function rank(v: unknown, p: string): number | null { return nullable(v, p, (value, path) => decodeInteger(value, path, 1)) }
-export function version(v: unknown, p: string): number { const result = decodeInteger(v, p); if (result !== 1) invalidData('Fantasy-regelversjon', p); return result }
+export function version(v: unknown, p: string): RulesVersion { if (v === 1 || v === 2) return v; return invalidData('Fantasy-regelversjon', p) }
 export function token(v: unknown, p: string): string { const result = decodeString(v, p); if (!/^[A-Za-z0-9_-]{43}$/.test(result)) invalidData('Fantasy-revisjon', p); return result }

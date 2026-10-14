@@ -49,6 +49,7 @@ struct DispositionRow {
     disposed: bool,
 }
 pub(super) struct Loaded {
+    pub rules: crate::domain::fantasy::RulesVersion,
     pub rounds: Vec<Round>,
     pub golfers: Vec<Identity>,
     pub managers: Vec<Manager>,
@@ -61,6 +62,12 @@ pub(super) async fn load(
     t: Uuid,
     caller: Uuid,
 ) -> Result<Loaded, Error> {
+    let version: i16 =
+        sqlx::query_scalar("SELECT rules_version FROM fantasy_games WHERE tournament_id=$1")
+            .bind(t)
+            .fetch_one(&mut **tx)
+            .await?;
+    let rules = version.try_into().map_err(|_| Error::Invalid)?;
     let (role,round_count,hidden):(TournamentRole,i16,bool)=sqlx::query_as("SELECT m.role,t.number_of_rounds,t.final_round_back_nine_hidden FROM tournaments t JOIN tournament_memberships m ON m.tournament_id=t.id WHERE t.id=$1 AND m.user_id=$2").bind(t).bind(caller).fetch_one(&mut **tx).await?;
     let rounds:Vec<Round>=sqlx::query_as("SELECT r.id,r.round_number,r.name,r.status,r.scoring_format,r.number_of_holes,f.locked_at FROM rounds r LEFT JOIN fantasy_rounds f ON f.round_id=r.id WHERE r.tournament_id=$1 ORDER BY r.round_number,r.id").bind(t).fetch_all(&mut **tx).await?;
     let golfers=sqlx::query_as("SELECT p.id,p.display_name FROM tournament_players tp JOIN players p ON p.id=tp.player_id WHERE tp.tournament_id=$1 ORDER BY p.id").bind(t).fetch_all(&mut **tx).await?;
@@ -125,6 +132,7 @@ pub(super) async fn load(
         });
     }
     Ok(Loaded {
+        rules,
         rounds,
         golfers,
         managers,

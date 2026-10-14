@@ -4,6 +4,8 @@ pub mod holes;
 pub mod matches;
 pub mod projection;
 pub mod rounds;
+pub mod rules;
+pub use rules::RulesVersion;
 pub mod selections;
 pub mod totals;
 

@@ -138,7 +138,8 @@ profile handicap.
 
 | Hole outcome | Points |
 | --- | ---: |
-| Actual hole-in-one, or net albatross or better | +10 |
+| Actual hole-in-one (gross 1) | +20 |
+| Net albatross or better, without an actual ace | +5 |
 | Net eagle | +3 |
 | Net birdie | +1 |
 | Net par | 0 |
@@ -147,8 +148,18 @@ profile handicap.
 | Net triple bogey | −3 |
 | Net quadruple bogey or worse, or explicit pickup | −5 |
 
-Only one category applies per hole. A physical ace earns +10; a net score of one
-does not by itself count as an ace. Placement follows the format's net ranking:
+This table describes **rules version 2**, used for new games. Existing games
+upgrade only if no selection window has effectively closed when schema 39 is
+applied. An expired deadline or opened round counts even before a lock is
+materialized. Frozen games retain **version 1** for every round: ace +10 and net
+albatross-or-better +10. **Regler og poeng** shows the game's actual version.
+
+Only one category applies per hole. An actual ace earns +20 once in version 2,
+even if it also qualifies as net albatross; a net score of one alone is not an
+ace. A captained ace gives +40 hole points and a captained non-ace net albatross
++10. Selecting both partners of a team ace gives +40, or +60 with one as captain.
+The ace equals four net albatrosses or 20 birdies; this is a chosen game balance,
+not a probability-calibrated scale. Placement follows the format's net ranking:
 positions 1–8 receive **10, 8, 6, 5, 4, 3, 2, 1** points; later positions receive
 zero. Tied positions share points and skip the next position (1, 2, 2, 4).
 Stableford uses native net points for placing and uncapped net strokes for hole
@@ -256,7 +267,7 @@ the exact build, migration, permission, backup, restore, rollback, and launch
 procedure. Never reuse `.env.example` credentials or run the development seed in
 production.
 
-The current application requires **schema 38** through `0038_round_awards.sql`.
+The current application requires **schema 39** through `0039_fantasy_scoring.sql`.
 For an existing installation:
 
 1. Record the current release, verify a backup and copy it off-host.
@@ -269,8 +280,8 @@ For an existing installation:
 Use the [exact upgrade commands](docs/deployment_guide.md#upgrade-sequence).
 Fantasy needs no additional service, scheduler, secret or environment variable.
 Installing it does not enable games or enroll members automatically. On an
-installation at schema 37, apply schema 38 for optional round awards and refresh
-runtime grants. An incompatible-schema rollback requires restoring a verified
+installation at schema 38, apply schema 39 for versioned Fantasy scoring and
+refresh runtime grants. An incompatible-schema rollback requires restoring a verified
 backup into a fresh volume; see [Upgrade and rollback](docs/deployment_guide.md#upgrade-and-rollback).
 
 The [local Fantasy acceptance report](docs/validation/fantasy-release-2026-10-08/README.md)
