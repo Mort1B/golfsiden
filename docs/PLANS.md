@@ -9,9 +9,60 @@ None.
 
 ## Next candidate
 
-None selected.
+### A1 — P2: bind private leaderboard reads to the active session
+
+Evidence and the complete severity-rated assessment:
+[application review](validation/application-review-2026-10-14/README.md).
+This candidate is planned, not authorized for implementation by the review request.
+
+- Goal: prevent a private leaderboard request from using authority from a session
+  already revoked or replaced before its result transaction authorizes access.
+- Scope: round/tournament gross/net leaderboard handlers and repositories,
+  narrowly scoped session-aware authorization support, PostgreSQL/API regressions
+  and affected documentation. No frontend, scoring, schema or deployment change.
+- Behavior: pass session identity into the result transaction, lock/check the
+  session/user and exact membership with a deliberate lock order, retain authority
+  locks through assembly and recheck natural expiry before completion. Define
+  deliberate handling for repeatable-read serialization failures. Preserve API
+  envelopes, cache headers, visibility and valid-session response parity.
+- Validation: reproduce the captured membership-wait/revocation sequence and
+  credential-generation replacement; cover expiry, valid callers, nonmembers,
+  privacy, transaction cancellation and concurrent reads. Run the full backend
+  and PostgreSQL ladders, including migration/seed checks; read-only review.
+- Invariants: preserve membership/session isolation, final-round embargo,
+  handicap snapshots, sporting data, deterministic standings and SSE semantics.
+- Stop: publish the validated leaderboard repair only. Sibling setup reads and
+  A2–A8 remain separate candidates.
 
 ## Later queue
+
+### Severity-ordered review follow-ups
+
+All findings and individual acceptance criteria are in the
+[review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
+Select one bounded step at a time; none is implemented by this plan.
+
+1. **P2 / A2:** recheck expiry before committing round open/complete/lock; assert
+   rejection rolls back status/snapshots and emits no invalidation.
+2. **P2 / A3:** coordinate anonymous onboarding/invitation authentication across
+   route lifetimes, including cookie identity and reverse response order.
+3. **P2 / A1 follow-up:** inventory and repair the remaining user-only private
+   tournament/round/roster/pairing/team read families in bounded slices; inventory
+   analogous expiry gaps in legacy team/round writes alongside A2.
+4. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
+   the SQLx cancellation patch and recheck TLS behavior/advisory reachability.
+5. **P2 / A5:** require and bind the restore checksum before invoking restore;
+   preserve empty-target and single-transaction protections.
+6. **P2 / A6:** cap password-work admission while retaining four active Argon2
+   workers and cancellation-safe capacity release. Capacity impact is unmeasured.
+7. **P2 / A7:** upgrade affected development tools in compatible, validated
+   dependency steps. Scanner critical labels do not establish production RCE.
+8. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
+   query count and end-to-end cost. No current frontend latency impact is proven.
+
+Only after these, consider measurement-only steps for remaining Fantasy
+invalidation/fact-loading cost and empty-queue polling. No speculative optimization
+or load claim is authorized.
 
 ### Previously deferred work
 
@@ -19,10 +70,9 @@ None selected.
   scoped app-shell and private scorecard-retention/reauthorization design before
   implementation. Current in-memory return and durable queued edits remain distinct.
 
-- Deferred broader security assessment: further production proxy/database privilege,
-  recovery and dependency-advisory investigation. Revisit for a specific finding
-  or a separately requested assessment, rather than making another broad review
-  a prerequisite for continued functional testing.
+- Operator-owned security acceptance remains for the actual public proxy/TLS,
+  runtime database privileges, image advisories and backup/restore environment.
+  The local application assessment does not establish hosted readiness.
 
 ### Remaining deployment acceptance
 

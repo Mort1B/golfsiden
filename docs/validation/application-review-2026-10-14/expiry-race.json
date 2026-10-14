@@ -1,0 +1,7 @@
+{
+  "observed_membership_lock_wait": true,
+  "expired_before_release": true,
+  "mutation_status": 200,
+  "persisted_round_status": "open",
+  "persisted_handicap_snapshots": 8
+}

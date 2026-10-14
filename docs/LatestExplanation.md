@@ -1,38 +1,41 @@
-# Pre-deployment logic and optimization fixes
+# Application logic, performance and security review
 
-All three assessed issues are addressed in separate bounded changes.
+The documentation-only review found eight actionable items: seven P2/medium and
+one P3/low. No P0/critical or P1/high application finding was confirmed. Sporting
+rules, preserved handicap ownership, score corrections and the recent Fantasy
+and award logic were consistent in the paths reviewed. The application still
+needs the identified session and security work; passing tests alone does not
+establish complete safety or performance.
 
-- R1 repairs the browser observer: expected retryable conflicts and explicitly
-  canceled reads are distinguished from unexpected failures. Recovery must
-  actually restore both result boards.
-- R2 reuses a target only when the current refresh observed a successful network
-  read and the same query still passes session and freshness checks. Otherwise
-  the explicit read remains. Real-SSE Chrome probes reduced round request starts
-  from 24 to 21 for three saves and 60 to 55 for five, with unchanged write counts.
-- R3 projects only the requested round. Authorization, full fact loading,
-  all-round locks, lazy closure and session rechecks remain shared. Overall and
-  breakdown endpoints still calculate the whole tournament.
+Three session defects were reproduced with synthetic data. A private leaderboard
+request waiting on membership returned the same populated data after its session
+was revoked. A round-opening request waiting on membership committed after its
+session expired. In Chrome, a delayed anonymous creation response replaced a
+newer login after the creation page had unmounted, including the browser cookie.
+The browser scenario reproduced at mobile and desktop widths.
 
-For example, asking for round five previously projected all five rounds and
-calculated overall standings before discarding them. The scoped path uses the
-same loaded snapshot to project and hash round five alone. In the release fixture,
-median projection time fell from 1.941 to 0.368 ms. This is a CPU projection
-measurement; database and network costs are excluded. Broader batch invalidation
-and database-loading optimizations remain outside this work.
+The other findings concern a reachable Rustls advisory, optional restore checksum
+verification, password-work admission waiting, development-tool advisories and
+team-list N+1 queries. Evidence strength and application exposure determine each
+rating. Development-tool scanner critical labels do not establish a production
+remote-code-execution path, and performance observations have no demonstrated
+production latency-budget breach.
 
-The new parity matrix checks 720 exact serialized round responses and their
-internal finalization flags. Transaction regressions protect cross-round lazy
-closure, one post-commit event, rejected-target rollback and revoked sessions.
-Independent review found no actionable issues. The
-[evidence report](validation/predeployment-fixes-2026-10-14/README.md) records
-commands, measurements, validation results and fixture limits.
+For example, revoking a session correctly makes the next leaderboard request
+return 401, but a request that already passed the extractor can currently return
+200 after a database wait. The selected next candidate binds leaderboard session
+authority to the data transaction. It preserves membership and embargo behavior;
+other endpoint families and lifecycle expiry remain separately bounded work.
 
-Validation passed: 1,113 frontend tests in R2, 258 backend tests without the
-database feature, 736 tests in the full PostgreSQL ladder, migration/seed checks
-and nine retained Chrome scenarios. Typecheck, lint, builds, formatting and
-Clippy passed. One legacy-upgrade browser case and three existing database
-profiling probes were skipped for the fixture requirements recorded in the report.
-The new projection benchmark ran separately.
+Fresh validation passed: 1,113 frontend tests, 258 backend tests without the
+database feature, and 736 tests in the PostgreSQL-feature ladder. The database
+total includes the ordinary backend tests. Formatting, Clippy, typecheck, lint,
+builds and schema-39 migration/seed passed. Four manual performance probes were
+ignored in the database ladder. No full browser regression, production load test,
+public deployment or physical-device acceptance was performed.
 
-Physical iPhone Chrome/Safari and hosted acceptance remain operator-owned.
-No deployment was performed.
+The [review report](validation/application-review-2026-10-14/README.md) contains
+source locations, reproduced outcomes, current dependency sources, acceptance
+criteria and limitations. [PLANS.md](PLANS.md) selects one next candidate and
+orders the remaining work. No application code, dependency or migration changed,
+and no remediation was started.

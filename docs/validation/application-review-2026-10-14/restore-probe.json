@@ -1,0 +1,7 @@
+{
+  "missing_sidecar_exit": 0,
+  "missing_sidecar_reached_restore": true,
+  "mismatched_sidecar_exit": 1,
+  "mismatched_sidecar_reached_restore": false,
+  "real_database_used": false
+}

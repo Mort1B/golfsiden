@@ -1,0 +1,9 @@
+{
+  "baseline_status": 200,
+  "observed_membership_lock_wait": true,
+  "revocation_committed_before_release": true,
+  "inflight_status": 200,
+  "same_private_response": true,
+  "response_bytes": 2169,
+  "new_request_after_revocation_status": 401
+}

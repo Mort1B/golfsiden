@@ -1,0 +1,184 @@
+{
+  "rustsec_database": {
+    "advisory-count": 1310,
+    "last-commit": "6aed84668c23d7f535077a9fe918bf1fa0f6a5bc",
+    "last-updated": "2026-10-13T17:07:33+02:00"
+  },
+  "rust_vulnerabilities": [
+    {
+      "package": "quinn-proto",
+      "version": "0.11.17",
+      "advisory": "RUSTSEC-2026-0340",
+      "title": "Peer minimum ACK delay can panic quinn-proto when ACK_FREQUENCY transmission is enabled",
+      "patched": [
+        ">=0.11.18"
+      ]
+    },
+    {
+      "package": "quinn-proto",
+      "version": "0.11.17",
+      "advisory": "RUSTSEC-2026-0338",
+      "title": "Remote peer can panic quinn-proto with zero-length STREAM frames during unordered reads",
+      "patched": [
+        ">=0.11.18"
+      ]
+    },
+    {
+      "package": "quinn-proto",
+      "version": "0.11.17",
+      "advisory": "RUSTSEC-2026-0343",
+      "title": "Outgoing datagram buffer accounting can panic the sender in quinn-proto",
+      "patched": [
+        ">=0.11.18"
+      ]
+    },
+    {
+      "package": "rsa",
+      "version": "0.9.10",
+      "advisory": "RUSTSEC-2023-0071",
+      "title": "Marvin Attack: potential key recovery through timing sidechannels",
+      "patched": []
+    },
+    {
+      "package": "rustls",
+      "version": "0.23.43",
+      "advisory": "RUSTSEC-2026-0285",
+      "title": "TLS 1.3 handshake messages incorrectly accepted across encryption level boundaries",
+      "patched": [
+        ">=0.23.45"
+      ]
+    }
+  ],
+  "rust_warnings": {
+    "yanked": [
+      "chacha20 0.10.1"
+    ]
+  },
+  "normal_tree_reachable_advisory_packages": [
+    "rustls"
+  ],
+  "normal_tree_absent_advisory_packages": [
+    "quinn-proto",
+    "rsa",
+    "chacha20"
+  ],
+  "npm_counts": {
+    "info": 0,
+    "low": 0,
+    "moderate": 1,
+    "high": 3,
+    "critical": 2,
+    "total": 6
+  },
+  "npm_packages": [
+    {
+      "package": "@vitest/mocker",
+      "scanner_severity": "moderate",
+      "advisories": [
+        "https://github.com/advisories/GHSA-82fw-gwwq-j7x9"
+      ],
+      "production_dependency": false,
+      "installed": [
+        {
+          "path": "node_modules/@vitest/mocker",
+          "version": "3.2.7",
+          "dev": true
+        }
+      ]
+    },
+    {
+      "package": "brace-expansion",
+      "scanner_severity": "high",
+      "advisories": [
+        "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr",
+        "https://github.com/advisories/GHSA-q2hr-2g5m-vwhr",
+        "https://github.com/advisories/GHSA-qhr7-859c-m2p7",
+        "https://github.com/advisories/GHSA-qhr7-859c-m2p7",
+        "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p",
+        "https://github.com/advisories/GHSA-6j4f-fj2g-mc7p"
+      ],
+      "production_dependency": false,
+      "installed": [
+        {
+          "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+          "version": "5.0.9",
+          "dev": true
+        },
+        {
+          "path": "node_modules/brace-expansion",
+          "version": "1.1.18",
+          "dev": true
+        }
+      ]
+    },
+    {
+      "package": "js-yaml",
+      "scanner_severity": "high",
+      "advisories": [
+        "https://github.com/advisories/GHSA-2883-xcg3-v3hh"
+      ],
+      "production_dependency": false,
+      "installed": [
+        {
+          "path": "node_modules/js-yaml",
+          "version": "4.3.1",
+          "dev": true
+        }
+      ]
+    },
+    {
+      "package": "source-map-js",
+      "scanner_severity": "high",
+      "advisories": [
+        "https://github.com/advisories/GHSA-68fv-2mgg-jv7q"
+      ],
+      "production_dependency": false,
+      "installed": [
+        {
+          "path": "node_modules/source-map-js",
+          "version": "1.2.1",
+          "dev": true
+        }
+      ]
+    },
+    {
+      "package": "tinypool",
+      "scanner_severity": "critical",
+      "advisories": [
+        "https://github.com/advisories/GHSA-5gmw-xhrv-c9v3",
+        "https://github.com/advisories/GHSA-85c8-ppgw-ccpr"
+      ],
+      "production_dependency": false,
+      "installed": [
+        {
+          "path": "node_modules/tinypool",
+          "version": "1.1.1",
+          "dev": true
+        }
+      ]
+    },
+    {
+      "package": "vitest",
+      "scanner_severity": "critical",
+      "advisories": [
+        "https://github.com/advisories/GHSA-82fw-gwwq-j7x9"
+      ],
+      "production_dependency": false,
+      "installed": [
+        {
+          "path": "node_modules/vitest",
+          "version": "3.2.7",
+          "dev": true
+        }
+      ]
+    }
+  ],
+  "npm_production_counts": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  }
+}
