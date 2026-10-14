@@ -71,12 +71,14 @@ and published; do not implement the other candidates in this step.
 
 ## Later queue
 
-### CLOSEST-PIN — administrator awards one stroke after a round
+### ROUND-AWARDS — optional closest-to-pin and longest-drive awards
 
-**Goal and confirmed policy:** Let the tournament administrator give the
-closest-to-pin winner −1 on their official net golf result after a round. The
-user confirmed net golf results only: gross scores, recorded hole strokes and
-all Fantasy points remain unchanged, including Fantasy placement points.
+**Goal and confirmed policy:** Let the tournament administrator optionally give
+the closest-to-pin winner and/or longest-drive winner −1 each on their official
+net golf result after a round. Both awards are independently optional: neither
+is required for round completion or tournament results. Without an award, no
+adjustment applies. Net golf results only: gross scores, recorded hole strokes
+and all Fantasy points remain unchanged, including Fantasy placement points.
 
 **Scope:** A typed domain award, append-only forward migration and repository/API
 support, administrator round management, affected result projections and typed
@@ -85,10 +87,14 @@ handicap snapshots. Do not repurpose Fantasy non-finish dispositions.
 
 **Proposed behavior to finalize when activating this candidate:**
 
-- One winner and one −1 award per round, with no stacking or automatic detection.
+- Allow neither, either or both award types for each round; no winner is selected
+  by default and no award is applied automatically. One winner and one −1 award
+  per type per round. Proposed combination rule: the same player may win both,
+  for a total −2, while repeated delivery of either award never adds another −1.
   Admin selects a participant from the preserved round field and records a
-  reason. Persist round/player identity, actor, timestamp and replacement/reversal
-  history. Repeated delivery cannot double-apply the award.
+  reason. Persist award type, round/player identity, actor, timestamp and
+  replacement/reversal history. Each award can be corrected or removed
+  independently without changing the other.
 - Adjust the winner's individual net round contribution and carry it into
   tournament standings under existing counted-round rules. In team rounds,
   preserve the shared team result and the partner's contribution; display the
@@ -101,7 +107,7 @@ handicap snapshots. Do not repurpose Fantasy non-finish dispositions.
   path. Replacement/removal is a correction with a reason and fresh revision;
   ordinary locked score mutations remain rejected. An incomplete round with a
   non-finisher needs a separately defined after-play boundary before support.
-- Display base net result, closest-to-pin −1 and adjusted result wherever relevant
+- Display base net result, each named −1 award and adjusted result where relevant
   (round contribution, standings and history). Preserve gross views and hidden
   final-result visibility. Notify affected queries only after successful commit.
 - Fantasy keeps unadjusted sporting placement facts as well as unchanged hole
@@ -112,18 +118,22 @@ handicap snapshots. Do not repurpose Fantasy non-finish dispositions.
 teams, handicap snapshots, gross/net separation, individual aggregation,
 counted-round/tie policies and auditable locked-round corrections.
 
-**Validation:** Domain cases for 72 net becoming 71, duplicate delivery,
-replacement/reversal, ties and counted-round selection. Cover team-partner
-isolation, the agreed Stableford behavior, and explicit unsupported-format/state
+**Validation:** Domain cases for neither award (72 stays 72), either award
+(72 becomes 71), different winners, both awards to one winner (72 becomes 70),
+duplicate delivery per type, independent replacement/reversal, ties and
+counted-round selection. Verify awards are never required for completion or
+results. Cover team-partner isolation, the agreed Stableford behavior and
+explicit unsupported-format/state
 rejection. Assert unchanged Fantasy placement and totals even when the adjusted
 golf ranking changes. PostgreSQL tests cover admin authorization, foreign-round/
-tournament identities, uniqueness, concurrent admins, stale writes, locked-round
-corrections, clean/upgrade migration and seed behavior. Run backend, PostgreSQL
+tournament identities, uniqueness per round/award type, concurrent admins, stale
+writes, locked-round corrections, clean/upgrade migration and seed behavior.
+Run backend, PostgreSQL
 and frontend ladders plus mobile/desktop admin/member flows, error/retry states,
 long names and concealed results. Update behavior, architecture, deployment and
 latest-explanation docs in the implementation step.
 
-**Stop:** Publish only the agreed closest-to-pin behavior and validation. No
+**Stop:** Publish only these two optional award types and their validation. No
 general bonus editor, other prizes or automatic winner/tie detection.
 
 ### FANTASY-ALBATROSS — five points for net albatross
@@ -194,7 +204,7 @@ Hosting and deployment checks belong to the user. These historical acceptance
 limits do not expand the application-readiness step into server administration
 or another assessment. Broader device coverage and polish can follow feedback.
 
-Outside the scoped closest-to-pin proposal, no new sporting scoring rules are
-planned. No automatic opponents/byes/brackets, team match play,
+Outside the scoped optional round-awards proposal, no new sporting scoring rules
+are planned. No automatic opponents/byes/brackets, team match play,
 extra holes, public match sharing, cold offline launch or background sync is included.
 Fantasy remains separate from sporting scores and completion rules.

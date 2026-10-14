@@ -1,4 +1,4 @@
-# Fantasy presets, closest-to-pin award and albatross planning
+# Fantasy presets, optional round awards and albatross planning
 
 This iteration is documentation-only. [PLANS.md](PLANS.md) records one next
 candidate and two later candidates for the requested changes. No implementation
@@ -12,11 +12,14 @@ recovery rules. For example, a manager can prepare the same four for three round
 and change only round three's captain. A failed round-three save must not hide
 acknowledged saves for rounds one and two.
 
-The user confirmed that closest to the pin gives a separate −1 adjustment to the
-winner's official net golf result only. Recorded hole strokes, gross results and
-Fantasy points remain unchanged, including Fantasy placement points. The plan
-requires an auditable admin action after play, correction/reversal history and
-protection against duplicate awards. It proposes a personal adjustment in team
+The user clarified that closest to the pin and longest drive are independently
+optional −1 awards to each winner's official net golf result only. Admins may
+record neither, either or both after a round; completion and results never
+require an award. The proposed combination rule allows one player to win both
+for −2 total. Each award has its own identity, audit history and correction or
+reversal, so retrying one cannot duplicate it or affect the other. Recorded hole
+strokes, gross results and Fantasy points remain unchanged, including Fantasy
+placement points. The plan proposes a personal adjustment in team
 rounds without changing the partner's result. Stableford's points/equivalent
 presentation must be resolved when activating that candidate; match play is
 excluded because it has no net stroke result.
