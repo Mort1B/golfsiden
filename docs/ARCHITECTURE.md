@@ -513,8 +513,10 @@ and reapplies runtime grants before the API is started.
   that final check; see [A1g acceptance](validation/numeric-read-session-2026-10-14/README.md).
   Both four-ball card GETs also perform it; see
   [A1h acceptance](validation/four-ball-read-session-2026-10-14/README.md).
-  Stableford cards, match detail/completion/table and invitation metadata
-  still retain authority locks but omit that final check. Final-visibility and
+  Both Stableford card GETs do too; see
+  [A1i acceptance](validation/stableford-read-session-2026-10-14/README.md).
+  Match detail/completion/table and invitation metadata still retain authority
+  locks but omit that final check. Final-visibility and
   course GETs retain user-only authorization boundaries. Awards, player-account
   metadata, result-share status, Fantasy reads and match listing already perform
   final session checks. Bound
@@ -1673,6 +1675,18 @@ Scoring entries add revisions and permitted mutation metadata. Cards carry
 actual net strokes, nullable card `values`, resolved progress and permitted
 completion/confirmation metadata. All routes are private/no-store, with membership
 checked before private-read format errors.
+
+Both Stableford card GETs wrap their entire repeatable-read attempt in one
+`40001` retry. Stored context, session/user, exact membership, frozen player and
+existing player/flight scoring authority are reloaded; no discarded facts or
+derived values survive. A final database wall-clock session check follows input,
+confirmation and domain points/visibility assembly before commit, including empty
+cards. A second conflict maps to generic private `503 service_unavailable` through
+a GET-only error mapper; other mappings and all-status cache middleware remain
+unchanged. Settings, conditional input delivery, confirmation and shared mutation
+helpers receive no retry or behavioral change. Each ordinary success adds one
+final authority query, with no performance claim. Native points, comparison
+equivalents and optional actual strokes retain their distinct values and units.
 
 `domain/leaderboards/values.rs` serializes explicit version-1 value variants.
 Stableford round entries/contributions omit legacy gross/net/par/score-to-par

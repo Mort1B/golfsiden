@@ -4,7 +4,9 @@ Follow-up: [A1g numeric read acceptance](../numeric-read-session-2026-10-14/READ
 repairs the three numeric access/card GETs with reproduced late-expiry evidence.
 [A1h four-ball acceptance](../four-ball-read-session-2026-10-14/README.md) repairs
 both four-ball card GETs after reproducing late confirmation-loading expiry.
-Eight P2 routes and three P3 course routes remain. The classifications, manifest
+[A1i Stableford acceptance](../stableford-read-session-2026-10-14/README.md) closes
+both Stableford card GETs with late confirmation-loading expiry evidence.
+Six P2 routes and three P3 course routes remain. The classifications, manifest
 and source anchors below preserve the original A1f assessment revision.
 
 Reviewed source revision: `21917b6931c4f94dfacdbb36ded7f390f6108834`.

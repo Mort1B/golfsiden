@@ -21,7 +21,9 @@ P3) at that snapshot. The subsequent
 [numeric read repair](../numeric-read-session-2026-10-14/README.md) closes three
 of those P2 routes with reproduced late-expiry evidence. The
 [four-ball read repair](../four-ball-read-session-2026-10-14/README.md) closes two
-more P2 routes with late confirmation-loading expiry evidence. Eight P2 routes
+more P2 routes with late confirmation-loading expiry evidence. The
+[Stableford read repair](../stableford-read-session-2026-10-14/README.md) closes
+two further P2 routes with the same late-loading reproduction. Six P2 routes
 and three P3 course routes remain; those remaining inventory findings are
 source-supported, not new race reproductions. Remaining repairs and legacy-write
 inventory stay queued. The assessment below describes the originally reviewed revision.

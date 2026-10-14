@@ -108,7 +108,7 @@ async fn read(
         .await
         .map(read_projection)
         .map(Json)
-        .map_err(map_error)
+        .map_err(map_read_error)
 }
 async fn scoring(
     State(state): State<Arc<AppState>>,
@@ -118,7 +118,13 @@ async fn scoring(
     stableford::get(&state.pool, auth.principal.session_id, round, player, true)
         .await
         .map(Json)
-        .map_err(map_error)
+        .map_err(map_read_error)
+}
+fn map_read_error(error: ScorecardError) -> ApiError {
+    match error {
+        ScorecardError::ReadUnavailable => ApiError::ServiceUnavailable,
+        error => map_error(error),
+    }
 }
 async fn confirm(
     State(state): State<Arc<AppState>>,

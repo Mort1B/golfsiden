@@ -548,9 +548,11 @@ records its historical snapshot of 27 remaining tournament-scoped GETs: 11 bound
 and 16 incomplete. The subsequent [numeric read repair](validation/numeric-read-session-2026-10-14/README.md)
 closes three of those incomplete boundaries with runtime evidence. The
 [four-ball read repair](validation/four-ball-read-session-2026-10-14/README.md)
-closes two more. Eight P2 routes and three P3 course routes remain: Stableford
-card reads, match detail/completion/table and invitations still lack a final
-expiry check; final-visibility and course reads still use extracted user identity.
+closes two more, followed by the two
+[Stableford card GETs](validation/stableford-read-session-2026-10-14/README.md).
+Six P2 routes and three P3 course routes remain: match detail/completion/table
+and invitations still lack a final expiry check; final-visibility and course
+reads still use extracted user identity.
 The source inventory itself
 executes no routes. In particular, Fantasy selection/results GETs may finalize due windows;
 they are not side-effect-free inspection tools. The report owns exact routes,
@@ -894,6 +896,18 @@ The dedicated API uses `individual_stableford` as its format:
   numeric 9→10 when both earn zero points. No-ops and accepted receipt replays
   preserve it. Completed rounds remain correctable until locking; ordinary locked
   mutations and scoring reads are rejected, while private read-only history remains.
+
+Both Stableford card GETs recheck active session validity against database
+wall-clock time after complete inputs, confirmation and points/visibility
+assembly, before commit. Expiry during those waits returns private `401`, including
+empty cards. One fresh whole attempt is allowed after a `40001` snapshot conflict;
+context, role, player/flight permissions and all facts are reloaded. A second
+conflict yields generic private `503 service_unavailable`; other errors retain
+their old mapping. Existing non-storeable headers and lookup/error precedence
+remain, including 404 for draft cards without frozen player snapshots. Settings,
+input delivery and confirmation receive no retries. The check does not freeze
+time through commit or delivery; 18-hole restriction and hidden front-nine
+projection are unchanged.
 
 Device edits use `stableford_v1` and an account/player/round/hole identity. An
 immutable queued request is never overwritten by a later numeric or pickup edit;

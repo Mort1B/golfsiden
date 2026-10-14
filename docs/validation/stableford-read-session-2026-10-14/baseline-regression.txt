@@ -1,0 +1,21 @@
+     Running tests/stableford_read_sessions.rs (target/debug/deps/stableford_read_sessions-cdf2361e37d4c5ed)
+
+running 1 test
+/api/rounds/00000000-0000-0000-0000-000000000005/stableford/scorecards/00000000-0000-0000-0000-00000000000b: status=200 OK, code=null
+/api/rounds/00000000-0000-0000-0000-000000000005/stableford/scorecards/00000000-0000-0000-0000-00000000000b/scoring: status=200 OK, code=null
+
+thread 'stableford_read_sessions::expiry::expiry_during_final_confirmation_loading_denies_both_reads' (571312) panicked at backend/tests/stableford_read_sessions/expiry.rs:86:9:
+assertion `left == right` failed
+  left: 200
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test stableford_read_sessions::expiry::expiry_during_final_confirmation_loading_denies_both_reads ... FAILED
+
+failures:
+
+failures:
+    stableford_read_sessions::expiry::expiry_during_final_confirmation_loading_denies_both_reads
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 2 filtered out; finished in 17.11s
+
+error: test failed, to rerun pass `-p golf-api --test stableford_read_sessions`
