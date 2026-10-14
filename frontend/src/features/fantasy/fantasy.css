@@ -40,3 +40,11 @@
 .fantasy-round-totals,.fantasy-standings small { font-size: .875rem; }
 .fantasy-page p { font-size: 1rem; line-height: 1.5; }
 .fantasy-page fieldset:focus { outline: 3px solid #247655; outline-offset: 3px; }
+
+.fantasy-presets { list-style: none; padding: 0; margin: 16px 0; }
+.fantasy-presets > li { border-bottom: 1px solid #d5dfd8; padding: 16px 0; }
+.fantasy-presets h3 { margin: 0 0 8px; }
+.fantasy-presets p { margin: 8px 0; }
+@media (min-width: 650px) {
+  .fantasy-presets > li { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 20px; align-items: start; }
+}

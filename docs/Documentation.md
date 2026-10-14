@@ -23,6 +23,16 @@ acceptance remains a separate operator check.
    edits. A valid saved lineup is compact; **Endre valg** opens the editor and
    moves keyboard focus into it. Unsaved, uncertain or rejected selections keep
    editing/recovery visible. An ineligible golfer remains available for removal.
+   **Planlegg alle runder** lists the saved four, captain, deadline and
+   saved/unsaved/invalid/closed status for every existing round. Future rounds
+   can be prepared before golf teams exist. **Se / endre runde** selects that
+   round's independent editor. **Kopier fireren til andre åpne runder** previews
+   eligible open destinations and saved revisions that would be replaced;
+   replacing an existing unsaved destination requires an explicit checkbox.
+   **Forbered valgte runder** changes local drafts only. Later source edits do
+   not change copied rounds, and newly created rounds remain unprepared.
+   Review overrides, then **Lagre gjennomgåtte utkast** submits in round order.
+   Each round has its own receipt; the operation can partially succeed.
 3. The server locks picks at the earlier explicit deadline or actual round
    opening. An admin can set/clear an earlier deadline under **Administrer denne
    Fantasy-runden** using local date/time; it is sent as an explicit UTC instant.
@@ -81,6 +91,19 @@ revision. **Bruk gjeldende lag** adopts the fresh current lineup without a write
 **Behold valgene som nytt utkast** rebases the original picks/captain for review.
 Only a subsequent deliberate save creates a new request ID. A generic conflict
 stays unresolved; it is not evidence that the original write failed.
+
+All-round saving checks fresh access, eligibility and revision before each write.
+It pauses at the first closure, stale selection, failed read/write, uncertainty,
+disconnect or privacy reset. Progress reports confirmed rounds; those rounds are
+never resent by a later batch. Unsent drafts remain in memory. Resolve the
+affected round's exact submission, or retry reads after a confirmed write, then
+review and deliberately save the remaining drafts. Even an initial live
+connection opening during saving can pause the sequence; there is no automatic
+restart. Draft edits, discard and other Fantasy writes are blocked during a
+batch. **Forkast utkast for runde** discards only that round's unsent draft, so a
+closed draft need not block other rounds. For a stale unsent draft, review the
+current saved lineup and explicitly choose **Behold utkastet mot gjeldende
+revisjon** before a new save. These choices do not themselves send a write.
 
 An acknowledged write remains acknowledged even if a subsequent read fails.
 The receipt is retained and **Prøv oppdatering igjen** retries reads only; it

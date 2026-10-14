@@ -1,48 +1,38 @@
-# Fantasy presets, optional round awards and albatross planning
+# Fantasy lineups for every round
 
-This iteration is documentation-only. [PLANS.md](PLANS.md) records one next
-candidate and two later candidates for the requested changes. No implementation
-step is active, and current application behavior is unchanged.
+The Fantasy lineup workspace now lets a manager prepare every existing tournament
+round in advance, including team rounds whose sporting teams have not yet been
+assigned. **Planlegg alle runder** shows each round's picks, captain, deadline and
+status. The selected round's four can be copied through an explicit preview;
+existing unsaved destination choices require consent to replace. Copying creates
+independent local drafts. A newly created round remains unprepared.
 
-The existing Fantasy API already accepts a saved four and captain for each
-future round while its selection window is open. The first candidate makes this
-easier to discover and use: review all rounds, copy a lineup into open rounds,
-and retain independent overrides. Each save keeps its existing receipt and
-recovery rules. For example, a manager can prepare the same four for three rounds
-and change only round three's captain. A failed round-three save must not hide
-acknowledged saves for rounds one and two.
+For example, prepare one four for three rounds, change round two's captain, then
+review and save all three. Saves run in tournament order with a separate request,
+revision and receipt for each round. The batch checks fresh authorization,
+eligibility and revision before each dispatch. Draft edits and other Fantasy
+writes are guarded until the sequence stops.
 
-The user clarified that closest to the pin and longest drive are independently
-optional −1 awards to each winner's official net golf result only. Admins may
-record neither, either or both after a round; completion and results never
-require an award. The proposed combination rule allows one player to win both
-for −2 total. Each award has its own identity, audit history and correction or
-reversal, so retrying one cannot duplicate it or affect the other. Recorded hole
-strokes, gross results and Fantasy points remain unchanged, including Fantasy
-placement points. The plan proposes a personal adjustment in team
-rounds without changing the partner's result. Stableford's points/equivalent
-presentation must be resolved when activating that candidate; match play is
-excluded because it has no net stroke result.
+If round two's response is lost, round one remains confirmed, round two retains
+its exact request for reconciliation, and round three stays unsent. After
+resolving round two, deliberately save the remaining draft; round one is never
+sent again. A failed read after acknowledgement also pauses the batch but
+preserves the receipt and offers read-only retry. Disconnect/privacy clearing,
+including an initial live connection opening, pauses further saves. Local
+recovery remains scoped to tournament, account and session, while private server
+projections are erased as before. Closed drafts can be discarded per round;
+stale unsent drafts require explicit review and rebase before a new save.
 
-Net albatross or better will award 5 Fantasy points. Following the request for
-a larger hole-in-one award, step 3 now proposes 20 for an actual ace, retaining
-single-category precedence and the other hole-point values. Twenty is a balance
-recommendation, not a statistically calibrated value: it equals four net
-albatrosses or twice the first-place placement award. Captain doubling makes it
-40; selecting both partners in a shared-team round makes the ace contribution
-40, or 60 with one captain. The plan requires reviewing these consequences
-before accepting the exact ace value for implementation.
+The implementation reuses the existing API, immutable receipts and carry-forward
+rules. There is no backend or schema change. Optional closest-to-pin/longest-drive
+awards and the revised Fantasy scoring scale remain separate candidates in
+[PLANS.md](PLANS.md).
 
-The user chose to apply the new scale only to games whose selections have not
-locked yet. Current storage, result metadata and frontend decoding support only
-rules version 1, so the plan includes a new version and coordinated compatibility
-work. Frozen version-1 games retain their existing +10 ace/albatross scoring for
-every round. An already-expired deadline counts as closed even when its lock has
-not yet been materialized by a read.
-
-The plan was reviewed against current selection, scoring, versioning and result
-boundaries. Local Markdown links/anchors and `git diff --check` were checked.
-Runtime, PostgreSQL and browser tests were not run because this planning step
-changes only documentation; each candidate lists its implementation validation.
-Current-behavior guides remain unchanged until the corresponding implementation.
-Hosting remains user-operated.
+Validation passed: 138 frontend test files / 1,052 tests, typecheck, lint, build,
+strict standalone browser-test TypeScript, three new Chrome scenarios and 14
+retained browser regressions. Rendered states cover 320/390/1280 pixels, long
+names, keyboard copy-preview focus, loading/error recovery, closed destinations,
+partial success, exact replay and second-account privacy. A read-only independent
+review found no correctness or privacy defects. See the
+[validation report](validation/fantasy-presets-2026-10-14/README.md) for commands,
+coverage, test repairs and limits. Hosted deployment remains operator-owned.

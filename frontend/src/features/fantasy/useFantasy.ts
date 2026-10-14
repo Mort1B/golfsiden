@@ -31,6 +31,7 @@ export function useFantasyQuery<T>(t: string, parts: string[], load: (signal: Ab
     }),
   })
 }
+export type FantasyActionOutcome = 'acknowledged' | 'refresh_failed' | 'failed' | 'cancelled'
 export function useFantasyAction(t: string) {
   const { session } = useAuth(), client=useQueryClient(), alive=useRef(false), busy=useRef(false)
   const acknowledged=useRef(false),generation=useRef(0),refreshGeneration=useRef(0)
@@ -67,9 +68,9 @@ export function useFantasyAction(t: string) {
     busy.current=true;setPending(true)
     try{await refresh()}finally{busy.current=false;if(current())setPending(false)}
   }
-  const execute=async<T,>(operation:(session:AuthSession)=>Promise<T>,success:(value:T)=>void=()=>{},failure?:((error:unknown)=>void),target?:FantasyReadTarget):Promise<void>=>{
-    if(busy.current || phase==='refresh_failed' || !current() || !session) return
-    if(!navigator.onLine){setFeedback({error:true,text:'Du er frakoblet. Fantasy-valg lagres bare på nett.'});return}
+  const execute=async<T,>(operation:(session:AuthSession)=>Promise<T>,success:(value:T)=>void=()=>{},failure?:((error:unknown)=>void),target?:FantasyReadTarget):Promise<FantasyActionOutcome>=>{
+    if(busy.current || phase==='refresh_failed' || !current() || !session) return 'cancelled'
+    if(!navigator.onLine){setFeedback({error:true,text:'Du er frakoblet. Fantasy-valg lagres bare på nett.'});return 'failed'}
     generation.current++;acknowledged.current=false
     required.current=target??{kind:'game'}
     busy.current=true;setPending(true);setFeedback(null);setPhase('writing')
@@ -78,17 +79,17 @@ export function useFantasyAction(t: string) {
       try{
         await mutation.mutateAsync(async()=>{if(!current())throw new Error('Sesjonen er endret.');result={value:await operation(session)}})
       }catch(error){
-        if(!current())return
+        if(!current())return 'cancelled'
         setPhase(error instanceof ApiHttpError&&error.status<500?'write_failed':'uncertain')
         setFeedback({error:true,text:fantasyError(error)});failure?.(error)
         required.current=null
         await refresh()
-        return
+        return 'failed'
       }
-      if(!current()||!result)return
+      if(!current()||!result)return 'cancelled'
       acknowledged.current=true;setPhase('refreshing')
       success(result.value)
-      await refresh()
+      return await refresh()?'acknowledged':'refresh_failed'
     }finally{busy.current=false;mutation.reset();if(current())setPending(false)}
   }
   return {pending,phase,feedback,current,refresh,retryRefresh,execute,clear:()=>{if(phase!=='refresh_failed'){generation.current++;acknowledged.current=false;required.current=null;setFeedback(null);setPhase('idle')}}}

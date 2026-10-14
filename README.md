@@ -95,6 +95,13 @@ selectable golfers and nine teams competing for placement points.
 2. For each round, choose four distinct eligible golfers, select one as
    **Kaptein · doble poeng**, and save. Both partners can be selected, and different
    managers can choose the same golfers. There is no budget or transfer penalty.
+   **Planlegg alle runder** shows each round's picks and status, including future
+   rounds before golf teams are assigned. **Kopier fireren til andre åpne runder**
+   previews copies; **Forbered valgte runder** creates local drafts. Review or
+   override each round, then **Lagre gjennomgåtte utkast** saves them in order.
+   Existing unsaved choices require explicit replacement. Saving pauses at the
+   first problem; resolve it before deliberately saving remaining drafts.
+   Confirmed rounds are not sent again. Newly added rounds remain unprepared.
 3. Picks lock when the round opens or at an earlier administrator-set deadline.
    Without a new valid lineup, the previous eligible locked lineup and captain
    are reused automatically. With no complete eligible fallback, the entry gets

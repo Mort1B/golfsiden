@@ -5,8 +5,7 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. Planning only: the three requested changes below are not implementation
-approval. Execute one bounded step at a time after approval.
+None. The next candidate requires its own bounded implementation approval.
 
 Every implementation step updates affected durable docs and LatestExplanation,
 removes its completed plan item, commits only its scope and stops before the
@@ -14,62 +13,7 @@ next. No budgets, transfer penalties, newly generated picks, sporting team
 generation, public Fantasy sharing, prizes/payments or offline queued selection
 writes are in this plan.
 
-## Next candidate: FANTASY-PRESET — prepare every round in advance
-
-**Goal:** Let an enrolled manager preset four golfers and a captain for every
-existing tournament round before play, with independent per-round overrides.
-
-**Current evidence:** `frontend/src/pages/FantasyPage.tsx` already lists all
-rounds, and `backend/src/repositories/fantasy/lineups.rs` accepts a selection for
-any round whose Fantasy window is open. The missing convenience is preparing and
-reviewing all rounds together; deadlines remain authoritative.
-
-**Scope:** The Fantasy lineup workspace, its draft/recovery state and focused
-frontend/browser tests. Reuse existing per-round reads/saves, revisions and
-immutable receipts. No bulk endpoint or schema change is initially needed.
-
-**Behavior:**
-
-- Show each round's saved four, captain, deadline and saved/unsaved/invalid/closed
-  status together. Permit distinct future selections before earlier rounds begin.
-- Offer an explicit action to copy a chosen four and captain into all still-open
-  rounds. Preview destinations and existing selections that would be replaced;
-  copying prepares drafts, and saving submits them. Preserve other unsaved edits
-  unless their replacement is explicitly chosen. Resolve uncertain submissions
-  before preparing replacements for them.
-- Save reviewed rounds through the existing API in tournament order. Each round
-  has its own request ID, expected revision and receipt; this is not an atomic
-  tournament transaction. Show partial success accurately. Pause remaining saves
-  on failure or uncertainty, retain unsubmitted drafts, and reconcile the exact
-  uncertain request before resuming. Never resend acknowledged rounds because
-  another save or a subsequent refresh failed.
-- Each saved round remains independently editable until its authoritative close.
-  Later source-lineup edits do not rewrite copied rounds. Newly created rounds
-  appear unprepared and require another deliberate selection.
-- Recheck eligibility on save and close. Picks remain player identities even
-  before sporting teams are assigned; changing partners does not change picks.
-  Carry-forward remains a fallback for rounds without a valid preset.
-- Visibly exclude closed rounds. No automatic enrollment, late backfill,
-  generated replacement picks, offline writes or access to others' private picks.
-
-**Invariants:** Four distinct eligible golfers and a captain among them;
-per-round server deadlines, pre-lock privacy, session fencing, idempotent recovery
-and historical locked receipts remain authoritative.
-
-**Validation:** Frontend full ladder from [AGENT_WORKFLOW.md](AGENT_WORKFLOW.md)
-and real browser at 320/390/1280px. Cover three independently preset rounds,
-copy-and-override, pre-team setup, a closed destination, expiry during saving,
-withdrawal, insufficient eligible players, stale revision, partial success,
-lost response/exact replay, failed refresh, reconnect and session replacement.
-Verify carry-forward and second-account privacy; include loading/error/empty/
-populated/long-name states, keyboard focus, console and failed-request inspection.
-Backend/database ladders apply if an approved scope revision changes those layers.
-
-**Documentation and stop:** Update affected Fantasy guide, README and architecture
-descriptions, plus LatestExplanation. Stop after this flow is reviewed, validated
-and published; do not implement the other candidates in this step.
-
-## Later queue
+## Next candidate
 
 ### ROUND-AWARDS — optional closest-to-pin and longest-drive awards
 
@@ -135,6 +79,8 @@ latest-explanation docs in the implementation step.
 
 **Stop:** Publish only these two optional award types and their validation. No
 general bonus editor, other prizes or automatic winner/tie detection.
+
+## Later queue
 
 ### FANTASY-SCORING — distinguish net scoring from an exceptional actual shot
 

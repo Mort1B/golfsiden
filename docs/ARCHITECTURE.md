@@ -2585,6 +2585,31 @@ write or uncertain submission remains; round switches retain their separate reco
 An acknowledged write with failed refresh alone never blocks navigation/logout.
 Nothing is written to browser storage or queued for offline transmission.
 
+`FantasyPresets` reads every existing round through `fantasyRoundQuery` using the
+same canonical keys and authorization fences as the selected-round view. It
+renders overview status from current queries and provider-owned local records.
+Copy previews retain only reviewed input/identity/revision fingerprints. Applying
+a preview rechecks fresh destination availability, source eligibility, revision
+and explicit consent to replace unsaved edits, then creates independent local
+drafts using destination revisions. New round identifiers receive no automatic
+draft. The local deadline timer triggers reads; only server availability gates
+acceptance. Individual editing and carry-forward retain their existing semantics.
+
+`useFantasyBatch` runs at provider lifetime with only round identifiers, confirmed
+identifiers, progress and local recovery records. It processes reviewed drafts in
+round-number order. Before each write it fetches current authorized round data and
+checks canonical session, privacy epoch, availability, eligibility and expected
+revision. Query privacy erasure increments the epoch and pauses remaining work,
+including a live connection opening during the sequence. Shared provider guards
+prevent local edits/discard and other mutations between writes. Individual and
+batch saves share `submitFantasyLineup`; action outcomes distinguish acknowledged,
+acknowledged-with-refresh-failure, failed and cancelled operations. Receipts are
+retained immediately, acknowledged drafts are cleared, and the first unsuccessful
+step pauses subsequent writes. Exact uncertain requests are reconciled through
+the selected-round editor. A deliberate later batch includes only remaining
+drafts. There is no bulk endpoint, atomic cross-round transaction, retained server
+projection or automatic resume. Session replacement resets the whole provider.
+
 All Fantasy mutations share that workspace lifetime. Write errors are caught
 separately from refresh errors: a positive response records acknowledgement before
 refresh, and failed refresh cannot call the write-failure callback. Read-only retry

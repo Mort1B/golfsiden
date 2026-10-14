@@ -9,6 +9,7 @@ import { useAuth } from '../features/auth/authContext'
 import { useTournamentLive } from '../features/live/useTournamentLive'
 import { FantasySetup } from '../features/fantasy/FantasyAdmin'
 import { FantasyBoards } from '../features/fantasy/FantasyBoards'
+import { FantasyPresets } from '../features/fantasy/FantasyPresets'
 import { FantasyRound } from '../features/fantasy/FantasyRound'
 import { useFantasyDrafts } from '../features/fantasy/fantasyDrafts'
 import { FantasyDraftProvider, FantasyRecoveryStatus } from '../features/fantasy/FantasyDraftProvider'
@@ -39,7 +40,7 @@ function FantasyWorkspace({tournament}:{tournament:string}){
       {admin&&<FantasySetup selectedRound={selectedRound?.id} tournament={tournament} game={game.data??null} rounds={rounds.data??[]} refreshing={game.isFetching||memberships.isFetching}/>}
       {!game.data?.enabled?<p>Fantasy er ikke aktivert for denne turneringen.</p>:<>
         <div className="fantasy-tabs" role="group" aria-label="Fantasy-visning"><button aria-pressed={viewing.section==='lineup'} aria-controls="fantasy-lineup-panel" onClick={()=>setViewing({section:'lineup'})}>Min firer</button><button aria-pressed={viewing.section==='boards'} aria-controls="fantasy-boards-panel" onClick={()=>setViewing({section:'boards'})}>Poengtavler</button></div>
-        <div id="fantasy-lineup-panel" hidden={viewing.section!=='lineup'}>{rounds.data?.length?<><label htmlFor="fantasy-round">Runde for Min firer</label><select id="fantasy-round" value={selectedRound?.id??''} onChange={e=>setViewing({lineupRound:e.target.value})}>{rounds.data.map(r=><option value={r.id} key={r.id}>Runde {r.round_number}: {r.name}</option>)}</select>{selectedRound&&<FantasyRound key={selectedRound.id} tournament={tournament} round={selectedRound} players={roster.data?.players??[]} rounds={rounds.data??[]} admin={admin} authorityRefreshing={memberships.isFetching||rounds.isFetching||roster.isFetching}/>}</>:<p>Ingen runder er opprettet ennå.</p>}</div>
+        <div id="fantasy-lineup-panel" hidden={viewing.section!=='lineup'}>{rounds.data?.length?<><FantasyPresets tournament={tournament} rounds={rounds.data} players={roster.data?.players??[]} selected={selectedRound?.id??''} refreshing={memberships.isFetching||rounds.isFetching||roster.isFetching}/><label htmlFor="fantasy-round">Runde for Min firer</label><select id="fantasy-round" value={selectedRound?.id??''} onChange={e=>setViewing({lineupRound:e.target.value})}>{rounds.data.map(r=><option value={r.id} key={r.id}>Runde {r.round_number}: {r.name}</option>)}</select>{selectedRound&&<FantasyRound key={selectedRound.id} tournament={tournament} round={selectedRound} players={roster.data?.players??[]} rounds={rounds.data??[]} admin={admin} authorityRefreshing={memberships.isFetching||rounds.isFetching||roster.isFetching}/>}</>:<p>Ingen runder er opprettet ennå.</p>}</div>
         <div id="fantasy-boards-panel" hidden={viewing.section!=='boards'}>{results.error?<ErrorState error={results.error} onRetry={()=>void action.refresh()}/>:!results.data?<LoadingState/>:<>{results.isFetching&&<p role="status">Oppdaterer poengtavlene …</p>}<FantasyBoards tournament={tournament} results={results.data} refreshing={results.isFetching}/></>}</div>
       </>}
     </>}<FantasyRules/>
