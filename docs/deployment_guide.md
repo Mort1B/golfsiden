@@ -12,13 +12,14 @@ are expected to survive loss of that host.
 
 ## Current release
 
-The current application requires **schema 37** through
-`0037_fantasy_guards.sql`, with matching API and frontend builds. The API
+The current application requires **schema 38** through
+`0038_round_awards.sql`, with matching API and frontend builds. The API
 checks every embedded migration and checksum, not only the largest version.
 Do not skip intermediate migrations when upgrading an older installation.
 
 | Change | Deployment requirement |
 | --- | --- |
+| Optional personal round awards | Schema 38, refreshed runtime grants and matching API/frontend |
 | Fantasy private selections, settlement and result APIs | Schemas 35–37 and refreshed runtime grants; matching API/frontend exposes the private game |
 | Admin-created players, personal claim links and withdrawal | Schema 34, refreshed runtime grants and matching API/frontend |
 | Draft tournament name, description and date editing | Schema 33, refreshed runtime grants and matching API/frontend |
@@ -31,8 +32,9 @@ rounds use net hole and placement points; match play uses +3/+1/−1 outcomes on
 See the [README rules](../README.md#fantasy) and the
 [Fantasy setup and release checks](#fantasy-setup-and-release-checks).
 No additional Fantasy environment variable, secret, service or scheduler is
-required. A schema-37 installation needs matching current API/frontend builds;
-the UI and acceptance work introduced no later migration.
+required. A schema-37 installation must apply schema 38 and refresh runtime
+grants for the current optional-awards release. Fantasy scoring rules remain
+unchanged.
 
 For an existing installation, use [Upgrade and rollback](#upgrade-and-rollback).
 For a new host, follow configuration and initial deployment below. Finish with
@@ -459,6 +461,31 @@ corrections and confirmation require connectivity and current authorization.
 Deploy strict nullable overall and match decoders with the API: match-only private
 overall reads are explicitly not applicable and public overall sharing unavailable.
 Mixed public summaries keep their existing allowlist and exclude match facts.
+
+### Schema 38 optional round awards
+
+Apply `0038_round_awards.sql` with the owner migration command and refresh runtime
+grants before starting matching API/frontend builds. No new configuration, worker
+or secret is needed. Migration creates typed award slots and immutable history;
+it creates no awards and preserves existing tournament/player/round/score facts.
+Awards remain optional and do not gate completion or locking. Back up award
+history and current slots with the complete application database.
+
+Use the usual verified backup, `RUN_MIGRATIONS=false`, owner migration and runtime
+permission refresh. Verify `/api/health` and `/api/ready`. Older schema-37 binaries
+reject the upgraded schema. Rollback requires restoring the pre-upgrade backup
+into a fresh volume with matching binaries; never delete audit records, disable
+guards or edit applied migrations to downgrade.
+
+In a disposable test tournament, complete a non-match round with no awards and
+confirm it remains lockable. Add closest-to-pin and longest-drive, first to one
+player and then replace/remove independently with reasons. Verify a base 72
+becomes 70, the teammate stays unchanged, gross and Fantasy results remain
+unchanged, and locked-round changes require correction acknowledgment. For
+Stableford verify original card points plus separate competition points. Check
+member/anonymous denial of the admin award route and hidden-final concealment.
+Use the [current local acceptance evidence](validation/round-awards-2026-10-14/README.md)
+as a reference, not as proof of hosted deployment.
 
 ### Schemas 35–37 Fantasy persistence
 

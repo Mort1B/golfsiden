@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, waitFor, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { createMemoryRouter, RouterProvider } from 'react-router-dom'
+import { ScoringGuardProvider } from '../features/scoring/ScoringGuardProvider'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../api/client'
 import { tournamentApi, tournamentKeys } from '../api/tournaments'
@@ -18,11 +19,8 @@ const auth: AuthContextValue = {
   session, loading: false, error: null, signIn: vi.fn(), establishSession: vi.fn(), signOut: vi.fn(), retry: vi.fn(),
 }
 function tree(value: AuthContextValue = auth) {
-  return <QueryClientProvider client={client}><AuthContext value={value}>
-    <MemoryRouter initialEntries={[`/manage/tournaments/${tournament.id}?round=${round.id}`]}>
-      <Routes><Route path="/manage/tournaments/:tournamentId" element={<TournamentManagementPage />} /></Routes>
-    </MemoryRouter>
-  </AuthContext></QueryClientProvider>
+  const router=createMemoryRouter([{path:'/manage/tournaments/:tournamentId',element:<TournamentManagementPage/>}],{initialEntries:[`/manage/tournaments/${tournament.id}?round=${round.id}`]})
+  return <QueryClientProvider client={client}><AuthContext value={value}><ScoringGuardProvider><RouterProvider router={router}/></ScoringGuardProvider></AuthContext></QueryClientProvider>
 }
 beforeEach(() => {
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } })

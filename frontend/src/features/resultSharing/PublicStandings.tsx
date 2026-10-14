@@ -8,7 +8,7 @@ export function PublicStandings({ board }: { board: PublicResults }) {
     <h1>{board.tournament_name}</h1>
     <h2>{metricLabel(board.metric)} sammenlagt</h2>
     <p>Beste {board.required_counted_rounds} av {board.final_round_number} runder.</p>
-    {board.entries.some(entry => entry.value) && <p>Sammenlagtekvivalent: Stableford omregnes til 36 minus poeng på fullt kort, ellers 2 per løste hull minus poeng. Slagspill bidrar med score mot par. Lavest resultat vinner.</p>}
+    {board.entries.some(entry => entry.value) && <p>Sammenlagtekvivalent: Stableford omregnes til 36 minus konkurransepoeng på fullt kort, ellers 2 per løste hull minus poeng. Slagspill bidrar med score mot par. Valgfrie netto-utmerkelser inngår som konkurransepoeng. Lavest resultat vinner.</p>}
     <p><strong>Lik totalscore: {tieBreakLabel(board.tie_break_policy)}.</strong> {tieBreakExplanation(board.tie_break_policy)}</p>
     {board.visibility.mode === 'front_nine' && <p className="public-result-notice">Finalens bakni er skjult. Bare synlige resultater inngår her.</p>}
     {board.entries.length === 0 ? <p>Ingen resultater å vise ennå.</p> : <ol className="public-result-list">

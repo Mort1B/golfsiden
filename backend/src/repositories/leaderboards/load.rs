@@ -68,6 +68,17 @@ pub(super) async fn related(
     .await?;
 
     let mut related = Related::default();
+    let awards = sqlx::query_as::<_, (Uuid, Uuid, crate::domain::round_awards::AwardType)>("SELECT round_id, player_id, award_type FROM round_awards WHERE round_id = ANY($1) AND player_id IS NOT NULL ORDER BY round_id, award_type").bind(&round_ids).fetch_all(&mut *connection).await?;
+    for (round, player_id, award_type) in awards {
+        related
+            .awards
+            .entry(round)
+            .or_default()
+            .push(crate::domain::round_awards::AwardFact {
+                player_id,
+                award_type,
+            });
+    }
     for (round_id, hole_id, player_id, gross) in stableford_inputs {
         let input = gross
             .map(|n| {
@@ -179,6 +190,7 @@ pub(super) async fn related(
 
 #[derive(Default)]
 struct Related {
+    awards: HashMap<Uuid, Vec<crate::domain::round_awards::AwardFact>>,
     stableford_inputs: HashMap<Uuid, Vec<crate::domain::leaderboards::StablefordInputFact>>,
     holes: HashMap<Uuid, Vec<HoleFact>>,
     snapshots: HashMap<Uuid, Vec<SnapshotFact>>,
@@ -193,6 +205,7 @@ impl Related {
     fn take(&mut self, round: RoundFact) -> RoundLeaderboardFacts {
         let id = round.round_id;
         RoundLeaderboardFacts {
+            awards: self.awards.remove(&id).unwrap_or_default(),
             stableford_inputs: self.stableford_inputs.remove(&id).unwrap_or_default(),
             round,
             holes: self.holes.remove(&id).unwrap_or_default(),

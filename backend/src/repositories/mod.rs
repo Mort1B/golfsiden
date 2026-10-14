@@ -30,3 +30,5 @@ pub mod match_play;
 pub mod player_claims;
 
 pub mod fantasy;
+
+pub mod round_awards;

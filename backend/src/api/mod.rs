@@ -13,6 +13,7 @@ mod password_recovery;
 mod player_claims;
 mod profile;
 mod result_sharing;
+mod round_awards;
 mod rounds;
 mod scorecards;
 mod stableford;
@@ -55,6 +56,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .merge(tournament_details::routes())
         .merge(tournament_creation::routes())
         .merge(rounds::routes())
+        .merge(round_awards::routes())
         .merge(scorecards::routes())
         .merge(four_ball::routes())
         .merge(stableford::routes())

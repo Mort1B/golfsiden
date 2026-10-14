@@ -1,3 +1,4 @@
+import { decodeNetAwards, validateNetAwards } from './awards'
 import { decodeNativeValue, validateNativeRanks } from './values'
 import { ownerTypeForScoringFormat } from '../scoringFormats'
 import { decodeArray, decodeBoolean, decodeInteger, decodeObject, decodeString, decodeUuid } from '../decoder'
@@ -12,6 +13,7 @@ function decodeNullableBoolean(value: unknown, path: string): boolean | null {
 function roundEntry(value: unknown, path: string): RoundLeaderboardEntry {
   const data = decodeObject(value, path, 'resultatdata')
   return {
+    ...(data.net_awards !== undefined ? { net_awards: decodeNetAwards(data.net_awards, path) } : {}),
     position: nullablePosition(data.position, `${path}.position`), tied: decodeBoolean(data.tied, `${path}.tied`, 'resultatdata'),
     owner: decodeLeaderboardOwner(data.owner, `${path}.owner`), owner_name: decodeString(data.owner_name, `${path}.owner_name`, 'resultatdata'),
     members: decodeArray(data.members, `${path}.members`, decodeLeaderboardMember, 'resultatdata'),
@@ -56,6 +58,9 @@ export function decodeRoundLeaderboard(value: unknown, expectedRoundId: string, 
     if ((entry.value !== undefined) !== (decoded.scoring_format === 'individual_stableford')) invalidLeaderboard(`${path}.value`)
     if (entry.value && entry.value.actual_gross_total !== null
       && entry.value.actual_net_total !== entry.value.actual_gross_total - (entry.playing_handicap ?? invalidLeaderboard(`${path}.playing_handicap`))) invalidLeaderboard(`${path}.actual_net_total`)
+    const awardsPermitted = decoded.metric === 'net' && !restricted && entry.complete === true && ['completed','locked'].includes(decoded.status)
+    validateNetAwards(entry.net_awards, entry.value, entry.net_total, awardsPermitted && entry.owner.type === 'player', path)
+    entry.members.forEach(member => validateNetAwards(member.net_awards, undefined, entry.net_total, awardsPermitted, path, true))
     if (entry.value === undefined) {
     const selected = decoded.metric === 'gross' ? entry.gross_total : entry.net_total
     if (entry.score_to_par !== selected - entry.par_played) invalidLeaderboard(`${path}.score_to_par`)

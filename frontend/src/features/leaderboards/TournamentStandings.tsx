@@ -69,6 +69,7 @@ function TournamentRow({
             {provisionalProgressLabel(provisional)}
           </p>
         )}
+        {metric === 'net' && entry.contributions.some(c=>c.counted&&c.net_awards) && <p>Netto inkluderer personlige rundeutmerkelser. Se bidrag for grunnlag og justering.</p>}
         {tieBreak !== null && (
           <p className="leaderboard-tie-break">Siste runde{entry.value ? ' (ekvivalent)' : ''}: {scoreToParLabel(tieBreak)} {metricLabel(metric).toLowerCase()} · sammenlignet ved lik totalscore</p>
         )}
@@ -105,7 +106,7 @@ export function TournamentStandings({ leaderboard, rounds }: { leaderboard: Tour
   )
   return (
     <div className="standings-section">
-      {leaderboard.entries.some(entry => entry.value) && <p>Sammenlagtekvivalent: Stableford omregnes til 36 minus poeng på fullt kort, ellers 2 per løste hull minus poeng. Slagspill bidrar med score mot par. Lavest resultat vinner.</p>}
+      {leaderboard.entries.some(entry => entry.value) && <p>Sammenlagtekvivalent: Stableford omregnes til 36 minus konkurransepoeng på fullt kort, ellers 2 per løste hull minus poeng. Slagspill bidrar med score mot par. Valgfrie netto-utmerkelser inngår som konkurransepoeng. Lavest resultat vinner.</p>}
       <div className="standings-heading">
         <div><p>Sammenlagt</p><h2>{metricLabel(leaderboard.metric)} resultat</h2></div>
         <span>Beste {leaderboard.required_counted_rounds} av {rounds.filter(r => r.scoring_format !== 'singles_match_play').length}</span>

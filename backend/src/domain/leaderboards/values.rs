@@ -10,7 +10,9 @@ impl TournamentContribution {
     pub fn equivalent(&self, metric: LeaderboardMetric) -> i32 {
         match (&self.stableford, metric) {
             (Some(v), LeaderboardMetric::Gross) => v.gross_equivalent,
-            (Some(v), LeaderboardMetric::Net) => v.net_equivalent,
+            (Some(v), LeaderboardMetric::Net) => {
+                v.net_equivalent + self.net_awards.as_ref().map_or(0, |a| a.adjustment())
+            }
             (None, LeaderboardMetric::Gross) => self.gross_total - self.par_total,
             (None, LeaderboardMetric::Net) => self.net_total - self.par_total,
         }
@@ -39,6 +41,9 @@ impl Serialize for RoundLeaderboardEntry {
         } else {
             fields!(map, self, gross_total, net_total, par_played, score_to_par);
         }
+        if let Some(awards) = &self.net_awards {
+            map.serialize_entry("net_awards", awards)?;
+        }
         map.end()
     }
 }
@@ -61,6 +66,9 @@ impl Serialize for TournamentContribution {
             map.serialize_entry("value",&serde_json::json!({"type":"stableford","version":1,"gross_points":values.gross_points,"net_points":values.net_points,"gross_equivalent":values.gross_equivalent,"net_equivalent":values.net_equivalent,"actual_gross_total":values.actual_gross_total,"actual_net_total":values.actual_net_total}))?;
         } else {
             fields!(map, self, gross_total, net_total, par_total, score_to_par);
+        }
+        if let Some(awards) = &self.net_awards {
+            map.serialize_entry("net_awards", awards)?;
         }
         map.end()
     }

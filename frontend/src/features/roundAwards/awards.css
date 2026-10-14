@@ -1,0 +1,14 @@
+.round-awards { border-top: 1px solid #d8ded8; margin-top: 1.5rem; padding-top: 1rem; overflow-wrap: anywhere; }
+.award-editor { border: 0; border-bottom: 1px solid #d8ded8; margin: 1rem 0; padding: 0 0 1rem; min-width: 0; }
+.award-editor legend { font-weight: 700; padding: 0; }
+.award-editor label { display: flex; flex-direction: column; gap: .4rem; margin: .75rem 0; }
+.award-editor select, .award-editor textarea { width: 100%; max-width: 100%; min-width: 0; min-height: 44px; padding: .5rem; }
+.award-editor textarea { min-height: 88px; }
+.award-editor button, .round-awards summary { min-height: 44px; padding: .6rem; margin: .25rem .25rem .25rem 0; white-space: normal; }
+.award-editor .award-ack { flex-direction: row; align-items: center; min-height: 44px; }
+.award-ack input { width: 24px; height: 24px; flex-shrink: 0; }
+.round-awards li { margin-block: 1rem; }
+.net-awards { font-size: .85rem; overflow-wrap: anywhere; }
+
+.award-recovery { max-width: 960px; margin: 1rem auto; padding: 1rem; overflow-wrap: anywhere; }
+.award-recovery button { min-height: 44px; min-width: 44px; padding: .6rem; white-space: normal; }

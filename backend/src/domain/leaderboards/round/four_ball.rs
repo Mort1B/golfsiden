@@ -38,6 +38,7 @@ pub(super) fn build(
             .entry(member.team_id)
             .or_default()
             .push(LeaderboardMember {
+                net_awards: None,
                 player_id: member.player_id,
                 display_name: member.display_name.clone(),
                 display_order: member.display_order,
@@ -87,6 +88,7 @@ pub(super) fn build(
         let [a, b] = partners;
         let partners = [a?, b?];
         let mut entry = RoundLeaderboardEntry {
+            net_awards: None,
             stableford: None,
             position: None,
             tied: false,

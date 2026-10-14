@@ -130,6 +130,7 @@ fn team_owner_seeds<'a>(
             .entry(member.team_id)
             .or_default()
             .push(LeaderboardMember {
+                net_awards: None,
                 player_id: member.player_id,
                 display_name: member.display_name.clone(),
                 display_order: member.display_order,

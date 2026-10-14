@@ -1,3 +1,4 @@
+import { AwardsProvider } from '../features/roundAwards/AwardsProvider'
 import { usePublishTournamentNavigation } from '../routing/tournamentNavigation'
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -15,8 +16,8 @@ import { roundManagementUrl } from '../features/tournaments/lifecycle/lifecycleS
 
 export function TournamentManagementPage() {
   const { tournamentId = '' } = useParams()
-  const userId = useAuth().session?.user_id ?? ''
-  return <TournamentManagementWorkspace key={`${userId}:${tournamentId}`} tournamentId={tournamentId} />
+  const { session } = useAuth()
+  return <AwardsProvider key={`${session?.user_id}:${session?.csrf_token}:${tournamentId}`} tournament={tournamentId}><TournamentManagementWorkspace tournamentId={tournamentId} /></AwardsProvider>
 }
 
 function TournamentManagementWorkspace({ tournamentId }: { tournamentId: string }) {

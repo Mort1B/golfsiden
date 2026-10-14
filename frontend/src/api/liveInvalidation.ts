@@ -61,7 +61,7 @@ export function isVisibilityProjectionTarget(queryKey: readonly unknown[], userI
   if (queryKey[0] !== privateWorkspaceKeys.root[0] || queryKey[1] !== userId) return false
   if (queryKey[2] === 'leaderboards' || queryKey[2] === 'tournaments' && (queryKey[4] === 'match-table' || queryKey[4] === 'fantasy')) return true
   if (queryKey[2] !== 'rounds') return false
-  return queryKey[4] === 'match-play' && queryKey[5] !== 'scoring' || queryKey[4] === 'completion-validation'
+  return queryKey[4] === 'awards' || queryKey[4] === 'match-play' && queryKey[5] !== 'scoring' || queryKey[4] === 'completion-validation'
     || (queryKey[4] === 'scorecards' && queryKey[5] === 'read')
 }
 

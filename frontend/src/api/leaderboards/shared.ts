@@ -1,3 +1,4 @@
+import { decodeNetAwards } from './awards'
 import { decodeInteger, decodeObject, decodeString, decodeUuid, invalidData } from '../decoder'
 import { isScoringFormat } from '../scoringFormats'
 import type { LeaderboardMember, LeaderboardMetric, LeaderboardOwner, ParticipantStatus, RoundStatus, ScoringFormat } from '../types'
@@ -31,6 +32,7 @@ export function decodeLeaderboardOwner(value: unknown, path: string): Leaderboar
 export function decodeLeaderboardMember(value: unknown, path: string): LeaderboardMember {
   const data = decodeObject(value, path, 'resultatdata')
   return {
+    ...(data.net_awards !== undefined ? { net_awards: decodeNetAwards(data.net_awards, path) } : {}),
     player_id: decodeUuid(data.player_id, `${path}.player_id`, 'resultatdata'),
     display_name: decodeString(data.display_name, `${path}.display_name`, 'resultatdata'),
     display_order: data.display_order === null ? null : decodeInteger(data.display_order, `${path}.display_order`, undefined, undefined, 'resultatdata'),

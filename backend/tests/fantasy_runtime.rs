@@ -211,7 +211,7 @@ async fn schema34_upgrade_preserves_seeded_tournament_and_repeats(pool: PgPool) 
             .fetch_one(&pool)
             .await
             .unwrap(),
-        37
+        38
     );
     assert_eq!(
         sqlx::query_scalar::<_, i64>("SELECT count(*) FROM fantasy_games")

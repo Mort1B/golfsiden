@@ -92,6 +92,7 @@ pub struct StablefordInputFact {
 
 #[derive(Debug, Clone)]
 pub struct RoundLeaderboardFacts {
+    pub awards: Vec<crate::domain::round_awards::AwardFact>,
     pub stableford_inputs: Vec<StablefordInputFact>,
     pub round: RoundFact,
     pub holes: Vec<HoleFact>,
@@ -120,6 +121,8 @@ impl LeaderboardOwner {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct LeaderboardMember {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub net_awards: Option<crate::domain::round_awards::NetAwards>,
     pub player_id: Uuid,
     pub display_name: String,
     pub display_order: Option<i16>,
@@ -127,6 +130,7 @@ pub struct LeaderboardMember {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RoundLeaderboardEntry {
+    pub net_awards: Option<crate::domain::round_awards::NetAwards>,
     pub stableford: Option<crate::domain::stableford::card::Values>,
     pub position: Option<usize>,
     pub tied: bool,
@@ -204,6 +208,7 @@ pub struct TournamentLeaderboardEntry {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TournamentContribution {
+    pub net_awards: Option<crate::domain::round_awards::NetAwards>,
     pub stableford: Option<crate::domain::stableford::card::Values>,
     pub round_id: Uuid,
     pub mandatory: bool,

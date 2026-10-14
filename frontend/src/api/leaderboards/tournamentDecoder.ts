@@ -1,3 +1,4 @@
+import { decodeNetAwards, validateNetAwards } from './awards'
 import { decodeNativeValue, decodeOverallValue, contributionEquivalent } from './values'
 import { decodeTieBreakPolicy } from '../tieBreakPolicy'
 import { validateTournamentRanks } from './tournamentRanks'
@@ -25,6 +26,7 @@ function currentTeam(value: unknown, path: string): CurrentTeam | null {
 function contribution(value: unknown, path: string): TournamentContribution {
   const data = decodeObject(value, path, 'resultatdata')
   return {
+    ...(data.net_awards !== undefined ? { net_awards: decodeNetAwards(data.net_awards, path) } : {}),
     round_id: decodeUuid(data.round_id, `${path}.round_id`, 'resultatdata'),
     owner: decodeLeaderboardOwner(data.owner, `${path}.owner`),
     owner_name: decodeString(data.owner_name, `${path}.owner_name`, 'resultatdata'),
@@ -75,6 +77,7 @@ function validateContribution(
   leaderboard: TournamentLeaderboard,
   included: Set<string>,
 ): void {
+  validateNetAwards(item.net_awards, item.value, item.net_total, leaderboard.metric === 'net' && !item.provisional, path)
   if (item.holes_scored > item.number_of_holes) invalidLeaderboard(`${path}.holes_scored`)
   if (item.provisional) {
     if (item.holes_scored === 0

@@ -63,6 +63,7 @@ fn individual_round(id_value: u128, number: i16, status: RoundStatus) -> RoundLe
         ScoringFormat::IndividualStrokePlay,
     );
     RoundLeaderboardFacts {
+        awards: Vec::new(),
         stableford_inputs: Vec::new(),
         holes: holes(round.round_id),
         snapshots: vec![
@@ -145,6 +146,7 @@ fn scramble_uses_frozen_members_and_formula() {
     let round = round_fact(300, 1, RoundStatus::Open, ScoringFormat::TeamScramble);
     let team_id = id(310);
     let mut facts = RoundLeaderboardFacts {
+        awards: Vec::new(),
         stableford_inputs: Vec::new(),
         holes: holes(round.round_id),
         snapshots: vec![
@@ -195,6 +197,7 @@ fn foursomes_uses_preserved_team_handicap_instead_of_rounded_members() {
     let round = round_fact(320, 1, RoundStatus::Open, ScoringFormat::TwoPlayerFoursomes);
     let team_id = id(321);
     let facts = RoundLeaderboardFacts {
+        awards: Vec::new(),
         stableford_inputs: Vec::new(),
         holes: holes(round.round_id),
         snapshots: vec![
@@ -230,6 +233,7 @@ fn handicap_disabled_scramble_still_requires_exactly_two_frozen_members() {
     round.handicap_enabled = false;
     let team_id = id(310);
     let facts = RoundLeaderboardFacts {
+        awards: Vec::new(),
         stableford_inputs: Vec::new(),
         holes: holes(round.round_id),
         snapshots: vec![snapshot(round.round_id, 1, "Ada", 8, 8)],
@@ -263,6 +267,7 @@ fn tournament_aggregates_changing_team_attribution_and_ranks_round_count_first()
     let round = round_fact(300, 2, RoundStatus::Locked, ScoringFormat::TeamScramble);
     let team_id = id(310);
     let second = RoundLeaderboardFacts {
+        awards: Vec::new(),
         stableford_inputs: Vec::new(),
         holes: holes(round.round_id),
         snapshots: vec![
@@ -435,6 +440,7 @@ fn case_insensitive_name_ties_fall_directly_to_uuid() {
     let team_id = id(310);
     let scramble_round = round_fact(300, 1, RoundStatus::Open, ScoringFormat::TeamScramble);
     let scramble = RoundLeaderboardFacts {
+        awards: Vec::new(),
         stableford_inputs: Vec::new(),
         holes: holes(scramble_round.round_id),
         snapshots: vec![
@@ -464,6 +470,7 @@ fn stored_fact_validation_rejects_missing_snapshots_duplicate_attribution_and_in
     let team_id = id(310);
     let round = round_fact(300, 1, RoundStatus::Open, ScoringFormat::TeamScramble);
     let base = RoundLeaderboardFacts {
+        awards: Vec::new(),
         stableford_inputs: Vec::new(),
         holes: holes(round.round_id),
         snapshots: vec![

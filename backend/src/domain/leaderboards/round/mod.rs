@@ -29,6 +29,16 @@ pub fn build_round_leaderboard_projected(
     metric: LeaderboardMetric,
     visibility: VisibilityMetadata,
 ) -> Result<RoundLeaderboard, LeaderboardError> {
+    let mut result = build_base(facts, metric, visibility)?;
+    super::awards::adjust_round(&mut result, &facts.awards);
+    Ok(result)
+}
+
+fn build_base(
+    facts: &RoundLeaderboardFacts,
+    metric: LeaderboardMetric,
+    visibility: VisibilityMetadata,
+) -> Result<RoundLeaderboard, LeaderboardError> {
     let round = &facts.round;
     if round.scoring_format == crate::domain::models::ScoringFormat::SinglesMatchPlay {
         return Err(LeaderboardError::InvalidStoredData);
@@ -212,6 +222,7 @@ fn assemble_entries(
             let holes_scored = owner_scores.len();
             let restricted = visibility == VisibilityMode::FrontNine;
             Ok(RoundLeaderboardEntry {
+                net_awards: None,
                 stableford: None,
                 position: None,
                 tied: false,

@@ -1,3 +1,4 @@
+import { awardsKey } from './roundAwards'
 import { QueryClient, QueryObserver } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 import { leaderboardKeys } from './leaderboards'
@@ -36,6 +37,7 @@ it('deduplicates return checks and revalidates identity before refetching privat
 function seededClient() {
   const queryClient = new QueryClient()
   const keys = {
+    awards: awardsKey('user-one','round-one'),
     roundLeaderboard: leaderboardKeys.round('user-one', 'round-one', 'gross'),
     tournamentLeaderboard: leaderboardKeys.tournament('user-one', 'tour-one', 'net'),
     completion: privateWorkspaceKeys.completion('user-one', 'round-one'),
@@ -54,6 +56,7 @@ describe('visibility-safe live invalidation', () => {
 
       const invalidation = handleTournamentLiveSignal(queryClient, 'user-one', signal)
 
+      expect(queryClient.getQueryData(keys.awards)).toBeUndefined()
       expect(queryClient.getQueryData(keys.roundLeaderboard)).toBeUndefined()
       expect(queryClient.getQueryData(keys.tournamentLeaderboard)).toBeUndefined()
       expect(queryClient.getQueryData(keys.completion)).toBeUndefined()

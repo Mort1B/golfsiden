@@ -92,6 +92,7 @@ pub(super) fn build(
             return Err(invalid());
         }
         entries.push(RoundLeaderboardEntry {
+            net_awards: None,
             stableford: Some(values),
             position: None,
             tied: false,

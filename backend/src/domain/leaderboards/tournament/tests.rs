@@ -32,6 +32,7 @@ fn completed_round(round_number: i16, scores: &[(u128, i16)]) -> RoundLeaderboar
         },
     ];
     RoundLeaderboardFacts {
+        awards: Vec::new(),
         stableford_inputs: Vec::new(),
         round: RoundFact {
             round_id,
@@ -109,6 +110,7 @@ fn completed_foursomes_round(round_number: i16) -> RoundLeaderboardFacts {
         },
     ];
     RoundLeaderboardFacts {
+        awards: Vec::new(),
         stableford_inputs: Vec::new(),
         round: RoundFact {
             round_id,
@@ -237,6 +239,7 @@ fn final_open_round(player_id: u128) -> RoundLeaderboardFacts {
         })
         .collect::<Vec<_>>();
     RoundLeaderboardFacts {
+        awards: Vec::new(),
         stableford_inputs: Vec::new(),
         round: RoundFact {
             round_id,
@@ -789,3 +792,79 @@ fn provisional_even_par_players_remain_tied_with_each_other() {
 
 #[path = "tie_break_tests.rs"]
 mod tie_break_tests;
+
+#[test]
+fn awards_adjust_personal_team_contributions_before_best_round_selection() {
+    use crate::domain::round_awards::{AwardFact, AwardType};
+    let mut team = completed_foursomes_round(1);
+    let base = build_tournament_leaderboard(&facts(vec![team.clone()], 1), LeaderboardMetric::Net)
+        .unwrap();
+    let winner = base.entries[0].player_id;
+    team.awards = vec![
+        AwardFact {
+            player_id: winner,
+            award_type: AwardType::ClosestToPin,
+        },
+        AwardFact {
+            player_id: winner,
+            award_type: AwardType::LongestDrive,
+        },
+    ];
+    let adjusted =
+        build_tournament_leaderboard(&facts(vec![team.clone()], 1), LeaderboardMetric::Net)
+            .unwrap();
+    for old in &base.entries {
+        let new = adjusted
+            .entries
+            .iter()
+            .find(|e| e.player_id == old.player_id)
+            .unwrap();
+        assert_eq!(
+            new.net_total,
+            old.net_total - if old.player_id == winner { 2 } else { 0 }
+        );
+        assert_eq!(new.gross_total, old.gross_total);
+    }
+    let mut individual = completed_round(2, &[(1, 4), (2, 4)]);
+    for s in &mut individual.snapshots {
+        s.playing_handicap = 0;
+    }
+    let mut first = completed_round(1, &[(1, 4), (2, 4)]);
+    first.awards = vec![AwardFact {
+        player_id: id(2),
+        award_type: AwardType::LongestDrive,
+    }];
+    let chosen =
+        build_tournament_leaderboard(&facts(vec![first, individual], 1), LeaderboardMetric::Net)
+            .unwrap();
+    let entry = chosen
+        .entries
+        .iter()
+        .find(|e| e.player_id == id(2))
+        .unwrap();
+    assert_eq!(entry.position, Some(1));
+    assert_eq!(entry.net_total, 7);
+    assert!(
+        entry
+            .contributions
+            .iter()
+            .find(|c| c.round_id == id(101))
+            .unwrap()
+            .counted
+    );
+    let gross =
+        build_tournament_leaderboard(&facts(vec![team], 1), LeaderboardMetric::Gross).unwrap();
+    assert_eq!(
+        gross
+            .entries
+            .iter()
+            .find(|e| e.player_id == winner)
+            .unwrap()
+            .net_total,
+        base.entries
+            .iter()
+            .find(|e| e.player_id == winner)
+            .unwrap()
+            .net_total
+    );
+}

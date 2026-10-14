@@ -93,6 +93,7 @@ pub(super) fn attribute_round(
         let candidate = CandidateContribution {
             round_number,
             value: TournamentContribution {
+                net_awards: entry.net_awards.clone(),
                 stableford: entry.stableford.clone(),
                 round_id: leaderboard.round_id,
                 mandatory: mandatory_round_id == Some(leaderboard.round_id),
@@ -107,7 +108,10 @@ pub(super) fn attribute_round(
                 score_to_par: entry.stableford.as_ref().map_or(entry.score_to_par, |v| {
                     match leaderboard.metric {
                         super::super::LeaderboardMetric::Gross => v.gross_equivalent,
-                        super::super::LeaderboardMetric::Net => v.net_equivalent,
+                        super::super::LeaderboardMetric::Net => {
+                            v.net_equivalent
+                                + entry.net_awards.as_ref().map_or(0, |a| a.adjustment())
+                        }
                     }
                 }),
                 counted: false,
@@ -119,12 +123,18 @@ pub(super) fn attribute_round(
             }
             LeaderboardOwner::Team { .. } => {
                 for member in entry.members {
+                    let mut personal = candidate.clone();
+                    personal.value.net_awards = member.net_awards;
+                    if let Some(award) = &personal.value.net_awards {
+                        personal.value.net_total += award.adjustment();
+                        personal.value.score_to_par += award.adjustment();
+                    }
                     add(
                         participants,
                         contributions,
                         attributed,
                         member.player_id,
-                        candidate.clone(),
+                        personal,
                     )?;
                 }
             }

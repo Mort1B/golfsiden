@@ -79,6 +79,20 @@ bracket generation.
    cards are confirmed, the organizer can complete and lock the round, then
    complete and archive the tournament when eligible.
 
+## Optional round awards
+
+After a non-match round is completed or locked, a tournament administrator can
+record **Closest to pin** and **Longest drive** under **Valgfrie rundeutmerkelser**
+in round management. Each is optional and gives its winner −1 on the net golf
+result. Both may go to one player for −2. Select a winner, give a reason and save;
+replacements, removals and locked-round awards require correction acknowledgment.
+
+Gross results, recorded strokes and Fantasy points stay unchanged. Team awards
+apply only to the winner's individual contribution; the shared team result and
+partner remain unchanged. Stableford shows a separate +1 competition point per
+award while retaining the card's original points. Results and history display
+the base and adjusted values. See the [award flow and API](docs/Documentation.md#optional-round-awards).
+
 ## Fantasy
 
 Fantasy is a separate game within a tournament: it uses the recorded golf results
@@ -242,7 +256,7 @@ the exact build, migration, permission, backup, restore, rollback, and launch
 procedure. Never reuse `.env.example` credentials or run the development seed in
 production.
 
-The current application requires **schema 37** through `0037_fantasy_guards.sql`.
+The current application requires **schema 38** through `0038_round_awards.sql`.
 For an existing installation:
 
 1. Record the current release, verify a backup and copy it off-host.
@@ -255,8 +269,8 @@ For an existing installation:
 Use the [exact upgrade commands](docs/deployment_guide.md#upgrade-sequence).
 Fantasy needs no additional service, scheduler, secret or environment variable.
 Installing it does not enable games or enroll members automatically. On an
-installation already at schema 37, the Fantasy UI and acceptance work adds no
-further migration. An incompatible-schema rollback requires restoring a verified
+installation at schema 37, apply schema 38 for optional round awards and refresh
+runtime grants. An incompatible-schema rollback requires restoring a verified
 backup into a fresh volume; see [Upgrade and rollback](docs/deployment_guide.md#upgrade-and-rollback).
 
 The [local Fantasy acceptance report](docs/validation/fantasy-release-2026-10-08/README.md)

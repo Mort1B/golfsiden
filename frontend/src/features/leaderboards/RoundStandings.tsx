@@ -1,3 +1,4 @@
+import { NetAwardSummary } from './NetAwardSummary'
 import { CheckCircle2, Clock3, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { LeaderboardMetric, RoundLeaderboard, RoundLeaderboardEntry } from '../../api/types'
@@ -45,7 +46,7 @@ function RoundRowWithTarget({ entry, leaderboard }: { entry: RoundLeaderboardEnt
 }
 
 function RoundRowContent({ entry, metric, visibleHoleCount }: { entry: RoundLeaderboardEntry; metric: LeaderboardMetric; visibleHoleCount: number }) {
-  const total = entry.value ? metric === 'gross' ? entry.value.gross_points : entry.value.net_points : metric === 'gross' ? entry.gross_total : entry.net_total
+  const total = entry.value ? metric === 'gross' ? entry.value.gross_points : (entry.net_awards?.type === 'stableford' ? entry.net_awards.competition_net_points : entry.value.net_points) : metric === 'gross' ? entry.gross_total : entry.net_total
   const hasScore = entry.holes_scored > 0
   return <>
     <div className="leaderboard-position" aria-label={entry.tied && entry.position !== null ? `Delt plass ${entry.position}` : undefined}>
@@ -56,6 +57,7 @@ function RoundRowContent({ entry, metric, visibleHoleCount }: { entry: RoundLead
       {entry.owner.type === 'team' && entry.members.length > 0 && (
         <p className="leaderboard-members"><Users aria-hidden="true" />{entry.members.map((member) => member.display_name).join(' · ')}</p>
       )}
+      <NetAwardSummary awards={entry.net_awards}/>{entry.members.filter(member=>member.net_awards).map(member=><div key={member.player_id}><span>{member.display_name} · personlig utmerkelse</span><NetAwardSummary awards={member.net_awards}/></div>)}
       <p className="leaderboard-progress">
         {entry.confirmed ? <CheckCircle2 aria-hidden="true" /> : <Clock3 aria-hidden="true" />}
         {progressLabel(entry, visibleHoleCount)}

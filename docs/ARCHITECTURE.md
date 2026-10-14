@@ -1078,6 +1078,7 @@ Implemented resources:
 | `GET` | `/api/rounds/{round_id}/score-access` | Retrieve writable score owners for the session |
 | `POST` | `/api/rounds/{round_id}/complete` | Complete a ready open round atomically |
 | `POST` | `/api/rounds/{round_id}/lock` | Lock a ready completed round atomically |
+| `GET`, `PUT` | `/api/rounds/{round_id}/awards` | Exact-admin optional net awards, revisioned commands and immutable receipts |
 | `POST` | `/api/tournaments/{tournament_id}/complete` | Exact-admin explicit completion after every configured round is locked |
 | `POST` | `/api/tournaments/{tournament_id}/archive` | Exact-admin explicit archive of a completed tournament; preserves private history |
 | `GET` | `/api/rounds/{round_id}/leaderboards/gross` | Retrieve the live gross round leaderboard |
@@ -2726,3 +2727,45 @@ queries. It requires current connected round reads and a successful post-mount
 access fetch, and remounts for account/CSRF changes. Its contextual resume link is
 advisory navigation; Score still performs full fresh authority checks. It stores
 no protected result projection or permission in navigation memory.
+
+
+## Optional personal round awards
+
+Schema 38 adds `round_awards` current slots and `round_award_history` immutable
+command receipts. The typed enum admits only closest-to-pin and longest-drive.
+One current slot exists per round/type; removal preserves a null-winner tombstone
+and monotonic revision. Composite foreign keys bind current and previous winners
+to preserved round handicap snapshots. No hole score, handicap or Fantasy source
+row is rewritten. Audit/current matching, immutable history, active exact-admin
+session, supported completed/locked state, correction acknowledgment and atomic
+application are enforced again by PostgreSQL guards.
+
+`repositories::round_awards` owns command validation and transactional persistence.
+It serializes under the parent round lock, coordinates request identity, and
+rechecks session/authority after waits and before commit. Exact replay returns the
+stored historical receipt; its actor must match the submitting account. The API
+maps typed errors and emits a round invalidation only after a new commit. Reads
+are admin-only and private/no-store. Full history is scoped to one round and
+ordered by creation time/request ID. Command and revision contracts are described
+in [Documentation](Documentation.md#round-award-api).
+
+The pure leaderboard award module applies personal adjustments to permitted net
+projections. Individual round totals use adjusted net results; shared teams keep
+their sporting total/rank and annotate the affected member. Overall assembly
+applies awards after player attribution and before best-N selection and ties.
+Stableford retains native values and uses a distinct competition-point/equivalent
+summary for ranking. Gross and concealed projections bypass awards. Public
+sharing consumes existing adjusted aggregates through its unchanged allowlist.
+Fantasy reads independent native facts and source generations, so even a changed
+golf winner leaves Fantasy placement, hole totals and source tokens unchanged.
+
+`AwardsProvider` sits above management query/access branches and is keyed by
+account, CSRF session and tournament. It retains only drafts, exact uncertain
+commands, own receipts and status. Eligibility, current awards and audit history
+remain in TanStack Query and participate in existing denial/session/SSE erasure.
+Every dispatch/read completion checks canonical session identity. Recovery stays
+available when the editor unmounts; acknowledgment precedes read reconciliation,
+and read failure never causes another write. Receipt identity/body/revision and
+actor are checked before acknowledgment. Optional award-query failures are
+excluded only from lifecycle readiness-failure classification, while their
+invalidation remains intact. No persistent offline award queue is introduced.

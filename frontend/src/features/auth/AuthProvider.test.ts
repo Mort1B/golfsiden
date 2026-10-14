@@ -1,3 +1,4 @@
+import { awardsKey } from '../../api/roundAwards'
 import { QueryClient, QueryObserver } from '@tanstack/react-query'
 import { describe, expect, it } from 'vitest'
 import type { AuthSession } from '../../api/auth'
@@ -139,3 +140,5 @@ describe('AuthProvider private cache transitions', () => {
     expect(queryClient.getQueryData(authKeys.session)).toBeNull()
   })
 })
+
+it('clears administrator award projections on same-account CSRF renewal',()=>{const client=new QueryClient();const current=session('same-user');client.setQueryData(authKeys.session,current);client.setQueryData(awardsKey(current.user_id,'round'),{history:['private']});publishSessionTransition(client,{...current,csrf_token:'renewed'});expect(client.getQueryData(awardsKey(current.user_id,'round'))).toBeUndefined()})

@@ -1,3 +1,4 @@
+import { RoundAwards } from '../../roundAwards/RoundAwards'
 import { MatchLifecycle } from '../../matchPlay/MatchLifecycle'
 import { useEffect, useRef, useState } from 'react'
 import { CheckCircle2, LockKeyhole, RefreshCw } from 'lucide-react'
@@ -82,6 +83,7 @@ export function SelectedRoundLifecycle({ tournament, selectedRound, authorityRef
         </div>
       </fieldset>}
     </>}
+    {(state.round.status === 'completed' || state.round.status === 'locked') && <RoundAwards round={state.round.id} tournament={tournament.id} authorityRefreshing={authorityRefreshing || state.busy || state.refreshing} />}
     <p className="round-lifecycle-visibility">Fullføring og låsing endrer ikke synligheten av finalens siste ni hull. Visning styres separat.</p>
   </div>
 }

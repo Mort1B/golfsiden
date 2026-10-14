@@ -19,3 +19,5 @@ pub enum LeaderboardError {
 mod stableford_tests;
 #[cfg(test)]
 mod tests;
+
+mod awards;

@@ -21,7 +21,7 @@ export function decodeOverallValue(data: Record<string, unknown>, path: string):
     selected: decodeInteger(d.selected, path), tie_break: d.tie_break === null ? null : decodeInteger(d.tie_break, path) }
 }
 export function contributionEquivalent(item: TournamentContribution, metric: LeaderboardMetric): number {
-  return item.value ? metric === 'gross' ? item.value.gross_equivalent : item.value.net_equivalent
+  return item.value ? metric === 'gross' ? item.value.gross_equivalent : (item.net_awards?.type === 'stableford' ? item.net_awards.adjusted_net_equivalent : item.value.net_equivalent)
     : (metric === 'gross' ? item.gross_total : item.net_total) - item.par_total
 }
 export function overallSelected(item: { value?: { selected: number } } | { score_to_par: number }): number {
@@ -32,7 +32,7 @@ export function overallTieBreak(item: { value?: { tie_break: number | null } } |
 }
 export function validateNativeRanks(board: RoundLeaderboard): void {
   const points = (entry: RoundLeaderboard['entries'][number]) => entry.value
-    ? board.metric === 'gross' ? entry.value.gross_points : entry.value.net_points : invalidLeaderboard('value')
+    ? board.metric === 'gross' ? entry.value.gross_points : (entry.net_awards?.type === 'stableford' ? entry.net_awards.competition_net_points : entry.value.net_points) : invalidLeaderboard('value')
   let unranked = false
   board.entries.forEach((entry, index, all) => {
     if (entry.holes_scored === 0) {

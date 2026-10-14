@@ -101,12 +101,14 @@ export type LeaderboardOwner =
   | { type: 'team'; id: string }
 
 export interface LeaderboardMember {
+  net_awards?: import('./roundAwards/types').NetAwards
   player_id: string
   display_name: string
   display_order: number | null
 }
 
 interface RoundLeaderboardEntryBase {
+  net_awards?: import('./roundAwards/types').NetAwards
   position: number | null
   tied: boolean
   owner: LeaderboardOwner
@@ -144,6 +146,7 @@ export interface CurrentTeam {
 }
 
 interface TournamentContributionBase {
+  net_awards?: import('./roundAwards/types').NetAwards
   round_id: string
   owner: LeaderboardOwner
   owner_name: string

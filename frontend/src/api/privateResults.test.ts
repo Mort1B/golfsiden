@@ -1,3 +1,4 @@
+import { awardsKey } from './roundAwards'
 import { QueryClient, QueryObserver } from '@tanstack/react-query'
 import { expect, it } from 'vitest'
 import { ApiHttpError } from './http'
@@ -16,7 +17,7 @@ function setup() {
 }
 it('erases read projections across formats and metrics, preserves other accounts/trips and scoring state', () => {
   const client = setup(), owner = { type: 'player' as const, id: 'player' }
-  const erased = [leaderboardKeys.round('user','round','gross'), leaderboardKeys.round('user','round','net'), leaderboardKeys.tournament('user','trip','gross'), scoringKeys.read('user','round',owner), matchKeys.table('user','trip'), matchKeys.list('user','round'), matchKeys.listForPlayer('user','round','first'), matchKeys.listForPlayer('user','round','second'), matchKeys.read('user','round','match')]
+  const erased = [awardsKey('user','round'),leaderboardKeys.round('user','round','gross'), leaderboardKeys.round('user','round','net'), leaderboardKeys.tournament('user','trip','gross'), scoringKeys.read('user','round',owner), matchKeys.table('user','trip'), matchKeys.list('user','round'), matchKeys.listForPlayer('user','round','first'), matchKeys.listForPlayer('user','round','second'), matchKeys.read('user','round','match')]
   client.setQueryData(tournamentKeys.rounds('user', 'other'), [{ id: 'other-round', tournament_id: 'other' }])
   const preserved = [matchKeys.listForPlayer('other','round','first'), matchKeys.listForPlayer('user','other-round','first'), leaderboardKeys.round('user','other-round','gross'), scoringKeys.read('user','other-round',owner), leaderboardKeys.round('other','round','gross'), leaderboardKeys.tournament('user','other','gross'), scoringKeys.scoring('user','round',owner), matchKeys.scoring('user','round','match')]
   for (const key of [...erased, ...preserved]) client.setQueryData(key, { private: 'retained' })

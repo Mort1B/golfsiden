@@ -16,6 +16,7 @@ fn round(
 ) -> RoundLeaderboardFacts {
     let rid = id(100 + n as u128);
     let mut f = RoundLeaderboardFacts {
+        awards: Vec::new(),
         stableford_inputs: vec![],
         round: RoundFact {
             round_id: rid,
@@ -275,4 +276,57 @@ fn nine_visible_holes_twenty_points_gives_minus_two_and_legacy_serialization_is_
     assert!(json["entries"][0].get("value").is_none());
     assert_eq!(json["entries"][0]["gross_total"], 72);
     assert_eq!(json["entries"][0]["score_to_par"], 0);
+}
+
+#[test]
+fn awards_preserve_native_stableford_and_rank_competition_points() {
+    use crate::domain::round_awards::{AwardFact, AwardType, NetAwards};
+    let mut f = round(1, ScoringFormat::IndividualStableford, [0, 0], [0, 1]);
+    let before = build_round_leaderboard(&f, LeaderboardMetric::Net).unwrap();
+    let native = before
+        .entries
+        .iter()
+        .find(|e| e.owner == LeaderboardOwner::Player { id: id(2) })
+        .unwrap()
+        .stableford
+        .clone();
+    f.awards = vec![
+        AwardFact {
+            player_id: id(2),
+            award_type: AwardType::ClosestToPin,
+        },
+        AwardFact {
+            player_id: id(2),
+            award_type: AwardType::LongestDrive,
+        },
+    ];
+    let after = build_round_leaderboard(&f, LeaderboardMetric::Net).unwrap();
+    let winner = &after.entries[0];
+    assert_eq!(winner.owner, LeaderboardOwner::Player { id: id(2) });
+    assert_eq!(winner.stableford, native);
+    assert!(matches!(
+        winner.net_awards,
+        Some(NetAwards::Stableford {
+            base_net_points: 35,
+            competition_net_points: 37,
+            base_net_equivalent: 1,
+            adjusted_net_equivalent: -1,
+            ..
+        })
+    ));
+    let mut overall_facts = tournament(vec![f.clone()]);
+    overall_facts.counted_rounds = 1;
+    let overall = build_tournament_leaderboard(&overall_facts, LeaderboardMetric::Net).unwrap();
+    assert_eq!(overall.entries[0].player_id, id(2));
+    assert_eq!(overall.entries[0].score_to_par, -1);
+    assert_eq!(overall.entries[0].contributions[0].stableford, native);
+    let hidden = build_round_leaderboard_projected(
+        &f,
+        LeaderboardMetric::Net,
+        VisibilityMetadata {
+            mode: VisibilityMode::FrontNine,
+        },
+    )
+    .unwrap();
+    assert!(hidden.entries.iter().all(|e| e.net_awards.is_none()));
 }

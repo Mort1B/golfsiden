@@ -275,3 +275,30 @@ fn untied_primary_scores_do_not_expose_unused_comparison_values() {
             .all(|entry| !entry.tied && entry.tie_break_score_to_par.is_none())
     );
 }
+
+#[test]
+fn personal_award_resolves_final_tie_even_when_final_is_not_counted() {
+    use crate::domain::round_awards::{AwardFact, AwardType};
+    let mut final_round = round(3, 18, &[(1, 5), (2, 5), (3, 5)]);
+    final_round.awards = vec![AwardFact {
+        player_id: id(2),
+        award_type: AwardType::ClosestToPin,
+    }];
+    let input = configured(
+        vec![round(1, 18, &[(1, 4), (2, 4), (3, 4)]), final_round],
+        1,
+    );
+    let result = build_tournament_leaderboard(&input, LeaderboardMetric::Net).unwrap();
+    assert_eq!(result.entries[0].player_id, id(2));
+    assert_eq!(result.entries[0].tie_break_score_to_par, Some(17));
+    assert!(
+        !result.entries[0]
+            .contributions
+            .iter()
+            .find(|c| c.round_id == id(103))
+            .unwrap()
+            .counted
+    );
+    let gross = build_tournament_leaderboard(&input, LeaderboardMetric::Gross).unwrap();
+    assert!(gross.entries.iter().all(|e| e.tied));
+}

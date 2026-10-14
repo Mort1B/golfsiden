@@ -1,11 +1,97 @@
 # Project documentation
 
+## Optional round awards
+
+In tournament management, select a completed or locked non-match round and open
+**Valgfrie rundeutmerkelser**. **Closest to pin** and **Longest drive** each have an
+independent winner and reason. No winner is selected automatically, and neither
+award is required to complete or lock a round. Choose **Ingen vinner / fjern
+utmerkelse** to remove an existing award. Replacement, removal, re-awarding after
+removal, and all locked-round changes require explicit correction acknowledgment.
+**Historikk for utmerkelsene** preserves each accepted change and its reason.
+Only an exact tournament administrator can read this editor/history or write.
+Winners come from the preserved round field, including historical participants
+who have since withdrawn. Open/incomplete rounds and match play are unsupported.
+
+Each award subtracts one from the winner's official net round contribution;
+both awards may go to the same winner for −2. A base 72 becomes 71 or 70. In team
+rounds the shared team total/rank stays unchanged, and only the winner's personal
+contribution changes. Overall standings apply the adjustment before counted-round
+selection, aggregation and the existing final-round tie policy. Gross results,
+hole strokes, handicap snapshots, scorecard confirmation and all Fantasy points
+(including placement) stay unchanged.
+
+Stableford retains native hole/card points and actual strokes. Each award adds
+one separate net competition point and subtracts one from the overall comparison
+equivalent. For example, 36 native net points plus both awards gives 38 competition
+points and an equivalent of −2 instead of 0. These equivalents are not actual
+strokes. Net standings and player history show the original value, named awards
+and adjusted value. Hidden final results conceal the adjustment too. Public
+shares show adjusted permitted standings without audit reasons or actor metadata.
+
+Drafts, exact uncertain requests and own acknowledgments survive query clearing
+and round selection within the same management session. A missing response offers
+**Avklar samme …-innsending**, even when the editor cannot load; it replays the
+original request. Acknowledged writes followed by failed reads offer **Prøv
+oppdatering igjen**, which only reads. A stale revision requires explicit review
+before a new request. Unsent drafts may be discarded. Recovery is scoped to the
+account, CSRF session and tournament, does not survive reload, and is never queued
+offline. Unsaved/uncertain work guards navigation. Optional award-read failure
+never becomes a round-completion or locking requirement.
+
+### Round award API
+
+`GET /api/rounds/{round_id}/awards` returns `round_id`, `tournament_id`,
+`availability` (`available`, `round_not_completed`, `unsupported_format`),
+`correction_required`, `eligible_players`, exactly two current `awards` slots and
+immutable `history`. Slots contain `award_type`, required nullable `player_id`
+and a canonical decimal-string `revision`; an untouched slot has revision `"0"`.
+Award types are `closest_to_pin` and `longest_drive`.
+
+`PUT` at the same path accepts a strict version-1 command:
+
+```json
+{
+  "version": 1,
+  "request_id": "a3d0d668-d57a-4eea-a716-4196cc2b1c88",
+  "award_type": "closest_to_pin",
+  "player_id": null,
+  "expected_revision": "1",
+  "reason": "Corrected after checking the competition result",
+  "correction": true
+}
+```
+
+The nullable player field is required; null removes an existing winner. The
+reason must be nonblank, at most 500 UTF-8 bytes, and contain no NUL. The receipt
+contains request/round/type/player identity, `previous_player_id`, new revision,
+reason, correction flag, actor and timestamp. Identical replay returns the
+original receipt, including when a later change superseded it. Reusing an ID for
+a different command is rejected. Revisions remain strings to preserve BIGINT
+precision. Writes require the existing CSRF/session protection. Both routes use
+`Cache-Control: private, no-store`; a new accepted write emits one round event
+after commit. Replay emits none.
+
+Conflict codes are `round_award_revision_conflict`, `round_award_request_conflict`,
+`round_award_not_completed`, `round_award_unsupported_format` and
+`round_award_correction_required`. Invalid commands/participants return
+`validation_error`. Parsing can fail before receipt lookup, so a generic 400 on
+an already-uncertain replay is not proof the original write failed.
+
+Net result contracts add optional `net_awards`, absent for no award, gross views
+or concealed results. The `stroke` variant carries `awards`, `adjustment`,
+`base_net_total` and `adjusted_net_total`. The `stableford` variant carries
+`awards`, `adjustment`, `base_net_points`, `competition_net_points`,
+`base_net_equivalent` and `adjusted_net_equivalent`. Shared team entries attach
+personal summaries to members; individual entries and overall round contributions
+carry their own summary. Stableford's native result object remains unchanged.
+
 ## Fantasy competition
 
 Fantasy is an optional private game inside each tournament, available from
 **Fantasy · min firer og poengtavler** on the tournament page and the Fantasy link
 in tournament management. The route is `/tournaments/:tournamentId/fantasy`.
-Schema 37 and matching API/frontend builds are required. Fantasy does not alter
+The current release requires schema 38 and matching API/frontend builds. Fantasy does not alter
 golf scores, teams or sporting standings. The [local release acceptance report](validation/fantasy-release-2026-10-08/README.md)
 covers all six formats, changing teams across rounds and both leaderboards; hosted
 acceptance remains a separate operator check.

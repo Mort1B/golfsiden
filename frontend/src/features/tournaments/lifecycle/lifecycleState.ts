@@ -62,7 +62,7 @@ export async function reconcileLifecycleQueries(client: QueryClient, userId: str
   // inspect the current queries, and let fetching/authority gates hold pending actions.
   // Replace reads started before the mutation outcome, so they cannot restore old readiness.
   await client.invalidateQueries(filters)
-  const failed = client.getQueryCache().findAll(filters).some((query) => query.isActive()
+  const failed = client.getQueryCache().findAll(filters).some((query) => query.queryKey[4] !== 'awards' && query.isActive()
     && (query.state.status === 'error' || query.state.fetchStatus === 'paused'
       || (query.state.isInvalidated && query.state.fetchStatus === 'idle')))
   if (failed) throw new Error('Rundens data kunne ikke oppdateres.')
