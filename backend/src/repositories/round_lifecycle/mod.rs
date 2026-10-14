@@ -13,6 +13,7 @@ use crate::{
     },
     repositories::{
         auth,
+        session_read::{self, SessionReadError},
         tournament_authorization::{self, AuthorizationError},
     },
 };
@@ -45,25 +46,25 @@ pub async fn pairing_validation(
     Ok(result)
 }
 
-pub async fn pairing_validation_for_member(
+pub async fn pairing_validation_for_session(
     pool: &PgPool,
-    user_id: Uuid,
+    session: Uuid,
     round_id: Uuid,
-) -> Result<PairingValidation, AuthorizationError> {
-    let mut transaction = pool.begin().await?;
-    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-        .execute(&mut *transaction)
-        .await?;
-    tournament_authorization::require_round_member_read(&mut transaction, user_id, round_id)
-        .await?;
-    let mut validation = load::round(&mut transaction, round_id, false)
-        .await?
-        .map(|loaded| validate(&loaded.facts))
-        .ok_or(AuthorizationError::NotFound)?;
-    crate::repositories::match_play::setup::add_readiness(&mut transaction, &mut validation)
-        .await?;
-    transaction.commit().await?;
-    Ok(validation)
+) -> Result<PairingValidation, SessionReadError> {
+    session_read::retry(|| async {
+        let (mut transaction, user) = session_read::begin(pool, session).await?;
+        tournament_authorization::require_round_member_read(&mut transaction, user, round_id)
+            .await?;
+        let mut validation = load::round(&mut transaction, round_id, false)
+            .await?
+            .map(|loaded| validate(&loaded.facts))
+            .ok_or(AuthorizationError::NotFound)?;
+        crate::repositories::match_play::setup::add_readiness(&mut transaction, &mut validation)
+            .await?;
+        session_read::finish(transaction, session).await?;
+        Ok(validation)
+    })
+    .await
 }
 
 pub async fn open(pool: &PgPool, round_id: Uuid) -> Result<OpenRoundResult, OpenRoundError> {

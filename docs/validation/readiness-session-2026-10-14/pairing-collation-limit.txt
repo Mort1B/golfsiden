@@ -1,0 +1,35 @@
+     Running tests/pairing_team_sessions.rs (target/debug/deps/pairing_team_sessions-3a4872a11ac05169)
+
+running 14 tests
+test pairing_team_sessions::authorization::changed_membership_reloads_payload_from_a_fresh_snapshot ... ok
+test pairing_team_sessions::authorization::authorized_reads_serialize_before_later_revocation_and_credential_changes ... ok
+test pairing_team_sessions::authorization::credential_replacement_before_authority_denies_both_reads ... ok
+test pairing_team_sessions::authorization::membership_removal_retries_with_fresh_authority_on_both_reads ... ok
+test pairing_team_sessions::authorization::revocation_before_transactional_authorization_denies_both_reads ... ok
+test pairing_team_sessions::contracts::cancellation_releases_session_authority_for_both_reads ... ok
+test pairing_team_sessions::contracts::empty_round_reads_preserve_typed_pairing_and_empty_team_envelopes ... ok
+test pairing_team_sessions::contracts::concurrent_valid_reads_preserve_payloads_and_do_not_write_or_emit_sse ... ok
+test pairing_team_sessions::contracts::legacy_individual_groups_keep_identity_schedule_and_distinct_sorting ... FAILED
+test pairing_team_sessions::contracts::member_loading_uses_one_snapshot_for_group_and_member_facts ... ok
+test pairing_team_sessions::contracts::roles_cross_tournament_missing_invalid_and_put_contracts_are_preserved ... ok
+test pairing_team_sessions::expiry::empty_pairing_and_team_results_still_recheck_expiry ... ok
+test pairing_team_sessions::expiry::expiry_during_final_pairing_query_or_team_members_denies_reads ... ok
+test pairing_team_sessions::expiry::expiry_during_membership_wait_denies_both_reads ... ok
+
+failures:
+
+---- pairing_team_sessions::contracts::legacy_individual_groups_keep_identity_schedule_and_distinct_sorting stdout ----
+
+thread 'pairing_team_sessions::contracts::legacy_individual_groups_keep_identity_schedule_and_distinct_sorting' (486537) panicked at backend/tests/pairing_team_sessions/contracts.rs:215:5:
+assertion `left == right` failed
+  left: String("d1000000-0000-0000-0000-000000000001")
+ right: "d1000000-0000-0000-0000-000000000002"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    pairing_team_sessions::contracts::legacy_individual_groups_keep_identity_schedule_and_distinct_sorting
+
+test result: FAILED. 13 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 51.82s
+
+error: test failed, to rerun pass `--test pairing_team_sessions`

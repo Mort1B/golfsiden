@@ -1,0 +1,89 @@
+[
+  {
+    "width": 320,
+    "kind": "pairing",
+    "actual_private_200": true,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_denied": true,
+    "injected_responses": 6
+  },
+  {
+    "width": 320,
+    "kind": "completion",
+    "actual_private_200": true,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_denied": true,
+    "injected_responses": 6
+  },
+  {
+    "width": 320,
+    "logged_out_both_private_401": true,
+    "no_lifecycle_mutations": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  },
+  {
+    "width": 390,
+    "kind": "pairing",
+    "actual_private_200": true,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_denied": true,
+    "injected_responses": 6
+  },
+  {
+    "width": 390,
+    "kind": "completion",
+    "actual_private_200": true,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_denied": true,
+    "injected_responses": 6
+  },
+  {
+    "width": 390,
+    "logged_out_both_private_401": true,
+    "no_lifecycle_mutations": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  },
+  {
+    "width": 1280,
+    "kind": "pairing",
+    "actual_private_200": true,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_denied": true,
+    "injected_responses": 6
+  },
+  {
+    "width": 1280,
+    "kind": "completion",
+    "actual_private_200": true,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_denied": true,
+    "injected_responses": 6
+  },
+  {
+    "width": 1280,
+    "logged_out_both_private_401": true,
+    "no_lifecycle_mutations": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  }
+]

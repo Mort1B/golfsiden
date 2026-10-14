@@ -1,53 +1,70 @@
-# Session-bound pairing and team reads
+# Session-bound round readiness reads
 
-The private pairing-layout and team-list GETs now carry the session ID through
-complete payload assembly. A controlled regression showed both previously
-returning HTTP 200 after session revocation committed while they waited on
-membership. The same test now returns the existing private 401 body on both routes.
+The pairing and completion readiness GETs now carry the actual session ID through
+complete readiness assembly. A controlled PostgreSQL regression showed both
+previously returning HTTP 200 after revocation committed while they waited on
+membership. The repaired routes return the existing private 401 response.
 
-Both repositories reuse the unchanged `session_read.rs` boundary: one
-repeatable-read attempt, initial session/user share locks before exact membership,
-a final database wall-clock expiry check, and one full retry on snapshot
-invalidation. Round ownership comes from its stored tournament relation. All
-entrant, group and member queries finish before the final check, including empty
-layouts/lists. Revocation or credential replacement that wins authority denies
-the read; a later writer waits behind an already authorized reader. The clock is
-not frozen during COMMIT, and already delivered responses are not retracted.
+Both reuse the unchanged shared session-read boundary: one repeatable-read
+attempt, active session/user share locks before exact tournament membership,
+a final database wall-clock expiry check and one complete retry on snapshot
+invalidation. Pairing's final check follows its additional singles-match
+assignment validation. Completion's retry reloads stored round/tournament
+context, exact role, owner facts, visible holes and the redacted projection.
+Nothing from a discarded attempt can supply the next response.
 
-For example, a pairing request that expires while loading final flight members
-returns no layout. Membership changes that invalidate an attempt discard its
-user, authority and payload; a second snapshot conflict returns generic private
-503. Pairing GET uses shared error mapping while PUT/preflight keep their existing
-error and mutation boundaries. Existing pairing cache middleware remains in place;
-team GET adds `private, no-store` for every status. No mutation gains a retry.
+For example, an admin-to-viewer demotion while a completion read waits also
+changes the final from released to hidden. The fresh attempt must return only
+front-nine progress, with null completeness/confirmation/readiness and no
+hidden-state issue codes. Expiry during later fact loading similarly denies
+success. Later revocation or credential writers wait behind an already
+authorized reader; wall-clock time is not frozen during COMMIT.
 
-Payload loading is unchanged: flat team JSON, active/inactive entrants, schedules,
-timestamps, distinct group identities, legacy individual groups and the endpoints'
-different name/member ordering are preserved. Each ordinary read adds two session
-queries. The existing member query per team remains A8; no batching or measured
-speedup is claimed. Readiness, scoring, schema, frontend source, dependencies and
-hosting configuration remain outside this repair.
+Both selected GETs now apply `private, no-store` to every response. A second
+snapshot conflict returns generic 503. Blocked readiness remains typed 200, and
+singles completion-validation retains its existing 404 with a separate dedicated
+completion endpoint. Fact SQL, blocker ordering, formats, frozen handicap/owner
+rules and hidden-final redaction are unchanged. Internal unrestricted validation
+helpers and open/complete/lock mutations retain their existing owners. No
+mutation gains retries or events. There are two additional session queries per
+ordinary successful read, with no measured speedup claim.
 
-Fourteen new PostgreSQL/API cases cover revocation, credential generation,
-later-write serialization, membership changes with fresh payloads, coherent
-multi-query snapshots, expiry during membership/data loading, empty results,
-twelve concurrent valid reads, cancellation, all roles, missing/cross-trip targets
-and legacy contracts. Two fixture assertions were corrected to match the existing
-flat team JSON. Independent read-only review found no remaining findings.
+Sixteen new PostgreSQL/API regressions cover revocation, credential changes,
+later-write serialization, membership removal, changed role/context, expiry at
+membership and late-load gates, singles assignments, empty results, all roles,
+resource errors, concurrency, cancellation, coherent snapshots and ready,
+completed and locked states. Existing four-ball and Stableford privacy tests
+supply their existing real session to the renamed completion entry.
 
-Focused suites pass 31 tests; shared retry helpers pass two. The full backend
-suite passes 261 tests, and the PostgreSQL-feature ladder passes 797 with four
-existing manual performance probes ignored, including retained A1b/A1c and pairing
-PUT coverage. Formatting, strict Clippy, all API builds, migration and seed pass.
+Independent review found a test gap: the original context-change fixture repeated
+the default visibility value. It now starts explicitly released and changes both
+context and role, so either stale value fails. The corrected source/test review has no remaining findings.
+An unchanged A1d name-order test also exposed a P3 collation assumption on Debian
+PostgreSQL. Native uppercase/lowercase order differs from the repository's Alpine
+image. Its test-only portability follow-up is queued; runtime sorting is unchanged.
 
-Chrome passes at 320, 390 and 1280px. The actual pairing UI covers loading,
-populated long group names, error/read-only retry, empty and denied states.
-`/teams` has no current UI consumer; its actual typed API/decoder and HTTP/cache
-contracts were tested separately inside the browser. Both routes return private
-401s after logout. No page errors or unexpected network failures occurred, and
-representative mobile/desktop screenshots were inspected. [The report](validation/pairing-team-session-2026-10-14/README.md)
-retains the original failure, browser results, exact wait gates and limits.
-Physical-device, public-host and production-load acceptance remain unchanged.
+The focused readiness/lifecycle/completion/four-ball/Stableford suites pass 73
+checks before the review fixture tightening. The corrected readiness suite and
+unchanged pairing compatibility suite pass 30. The full backend suite passes
+261 tests; the final PostgreSQL-feature ladder passes 813 with four existing
+manual performance probes ignored on the repository's PostgreSQL 17 Alpine
+image. Formatting, strict all-target/feature Clippy, API builds, migration and
+seed pass. The final schema is 39. The first Debian full run's existing collation
+test failure remains recorded separately.
 
-[PLANS.md](PLANS.md) selects A1e's pairing/completion readiness GETs next;
-that work and the remaining severity-rated findings stay queued.
+Chrome passes both readiness flows at 320, 390 and 1280px: delayed loading,
+real populated responses, long content, injected blocked/empty/denied states,
+error with read-only refresh, private 401 after logout and login redirection.
+Lifecycle actions remain disabled while pending or failed; no lifecycle POSTs
+occur during UI checks. There are no page exceptions or unexpected network
+failures. Representative screenshots were visually inspected. The first probe's
+synthetic empty completion response omitted an existing blocker code; runtime
+decoding rejected it correctly, and the corrected probe passes all six flows.
+[The report](validation/readiness-session-2026-10-14/README.md) retains the original
+failure, exact wait gates, review correction, browser evidence and validation
+limits. Schema, frontend source, dependencies and hosted configuration are
+unchanged; physical-device, public-host and production-load acceptance remain
+separate.
+
+[PLANS.md](PLANS.md) queues the remaining private-read inventory and other
+severity-rated review findings. No queued repair is started by this step.

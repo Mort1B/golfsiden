@@ -515,8 +515,8 @@ read once more from fresh authority; a second snapshot conflict returns generic
 `503 service_unavailable`. All responses from these three routes use `private,
 no-store`. Existing membership-only visibility, list ordering, roles, linked
 entrant IDs and `403`/`404` contracts remain unchanged. Roster, round, pairing
-and team routes use the same session authority below; readiness reads remain
-separately queued.
+and team routes use the same session authority below. Pairing/completion
+readiness GETs also use that boundary, as described under Round transitions.
 
 The private roster (`GET /api/tournaments/{id}/players`), round list (`GET
 /api/tournaments/{id}/rounds`), round detail (`GET /api/rounds/{id}`), pairing
@@ -2246,6 +2246,25 @@ admins receive authoritative progress, confirmation, and lifecycle readiness.
 While the final back nine is hidden for a non-admin, it counts only actual scores on holes
 1–9, reports nine visible required holes, nulls completion, confirmation, and
 readiness, and omits issue codes derived from hidden state.
+
+Both this GET and `GET /api/rounds/{round_id}/pairing-validation` bind the
+actual session to the complete readiness read. They lock/check the session and
+user before exact tournament membership, derive the round's tournament from
+stored relations and retain authority through one repeatable-read snapshot.
+The final database wall-clock session check follows all facts and projection
+assembly, including empty results and the pairing read's additional singles
+assignment check. Revocation or credential replacement before transactional
+authority returns `401`; later authority writers wait behind an authorized read.
+Expiry while waiting for membership or later facts rejects a successful reply.
+
+A snapshot conflict discards the complete attempt, including its role and
+visibility context, and permits one fresh full read. A second conflict returns
+`503 service_unavailable`. `401`/`403`/`404` retain their existing meanings, and
+all statuses on both GET routes are `private, no-store`. A blocked readiness
+result is still a typed `200` response; it does not trigger a lifecycle change.
+The singles-match completion-validation path keeps its existing `404`; its
+dedicated completion endpoint is separate. No lifecycle mutation gains a retry,
+and the clock is not frozen during COMMIT.
 
 `POST /api/rounds/{round_id}/complete` accepts only an open round, and
 `POST /api/rounds/{round_id}/lock` accepts only a completed round. Both serialize

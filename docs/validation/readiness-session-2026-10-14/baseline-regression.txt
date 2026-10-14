@@ -1,0 +1,21 @@
+     Running tests/readiness_sessions.rs (target/debug/deps/readiness_sessions-cfc537c06cab68ac)
+
+running 1 test
+/api/rounds/00000000-0000-0000-0000-000000004001/pairing-validation: status=200 OK, code=null
+/api/rounds/00000000-0000-0000-0000-000000004001/completion-validation: status=200 OK, code=null
+
+thread 'readiness_sessions::authorization::revocation_before_transactional_authorization_denies_both_reads' (459847) panicked at backend/tests/readiness_sessions/authorization.rs:46:9:
+assertion `left == right` failed: /api/rounds/00000000-0000-0000-0000-000000004001/pairing-validation
+  left: 200
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test readiness_sessions::authorization::revocation_before_transactional_authorization_denies_both_reads ... FAILED
+
+failures:
+
+failures:
+    readiness_sessions::authorization::revocation_before_transactional_authorization_denies_both_reads
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.82s
+
+error: test failed, to rerun pass `-p golf-api --test readiness_sessions`

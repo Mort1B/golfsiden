@@ -13,6 +13,7 @@ use crate::{
     api::{
         auth::{AuthenticatedSession, MutationSession},
         authorization::map_authorization_error,
+        private_read::map_error as map_read_error,
     },
     domain::models::{OpenRoundResult, ReadinessIssueCode},
     error::{ApiError, ApiResult},
@@ -24,13 +25,13 @@ pub async fn pairing_validation(
     Path(round_id): Path<Uuid>,
     authenticated: AuthenticatedSession,
 ) -> ApiResult<impl IntoResponse> {
-    let validation = round_lifecycle::pairing_validation_for_member(
+    let validation = round_lifecycle::pairing_validation_for_session(
         &state.pool,
-        authenticated.principal.user_id,
+        authenticated.principal.session_id,
         round_id,
     )
     .await
-    .map_err(map_authorization_error)?;
+    .map_err(map_read_error)?;
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(validation)))
 }
 

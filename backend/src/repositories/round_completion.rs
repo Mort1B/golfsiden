@@ -18,6 +18,7 @@ use crate::{
     },
     repositories::{
         auth,
+        session_read::{self, SessionReadError},
         tournament_authorization::{self, AuthorizationError},
     },
 };
@@ -87,15 +88,20 @@ pub async fn validation(
     Ok(validation)
 }
 
-pub async fn validation_for_member(
+pub async fn validation_for_session(
     pool: &PgPool,
-    user_id: Uuid,
+    session: Uuid,
     round_id: Uuid,
-) -> Result<RoundCompletionReadProjection, AuthorizationError> {
-    let mut transaction = pool.begin().await?;
-    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-        .execute(&mut *transaction)
-        .await?;
+) -> Result<RoundCompletionReadProjection, SessionReadError> {
+    session_read::retry(|| validation_once(pool, session, round_id)).await
+}
+
+async fn validation_once(
+    pool: &PgPool,
+    session: Uuid,
+    round_id: Uuid,
+) -> Result<RoundCompletionReadProjection, SessionReadError> {
+    let (mut transaction, user_id) = session_read::begin(pool, session).await?;
     let context = sqlx::query_as::<_, ReadVisibilityRow>(
         "SELECT r.tournament_id, r.scoring_format, r.round_number, r.status, r.number_of_holes,
                 t.final_round_back_nine_hidden, t.number_of_rounds AS tournament_round_count
@@ -120,7 +126,7 @@ pub async fn validation_for_member(
     .await?
     .ok_or(AuthorizationError::Forbidden)?;
     if context.scoring_format == ScoringFormat::SinglesMatchPlay {
-        return Err(AuthorizationError::NotFound);
+        return Err(AuthorizationError::NotFound.into());
     }
     let validation = load_facts(&mut transaction, round_id, false)
         .await?
@@ -129,7 +135,7 @@ pub async fn validation_for_member(
     let metadata = completion_visibility(&context, role);
     let visible_holes = load_visible_holes(&mut transaction, round_id).await?;
     let projection = read_projection(validation, metadata, &visible_holes);
-    transaction.commit().await?;
+    session_read::finish(transaction, session).await?;
     Ok(projection)
 }
 

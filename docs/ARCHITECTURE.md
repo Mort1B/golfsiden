@@ -477,7 +477,7 @@ and reapplies runtime grants before the API is started.
   roster/list responses still require current authority. All three selected GET
   methods apply shared private error mapping and `private, no-store` on every
   status. Round-creation preflight retains its existing transaction owner, and
-  POST, remaining readiness reads and mutation boundaries retain their own
+  POST and mutation boundaries retain their own
   authority/error owners. Each repaired read adds two active-session queries,
   with no per-player or per-round authorization-query loop.
 - Private pairing-layout and team-list GETs also use `session_read.rs` through
@@ -494,6 +494,18 @@ and reapplies runtime grants before the API is started.
   the distinct name/member ordering of the two endpoints, schedule/identity data
   and the existing team member-query loop are unchanged. A8 still owns any team
   batching; session binding adds two authority queries without a speedup claim.
+- Pairing/completion readiness GETs use explicit `*_for_session` repository
+  entries and the same `session_read.rs` transaction owner. Pairing's final
+  session check follows both base validation and additional singles-assignment
+  readiness. Completion's entire stored round/tournament context, exact role,
+  owner facts, visible-hole queries and redacted projection belong to each
+  attempt; none survives a retry. Membership/context changes that invalidate a
+  snapshot restart the complete read once, then return generic private 503.
+  All statuses on these two GET routes use shared `private, no-store` middleware.
+  Existing blocker ordering, snapshot-based owner selection and hidden-final
+  redaction are unchanged. Singles completion-validation retains its existing
+  404 and dedicated completion owner. Internal unrestricted validation helpers,
+  opening, completion and locking remain separate with no mutation retry.
 - Course discovery is a bundled JSON catalog, not provider free-text search or a
   persistence model. Its tournament-scoped GET handler requires exact admin
   membership, searches names and internal aliases locally, preserves file order,

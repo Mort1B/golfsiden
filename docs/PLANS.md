@@ -9,31 +9,29 @@ None. Awaiting approval of one bounded next step.
 
 ## Next candidate
 
-### A1e — P2: bind private round readiness reads to their session
+### A1f — P2 follow-up: inventory remaining private-read authority
 
-Evidence: [application review](validation/application-review-2026-10-14/README.md#a1--p2-revoked-sessions-can-finish-private-reads).
+Evidence: [application review](validation/application-review-2026-10-14/README.md#a1--p2-revoked-sessions-can-finish-private-reads)
+and the [completed readiness boundary](validation/readiness-session-2026-10-14/README.md).
 
-- Goal: prevent pairing/completion readiness replies from finishing with revoked
-  or expired session authority during database waits.
-- Scope: `GET /api/rounds/{id}/pairing-validation` and `GET
-  /api/rounds/{id}/completion-validation`; their API/repository boundary, focused
-  shared session support, regressions and docs. Exclude open/complete/lock and
-  other mutations, scoring rules, schema, frontend and remaining-read inventory.
-- Behavior: carry session identity into one consistent read, derive stored round
-  ownership, retain session/user/exact-membership authority through complete
-  readiness assembly and recheck database wall-clock expiry before success.
-  Permit one fresh full-read retry on snapshot invalidation, then private generic
-  unavailable responses. Preserve payloads, blocker ordering, roles and errors.
-- Validation: reproduce before repairing; cover revocation, credential generation,
-  membership changes, expiry during authority/later loading waits, all roles,
-  missing/cross-tournament resources, ready/blocked/empty states, valid concurrent
-  reads, cancellation, private cache policy and no writes/SSE. Run full backend/
-  PostgreSQL ladders, focused browser evidence, retained lifecycle/mutation
-  compatibility and independent read-only review.
-- Invariants: preserve format-specific readiness, fixed handicap/snapshot rules
-  and lifecycle mutation boundaries; this step adds no mutation retry or side effect.
-- Stop: publish only these two readiness GET repairs; leave remaining-read
-  inventory, legacy writes and other assessment findings queued.
+- Goal: identify the next evidence-backed private-read repair after the selected
+  leaderboard, tournament, roster, round, pairing/team and readiness GETs.
+- Scope: read-only source inventory of remaining authenticated tournament-scoped
+  JSON GET handlers and their exact repository boundaries. Include session/user,
+  stored resource ownership, membership/role, fact loading, final wall-clock
+  expiry, retry and private-cache ownership. Exclude public capability routes,
+  auth/session endpoints, SSE streams, writes and hosted infrastructure.
+- Behavior: document each remaining family as bound, incomplete or unresolved
+  with concrete file/line evidence. Distinguish source-supported gaps from race
+  reproductions and impact. Do not treat the existing selected repairs as proof
+  for siblings or claim fresh advisory/runtime findings without evidence.
+- Validation: trace every included API-to-repository path and shared helper;
+  independently review the inventory, check document links and diff scope. This
+  documentation-only step needs no production code, dependency or schema edits.
+- Invariants: assessment remains separate from remediation; preserve all runtime
+  behavior and root product invariants. Do not run writes as part of inventory.
+- Stop: publish the inventory and one concrete next candidate; implement no
+  newly discovered repair. Legacy-write expiry remains a separate inventory.
 
 ## Later queue
 
@@ -43,9 +41,9 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A1 follow-up after A1e:** perform a bounded read-only inventory of
-   remaining private read authority gaps; inventory analogous expiry gaps in
-   legacy team/round writes as a separate slice.
+1. **P2 / A1 after A1f:** select one evidence-backed repair from the private-read
+   inventory. Inventory analogous expiry gaps in legacy team/round writes as a
+   separate slice.
 2. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
    the SQLx cancellation patch and recheck TLS behavior/advisory reachability.
 3. **P2 / A5:** require and bind the restore checksum before invoking restore;
@@ -62,6 +60,12 @@ invalidation/fact-loading cost and empty-queue polling. No speculative optimizat
 or load claim is authorized.
 
 ### Previously deferred work
+
+- P3 test-only collation portability: the unchanged A1d legacy-name ordering case
+  assumes uppercase-first native collation. Debian/glibc and the repository's
+  Alpine/musl PostgreSQL images disagree while production SQL retains native
+  ordering. Adjust the test's contract in a separately bounded step; see
+  [captured failure and comparison](validation/readiness-session-2026-10-14/README.md#existing-collation-dependent-test-limit).
 
 - Retained leaderboard browser-test maintenance: update obsolete score-status
   assertions at `frontend/e2e/leaderboardLive.browser.ts:71,103` in a separate

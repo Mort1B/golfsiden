@@ -17,7 +17,7 @@ async fn outputs(pool: &PgPool, session: Uuid, grant: Uuid, token: &ResultShareT
             .await
             .unwrap(),
     );
-    let completion = round_completion::validation_for_member(pool, id(41), id(5))
+    let completion = round_completion::validation_for_session(pool, session, id(5))
         .await
         .unwrap();
     let mut metrics = Vec::new();

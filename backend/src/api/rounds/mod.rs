@@ -66,7 +66,8 @@ pub fn routes() -> Router<Arc<AppState>> {
         )
         .route(
             "/api/rounds/{round_id}/pairing-validation",
-            get(lifecycle::pairing_validation),
+            get(lifecycle::pairing_validation)
+                .layer(axum::middleware::map_response(private_response)),
         )
         .route(
             "/api/rounds/{round_id}/open",
@@ -74,7 +75,7 @@ pub fn routes() -> Router<Arc<AppState>> {
         )
         .route(
             "/api/rounds/{round_id}/completion-validation",
-            get(completion::validation),
+            get(completion::validation).layer(axum::middleware::map_response(private_response)),
         )
         .route(
             "/api/rounds/{round_id}/complete",
