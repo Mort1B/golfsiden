@@ -607,6 +607,16 @@ Concurrent opens cannot duplicate either snapshot kind. Database triggers freeze
 and scoring configuration after draft and require all status/snapshot changes to
 use the lifecycle transaction.
 
+Authorized round opening, completion and locking recheck the active session
+immediately before commit using database wall-clock time. If it expires during a
+membership or later transaction wait, the existing `401 unauthenticated` response
+is returned, no live-update event is published and all lifecycle effects roll
+back. That includes status/timestamps, both opening snapshot kinds and the first
+tournament handicap-lock marker. A valid renewed session can deliberately submit
+the action again. The server does not automatically retry lifecycle mutations.
+Readiness, locked-round protections and singles-match completion rules remain
+unchanged. This does not freeze time during COMMIT.
+
 ## Live scorecards
 
 The numeric endpoints below serve individual stroke play, scramble and foursomes.

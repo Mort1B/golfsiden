@@ -1,0 +1,29 @@
+     Running tests/leaderboard_sessions.rs (target/debug/deps/leaderboard_sessions-18611ae5230a107e)
+
+running 10 tests
+test leaderboard_sessions::coherence::cancelled_wait_releases_authority_and_leaves_pool_reusable ... ok
+test leaderboard_sessions::coherence::concurrent_valid_reads_preserve_response_parity_without_writes ... ok
+test leaderboard_sessions::authorization::membership_removed_during_wait_is_reauthorized_after_serialization_failure ... ok
+test leaderboard_sessions::authorization::credential_change_before_transactional_authorization_denies_all_boards ... ok
+test leaderboard_sessions::authorization::revocation_before_transactional_authorization_denies_all_boards ... ok
+test leaderboard_sessions::authorization::authorized_read_serializes_before_later_revocation ... ok
+test leaderboard_sessions::coherence::retry_after_membership_demotion_recomputes_hidden_final_projection ... ok
+test leaderboard_sessions::expiry::match_only_envelope_rechecks_expiry_after_wait ... ok
+test leaderboard_sessions::expiry::expiry_during_membership_wait_denies_all_boards ... ok
+test leaderboard_sessions::expiry::expiry_during_score_loading_denies_all_boards ... FAILED
+
+failures:
+
+---- leaderboard_sessions::expiry::expiry_during_score_loading_denies_all_boards stdout ----
+
+thread 'leaderboard_sessions::expiry::expiry_during_score_loading_denies_all_boards' (326763) panicked at backend/tests/leaderboard_sessions/support.rs:125:14:
+read must reach the controlled database wait: Elapsed(())
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    leaderboard_sessions::expiry::expiry_during_score_loading_denies_all_boards
+
+test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 21.33s
+
+error: test failed, to rerun pass `--test leaderboard_sessions`

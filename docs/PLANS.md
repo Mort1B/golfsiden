@@ -5,32 +5,32 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None.
+None. Awaiting approval of one bounded next step.
 
 ## Next candidate
 
-### A2 — P2: reject expired sessions before round lifecycle commit
+### A3 — P2: coordinate identity-changing requests across route lifetimes
 
-Evidence: [application review](validation/application-review-2026-10-14/README.md#a2--p2-lifecycle-authorization-expires-before-commit).
+Evidence: [application review](validation/application-review-2026-10-14/README.md#a3--p2-late-account-creation-replaces-newer-authentication).
 
-- Goal: prevent round opening, completion or locking from committing after the
-  administrator session expires during a transactional wait.
-- Scope: `backend/src/repositories/round_lifecycle/mod.rs`,
-  `backend/src/repositories/round_completion.rs`, focused session-check support if
-  required, PostgreSQL/API regressions and affected documentation. No frontend,
-  scoring-rule, schema or deployment change; legacy team/round writes remain queued.
-- Behavior: keep the existing locks, readiness checks and mutations; check active
-  session using database wall-clock time immediately before commit. Expiry must
-  return the existing unauthenticated contract, roll back every status/snapshot
-  effect and emit no SSE invalidation. Preserve valid-session behavior.
-- Validation: expiry during membership and late transactional waits for each
-  open/complete/lock action, valid controls, unchanged stored state on rejection,
-  event counts and retained lifecycle/privacy regressions. Run full backend and
-  PostgreSQL ladders, migration/seed checks and read-only review.
-- Invariants: preserve sporting ownership, fixed handicap snapshots, locked-round
-  protections, exact-admin authority, atomic lifecycle state and audit history.
-- Stop: publish the validated lifecycle-expiry repair only. Do not begin A3 or
-  the remaining private-read families without authorization.
+- Goal: prevent a departed anonymous creation or invitation registration from
+  replacing a newer deliberate authentication choice.
+- Scope: existing frontend authentication/request coordination, onboarding and
+  invitation registration continuations, necessary login/logout/session-refresh
+  integration, focused regressions and documentation. No new product feature,
+  sporting rule, schema or deployment change.
+- Behavior: coordinate cookie-changing HTTP operations across route lifetimes,
+  fence late cache/navigation publication and reconcile authoritative cookie
+  identity. Ignoring a React callback alone is insufficient. Preserve immutable
+  mutation recovery and deliberate valid-session behavior.
+- Validation: reverse-response-order and navigation races for creation and
+  invitation registration, newer login/logout and same-user renewal. Assert
+  actual cookie/canonical identity, cache ownership and navigation. Run focused
+  tests, the affected full ladders, real mobile/desktop Chrome and read-only review.
+- Invariants: retain private cache/session isolation, exact uncertain-write
+  replay, acknowledged-write outcomes and existing API contracts.
+- Stop: publish this authentication-ordering repair only; do not begin sibling
+  private-read/write, dependency, recovery or capacity work.
 
 ## Later queue
 
@@ -40,20 +40,18 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A3:** coordinate anonymous onboarding/invitation authentication across
-   route lifetimes, including cookie identity and reverse response order.
-2. **P2 / A1 follow-up:** inventory and repair the remaining user-only private
+1. **P2 / A1 follow-up:** inventory and repair the remaining user-only private
    tournament/round/roster/pairing/team read families in bounded slices; inventory
    analogous expiry gaps in legacy team/round writes as a separate slice.
-3. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
+2. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
    the SQLx cancellation patch and recheck TLS behavior/advisory reachability.
-4. **P2 / A5:** require and bind the restore checksum before invoking restore;
+3. **P2 / A5:** require and bind the restore checksum before invoking restore;
    preserve empty-target and single-transaction protections.
-5. **P2 / A6:** cap password-work admission while retaining four active Argon2
+4. **P2 / A6:** cap password-work admission while retaining four active Argon2
    workers and cancellation-safe capacity release. Capacity impact is unmeasured.
-6. **P2 / A7:** upgrade affected development tools in compatible, validated
+5. **P2 / A7:** upgrade affected development tools in compatible, validated
    dependency steps. Scanner critical labels do not establish production RCE.
-7. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
+6. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
    query count and end-to-end cost. No current frontend latency impact is proven.
 
 Only after these, consider measurement-only steps for remaining Fantasy
@@ -66,6 +64,13 @@ or load claim is authorized.
   assertions at `frontend/e2e/leaderboardLive.browser.ts:71,103` in a separate
   test-only step before using that suite as a release gate. See the
   [captured failure and focused A1 browser coverage](validation/leaderboard-session-2026-10-14/README.md#browser-evidence-and-remaining-test-maintenance).
+
+- Retained A1 PostgreSQL expiry-test timing investigation: the unchanged
+  score-loading expiry case timed out before observing its wait at default test
+  concurrency, then passed in isolation and in the full two-thread ladder.
+  Investigate its pre-gate expiry window in a separate test-only step; no precise
+  cause or product regression was established. See the
+  [captured failure and rerun evidence](validation/round-lifecycle-session-2026-10-14/README.md#validation).
 
 - Optional offline preparation for browser closure/eviction: requires a separately
   scoped app-shell and private scorecard-retention/reauthorization design before

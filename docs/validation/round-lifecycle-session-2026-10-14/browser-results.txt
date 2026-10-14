@@ -1,0 +1,13 @@
+
+Running 2 tests using 1 worker
+
+(node:313386) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+Validating lifecycle for seed round 1
+Validating lifecycle for seed round 2
+Validating lifecycle for seed round 3
+Validating lifecycle for seed round 5
+  ✓  1 e2e/roundLifecycle.browser.ts:65:1 › admin lifecycle, live readiness, corrections, permissions and final visibility (1.0m)
+  ✓  2 e2e/roundLifecycle.browser.ts:202:1 › loading, retry, empty and long-content states at mobile and desktop widths (5.3s)
+
+  2 passed (1.2m)

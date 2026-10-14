@@ -1,0 +1,11 @@
+     Running tests/lifecycle_expiry.rs (target/debug/deps/lifecycle_expiry-f8d2833eed8443fe)
+
+running 6 tests
+test lifecycle_expiry::scenarios::foursomes_late_expiry_rolls_back_all_actions ... ok
+test lifecycle_expiry::scenarios::foursomes_membership_expiry_rolls_back_all_actions ... ok
+test lifecycle_expiry::scenarios::individual_late_expiry_rolls_back_all_actions ... ok
+test lifecycle_expiry::scenarios::individual_membership_expiry_rolls_back_all_actions ... ok
+test lifecycle_expiry::scenarios::match_late_expiry_rolls_back_all_actions ... ok
+test lifecycle_expiry::scenarios::match_membership_expiry_rolls_back_all_actions ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 50.37s

@@ -138,6 +138,15 @@ and reapplies runtime grants before the API is started.
   The final check uses database wall-clock time; it does not freeze the clock
   during COMMIT. Existing unchanged-handicap errors remain unchanged.
 - Round opening locks the round and tournament, repeats readiness validation, and captures one immutable snapshot for each active entrant before changing status. A transaction-local opening context prevents direct status or snapshot bypasses.
+- Authorized round open/complete/lock retains its existing round, session/user,
+  exact-admin membership and readiness locks, then rechecks the active session
+  with database wall-clock time immediately before commit. This check follows
+  all inner work, including singles-match transitions and opening snapshot reads.
+  Natural expiry during membership or later transactional waits returns the
+  existing unauthenticated error and rolls back status/timestamps, snapshots and
+  the first-opening tournament handicap lock marker. Rejected requests publish
+  no SSE; successful commits retain one round invalidation. No mutation retry is
+  added, and the final check does not freeze time during COMMIT.
 - Tournament start is a separate exact-admin lifecycle boundary. Its transaction
   locks the stored round set deterministically before reauthorizing the session
   and exact tournament membership, locking the tournament, and share-locking

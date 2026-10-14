@@ -11,7 +11,10 @@ use crate::{
         round_lifecycle::validate,
         scoring::ScoringError,
     },
-    repositories::tournament_authorization::{self, AuthorizationError},
+    repositories::{
+        auth,
+        tournament_authorization::{self, AuthorizationError},
+    },
 };
 
 #[derive(Debug, Error)]
@@ -78,6 +81,9 @@ pub async fn open_authorized(
     let mut transaction = pool.begin().await?;
     tournament_authorization::require_round_admin(&mut transaction, session_id, round_id).await?;
     let result = opening::in_transaction(&mut transaction, round_id).await?;
+    auth::lock_active_session(&mut transaction, session_id)
+        .await?
+        .ok_or(AuthorizationError::Unauthenticated)?;
     transaction.commit().await?;
     Ok(result)
 }

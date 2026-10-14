@@ -1,0 +1,19 @@
+     Running tests/lifecycle_expiry.rs (target/debug/deps/lifecycle_expiry-f8d2833eed8443fe)
+
+running 1 test
+
+thread 'lifecycle_expiry::scenarios::individual_membership_expiry_rolls_back_all_actions' (304120) panicked at backend/tests/lifecycle_expiry/scenarios.rs:41:9:
+assertion `left == right` failed: individual_stroke_play open late=false
+  left: 200
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test lifecycle_expiry::scenarios::individual_membership_expiry_rolls_back_all_actions ... FAILED
+
+failures:
+
+failures:
+    lifecycle_expiry::scenarios::individual_membership_expiry_rolls_back_all_actions
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 5 filtered out; finished in 3.12s
+
+error: test failed, to rerun pass `-p golf-api --test lifecycle_expiry`

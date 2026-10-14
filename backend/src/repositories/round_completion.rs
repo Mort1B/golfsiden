@@ -16,7 +16,10 @@ use crate::{
         score_visibility::{VisibilityFacts, visibility},
         scorecards::ScoreOwner,
     },
-    repositories::tournament_authorization::{self, AuthorizationError},
+    repositories::{
+        auth,
+        tournament_authorization::{self, AuthorizationError},
+    },
 };
 
 const ROUND_COLUMNS: &str = "id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, status, handicap_enabled, handicap_allowance_percent, scoring_format, created_at, updated_at";
@@ -216,6 +219,9 @@ async fn transition_authorized(
     let mut transaction = pool.begin().await?;
     tournament_authorization::require_round_admin(&mut transaction, session_id, round_id).await?;
     let round = transition_in_transaction(&mut transaction, round_id, action).await?;
+    auth::lock_active_session(&mut transaction, session_id)
+        .await?
+        .ok_or(AuthorizationError::Unauthenticated)?;
     transaction.commit().await?;
     Ok(round)
 }
