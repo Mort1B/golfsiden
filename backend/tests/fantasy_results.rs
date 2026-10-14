@@ -285,3 +285,116 @@ async fn scoped_not_found_rolls_back_lazy_closure_and_member_api_contract(pool: 
         StatusCode::UNAUTHORIZED
     );
 }
+
+#[sqlx::test(migrations = "../migrations")]
+async fn valid_round_read_finalizes_other_due_round_once(pool: PgPool) {
+    let f = fixture(&pool).await;
+    let due = f.rounds[0];
+    let target = f.rounds[1];
+    close(&pool, &f, due).await;
+    let state = AppState::new(pool.clone());
+    let mut events = state.live_events.subscribe();
+    let app = api::router(state);
+    let path = format!(
+        "/api/tournaments/{}/fantasy/rounds/{target}/results",
+        f.base.tournament
+    );
+    for first in [true, false] {
+        let response = app
+            .clone()
+            .oneshot(request("GET", &path, Some(ADMIN_TOKEN), json!(null)))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()["cache-control"], "no-store");
+        if first {
+            let event = events.try_recv().unwrap();
+            assert_eq!(event.tournament_id, f.base.tournament);
+            assert_eq!(event.id, f.base.tournament);
+        }
+        assert!(events.try_recv().is_err());
+    }
+    let locked: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT round_id FROM fantasy_rounds WHERE locked_at IS NOT NULL ORDER BY round_id",
+    )
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    assert_eq!(locked, vec![due]);
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>(
+            "SELECT count(*) FROM fantasy_selections WHERE round_id=$1 AND state='missed'"
+        )
+        .bind(due)
+        .fetch_one(&pool)
+        .await
+        .unwrap(),
+        2
+    );
+}
+
+#[sqlx::test(migrations = "../migrations")]
+async fn round_result_rejects_revocation_while_waiting_without_lazy_commit(pool: PgPool) {
+    let f = fixture(&pool).await;
+    close(&pool, &f, f.rounds[0]).await;
+    let mut holder = pool.begin().await.unwrap();
+    sqlx::query("SELECT id FROM rounds WHERE id=$1 FOR UPDATE")
+        .bind(f.rounds[0])
+        .execute(&mut *holder)
+        .await
+        .unwrap();
+    let state = AppState::new(pool.clone());
+    let mut events = state.live_events.subscribe();
+    let app = api::router(state);
+    let path = format!(
+        "/api/tournaments/{}/fantasy/rounds/{}/results",
+        f.base.tournament, f.rounds[1]
+    );
+    let task = tokio::spawn(async move {
+        app.oneshot(request("GET", &path, Some("fantasy-member"), json!(null)))
+            .await
+            .unwrap()
+    });
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        loop {
+            let waiting: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE 'SELECT id FROM rounds WHERE tournament_id=%')")
+                .fetch_one(&pool).await.unwrap();
+            if waiting { break; }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+    }).await.unwrap();
+    sqlx::query("UPDATE user_sessions SET revoked_at=clock_timestamp() WHERE id=$1")
+        .bind(f.member_session)
+        .execute(&pool)
+        .await
+        .unwrap();
+    holder.commit().await.unwrap();
+    let response = task.await.unwrap();
+    // Repeatable-read may report a serialization conflict before the recheck can
+    // observe revocation; neither that retryable response nor 401 may commit.
+    assert!(matches!(
+        response.status(),
+        StatusCode::UNAUTHORIZED | StatusCode::CONFLICT
+    ));
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>(
+            "SELECT count(*) FROM fantasy_rounds WHERE locked_at IS NOT NULL"
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap(),
+        0
+    );
+    assert_eq!(
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM fantasy_selections")
+            .fetch_one(&pool)
+            .await
+            .unwrap(),
+        0
+    );
+    assert!(events.try_recv().is_err());
+    assert!(matches!(
+        results::round_results(&pool, f.member_session, f.base.tournament, f.rounds[1]).await,
+        Err(Error::Authorization(_))
+    ));
+}

@@ -1,6 +1,8 @@
 mod load;
 mod models;
 mod round;
+#[cfg(test)]
+mod tests;
 use super::*;
 use crate::domain::fantasy::{
     RoundId,
@@ -26,7 +28,13 @@ struct Bundle {
     overall: Results,
     rounds: Vec<RoundResult>,
 }
-async fn bundle(pool: &PgPool, session: Uuid, t: Uuid, target: Target) -> Result<Bundle, Error> {
+async fn read<T>(
+    pool: &PgPool,
+    session: Uuid,
+    t: Uuid,
+    target: Target,
+    project: impl FnOnce(&load::Loaded, Uuid, Uuid, bool) -> Result<T, Error>,
+) -> Result<T, Error> {
     let mut pre = pool.begin().await?;
     authorize(&mut pre, session, t, false).await?;
     pre.rollback().await?;
@@ -51,10 +59,24 @@ async fn bundle(pool: &PgPool, session: Uuid, t: Uuid, target: Target) -> Result
     if !exists {
         return Err(AuthorizationError::NotFound.into());
     }
+    let result = project(&data, t, caller, finalized)?;
+    recheck(&mut tx, session).await?;
+    tx.commit().await?;
+    Ok(result)
+}
+async fn bundle(pool: &PgPool, session: Uuid, t: Uuid, target: Target) -> Result<Bundle, Error> {
+    read(pool, session, t, target, project_bundle).await
+}
+fn project_bundle(
+    data: &load::Loaded,
+    t: Uuid,
+    caller: Uuid,
+    finalized: bool,
+) -> Result<Bundle, Error> {
     let projected = data
         .rounds
         .iter()
-        .map(|r| round::project(&data, r, t, caller))
+        .map(|r| round::project(data, r, t, caller))
         .collect::<Result<Vec<_>, _>>()?;
     let expected: Vec<_> = data.rounds.iter().map(|r| RoundId(r.id)).collect();
     let golfer_entries: Vec<_> = data
@@ -103,8 +125,7 @@ async fn bundle(pool: &PgPool, session: Uuid, t: Uuid, target: Target) -> Result
     )?;
     let mut rounds: Vec<_> = projected.into_iter().map(|r| r.result).collect();
     for r in &mut rounds {
-        r.revision = revision(r)?;
-        r.finalized = finalized;
+        finish_round(r, finalized)?;
     }
     let mut overall = Results {
         tournament_id: t,
@@ -116,9 +137,28 @@ async fn bundle(pool: &PgPool, session: Uuid, t: Uuid, target: Target) -> Result
         finalized,
     };
     overall.revision = revision(&overall)?;
-    recheck(&mut tx, session).await?;
-    tx.commit().await?;
     Ok(Bundle { overall, rounds })
+}
+fn finish_round(result: &mut RoundResult, finalized: bool) -> Result<(), Error> {
+    result.revision = revision(result)?;
+    result.finalized = finalized;
+    Ok(())
+}
+fn project_round(
+    data: &load::Loaded,
+    t: Uuid,
+    caller: Uuid,
+    finalized: bool,
+    id: Uuid,
+) -> Result<RoundResult, Error> {
+    let round = data
+        .rounds
+        .iter()
+        .find(|r| r.id == id)
+        .ok_or(AuthorizationError::NotFound)?;
+    let mut result = round::project(data, round, t, caller)?.result;
+    finish_round(&mut result, finalized)?;
+    Ok(result)
 }
 fn overall_rows(
     rounds: &[RoundId],
@@ -156,12 +196,14 @@ pub async fn round_results(
     t: Uuid,
     r: Uuid,
 ) -> Result<RoundResult, Error> {
-    bundle(pool, session, t, Target::Round(r))
-        .await?
-        .rounds
-        .into_iter()
-        .find(|round| round.round.round_id == r)
-        .ok_or(AuthorizationError::NotFound.into())
+    read(
+        pool,
+        session,
+        t,
+        Target::Round(r),
+        |data, t, caller, finalized| project_round(data, t, caller, finalized, r),
+    )
+    .await
 }
 pub async fn golfer_breakdown(
     pool: &PgPool,

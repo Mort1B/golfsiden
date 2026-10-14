@@ -2265,6 +2265,16 @@ FANTASY-3 canonical JSON keys and ordering, verified against a frozen query fixt
 so existing disposition fingerprints remain valid. No award ledger, cache or
 background worker is introduced.
 
+Round-result reads use the same transaction and full fact loader, then project
+only the requested round. Overall and golfer/manager breakdown reads still
+project the complete tournament. Both paths share round revision hashing and
+the internal finalization flag used for post-commit invalidation. This avoids
+unneeded projection, overall ranking and hashing without changing SQL, locking
+or authorization. Loader validation still applies to every loaded round;
+domain-only projection errors in unrelated rounds do not block a valid scoped
+round response. Exact serialized parity and separate finalization-flag tests
+protect the shared response contract.
+
 All tournament golfers, including historical withdrawn or unselected golfers,
 and all scheduled rounds belong to the projection inventory. The participation
 wrapper distinguishes future rounds, explicit nonparticipation and missing

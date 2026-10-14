@@ -9,8 +9,7 @@ None.
 
 ## Next candidate
 
-R3: specialize round-only Fantasy projection after measurement and parity tests.
-Already authorized; preserve shared transaction, loading, authorization and locks.
+None selected.
 
 ## Later queue
 
