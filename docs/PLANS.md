@@ -9,29 +9,30 @@ None. Awaiting approval of one bounded next step.
 
 ## Next candidate
 
-### A1b — P2: bind private tournament list/detail reads to their session
+### A1c — P2: bind private roster and round reads to their session
 
 Evidence: [application review](validation/application-review-2026-10-14/README.md#a1--p2-revoked-sessions-can-finish-private-reads).
 
-- Goal: prevent private tournament list, membership-list and detail replies from
-  finishing with authority that was revoked or expired while they waited.
-- Scope: `GET /api/tournaments`, `GET /api/me/tournaments`, and
-  `GET /api/tournaments/{id}`; their API/repository authority boundary, focused
-  session support, regressions and docs. Exclude roster/round/pairing/team reads,
-  legacy writes, scoring rules, schema, frontend and deployment changes.
-- Behavior: carry session identity through authorization and result assembly,
-  retain required session/user/membership locks, recheck wall-clock expiry before
-  completion and preserve list/detail privacy, ordering and roles. Define bounded
-  whole-read retry if repeatable-read authority can invalidate a snapshot; return
-  the established private error contracts without partial data.
-- Validation: reproduce the original race before repairing; cover revocation,
-  credential replacement, expiry, membership changes, missing/cross-tournament
-  resources, valid concurrency, response/cache parity and no writes/SSE. Run full
-  backend/PostgreSQL ladders, affected browser evidence and read-only review.
-- Invariants: exact stored membership owns tournament access; preserve current
-  account/player separation, listing semantics and snapshot coherence.
-- Stop: publish these three private-read repairs only; leave sibling read/write
-  families and other assessment findings queued.
+- Goal: prevent roster and round list/detail replies from completing with revoked
+  or expired session authority during database waits.
+- Scope: `GET /api/tournaments/{id}/players`, `GET
+  /api/tournaments/{id}/rounds`, and `GET /api/rounds/{id}`; their API/repository
+  boundary, focused session support, regressions and docs. Exclude pairing/team
+  reads, readiness endpoints, legacy writes, scoring, schema and frontend changes.
+- Behavior: carry the session ID into one consistent transaction, derive stored
+  tournament ownership, retain session/user/exact-membership locks through
+  assembly and recheck database wall-clock expiry before success. Handle
+  invalidated snapshots with one bounded full-read retry and private generic
+  unavailable responses, preserving ordering and existing payload/error contracts.
+- Validation: reproduce before repairing; cover revocation, credential generation,
+  expiry during membership and later loading waits, membership changes, valid
+  concurrency, missing/cross-tournament targets, every role, cache policy and no
+  writes/SSE. Run full backend/PostgreSQL ladders, focused real-browser evidence
+  and independent read-only review.
+- Invariants: account membership remains independent of player/team membership;
+  preserve roster handicap-lock state, round fields and stored ownership.
+- Stop: publish these three GET repairs only; leave remaining read/write families
+  and assessment findings queued.
 
 ## Later queue
 
@@ -41,8 +42,8 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A1 follow-up after A1b:** repair the remaining user-only private
-   round/roster/pairing/team read families in bounded slices; inventory
+1. **P2 / A1 follow-up after A1c:** repair remaining user-only private
+   pairing/team/readiness families in bounded slices; inventory
    analogous expiry gaps in legacy team/round writes as a separate slice.
 2. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
    the SQLx cancellation patch and recheck TLS behavior/advisory reachability.

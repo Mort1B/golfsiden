@@ -1,0 +1,61 @@
+warning: use of deprecated method `futures_channel::mpsc::UnboundedReceiver::<T>::try_next`: please use `try_recv` instead
+   --> vendor/sqlx-postgres/src/listener.rs:335:56
+    |
+335 |         if let Ok(Some(notification)) = self.buffer_rx.try_next() {
+    |                                                        ^^^^^^^^
+    |
+    = note: `#[warn(deprecated)]` on by default
+
+warning: variant `Flush` is never constructed
+  --> vendor/sqlx-postgres/src/message/mod.rs:76:5
+   |
+68 | pub enum FrontendMessageFormat {
+   |          --------------------- variant in this enum
+...
+76 |     Flush = b'H',
+   |     ^^^^^
+   |
+   = note: `FrontendMessageFormat` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `Flush` is never constructed
+  --> vendor/sqlx-postgres/src/message/flush.rs:11:12
+   |
+11 | pub struct Flush;
+   |            ^^^^^
+
+warning: `sqlx-postgres` (lib) generated 3 warnings
+warning: `sqlx-postgres` (lib) generated 3 warnings (3 duplicates)
+   Compiling golf-api v0.1.0 (/home/morten/Prog/guttasgolfside/golfsiden/backend)
+warning: function `lock_membership` is never used
+  --> backend/tests/tournament_read_sessions/support.rs:92:14
+   |
+92 | pub async fn lock_membership(tx: &mut Transaction<'_, Postgres>) {
+   |              ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `golf-api` (test "tournament_read_sessions") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.46s
+     Running tests/tournament_read_sessions.rs (target/debug/deps/tournament_read_sessions-56dc1f5cf4bd8284)
+
+running 1 test
+/api/tournaments: status=200 OK, code=null
+/api/me/tournaments: status=200 OK, code=null
+/api/tournaments/00000000-0000-0000-0000-000000002001: status=200 OK, code=null
+
+thread 'tournament_read_sessions::authorization::revocation_before_transactional_authorization_denies_all_three_reads' (362051) panicked at backend/tests/tournament_read_sessions/authorization.rs:46:9:
+assertion `left == right` failed: /api/tournaments
+  left: 200
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test tournament_read_sessions::authorization::revocation_before_transactional_authorization_denies_all_three_reads ... FAILED
+
+failures:
+
+failures:
+    tournament_read_sessions::authorization::revocation_before_transactional_authorization_denies_all_three_reads
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.01s
+
+error: test failed, to rerun pass `-p golf-api --test tournament_read_sessions`

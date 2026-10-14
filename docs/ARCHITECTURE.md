@@ -449,6 +449,21 @@ and reapplies runtime grants before the API is started.
   All four HTTP routes apply `private, no-store` to successful and failed replies.
   Internal unrestricted and capability-authorized public projections retain
   their existing ownership; sibling workspace reads do not inherit this repair.
+- Private tournament list, own-membership list and detail reads take session IDs
+  through `tournaments/reads.rs`. Its repeatable-read transaction derives the user
+  from locked active session/user rows before acquiring exact membership share
+  locks; collections lock all existing memberships in tournament UUID order with
+  one query. Payload queries retain the prior display ordering, roles and
+  conditional player links in that same snapshot. A later membership insertion
+  is visible on a fresh read; removal or role change that invalidates a locking
+  snapshot discards the complete attempt. One full read retry handles direct and
+  nested `40001`; exhaustion returns generic `503 service_unavailable`. The final
+  active-session check uses database wall-clock time after payload loading, even
+  for empty collections. Session/user and membership locks last through commit;
+  later revocation, credentials or membership removal serialize behind readers
+  that already hold the corresponding locks. All statuses on these three GET
+  routes are `private, no-store`. No mutation retry or sibling read repair follows
+  from this boundary, and expiry is not frozen during COMMIT.
 - Course discovery is a bundled JSON catalog, not provider free-text search or a
   persistence model. Its tournament-scoped GET handler requires exact admin
   membership, searches names and internal aliases locally, preserves file order,

@@ -1,0 +1,116 @@
+[
+  {
+    "width": 320,
+    "scopes": [
+      {
+        "kind": "mine",
+        "path": "/api/me/tournaments",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "no_horizontal_overflow": true,
+        "injected_failures": 2
+      },
+      {
+        "kind": "detail",
+        "path": "/api/tournaments/00000000-0000-0000-0000-000000002001",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "no_horizontal_overflow": true,
+        "injected_failures": 2
+      },
+      {
+        "kind": "list",
+        "path": "/api/tournaments",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "no_horizontal_overflow": true,
+        "injected_failures": 2
+      }
+    ],
+    "logged_out_all_three_private_401": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  },
+  {
+    "width": 390,
+    "scopes": [
+      {
+        "kind": "mine",
+        "path": "/api/me/tournaments",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "no_horizontal_overflow": true,
+        "injected_failures": 2
+      },
+      {
+        "kind": "detail",
+        "path": "/api/tournaments/00000000-0000-0000-0000-000000002001",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "no_horizontal_overflow": true,
+        "injected_failures": 2
+      },
+      {
+        "kind": "list",
+        "path": "/api/tournaments",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "no_horizontal_overflow": true,
+        "injected_failures": 2
+      }
+    ],
+    "logged_out_all_three_private_401": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  },
+  {
+    "width": 1280,
+    "scopes": [
+      {
+        "kind": "mine",
+        "path": "/api/me/tournaments",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "no_horizontal_overflow": true,
+        "injected_failures": 2
+      },
+      {
+        "kind": "detail",
+        "path": "/api/tournaments/00000000-0000-0000-0000-000000002001",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "no_horizontal_overflow": true,
+        "injected_failures": 2
+      },
+      {
+        "kind": "list",
+        "path": "/api/tournaments",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "no_horizontal_overflow": true,
+        "injected_failures": 2
+      }
+    ],
+    "logged_out_all_three_private_401": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  }
+]

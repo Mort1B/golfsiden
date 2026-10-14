@@ -3,22 +3,24 @@ mod complete;
 mod counted_rounds;
 pub mod details;
 mod handicaps;
+mod reads;
 mod start;
 
 pub use archive::{ArchiveTournamentResult, archive_authorized};
 pub use complete::{CompleteTournamentResult, complete_authorized};
 pub use counted_rounds::{UpdateCountedRoundsResult, update_counted_rounds_authorized};
 pub use handicaps::{change_player_handicap_authorized, list_players, list_players_for_member};
+pub use reads::{TournamentReadError, get_for_session, list_for_session, list_mine_for_session};
 pub use start::{StartTournamentResult, start_authorized};
 
 use chrono::NaiveDate;
-use sqlx::{FromRow, PgPool};
+use sqlx::PgPool;
 use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
-    domain::models::{MyTournament, ScoringMode, Tournament, TournamentRole, TournamentStatus},
-    repositories::tournament_authorization::{self, AuthorizationError},
+    domain::models::{ScoringMode, Tournament},
+    repositories::tournament_authorization::AuthorizationError,
 };
 
 pub(super) const COLUMNS: &str = "id, name, description, start_date, end_date, number_of_rounds, counted_rounds, mandatory_round_id, tie_break_policy, status, scoring_mode, created_at, updated_at";
@@ -61,70 +63,12 @@ pub enum TournamentMutationError {
     Database(#[from] sqlx::Error),
 }
 
-#[derive(FromRow)]
-struct MyTournamentRow {
-    id: Uuid,
-    name: String,
-    description: String,
-    start_date: NaiveDate,
-    end_date: NaiveDate,
-    number_of_rounds: i16,
-    counted_rounds: Option<i16>,
-    mandatory_round_id: Option<Uuid>,
-    tie_break_policy: crate::domain::models::TournamentTieBreakPolicy,
-    status: TournamentStatus,
-    scoring_mode: ScoringMode,
-    created_at: chrono::DateTime<chrono::Utc>,
-    updated_at: chrono::DateTime<chrono::Utc>,
-    role: TournamentRole,
-    player_id: Option<Uuid>,
-}
-
 pub async fn list(pool: &PgPool) -> Result<Vec<Tournament>, sqlx::Error> {
     sqlx::query_as::<_, Tournament>(&format!(
         "SELECT {COLUMNS} FROM tournaments ORDER BY start_date DESC, name, id"
     ))
     .fetch_all(pool)
     .await
-}
-
-pub async fn list_for_member(pool: &PgPool, user_id: Uuid) -> Result<Vec<Tournament>, sqlx::Error> {
-    sqlx::query_as::<_, Tournament>(&format!(
-        "SELECT t.{columns}
-         FROM tournament_memberships tm
-         JOIN tournaments t ON t.id = tm.tournament_id
-         WHERE tm.user_id = $1
-         ORDER BY t.start_date DESC, t.name, t.id",
-        columns = COLUMNS.replace(", ", ", t.")
-    ))
-    .bind(user_id)
-    .fetch_all(pool)
-    .await
-}
-
-pub async fn get_for_member(
-    pool: &PgPool,
-    user_id: Uuid,
-    tournament_id: Uuid,
-) -> Result<Tournament, AuthorizationError> {
-    let mut transaction = pool.begin().await?;
-    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-        .execute(&mut *transaction)
-        .await?;
-    tournament_authorization::require_tournament_member_read(
-        &mut transaction,
-        user_id,
-        tournament_id,
-    )
-    .await?;
-    let tournament = sqlx::query_as::<_, Tournament>(&format!(
-        "SELECT {COLUMNS} FROM tournaments WHERE id = $1"
-    ))
-    .bind(tournament_id)
-    .fetch_one(&mut *transaction)
-    .await?;
-    transaction.commit().await?;
-    Ok(tournament)
 }
 
 pub async fn get(pool: &PgPool, id: Uuid) -> Result<Option<Tournament>, sqlx::Error> {
@@ -150,48 +94,4 @@ pub async fn create(
         .bind(id).bind(name.trim()).bind(description.trim()).bind(start_date).bind(end_date)
         .bind(number_of_rounds).bind(counted_rounds).bind(scoring_mode).execute(pool).await?;
     get(pool, id).await?.ok_or(sqlx::Error::RowNotFound)
-}
-
-pub async fn list_for_user(pool: &PgPool, user_id: Uuid) -> Result<Vec<MyTournament>, sqlx::Error> {
-    let rows = sqlx::query_as::<_, MyTournamentRow>(
-        "SELECT t.id, t.name, t.description, t.start_date, t.end_date,
-                t.number_of_rounds, t.counted_rounds, t.mandatory_round_id, t.tie_break_policy, t.status, t.scoring_mode, t.created_at,
-                t.updated_at, tm.role,
-                CASE WHEN tp.player_id IS NOT NULL THEN u.player_id END AS player_id
-         FROM tournament_memberships tm
-         JOIN tournaments t ON t.id = tm.tournament_id
-         JOIN users u ON u.id = tm.user_id
-         LEFT JOIN tournament_players tp
-           ON tp.tournament_id = tm.tournament_id AND tp.player_id = u.player_id
-         WHERE tm.user_id = $1
-         ORDER BY t.start_date DESC, lower(t.name), t.id",
-    )
-    .bind(user_id)
-    .fetch_all(pool)
-    .await?;
-    Ok(rows.into_iter().map(MyTournamentRow::into_model).collect())
-}
-
-impl MyTournamentRow {
-    fn into_model(self) -> MyTournament {
-        MyTournament {
-            tournament: Tournament {
-                id: self.id,
-                name: self.name,
-                description: self.description,
-                start_date: self.start_date,
-                end_date: self.end_date,
-                number_of_rounds: self.number_of_rounds,
-                counted_rounds: self.counted_rounds,
-                mandatory_round_id: self.mandatory_round_id,
-                tie_break_policy: self.tie_break_policy,
-                status: self.status,
-                scoring_mode: self.scoring_mode,
-                created_at: self.created_at,
-                updated_at: self.updated_at,
-            },
-            role: self.role,
-            player_id: self.player_id,
-        }
-    }
 }

@@ -3,8 +3,9 @@ use std::sync::Arc;
 use axum::{
     Json, Router,
     extract::{Path, State, rejection::JsonRejection},
-    http::{StatusCode, header::CACHE_CONTROL},
-    response::IntoResponse,
+    http::{HeaderValue, StatusCode, header::CACHE_CONTROL},
+    middleware,
+    response::{IntoResponse, Response},
     routing::get,
 };
 use chrono::{DateTime, Utc};
@@ -19,7 +20,7 @@ use crate::{
     },
     domain::models::TournamentHandicapCorrection,
     error::{ApiError, ApiResult},
-    repositories::tournaments::{self, TournamentMutationError},
+    repositories::tournaments::{self, TournamentMutationError, TournamentReadError},
 };
 
 pub fn routes() -> Router<Arc<AppState>> {
@@ -27,6 +28,12 @@ pub fn routes() -> Router<Arc<AppState>> {
         .route("/api/tournaments", get(list))
         .route("/api/me/tournaments", get(list_mine))
         .route("/api/tournaments/{tournament_id}", get(get_one))
+        .layer(middleware::map_response(private_response))
+        .merge(other_routes())
+}
+
+fn other_routes() -> Router<Arc<AppState>> {
+    Router::new()
         .route(
             "/api/tournaments/{tournament_id}/archive",
             axum::routing::post(archive),
@@ -51,6 +58,21 @@ pub fn routes() -> Router<Arc<AppState>> {
             "/api/tournaments/{tournament_id}/players/{player_id}/handicap-corrections",
             axum::routing::post(change_player_handicap),
         )
+}
+
+async fn private_response(mut response: Response) -> Response {
+    response
+        .headers_mut()
+        .insert(CACHE_CONTROL, HeaderValue::from_static("private, no-store"));
+    response
+}
+
+fn map_read_error(error: TournamentReadError) -> ApiError {
+    match error {
+        TournamentReadError::Authorization(error) => map_authorization_error(error),
+        TournamentReadError::Database(error) => ApiError::Database(error),
+        TournamentReadError::Unavailable => ApiError::ServiceUnavailable,
+    }
 }
 
 #[derive(Deserialize)]
@@ -99,7 +121,9 @@ async fn list(
     authenticated: AuthenticatedSession,
 ) -> ApiResult<impl IntoResponse> {
     let tournaments =
-        tournaments::list_for_member(&state.pool, authenticated.principal.user_id).await?;
+        tournaments::list_for_session(&state.pool, authenticated.principal.session_id)
+            .await
+            .map_err(map_read_error)?;
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(tournaments)))
 }
 
@@ -108,9 +132,10 @@ async fn get_one(
     Path(id): Path<Uuid>,
     authenticated: AuthenticatedSession,
 ) -> ApiResult<impl IntoResponse> {
-    let tournament = tournaments::get_for_member(&state.pool, authenticated.principal.user_id, id)
-        .await
-        .map_err(map_authorization_error)?;
+    let tournament =
+        tournaments::get_for_session(&state.pool, authenticated.principal.session_id, id)
+            .await
+            .map_err(map_read_error)?;
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(tournament)))
 }
 
@@ -120,7 +145,11 @@ async fn list_mine(
 ) -> ApiResult<impl IntoResponse> {
     Ok((
         [(CACHE_CONTROL, "private, no-store")],
-        Json(tournaments::list_for_user(&state.pool, authenticated.principal.user_id).await?),
+        Json(
+            tournaments::list_mine_for_session(&state.pool, authenticated.principal.session_id)
+                .await
+                .map_err(map_read_error)?,
+        ),
     ))
 }
 
@@ -352,4 +381,27 @@ where
     D: serde::Deserializer<'de>,
 {
     Option::<i16>::deserialize(deserializer)
+}
+
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn exhausted_read_retries_are_private_generic_unavailable() {
+        use axum::{
+            http::{StatusCode, header::CACHE_CONTROL},
+            response::IntoResponse,
+        };
+        use http_body_util::BodyExt;
+        let response = super::private_response(
+            super::map_read_error(super::TournamentReadError::Unavailable).into_response(),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+        assert_eq!(response.headers()[CACHE_CONTROL], "private, no-store");
+        let bytes = response.into_body().collect().await.unwrap().to_bytes();
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&bytes).unwrap(),
+            serde_json::json!({"error":{"code":"service_unavailable","message":"service is not ready"}})
+        );
+    }
 }

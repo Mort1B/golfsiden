@@ -187,7 +187,7 @@ fn constraint(error: &sqlx::Error) -> Option<&str> {
 
 #[sqlx::test(migrations = "../migrations")]
 async fn completes_once_audits_actor_preserves_visibility_scores_and_member_reads(pool: PgPool) {
-    seed(&pool, true).await;
+    let session = seed(&pool, true).await;
     let expected = version(&pool).await;
     let state = AppState::new(pool.clone());
     let mut events = state.live_events.subscribe();
@@ -231,7 +231,7 @@ async fn completes_once_audits_actor_preserves_visibility_scores_and_member_read
         .unwrap();
     assert_eq!(before, after);
     assert_eq!(
-        tournaments::get_for_member(&pool, ADMIN, TRIP)
+        tournaments::get_for_session(&pool, session, TRIP)
             .await
             .unwrap()
             .status,

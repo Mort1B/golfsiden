@@ -504,6 +504,20 @@ conflict returns generic `503 service_unavailable` without standings. Every repl
 from these four endpoints is `private, no-store`. Scoring values, result sharing
 and the other private workspace endpoints retain their existing contracts.
 
+
+`GET /api/tournaments`, `GET /api/me/tournaments` and `GET
+/api/tournaments/{id}` also bind the entire read to the active session. Session,
+user and membership share locks remain held through one consistent snapshot and
+payload assembly. Revocation or credential replacement that wins the authority
+lock denies the read; a later write waits behind an already authorized read.
+Natural expiry during a database wait returns `401` without tournament data,
+including otherwise empty lists. A changed membership snapshot is discarded and
+read once more from fresh authority; a second snapshot conflict returns generic
+`503 service_unavailable`. All responses from these three routes use `private,
+no-store`. Existing membership-only visibility, list ordering, roles, linked
+entrant IDs and `403`/`404` contracts remain unchanged. The other round, roster,
+pairing and team read families remain separately queued for session binding.
+
 ## Production and operator behavior
 
 Interrupted SQLx transaction initialization queues rollback before the connection

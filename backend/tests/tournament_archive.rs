@@ -712,7 +712,7 @@ async fn archived_member_results_stay_private_and_visibility_and_revocation_rema
 
 #[sqlx::test(migrations = "../migrations")]
 async fn archives_once_with_audit_event_and_unchanged_private_history(pool: PgPool) {
-    completed(&pool).await;
+    let session = completed(&pool).await;
     let expected = version(&pool).await;
     let before = history(&pool).await;
     let state = AppState::new(pool.clone());
@@ -758,21 +758,23 @@ async fn archives_once_with_audit_event_and_unchanged_private_history(pool: PgPo
         1
     );
     assert_eq!(
-        tournaments::get_for_member(&pool, ADMIN, TRIP)
+        tournaments::get_for_session(&pool, session, TRIP)
             .await
             .unwrap()
             .status,
         TournamentStatus::Archived
     );
     assert_eq!(
-        tournaments::list_for_member(&pool, ADMIN)
+        tournaments::list_for_session(&pool, session)
             .await
             .unwrap()
             .len(),
         1
     );
     assert_eq!(
-        tournaments::list_for_user(&pool, ADMIN).await.unwrap()[0]
+        tournaments::list_mine_for_session(&pool, session)
+            .await
+            .unwrap()[0]
             .tournament
             .status,
         TournamentStatus::Archived
@@ -799,7 +801,7 @@ async fn archives_once_with_audit_event_and_unchanged_private_history(pool: PgPo
         .unwrap();
     assert_eq!(response.status(), StatusCode::FORBIDDEN);
     assert!(
-        tournaments::get_for_member(&pool, ADMIN, TRIP)
+        tournaments::get_for_session(&pool, session, TRIP)
             .await
             .is_err()
     );
