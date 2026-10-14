@@ -1,0 +1,21 @@
+     Running tests/four_ball_read_sessions.rs (target/debug/deps/four_ball_read_sessions-0f818b878b3af2ef)
+
+running 1 test
+/api/rounds/00000000-0000-0000-0000-000000000005/four-ball/scorecards/00000000-0000-0000-0000-000000000015: status=200 OK, code=null
+/api/rounds/00000000-0000-0000-0000-000000000005/four-ball/scorecards/00000000-0000-0000-0000-000000000015/scoring: status=401 Unauthorized, code="unauthenticated"
+
+thread 'four_ball_read_sessions::expiry::expiry_during_membership_wait_denies_both_four_ball_reads' (533911) panicked at backend/tests/four_ball_read_sessions/expiry.rs:34:9:
+assertion `left == right` failed
+  left: 200
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test four_ball_read_sessions::expiry::expiry_during_membership_wait_denies_both_four_ball_reads ... FAILED
+
+failures:
+
+failures:
+    four_ball_read_sessions::expiry::expiry_during_membership_wait_denies_both_four_ball_reads
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.56s
+
+error: test failed, to rerun pass `-p golf-api --test four_ball_read_sessions`

@@ -511,7 +511,9 @@ and reapplies runtime grants before the API is started.
   distinguishes retained session/user/membership locks from the final database
   wall-clock check. The three ordinary numeric score-access/card GETs now perform
   that final check; see [A1g acceptance](validation/numeric-read-session-2026-10-14/README.md).
-  Four-ball/Stableford cards, match detail/completion/table and invitation metadata
+  Both four-ball card GETs also perform it; see
+  [A1h acceptance](validation/four-ball-read-session-2026-10-14/README.md).
+  Stableford cards, match detail/completion/table and invitation metadata
   still retain authority locks but omit that final check. Final-visibility and
   course GETs retain user-only authorization boundaries. Awards, player-account
   metadata, result-share status, Fantasy reads and match listing already perform
@@ -1343,6 +1345,18 @@ entries, independent gross/net winners and side totals. Round leaderboard
 metadata. Cards never expose `confirmed_by`. Membership authorization precedes
 format errors in private reads. Restricted metadata is withheld and winners,
 totals and progress are derived from permitted holes.
+
+Both four-ball card GETs retry their complete repeatable-read transaction once
+after `40001`. Stored context, active session/user, exact membership, both frozen
+partners and scoring permissions are reacquired; no discarded facts survive.
+After input/confirmation loading and visibility projection, a final database
+wall-clock session check precedes commit. Expiry denies success, including empty
+cards. A second conflict returns generic `503 service_unavailable` through a
+GET-only error mapper; other errors retain their prior mapping. Existing all-status
+`private, no-store` middleware is unchanged. Conditional delivery, confirmation,
+their shared helpers and mutation error mappings receive no retries or behavior
+changes. This adds one final authority query on ordinary successful reads and
+makes no measured performance claim.
 
 The frontend uses dedicated decoders and side components. New queued edits have
 `protocol: four_ball_v1`, an immutable team-side identity, player-owned head and

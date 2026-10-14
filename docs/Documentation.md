@@ -546,10 +546,12 @@ workspace and readiness repairs above do not imply every sibling checks expiry
 after loading. The [source inventory](validation/private-read-inventory-2026-10-14/README.md)
 records its historical snapshot of 27 remaining tournament-scoped GETs: 11 bound
 and 16 incomplete. The subsequent [numeric read repair](validation/numeric-read-session-2026-10-14/README.md)
-closes three of those incomplete boundaries with runtime evidence. Ten P2 routes
-and three P3 course routes remain: format-specific card reads, match detail/
-completion/table and invitations still lack a final expiry check; final-visibility
-and course reads still use extracted user identity. The source inventory itself
+closes three of those incomplete boundaries with runtime evidence. The
+[four-ball read repair](validation/four-ball-read-session-2026-10-14/README.md)
+closes two more. Eight P2 routes and three P3 course routes remain: Stableford
+card reads, match detail/completion/table and invitations still lack a final
+expiry check; final-visibility and course reads still use extracted user identity.
+The source inventory itself
 executes no routes. In particular, Fantasy selection/results GETs may finalize due windows;
 they are not side-effect-free inspection tools. The report owns exact routes,
 severity, cache/retry differences and evidence limits.
@@ -815,6 +817,17 @@ gross/net winners, optional totals and side-hole progress. Neither card exposes
 reads show only the first nine holes and withhold completion, confirmation and
 confirmation time. The scoring read rejects locked rounds. All routes are private
 and non-cacheable; membership is checked before private-read format errors.
+
+Both card GETs recheck active session validity against database wall-clock time
+after complete input/confirmation loading and visibility projection, before
+commit. Expiry during those waits returns `401 unauthenticated`, including for
+empty cards. Retained locks continue to serialize later session/credential and
+membership writers. If `40001` invalidates an attempt, one fresh complete read
+repeats context, role, both-partner and fact loading. A second conflict returns
+generic private `503 service_unavailable`; other errors retain their established
+mapping. No mutation receives a retry. This check does not freeze time through
+commit or network delivery. Nine-hole four-ball remains unsupported; hidden
+front-nine reads still project nine holes from the preserved 18-hole card.
 
 `POST` to the side path plus `/confirm`, with `{}`, certifies the current server
 card after authorizing both partners. It requires at least one numeric partner

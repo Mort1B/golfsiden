@@ -1,56 +1,51 @@
-# Numeric score reads recheck session expiry after loading
+# Four-ball card reads recheck session expiry after loading
 
-A1g fixes a reproduced P2 gap in the ordinary numeric member-card, scoring-card
-and shared score-access GETs. Before the change, all three could return 200 after
-the session naturally expired during a membership wait. Existing locks protected
-revocation and credential replacement, but time could advance while those locks
-were held. The original regression now returns non-storeable 401 from each route,
-without score writes or live events.
+A1h closes the P2 late-expiry gap in the four-ball member/scoring card GETs. Both
+original endpoints returned 200 after their active session expired while waiting
+on the final confirmation query. The same regression now returns private 401
+from both, with unchanged input/audit/receipt/confirmation state and no SSE.
 
-Each successful attempt checks database wall-clock session validity after its
-complete payload is assembled, immediately before commit. This includes card
-confirmation loading and member projection, full scoring summaries, four-ball
-partner-to-team owner mapping, and viewer/unlinked-player/singles empty lists.
-The boundary does not freeze time through commit or network delivery.
+Scoring already rechecked expiry during both-partner authorization, so its
+membership-wait baseline was already denied. It still lacked a final check after
+subsequent card loading. The repair adds that central database wall-clock check
+after inputs, confirmation and visibility projection, immediately before commit.
+It covers empty cards too, without claiming to freeze expiry during delivery.
 
-For example, an empty writable-owner list remains a successful authorized reply
-for a valid viewer. If that session expires while waiting for membership, the
-server now rejects the reply instead of returning a stale successful empty list.
-An ordinary member card still uses preserved round handicaps and redacts a
-hidden final's back nine exactly as before.
+Each complete repeatable-read attempt now permits one fresh retry after `40001`.
+Stored context, role, partner ordering, both-partner scoring authority and facts
+are rebuilt. A second conflict maps to generic private 503 through a GET-only
+mapper; other errors keep their old mapping. Conditional input delivery,
+confirmation, their shared helpers and mutation mappings remain unchanged.
+The original context/auth/membership/format/partner/editability order and existing
+all-status non-storeable headers are preserved.
 
-All three reads retain repeatable read and allow one fresh whole attempt after
-`40001`. Existing scoring-card retry behavior is shared with the member read;
-access owns a read-specific wrapper so shared mutation authorization is unchanged.
-A second conflict yields generic non-storeable 503. No role, context or facts
-survive the discarded attempt; other errors are not retried.
+For example, when an administrator is demoted to viewer while final visibility
+changes from released to hidden, a member-card retry reloads both context and
+role and returns nine visible holes with protected metadata null. The scoring
+retry rejects that viewer. Neither can reuse the discarded authorization.
 
-Selected GET middleware preserves `no-store` headers and fills missing ones with
-`private, no-store`, including missing-resource errors. The existing 404 test now
-asserts that deliberate contract. Mutation, conditional delivery, format-specific
-card routes, formulas, schema and frontend source are unchanged. Each successful
-selected read adds one final session query; no speedup or batching is claimed.
+Seventeen new PostgreSQL/API cases cover expiry at real waits, authority writers,
+fresh context and partner ordering, one-authorized-partner rejection, coherent
+input/confirmation snapshots, signed frozen handicaps, ties/pickups/unentered
+fields, cancellation, concurrency, exact retry counts and no writes/SSE.
+Corrected focused suites pass 34 tests. An initial draft-card expectation was
+corrected to assert the existing 409 before frozen partner snapshots exist.
+Independent read-only review found no actionable source/test findings.
 
-The 18 new PostgreSQL/API regressions cover authority writers, natural expiry at
-late loading/empty branches, changed hidden-final context on retry, fresh ordering,
-coherent scores/confirmation, cancellation, concurrent full JSON parity, nine-hole
-foursomes snapshots, exact retry counts and no writes/SSE. Corrected focused
-suites pass 58 tests. Independent read-only review found no actionable findings.
-Formatting, the 261-test ordinary backend ladder, strict Clippy and binary build
-pass. The full PostgreSQL ladder passes 831 tests, with four existing performance
-probes ignored. Explicit migration and seed pass at schema 39; local health and
-readiness return 200. The [validation report](validation/numeric-read-session-2026-10-14/README.md)
-records the commands, initial failures and final evidence. Owned local validation
+Formatting, 261 ordinary backend tests, strict Clippy and binary build pass.
+The full PostgreSQL ladder passes 848 tests, with four existing performance probes
+ignored. Explicit migration and seed pass at schema 39. The
+[validation report](validation/four-ball-read-session-2026-10-14/README.md) records
+commands, initial fixture correction and final evidence. Owned local validation
 services were stopped and removed.
+Chrome passes six member/scoring flows at 320, 390 and 1280px, including loading,
+empty, populated, denied and error/retry states. Real typed clients and private
+200/401 replies pass; long names fit, with no score writes, page exceptions or
+unexpected network failures. Local health/readiness pass at schema 39.
 
-Chrome passes nine endpoint/width flows at 320, 390 and 1280px: loading, populated,
-unentered/read-only fallback, denial, error and explicit read retry. Long names
-wrap without horizontal overflow. Real typed decoders and 200/401 cache envelopes
-pass; no score writes, page exceptions or unexpected network failures occur.
-The report distinguishes injected UI failures from real database authority races,
-retaining inspected screenshots and initial fixture corrections.
-
-Ten P2 and three P3 routes from the historical A1f inventory remain. Physical
-devices, public hosting, production load and other queued findings keep their
-acceptance limits. [PLANS.md](PLANS.md) selects the next bounded candidate;
-no queued repair is part of A1g.
+No formula, payload, schema, dependency or frontend source changes. Four-ball
+remains 18 holes; a hidden front nine is a projection, not nine-hole support.
+Each successful read adds one final authority query; no speedup is claimed.
+Eight P2 and three P3 inventory routes remain, alongside other queued findings
+and existing device/hosting acceptance limits. [PLANS.md](PLANS.md) owns the next
+bounded candidate; no queued repair is part of A1h.

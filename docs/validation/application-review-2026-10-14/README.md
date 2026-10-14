@@ -19,10 +19,12 @@ pairing/completion readiness GETs. The
 27 other tournament-scoped GETs: 11 source-bound and 16 incomplete (13 P2, three
 P3) at that snapshot. The subsequent
 [numeric read repair](../numeric-read-session-2026-10-14/README.md) closes three
-of those P2 routes with reproduced late-expiry evidence. Ten P2 routes and three
-P3 course routes remain; those remaining inventory findings are source-supported,
-not new race reproductions. Remaining repairs and legacy-write inventory stay
-queued. The assessment below describes the originally reviewed revision.
+of those P2 routes with reproduced late-expiry evidence. The
+[four-ball read repair](../four-ball-read-session-2026-10-14/README.md) closes two
+more P2 routes with late confirmation-loading expiry evidence. Eight P2 routes
+and three P3 course routes remain; those remaining inventory findings are
+source-supported, not new race reproductions. Remaining repairs and legacy-write
+inventory stay queued. The assessment below describes the originally reviewed revision.
 
 This is a documentation-only assessment of current application source, database
 contracts, browser state, production configuration and dependency advisories.

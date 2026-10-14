@@ -24,6 +24,28 @@ pub async fn get(
     team_id: Uuid,
     scoring: bool,
 ) -> Result<Card, ScorecardError> {
+    let conflict = |error: &ScorecardError| {
+        matches!(error, ScorecardError::Database(error) if error.as_database_error()
+            .is_some_and(|error| error.code().as_deref() == Some("40001")))
+    };
+    // Retry the complete snapshot, including stored context and both partners.
+    match get_once(pool, session_id, round_id, team_id, scoring).await {
+        Err(error) if conflict(&error) => {}
+        result => return result,
+    }
+    match get_once(pool, session_id, round_id, team_id, scoring).await {
+        Err(error) if conflict(&error) => Err(ScorecardError::ReadUnavailable),
+        result => result,
+    }
+}
+
+async fn get_once(
+    pool: &PgPool,
+    session_id: Uuid,
+    round_id: Uuid,
+    team_id: Uuid,
+    scoring: bool,
+) -> Result<Card, ScorecardError> {
     let mut tx = pool.begin().await?;
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
         .execute(&mut *tx)
@@ -56,6 +78,9 @@ pub async fn get(
         })
     };
     let card = build(&mut tx, &context, team_id, name, partners, metadata).await?;
+    auth::lock_active_session(&mut tx, session_id)
+        .await?
+        .ok_or(ScorecardError::Unauthenticated)?;
     tx.commit().await?;
     Ok(card)
 }

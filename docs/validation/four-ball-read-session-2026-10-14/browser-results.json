@@ -1,0 +1,95 @@
+[
+  {
+    "width": 320,
+    "kind": "member",
+    "actual_private_200": true,
+    "typed_decoder": true,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_denied": true,
+    "injected_responses": 2
+  },
+  {
+    "width": 320,
+    "kind": "scoring",
+    "actual_private_200": true,
+    "typed_decoder": true,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_denied": true,
+    "injected_responses": 38
+  },
+  {
+    "width": 320,
+    "logged_out_both_non_storeable_401": true,
+    "no_score_mutations": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  },
+  {
+    "width": 390,
+    "kind": "member",
+    "actual_private_200": true,
+    "typed_decoder": true,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_denied": true,
+    "injected_responses": 2
+  },
+  {
+    "width": 390,
+    "kind": "scoring",
+    "actual_private_200": true,
+    "typed_decoder": true,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_denied": true,
+    "injected_responses": 9
+  },
+  {
+    "width": 390,
+    "logged_out_both_non_storeable_401": true,
+    "no_score_mutations": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  },
+  {
+    "width": 1280,
+    "kind": "member",
+    "actual_private_200": true,
+    "typed_decoder": true,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_denied": true,
+    "injected_responses": 2
+  },
+  {
+    "width": 1280,
+    "kind": "scoring",
+    "actual_private_200": true,
+    "typed_decoder": true,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_denied": true,
+    "injected_responses": 15
+  },
+  {
+    "width": 1280,
+    "logged_out_both_non_storeable_401": true,
+    "no_score_mutations": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  }
+]
