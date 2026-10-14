@@ -70,6 +70,22 @@ pub async fn get(
     id: Uuid,
     scoring: bool,
 ) -> Result<Card, Error> {
+    match get_once(pool, session, round, id, scoring).await {
+        Err(Error::Database(sqlx::Error::Database(error)))
+            if error.code().as_deref() == Some("40001") =>
+        {
+            get_once(pool, session, round, id, scoring).await
+        }
+        result => result,
+    }
+}
+async fn get_once(
+    pool: &PgPool,
+    session: Uuid,
+    round: Uuid,
+    id: Uuid,
+    scoring: bool,
+) -> Result<Card, Error> {
     let mut tx = pool.begin().await?;
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
         .execute(&mut *tx)
@@ -89,6 +105,8 @@ pub async fn get(
         metadata(&c, role)
     };
     let card = build(&mut tx, &c, &m, visibility, scoring).await?;
+    // Expiry advances even while locked authority rows and snapshot facts stay stable.
+    live(&mut tx, session).await?;
     tx.commit().await?;
     Ok(card)
 }

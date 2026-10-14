@@ -1,51 +1,38 @@
-# Stableford card reads recheck session expiry after loading
+# Latest iteration — match card session authority
 
-A1i closes the P2 late-expiry gap in the Stableford member/scoring card GETs. Both
-original endpoints returned 200 after their session expired while waiting for
-the final confirmation query. The same regression now returns private 401 from
-both, with unchanged inputs, audits, receipts, confirmations and no read SSE.
+A1j repairs the member and scoring match card GETs. The controlled final-notes
+regression reproduced both original endpoints returning 200 after session expiry.
+Both now return private 401. Existing session/user and exact membership locks
+remain held while the repeatable-read transaction constructs the full card, then
+an existing database wall-clock authority check runs before commit.
 
-A final central database wall-clock session check now follows complete card
-assembly, including inputs, confirmation and domain point/visibility projection,
-immediately before commit. Empty cards follow the same path. Retained locks still
-serialize later authority writers; the check cannot freeze expiry through commit
-or network delivery.
+A `40001` snapshot conflict permits one complete fresh read. Context, roles,
+match/opponent identity, scoring permission, ledger, frozen handicaps and notes
+are discarded and reloaded. An exhausted conflict maps to generic private 503
+only in these two handlers; unrelated errors retain their existing mapping.
+Commands, listing, completion, table and shared helpers keep their contracts.
 
-One fresh complete repeatable-read attempt is allowed after `40001`. Stored
-context, principal, exact membership, player snapshot, scoring permissions and
-facts are reloaded. A second conflict maps to generic private 503 through a GET-only
-mapper; other mappings and existing all-status non-storeable headers remain.
-Settings, conditional delivery, confirmation and shared mutation helpers are
-unchanged. Context/auth/membership/format/player/editability order is preserved,
-including 404 before editability for drafts without frozen player snapshots.
+For example, an administrator card read queued on membership can lose that role
+while final visibility changes from released to hidden. Its retry now uses the
+new member authority and hidden context, returning only the permitted front nine;
+the scoring variant denies. A queued read that expires while loading the final
+numeric notes returns 401 instead of a successful old card.
 
-For example, a stored 20-stroke hole still reports 20 actual strokes and zero
-native points. A complete test card reports 34 points, +2 comparison equivalent
-and 88 actual strokes as separate fields. Pickup remains zero points without
-strokes; unentered holes remain unresolved. None of those calculations changed.
+Eighteen new PostgreSQL/API cases cover these races, bounded retry counts,
+revocation/credential serialization, both-opponent/flight authority, hidden
+noninterference, match lifecycle/result states, accepted report versus numeric
+note semantics, coherent aggregate/note snapshots, cancellation and concurrent
+full JSON parity without writes or SSE. Independent read-only source/test review
+found no actionable issues. Workspace tests, strict Clippy and API binaries
+passed, as did all 1,133 frontend tests, typecheck, lint and build. Chrome checked
+both typed card views at 320, 390 and 1280 px: loading, populated long names,
+private 503/read-only retry, empty, denied and logged-out states, without page
+errors, unexpected network failures or match mutations. The full PostgreSQL
+17.10 Alpine ladder passed 883 tests with four existing ignored probes/benchmarks;
+migrate and seed passed through unchanged schema 39. See the
+[acceptance report](validation/match-card-session-2026-10-15/README.md).
 
-Seventeen new PostgreSQL/API cases cover real expiry waits, authority races,
-fresh context/name on retry, player/flight permissions, frozen signed handicaps,
-point/stroke distinctions, hidden-input invariance, coherent confirmation facts,
-cancellation, concurrent full JSON parity, bounded retries and no writes/SSE.
-Final focused suites pass 36 tests. One initial fixture used an invalid format
-enum; it was corrected without runtime changes. Independent read-only review
-found no actionable source/test findings.
-
-Formatting, 261 ordinary backend tests, strict Clippy and binary build pass.
-The full PostgreSQL ladder passes 865 tests, with four existing performance probes
-ignored. Explicit migration and seed pass at schema 39. The
-[validation report](validation/stableford-read-session-2026-10-14/README.md) records
-commands, the fixture correction and final evidence. Owned local validation
-services were stopped and removed.
-Chrome passes six member/scoring flows at 320, 390 and 1280px, including real typed
-values/private 200 and 401 replies, loading, populated, empty, denied and error/retry
-states. Long names fit; no score writes, page exceptions or unexpected network
-failures occur. Local health/readiness pass at schema 39.
-
-No formulas, success payloads, schema, dependencies or frontend source changed.
-Stableford remains 18 holes, with a hidden front-nine projection. Each success adds
-one final authority query; no speedup is claimed. Six P2 and three P3 inventory
-routes remain alongside the other queued findings and existing device/hosting
-limits. [PLANS.md](PLANS.md) owns the next bounded candidate; no queued repair is
-part of A1i.
+No schema, frontend source, sporting rules, dependencies or hosting changes.
+Ordinary success adds one session query; no measured speedup is claimed. The
+check closes preceding waits, not expiry through commit/serialization/delivery.
+Four P2 routes and three P3 course routes remain in the historical read inventory.

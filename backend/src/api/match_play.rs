@@ -72,7 +72,7 @@ async fn read(
     match_play::reads::get(&state.pool, auth.principal.session_id, round, id, false)
         .await
         .map(Json)
-        .map_err(map_error)
+        .map_err(map_read_error)
 }
 async fn scoring(
     State(state): State<Arc<AppState>>,
@@ -82,7 +82,7 @@ async fn scoring(
     match_play::reads::get(&state.pool, auth.principal.session_id, round, id, true)
         .await
         .map(Json)
-        .map_err(map_error)
+        .map_err(map_read_error)
 }
 #[derive(serde::Deserialize)]
 struct ListQuery {
@@ -159,6 +159,16 @@ async fn table(
         .await
         .map(Json)
         .map_err(map_error)
+}
+fn map_read_error(error: Error) -> ApiError {
+    match error {
+        Error::Database(sqlx::Error::Database(error))
+            if error.code().as_deref() == Some("40001") =>
+        {
+            ApiError::ServiceUnavailable
+        }
+        error => map_error(error),
+    }
 }
 fn map_error(e: Error) -> ApiError {
     match e {

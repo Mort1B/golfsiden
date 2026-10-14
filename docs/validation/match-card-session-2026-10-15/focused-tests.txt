@@ -1,0 +1,21 @@
+running 18 tests
+test match_card_read_sessions::authorization::credential_replacement_before_authority_denies_both_reads ... ok
+test match_card_read_sessions::authorization::authorized_reads_serialize_before_later_revocation_and_credential_changes ... ok
+test match_card_read_sessions::authorization::membership_removal_retries_with_fresh_authority_on_both_reads ... ok
+test match_card_read_sessions::authorization::revocation_before_transactional_authorization_denies_both_reads ... ok
+test match_card_read_sessions::contracts::cancellation_releases_session_authority_on_both_reads ... ok
+test match_card_read_sessions::contracts::full_payloads_preserve_accepted_outcomes_notes_and_fixed_handicaps ... ok
+test match_card_read_sessions::contracts::hidden_member_payload_does_not_leak_changed_terminal_result ... ok
+test match_card_read_sessions::contracts::late_notes_loading_preserves_coherent_aggregate_revision_and_note_snapshot ... ok
+test match_card_read_sessions::contracts::roles_flights_errors_and_mutation_transport_are_preserved ... ok
+test match_card_read_sessions::contracts::scoring_requires_both_opponents_even_when_one_remains_eligible ... ok
+test match_card_read_sessions::expiry::expiry_during_final_notes_loading_denies_both_reads ... ok
+test match_card_read_sessions::expiry::expiry_during_membership_wait_denies_both_match_reads ... ok
+test match_card_read_sessions::retry::both_reads_stop_after_one_serialization_retry_with_private_503 ... ok
+test match_card_read_sessions::retry::membership_demotion_retries_authority_and_changed_hidden_final_context ... ok
+test match_card_read_sessions::retry::retry_reloads_changed_owner_name_and_preserves_frozen_handicap_on_both_reads ... ok
+test match_card_read_sessions::retry::unrelated_database_failures_are_not_retried_on_either_selected_read ... ok
+test match_card_read_sessions::states::wrong_format_stays_not_found_before_membership_resolution ... ok
+test match_card_read_sessions::states::draft_format_completed_and_locked_error_order_stays_match_specific ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 27.97s

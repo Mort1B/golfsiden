@@ -515,7 +515,9 @@ and reapplies runtime grants before the API is started.
   [A1h acceptance](validation/four-ball-read-session-2026-10-14/README.md).
   Both Stableford card GETs do too; see
   [A1i acceptance](validation/stableford-read-session-2026-10-14/README.md).
-  Match detail/completion/table and invitation metadata still retain authority
+  Both match card GETs now perform it too; see
+  [A1j acceptance](validation/match-card-session-2026-10-15/README.md).
+  Match completion/table and invitation metadata still retain authority
   locks but omit that final check. Final-visibility and
   course GETs retain user-only authorization boundaries. Awards, player-account
   metadata, result-share status, Fantasy reads and match listing already perform
@@ -2037,6 +2039,18 @@ add `revision` and `accepted_events` only after writable authorization. Hidden
 metadata is null, not a fabricated false or zero. Match listing intentionally
 loads cards per match within the 500 manual assignments per round bound; revisit
 this N+1 boundary before increasing that limit.
+
+The member and scoring card GETs own complete repeatable-read attempts. Each
+attempt resolves stored round/format, active session/user, exact membership,
+aggregate and, for scoring, both-opponent permission before building the full
+permitted card. A final `live` check uses database wall-clock time after notes and
+projection, before commit. Only SQLSTATE `40001` restarts that entire read once;
+all context, authority, facts and derived state are discarded. An exhausted
+conflict remains the existing repository database error, translated to generic
+private 503 by the two card GET handlers only. Other mappings and shared helpers
+retain their contracts. Listing, completion, table and commands keep separate
+transaction/retry owners. This adds one session query per ordinary success; it
+claims no measured speedup and does not freeze time through commit or delivery.
 
 Match listing now creates one request-local authority context inside the existing
 repeatable-read transaction. It locks the active session/user and tournament

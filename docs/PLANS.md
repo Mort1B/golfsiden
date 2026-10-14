@@ -5,40 +5,40 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A1i acceptance is in the [Stableford read report](validation/stableford-read-session-2026-10-14/README.md).
+None. A1j acceptance is in the [match card read report](validation/match-card-session-2026-10-15/README.md).
 
 ## Next candidate — requires approval
 
-### A1j — P2: finish match card session authority
+### A1k — P2: bind match completion and table reads
 
 Evidence: [remaining private-read inventory](validation/private-read-inventory-2026-10-14/README.md#match-details),
-R1 (source-supported; match card expiry races need their own reproduction).
+R1 (source-supported; these two reads need their own late-expiry reproduction).
 
-- Goal: prevent successful member/scoring match card reads after session expiry
-  during authority or complete match fact-loading waits.
-- Scope: `GET /api/rounds/{round}/match-play/matches/{id}` and its `/scoring`
-  variant; only their API/repository read boundary, focused evidence and docs.
-  Exclude match listing, completion, tournament match table, report/note and
-  other mutations, numeric/four-ball/Stableford siblings, formulas, schema,
+- Goal: prevent successful match completion/table reads after session expiry
+  during authority or full fact-loading waits.
+- Scope: `GET /api/rounds/{round}/match-play/completion` and
+  `GET /api/tournaments/{tournament}/match-table`; only their API/repository read
+  boundary, regression evidence and docs. Exclude match card/listing reads,
+  transitions, report/note commands, all other mutations, sporting rules, schema,
   frontend source and other findings.
-- Behavior: retain session/user, exact membership and existing both-opponent
-  scoring authority through a coherent full read, then check database wall-clock
-  session validity before success. Preserve stored round/match/opponent identity,
-  fixed handicaps, accepted reports, concessions/rulings, numeric notes, match
-  states, hidden-final projection, payloads, ordering and error precedence.
-  Allow one fresh whole read after `40001`, then generic private 503; reuse no
-  discarded context, authority or facts. Preserve all-status non-storeable
-  headers and all mutation/shared-helper contracts.
-- Validation: first reproduce late expiry at a real controlled wait; cover final
-  note/card loading, revocation/credential/membership changes, exact roles and
-  both-opponent/flight permissions, hidden-final retry freshness, valid match
-  states, full JSON parity, retry limits/nonserialization failures, cancellation,
-  concurrent valid reads and no writes/SSE. Run full affected backend/PostgreSQL
-  ladders on PostgreSQL 17 Alpine, mobile/desktop browser checks and read-only review.
-- Invariants: preserve root score ownership, historical handicap and locked-round
-  rules, existing read versus scoring authority and accepted sporting outcomes.
-  No new match rules, mutation retry or side effect.
-- Stop: publish only these two GET repairs and evidence; begin no queued family.
+- Behavior: retain active session/user and exact target membership through a
+  coherent complete read; perform a database wall-clock session check before
+  success. Preserve stored round/tournament identity, match ordering,
+  terminal/confirmed and ready-to-complete/lock states, hidden-final nulls and
+  excluded awards, participants, accepted half-points, table ranking/ties and
+  existing lookup/error precedence. Permit one fresh whole read after `40001`,
+  then generic private 503; retain no discarded context, authority or facts.
+  Preserve all-status cache and mutation/shared-helper contracts.
+- Validation: reproduce expiry during a controlled real database wait first;
+  cover both final loaders, revocation/credential/membership and role changes,
+  fresh hidden-final context on retry, full JSON parity for empty/populated and
+  lifecycle/result states, ordering/ties, retry limits/nonserialization failures,
+  cancellation/concurrent reads and no writes/SSE. Run full affected backend/
+  PostgreSQL ladders, mobile/desktop browser checks and independent read-only review.
+- Invariants: retain root player/team/score/handicap and locked-round rules,
+  exact membership scope, existing completion policy and accepted match outcomes.
+  No new sporting rules, mutation retry or side effects.
+- Stop: publish only these two read repairs and evidence; begin no queued family.
 
 ## Later queue
 
@@ -48,10 +48,9 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A1 after the selected match card candidate:** select one bounded repair
+1. **P2 / A1 after the selected completion/table candidate:** select one bounded repair
    from the [source inventory](validation/private-read-inventory-2026-10-14/README.md):
-   match completion/table (2),
-   invitation metadata (1), or user-only final-visibility metadata (1). Course
+   invitation metadata (1) or user-only final-visibility metadata (1). Course
    GET binding (3) is P3 and conditional/lower-impact. Keep legacy team/round
    write-expiry inventory a separate slice; this read inventory did not assess it.
 2. **P2 / A4:** update reachable Rustls to a compatible patched release, retain

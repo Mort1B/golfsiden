@@ -550,9 +550,10 @@ closes three of those incomplete boundaries with runtime evidence. The
 [four-ball read repair](validation/four-ball-read-session-2026-10-14/README.md)
 closes two more, followed by the two
 [Stableford card GETs](validation/stableford-read-session-2026-10-14/README.md).
-Six P2 routes and three P3 course routes remain: match detail/completion/table
-and invitations still lack a final expiry check; final-visibility and course
-reads still use extracted user identity.
+The two [match card GETs](validation/match-card-session-2026-10-15/README.md)
+are also repaired. Four P2 routes and three P3 course routes remain: match
+completion/table and invitations still lack a final expiry check. Final-visibility
+and course reads still use extracted user identity.
 The source inventory itself
 executes no routes. In particular, Fantasy selection/results GETs may finalize due windows;
 they are not side-effect-free inspection tools. The report owns exact routes,
@@ -983,6 +984,19 @@ concession, an agreed halve after play began, and an administrator ruling with a
 reason. Recording authority does not let a scorer invent a concession: record the
 actual conceder and attest communication. A whole-match concession or organizer
 award ends the match without fictitious hole scores, even before hole 1.
+
+Both member and scoring match card GETs retain active session/user and exact
+membership locks through the full coherent card, then recheck database wall-clock
+session validity after notes and projection, before commit. Expiry during loading
+returns private `401`. A `40001` snapshot conflict permits one fresh whole attempt,
+including stored context, both opponents' scoring permissions, ledger, fixed
+handicaps and notes. A second conflict returns generic private
+`503 service_unavailable`; unrelated failures retain their mapping. All statuses
+use `private, no-store`. Draft member cards remain readable; draft scoring is
+forbidden, and locked scoring remains exact-admin only. Lookup order and hidden
+front-nine redaction remain unchanged. Commands, listing, completion and match
+table receive no new retry. The final check does not freeze expiry through commit
+or network delivery. See the [acceptance report](validation/match-card-session-2026-10-15/README.md).
 
 Accepted reports form one contiguous ledger. A lead greater than the remaining
 holes ends the match; an equal result after hole 18 is a draw. Early unplayed holes

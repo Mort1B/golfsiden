@@ -6,7 +6,9 @@ repairs the three numeric access/card GETs with reproduced late-expiry evidence.
 both four-ball card GETs after reproducing late confirmation-loading expiry.
 [A1i Stableford acceptance](../stableford-read-session-2026-10-14/README.md) closes
 both Stableford card GETs with late confirmation-loading expiry evidence.
-Six P2 routes and three P3 course routes remain. The classifications, manifest
+[A1j match card acceptance](../match-card-session-2026-10-15/README.md) closes
+both detail/scoring GETs with final note-loading expiry evidence.
+Four P2 routes and three P3 course routes remain. The classifications, manifest
 and source anchors below preserve the original A1f assessment revision.
 
 Reviewed source revision: `21917b6931c4f94dfacdbb36ded7f390f6108834`.
