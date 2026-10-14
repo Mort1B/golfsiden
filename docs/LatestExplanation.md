@@ -1,70 +1,55 @@
-# Session-bound round readiness reads
+# Remaining private-read authority inventory
 
-The pairing and completion readiness GETs now carry the actual session ID through
-complete readiness assembly. A controlled PostgreSQL regression showed both
-previously returning HTTP 200 after revocation committed while they waited on
-membership. The repaired routes return the existing private 401 response.
+A1f traced all remaining authenticated tournament-scoped JSON GET boundaries at
+source revision `21917b6`. Of 46 explicit GET routes, 14 belong to previously
+repaired families and five are excluded health/readiness, auth, self-profile or
+SSE routes. The remaining 27 comprise 11 source-bound reads and 16 incomplete
+boundaries, with no unresolved source paths. No application, schema, dependency
+or test source changed, and no endpoint or database was called.
 
-Both reuse the unchanged shared session-read boundary: one repeatable-read
-attempt, active session/user share locks before exact tournament membership,
-a final database wall-clock expiry check and one complete retry on snapshot
-invalidation. Pairing's final check follows its additional singles-match
-assignment validation. Completion's retry reloads stored round/tournament
-context, exact role, owner facts, visible holes and the redacted projection.
-Nothing from a discarded attempt can supply the next response.
+The findings distinguish two P2 authority gaps. Twelve reads retain session/user
+and exact membership locks but omit the final database wall-clock expiry check:
+three numeric access/cards, four match detail/completion/table reads, two
+four-ball cards, two Stableford cards and invitation metadata. Later revocation
+and credential changes serialize behind those locks, while natural expiry can
+advance during loading. Final-visibility metadata is a separate P2 user-only
+boundary: its membership lock cannot revalidate the extracted session.
 
-For example, an admin-to-viewer demotion while a completion read waits also
-changes the final from released to hidden. The fresh attempt must return only
-front-nine progress, with null completeness/confirmation/readiness and no
-hidden-state issue codes. Expiry during later fact loading similarly denies
-success. Later revocation or credential writers wait behind an already
-authorized reader; wall-clock time is not frozen during COMMIT.
+Three course GETs have P3 session-binding gaps. Their payloads are globally
+bundled/registered course facts; all eight current catalog entries are missing
+or incomplete, so successful provider fetching and quota impact are conditional.
+No current hidden-score disclosure or provider-quota abuse was established.
+These findings come from source, not newly reproduced races.
 
-Both selected GETs now apply `private, no-store` to every response. A second
-snapshot conflict returns generic 503. Blocked readiness remains typed 200, and
-singles completion-validation retains its existing 404 with a separate dedicated
-completion endpoint. Fact SQL, blocker ordering, formats, frozen handicap/owner
-rules and hidden-final redaction are unchanged. Internal unrestricted validation
-helpers and open/complete/lock mutations retain their existing owners. No
-mutation gains retries or events. There are two additional session queries per
-ordinary successful read, with no measured speedup claim.
+Awards, player-account metadata, result-share status, all seven Fantasy GETs
+and match listing already retain authority and check the session after loading.
+Their transaction owners differ: some use default isolation and serialized
+round locks or one payload statement, others use repeatable read. Cache and
+retry policies also differ; `no-store` prohibits storage without literal
+`private`. Error-header coverage gaps do not alone establish cached disclosure.
+Fantasy selection/results GETs may finalize due windows and emit invalidations,
+so the inventory inspected source without executing them.
 
-Sixteen new PostgreSQL/API regressions cover revocation, credential changes,
-later-write serialization, membership removal, changed role/context, expiry at
-membership and late-load gates, singles assignments, empty results, all roles,
-resource errors, concurrency, cancellation, coherent snapshots and ready,
-completed and locked states. Existing four-ball and Stableford privacy tests
-supply their existing real session to the renamed completion entry.
+For example, the numeric score-access read holds an active session while
+resolving owners but also commits an empty singles result without a final expiry
+check. The next candidate, A1g, is limited to that GET and the ordinary numeric
+member/scoring card GETs. It must first reproduce late expiry, preserve owner,
+handicap, redaction and retry contracts, and validate without changing mutations
+or format-specific siblings. No repair has started.
 
-Independent review found a test gap: the original context-change fixture repeated
-the default visibility value. It now starts explicitly released and changes both
-context and role, so either stale value fails. The corrected source/test review has no remaining findings.
-An unchanged A1d name-order test also exposed a P3 collation assumption on Debian
-PostgreSQL. Native uppercase/lowercase order differs from the repository's Alpine
-image. Its test-only portability follow-up is queued; runtime sorting is unchanged.
+Two independent read-only reviews covered every inventoried route and confirmed
+46 unique route declarations and the manifest classifications. Review corrected
+two P3 documentation details about match filtering and the exact unchecked
+commit sites; no inventory findings remain. Local links/source-line targets,
+manifest consistency, the current catalog and documentation-only diff checks pass.
 
-The focused readiness/lifecycle/completion/four-ball/Stableford suites pass 73
-checks before the review fixture tightening. The corrected readiness suite and
-unchanged pairing compatibility suite pass 30. The full backend suite passes
-261 tests; the final PostgreSQL-feature ladder passes 813 with four existing
-manual performance probes ignored on the repository's PostgreSQL 17 Alpine
-image. Formatting, strict all-target/feature Clippy, API builds, migration and
-seed pass. The final schema is 39. The first Debian full run's existing collation
-test failure remains recorded separately.
+The [inventory report](validation/private-read-inventory-2026-10-14/README.md)
+contains every remaining route, source file/line evidence, severity, transaction,
+cache and retry details, and the [46-route manifest](validation/private-read-inventory-2026-10-14/routes.json).
+Backend, PostgreSQL, frontend and browser ladders are unaffected by this
+source/documentation-only step and were not rerun. Previous A1e acceptance is
+linked historical evidence, not new validation of the inventoried routes.
 
-Chrome passes both readiness flows at 320, 390 and 1280px: delayed loading,
-real populated responses, long content, injected blocked/empty/denied states,
-error with read-only refresh, private 401 after logout and login redirection.
-Lifecycle actions remain disabled while pending or failed; no lifecycle POSTs
-occur during UI checks. There are no page exceptions or unexpected network
-failures. Representative screenshots were visually inspected. The first probe's
-synthetic empty completion response omitted an existing blocker code; runtime
-decoding rejected it correctly, and the corrected probe passes all six flows.
-[The report](validation/readiness-session-2026-10-14/README.md) retains the original
-failure, exact wait gates, review correction, browser evidence and validation
-limits. Schema, frontend source, dependencies and hosted configuration are
-unchanged; physical-device, public-host and production-load acceptance remain
-separate.
-
-[PLANS.md](PLANS.md) queues the remaining private-read inventory and other
-severity-rated review findings. No queued repair is started by this step.
+[PLANS.md](PLANS.md) selects one next candidate. Other read repairs, legacy-write
+expiry inventory, dependency/recovery/capacity findings and existing deployment
+acceptance limits remain queued.

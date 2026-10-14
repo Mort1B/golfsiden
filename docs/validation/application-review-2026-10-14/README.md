@@ -14,8 +14,12 @@ addresses A1c's roster and round list/detail routes. The
 [pairing and team read repair](../pairing-team-session-2026-10-14/README.md)
 addresses A1d's two GET routes. The
 [readiness read repair](../readiness-session-2026-10-14/README.md) addresses A1e's
-pairing/completion readiness GETs. Remaining private read/write families and the
-other findings stay queued. The assessment below describes the reviewed revision.
+pairing/completion readiness GETs. The
+[remaining-read inventory](../private-read-inventory-2026-10-14/README.md) traces
+27 other tournament-scoped GETs: 11 source-bound and 16 incomplete (13 P2, three
+P3). Those findings are source-supported, not new race reproductions; remaining
+repairs and legacy-write inventory stay queued. The assessment below describes
+the originally reviewed revision.
 
 This is a documentation-only assessment of current application source, database
 contracts, browser state, production configuration and dependency advisories.

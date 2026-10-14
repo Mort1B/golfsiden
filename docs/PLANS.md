@@ -9,29 +9,37 @@ None. Awaiting approval of one bounded next step.
 
 ## Next candidate
 
-### A1f — P2 follow-up: inventory remaining private-read authority
+### A1g — P2: finish numeric score-read session authority
 
-Evidence: [application review](validation/application-review-2026-10-14/README.md#a1--p2-revoked-sessions-can-finish-private-reads)
-and the [completed readiness boundary](validation/readiness-session-2026-10-14/README.md).
+Evidence: [remaining private-read inventory](validation/private-read-inventory-2026-10-14/README.md#numeric),
+R1 (source-supported; a new late-expiry race still needs reproduction).
 
-- Goal: identify the next evidence-backed private-read repair after the selected
-  leaderboard, tournament, roster, round, pairing/team and readiness GETs.
-- Scope: read-only source inventory of remaining authenticated tournament-scoped
-  JSON GET handlers and their exact repository boundaries. Include session/user,
-  stored resource ownership, membership/role, fact loading, final wall-clock
-  expiry, retry and private-cache ownership. Exclude public capability routes,
-  auth/session endpoints, SSE streams, writes and hosted infrastructure.
-- Behavior: document each remaining family as bound, incomplete or unresolved
-  with concrete file/line evidence. Distinguish source-supported gaps from race
-  reproductions and impact. Do not treat the existing selected repairs as proof
-  for siblings or claim fresh advisory/runtime findings without evidence.
-- Validation: trace every included API-to-repository path and shared helper;
-  independently review the inventory, check document links and diff scope. This
-  documentation-only step needs no production code, dependency or schema edits.
-- Invariants: assessment remains separate from remediation; preserve all runtime
-  behavior and root product invariants. Do not run writes as part of inventory.
-- Stop: publish the inventory and one concrete next candidate; implement no
-  newly discovered repair. Legacy-write expiry remains a separate inventory.
+- Goal: prevent successful numeric score-access/member-card/scoring-card replies
+  after session expiry during authority or fact-loading waits.
+- Scope: `GET /api/rounds/{id}/score-access`, `GET
+  /api/rounds/{id}/scorecards/{owner_type}/{owner_id}` and that card GET's `/scoring`
+  variant; their focused API/repository boundary, regression evidence and docs.
+  Exclude mutations, conditional delivery, four-ball/Stableford/match siblings,
+  completion reads, scoring formulas, schema, frontend changes and other findings.
+- Behavior: retain session/user/exact-membership authority and one coherent full
+  read, then check database wall-clock session validity after complete assembly
+  before success. Include viewer/unlinked empty owners and the singles empty
+  score-access branch. Preserve stored ownership, role/flight permissions, final
+  visibility, fixed handicap snapshots, payloads, ordering and error precedence.
+  Retain the existing whole-scoring-read `40001` retry; allow one fresh complete
+  attempt for the other two selected GETs, then generic private 503. Reuse no
+  discarded role/context/facts. Cover all selected GET statuses with non-storeable
+  responses, without changing adjacent mutation contracts.
+- Validation: first reproduce controlled late expiry; cover session/credential and
+  membership changes, final loading/empty branches, exact roles and owner formats,
+  hidden finals, retry freshness/exhaustion, cancellation, valid concurrent reads,
+  full JSON parity, no writes/SSE and retained mutation/lifecycle compatibility.
+  Run backend/PostgreSQL ladders using the repository's PostgreSQL 17 Alpine
+  fixture, focused mobile/desktop browser evidence and independent read-only review.
+- Invariants: preserve root scoring/handicap/locked-round rules and existing read
+  versus scoring authority. No mutation retry or side effect; shared mutation
+  helpers retain their established behavior.
+- Stop: publish only these three GET repairs and evidence; start no queued family.
 
 ## Later queue
 
@@ -41,9 +49,12 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A1 after A1f:** select one evidence-backed repair from the private-read
-   inventory. Inventory analogous expiry gaps in legacy team/round writes as a
-   separate slice.
+1. **P2 / A1 after A1g:** select one bounded remaining repair from the
+   [source inventory](validation/private-read-inventory-2026-10-14/README.md):
+   match details/completion/table (4), four-ball cards (2), Stableford cards (2),
+   invitation metadata (1), or user-only final-visibility metadata (1). Course
+   GET binding (3) is P3 and conditional/lower-impact. Keep legacy team/round
+   write-expiry inventory a separate slice; this read inventory did not assess it.
 2. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
    the SQLx cancellation patch and recheck TLS behavior/advisory reachability.
 3. **P2 / A5:** require and bind the restore checksum before invoking restore;

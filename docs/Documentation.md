@@ -541,6 +541,18 @@ flat with members; its ordering and member-query loop are unchanged. Pairing PUT
 and its preflight/error contracts remain separate from the GET read boundary.
 The repair adds no mutation retry or frontend state change.
 
+Private GETs retain different session boundaries. The selected leaderboard,
+workspace and readiness repairs above do not imply every sibling checks expiry
+after loading. The [source inventory](validation/private-read-inventory-2026-10-14/README.md)
+records 27 remaining tournament-scoped GETs: 11 retain authority and perform a
+final active-session check; 16 have incomplete boundaries. Numeric and
+format-specific card/access reads plus invitation metadata retain session locks
+but omit a final expiry check. Final-visibility and course reads still use
+extracted user identity. This assessment executes no routes and adds no runtime
+behavior. In particular, Fantasy selection/results GETs may finalize due windows;
+they are not side-effect-free inspection tools. The report owns exact routes,
+severity, cache/retry differences and evidence limits.
+
 ## Production and operator behavior
 
 Interrupted SQLx transaction initialization queues rollback before the connection

@@ -506,6 +506,19 @@ and reapplies runtime grants before the API is started.
   redaction are unchanged. Singles completion-validation retains its existing
   404 and dedicated completion owner. Internal unrestricted validation helpers,
   opening, completion and locking remain separate with no mutation retry.
+- Session identity at an API/repository boundary alone does not establish final
+  expiry enforcement. The [remaining private-read inventory](validation/private-read-inventory-2026-10-14/README.md)
+  distinguishes retained session/user/membership locks from the final database
+  wall-clock check. Numeric score-access/cards, four-ball/Stableford cards,
+  match detail/completion/table and invitation metadata retain authority locks
+  but omit that final check. Final-visibility and course GETs retain user-only
+  authorization boundaries. Awards, player-account metadata, result-share status,
+  Fantasy reads and match listing already perform final session checks. Bound
+  families have different isolation/retry owners; Fantasy selection/results GETs
+  can finalize due windows and emit post-commit invalidations. A generic read-only
+  retry cannot be applied without preserving that transaction/side-effect boundary.
+  This is source assessment, not a runtime-wide acceptance or a change to those
+  implementations; remaining repairs require their own bounded steps.
 - Course discovery is a bundled JSON catalog, not provider free-text search or a
   persistence model. Its tournament-scoped GET handler requires exact admin
   membership, searches names and internal aliases locally, preserves file order,
