@@ -9,30 +9,28 @@ None.
 
 ## Next candidate
 
-R1: make the Fantasy preset browser acceptance deterministic (test-only).
+R2: avoid redundant Fantasy target reads after verified reconciliation.
+Authorized by the user's request to fix all three assessed issues.
 
-- Goal: resolve the reproduced 503-only assertion failure before treating the
-  browser suite as an unattended release gate; see the
-  [assessment](validation/predeployment-review-2026-10-14/README.md#r1--p2-browser-acceptance-rejects-recoverable-projection-conflicts).
-- Scope: `frontend/e2e/fantasyPreset.browser.ts` and a focused response-observer
-  helper/test if needed. No production, migration, dependency or hosting changes.
-- Behavior: accept the deliberately injected 503 and verified retryable
-  `409 fantasy_conflict` only on expected reads; assert affected projection
-  recovery. Preserve rejection of unexpected status/code and transport failures.
-  Permit unread bodies only with positive evidence of expected read cancellation.
-- Validation: deterministic conflict/recovery and unexpected-409 rejection cases,
-  repeated real-API Chrome runs, strict browser TypeScript and affected frontend
-  checks. Preserve existing draft, privacy and closed-destination assertions.
-- Invariants: exact write requests, recovery, session/privacy boundaries, scoring
-  rules and production retry behavior remain unchanged.
-- Stop: document/publish only the test repair, then stop before optimization.
-
-Every implementation step updates affected durable docs and LatestExplanation,
-commits only its scope and stops before the next step.
+- Goal: remove a duplicate target request without weakening acknowledgment or
+  authoritative refresh, including batch saves.
+- Scope: Fantasy refresh coordinator/target helper, a focused ephemeral fetch-proof
+  helper and recovery/request-count tests. Preserve full-root invalidation and SSE.
+- Behavior: reuse an initially active target only after observing a new fetch and
+  non-manual success during this refresh. Immediately recheck query identity,
+  success counter, activity, data, idle/non-invalidated state and canonical
+  session. Otherwise perform the existing explicit authorized target read.
+- Invariants: every batch write still gets fresh preflight; acknowledgment never
+  becomes uncertainty after a refresh failure; no write retries, stale cache reuse,
+  retained projections or changes to privacy erasure/session ownership.
+- Validation: preexisting in-flight reads, manual cache writes, cancellation,
+  erasure/replacement, invalidation, inactive/new targets and activation failures;
+  request-count regression; full frontend ladder and real browser recovery checks.
+- Stop: document/publish R2, then activate the already-authorized R3 separately.
 
 ## Later queue
 
-### Assessed optimization candidates
+### Authorized optimization sequence
 
 - R2: avoid redundant Fantasy target reads after verified reconciliation;
   three/five-round batches started 24/60 round reads in the local measurement.
@@ -41,7 +39,7 @@ commits only its scope and stops before the next step.
   calculation. No locking or authorization changes are approved.
 - Evidence and boundaries are in the
   [pre-deployment assessment](validation/predeployment-review-2026-10-14/README.md).
-  These require their own bounded implementation steps.
+  R3 is authorized after R2, with profiling and its own bounded implementation step.
 
 ### Previously deferred work
 

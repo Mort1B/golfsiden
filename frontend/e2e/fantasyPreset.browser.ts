@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { at, browserEvidence, claimManager, releaseFixture } from './fantasyReleaseSupport'
 import { fantasyLayouts } from './fantasySupport'
+import { observeFantasyReads } from './fantasyReadEvidence'
 import { roundView } from '../src/api/fantasy/selections'
 
 async function observeLive(page: import('@playwright/test').Page) {
@@ -83,12 +84,13 @@ test('pauses partial saving after a lost response and resumes without resending 
 })
 test('overview recovers a failed round read and excludes a closed copy destination',async({page})=>{
  await observeLive(page)
- const errors:string[]=[],failed:string[]=[],responses:number[]=[]
+ const errors:string[]=[],failed:string[]=[]
  page.on('pageerror',error=>errors.push(error.message))
  page.on('console',message=>{if(message.type()==='error'&&!message.text().includes('Failed to load resource'))errors.push(message.text())})
  page.on('requestfailed',request=>{if(!request.url().includes('/live')&&!request.failure()?.errorText.includes('ERR_ABORTED'))failed.push(new URL(request.url()).pathname)})
- page.on('response',response=>{if(response.status()>=400)responses.push(response.status())})
  const f=await releaseFixture(page,['individual_stroke_play','individual_stroke_play','individual_stroke_play'],[0,0,0,0])
+ const projectionPaths=new Set([`${f.base}/results`,`${f.base}/rounds/${at(f.rounds,0).id}/results`])
+ const evidence=observeFantasyReads(page,projectionPaths,`${f.base}/rounds/${at(f.rounds,2).id}`)
  await f.mutate(`${f.base}/rounds/${at(f.rounds,1).id}/deadline`,{deadline:new Date(Date.now()+1500).toISOString()},'PUT')
  let release=()=>{},unavailable=true
  const gate=new Promise<void>(resolve=>{release=resolve})
@@ -115,6 +117,41 @@ test('overview recovers a failed round read and excludes a closed copy destinati
  await page.getByRole('button',{name:'Forbered valgte runder'}).click()
  await expect(rows.nth(1)).not.toContainText('kaptein ×2')
  await expect(page.getByRole('button',{name:'Lagre gjennomgåtte utkast (2)'})).toBeEnabled()
+ // Verify recovery of both affected projections, not just the lineup overview.
+ await page.getByRole('button',{name:'Poengtavler',exact:true}).click()
+ const board=page.locator('#fantasy-boards-panel .fantasy-standings')
+ await expect(board).toContainText(at(f.names,0))
+ await page.getByLabel('Vis poeng for').selectOption(at(f.rounds,0).id)
+ await expect(board).toContainText(at(f.names,0))
+ await expect(page.getByText('Oppdaterer runden …')).toHaveCount(0)
+ expect((await evidence()).unavailable).toBeGreaterThan(0)
  expect(errors).toEqual([]);expect(failed).toEqual([])
- expect(responses.length).toBeGreaterThan(0);expect(responses.every(status=>status===503)).toBe(true)
+})
+
+test('both projection reads recover a delivered retryable conflict',async({page})=>{
+ await observeLive(page)
+ const f=await releaseFixture(page,['individual_stroke_play'],[0,0,0,0])
+ await page.goto(f.url);await waitForLive(page)
+ await page.getByRole('button',{name:'Poengtavler',exact:true}).click()
+ const board=page.locator('#fantasy-boards-panel .fantasy-standings')
+ await expect(board).toContainText(at(f.names,0))
+ await page.getByLabel('Vis poeng for').selectOption(at(f.rounds,0).id)
+ await expect(board).toContainText(at(f.names,0))
+ await expect(page.getByText('Oppdaterer runden …')).toHaveCount(0)
+ const paths=new Set([`${f.base}/results`,`${f.base}/rounds/${at(f.rounds,0).id}/results`])
+ const evidence=observeFantasyReads(page,paths,'')
+ const injected=new Set<string>()
+ for(const path of paths)await page.route(`**${path}`,async route=>{
+  if(!injected.has(path)){injected.add(path);await route.fulfill({status:409,contentType:'application/json',body:JSON.stringify({error:{code:'fantasy_conflict',message:'Injected projection conflict'}})})}
+  else await route.continue()
+ })
+ // Both queries are settled and the initial SSE invalidation is over before injection.
+ await page.getByRole('button',{name:'Oppdater Fantasy',exact:true}).click()
+ await expect.poll(()=>injected.size).toBe(2)
+ await expect(page.getByText('Oppdaterer runden …')).toHaveCount(0)
+ await expect(page.getByText('Oppdaterer poengtavlene …')).toHaveCount(0)
+ await expect(board).toContainText(at(f.names,0))
+ await page.getByLabel('Vis poeng for').selectOption('')
+ await expect(board).toContainText(at(f.names,0))
+ expect([...(await evidence()).conflicts].sort()).toEqual([...paths].sort())
 })
