@@ -9,6 +9,7 @@ use crate::{
     },
     repositories::{
         auth,
+        session_read::{self, SessionReadError},
         tournament_authorization::{self, AuthorizationError},
     },
 };
@@ -28,24 +29,20 @@ pub async fn list_players(
     Ok(roster)
 }
 
-pub async fn list_players_for_member(
+pub async fn list_players_for_session(
     pool: &PgPool,
-    user_id: Uuid,
+    session: Uuid,
     tournament_id: Uuid,
-) -> Result<TournamentPlayerRoster, AuthorizationError> {
-    let mut transaction = pool.begin().await?;
-    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-        .execute(&mut *transaction)
-        .await?;
-    tournament_authorization::require_tournament_member_read(
-        &mut transaction,
-        user_id,
-        tournament_id,
-    )
-    .await?;
-    let roster = list_players_in_transaction(&mut transaction, tournament_id).await?;
-    transaction.commit().await?;
-    Ok(roster)
+) -> Result<TournamentPlayerRoster, SessionReadError> {
+    session_read::retry(|| async {
+        let (mut tx, user) = session_read::begin(pool, session).await?;
+        tournament_authorization::require_tournament_member_read(&mut tx, user, tournament_id)
+            .await?;
+        let roster = list_players_in_transaction(&mut tx, tournament_id).await?;
+        session_read::finish(tx, session).await?;
+        Ok(roster)
+    })
+    .await
 }
 
 async fn list_players_in_transaction(

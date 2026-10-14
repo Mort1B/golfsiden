@@ -1,0 +1,116 @@
+[
+  {
+    "width": 320,
+    "scopes": [
+      {
+        "kind": "roster",
+        "path": "/api/tournaments/00000000-0000-0000-0000-000000002001/players",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "long_content_no_horizontal_overflow": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "injected_failures": 2
+      },
+      {
+        "kind": "round-list",
+        "path": "/api/tournaments/00000000-0000-0000-0000-000000002001/rounds",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "long_content_no_horizontal_overflow": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "injected_failures": 1
+      },
+      {
+        "kind": "round",
+        "path": "/api/rounds/00000000-0000-0000-0000-000000004001",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "long_content_no_horizontal_overflow": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "injected_failures": 4
+      }
+    ],
+    "logged_out_all_three_private_401": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  },
+  {
+    "width": 390,
+    "scopes": [
+      {
+        "kind": "roster",
+        "path": "/api/tournaments/00000000-0000-0000-0000-000000002001/players",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "long_content_no_horizontal_overflow": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "injected_failures": 2
+      },
+      {
+        "kind": "round-list",
+        "path": "/api/tournaments/00000000-0000-0000-0000-000000002001/rounds",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "long_content_no_horizontal_overflow": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "injected_failures": 1
+      },
+      {
+        "kind": "round",
+        "path": "/api/rounds/00000000-0000-0000-0000-000000004001",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "long_content_no_horizontal_overflow": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "injected_failures": 4
+      }
+    ],
+    "logged_out_all_three_private_401": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  },
+  {
+    "width": 1280,
+    "scopes": [
+      {
+        "kind": "roster",
+        "path": "/api/tournaments/00000000-0000-0000-0000-000000002001/players",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "long_content_no_horizontal_overflow": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "injected_failures": 2
+      },
+      {
+        "kind": "round-list",
+        "path": "/api/tournaments/00000000-0000-0000-0000-000000002001/rounds",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "long_content_no_horizontal_overflow": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "injected_failures": 1
+      },
+      {
+        "kind": "round",
+        "path": "/api/rounds/00000000-0000-0000-0000-000000004001",
+        "loading": true,
+        "valid_json_and_cache": true,
+        "long_content_no_horizontal_overflow": true,
+        "error_and_read_retry": true,
+        "empty_or_denied": true,
+        "injected_failures": 4
+      }
+    ],
+    "logged_out_all_three_private_401": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  }
+]

@@ -3,9 +3,9 @@ use std::sync::Arc;
 use axum::{
     Json, Router,
     extract::{Path, State, rejection::JsonRejection},
-    http::{HeaderValue, StatusCode, header::CACHE_CONTROL},
+    http::{StatusCode, header::CACHE_CONTROL},
     middleware,
-    response::{IntoResponse, Response},
+    response::IntoResponse,
     routing::get,
 };
 use chrono::{DateTime, Utc};
@@ -17,10 +17,11 @@ use crate::{
     api::{
         auth::{AuthenticatedSession, MutationSession},
         authorization::map_authorization_error,
+        private_read::{map_error as map_read_error, response as private_response},
     },
     domain::models::TournamentHandicapCorrection,
     error::{ApiError, ApiResult},
-    repositories::tournaments::{self, TournamentMutationError, TournamentReadError},
+    repositories::tournaments::{self, TournamentMutationError},
 };
 
 pub fn routes() -> Router<Arc<AppState>> {
@@ -52,27 +53,12 @@ fn other_routes() -> Router<Arc<AppState>> {
         )
         .route(
             "/api/tournaments/{tournament_id}/players",
-            get(list_players),
+            get(list_players).layer(middleware::map_response(private_response)),
         )
         .route(
             "/api/tournaments/{tournament_id}/players/{player_id}/handicap-corrections",
             axum::routing::post(change_player_handicap),
         )
-}
-
-async fn private_response(mut response: Response) -> Response {
-    response
-        .headers_mut()
-        .insert(CACHE_CONTROL, HeaderValue::from_static("private, no-store"));
-    response
-}
-
-fn map_read_error(error: TournamentReadError) -> ApiError {
-    match error {
-        TournamentReadError::Authorization(error) => map_authorization_error(error),
-        TournamentReadError::Database(error) => ApiError::Database(error),
-        TournamentReadError::Unavailable => ApiError::ServiceUnavailable,
-    }
 }
 
 #[derive(Deserialize)]
@@ -159,9 +145,9 @@ async fn list_players(
     authenticated: AuthenticatedSession,
 ) -> ApiResult<impl IntoResponse> {
     let roster =
-        tournaments::list_players_for_member(&state.pool, authenticated.principal.user_id, id)
+        tournaments::list_players_for_session(&state.pool, authenticated.principal.session_id, id)
             .await
-            .map_err(map_authorization_error)?;
+            .map_err(map_read_error)?;
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(roster)))
 }
 
@@ -393,7 +379,8 @@ mod tests {
         };
         use http_body_util::BodyExt;
         let response = super::private_response(
-            super::map_read_error(super::TournamentReadError::Unavailable).into_response(),
+            super::map_read_error(crate::repositories::session_read::SessionReadError::Unavailable)
+                .into_response(),
         )
         .await;
         assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);

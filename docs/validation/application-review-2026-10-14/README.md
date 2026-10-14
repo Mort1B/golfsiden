@@ -8,7 +8,9 @@ A2's open/complete/lock expiry gap. The
 [identity ordering repair](../identity-ordering-2026-10-14/README.md) addresses A3's
 same-document cookie/continuation ordering. The
 [tournament read repair](../tournament-read-session-2026-10-14/README.md) addresses
-A1b's list, own-membership list and detail routes. Remaining sibling private
+A1b's list, own-membership list and detail routes. The
+[roster and round read repair](../roster-round-session-2026-10-14/README.md)
+addresses A1c's roster and round list/detail routes. Remaining sibling private
 read/write families and the other findings stay queued. The assessment below describes the reviewed revision.
 
 This is a documentation-only assessment of current application source, database

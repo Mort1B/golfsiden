@@ -9,7 +9,7 @@ mod start;
 pub use archive::{ArchiveTournamentResult, archive_authorized};
 pub use complete::{CompleteTournamentResult, complete_authorized};
 pub use counted_rounds::{UpdateCountedRoundsResult, update_counted_rounds_authorized};
-pub use handicaps::{change_player_handicap_authorized, list_players, list_players_for_member};
+pub use handicaps::{change_player_handicap_authorized, list_players, list_players_for_session};
 pub use reads::{TournamentReadError, get_for_session, list_for_session, list_mine_for_session};
 pub use start::{StartTournamentResult, start_authorized};
 

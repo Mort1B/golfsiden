@@ -30,6 +30,7 @@ use crate::{
     api::{
         auth::{AuthenticatedSession, MutationSession},
         authorization::map_authorization_error,
+        private_read::{map_error as map_read_error, response as private_response},
     },
     domain::{models::ScoringFormat, round_formats::RoundFormatPolicy},
     error::{ApiError, ApiResult, require_non_empty},
@@ -43,9 +44,14 @@ pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
         .route(
             "/api/tournaments/{tournament_id}/rounds",
-            get(list).post(create),
+            get(list)
+                .layer(axum::middleware::map_response(private_response))
+                .post(create),
         )
-        .route("/api/rounds/{round_id}", get(get_one))
+        .route(
+            "/api/rounds/{round_id}",
+            get(get_one).layer(axum::middleware::map_response(private_response)),
+        )
         .route(
             "/api/rounds/{round_id}/pairings",
             get(pairings::get)
@@ -112,10 +118,13 @@ async fn list(
     Path(tournament_id): Path<Uuid>,
     authenticated: AuthenticatedSession,
 ) -> ApiResult<impl IntoResponse> {
-    let rounds =
-        rounds::list_for_member(&state.pool, authenticated.principal.user_id, tournament_id)
-            .await
-            .map_err(map_authorization_error)?;
+    let rounds = rounds::list_for_session(
+        &state.pool,
+        authenticated.principal.session_id,
+        tournament_id,
+    )
+    .await
+    .map_err(map_read_error)?;
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(rounds)))
 }
 
@@ -124,9 +133,9 @@ async fn get_one(
     Path(round_id): Path<Uuid>,
     authenticated: AuthenticatedSession,
 ) -> ApiResult<impl IntoResponse> {
-    let round = rounds::get_for_member(&state.pool, authenticated.principal.user_id, round_id)
+    let round = rounds::get_for_session(&state.pool, authenticated.principal.session_id, round_id)
         .await
-        .map_err(map_authorization_error)?;
+        .map_err(map_read_error)?;
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(round)))
 }
 

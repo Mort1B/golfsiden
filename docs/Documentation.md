@@ -515,8 +515,26 @@ including otherwise empty lists. A changed membership snapshot is discarded and
 read once more from fresh authority; a second snapshot conflict returns generic
 `503 service_unavailable`. All responses from these three routes use `private,
 no-store`. Existing membership-only visibility, list ordering, roles, linked
-entrant IDs and `403`/`404` contracts remain unchanged. The other round, roster,
-pairing and team read families remain separately queued for session binding.
+entrant IDs and `403`/`404` contracts remain unchanged. The roster and round list/detail routes use the same session authority below;
+pairing, team and readiness families remain separately queued.
+
+
+The private roster (`GET /api/tournaments/{id}/players`), round list (`GET
+/api/tournaments/{id}/rounds`) and round detail (`GET /api/rounds/{id}`) also
+validate the session throughout their read transaction. They retain exact
+membership authority and use stored ownership for a round. Revocation or a
+credential change that wins the authority lock denies the read; a later change
+waits behind an already authorized read. Expiry during membership or data-loading
+waits returns private `401` without the requested payload. A changed authority
+snapshot permits one fresh full read; a second snapshot conflict returns generic
+private `503`. These GET routes use `private, no-store` for all statuses.
+
+Roster player ordering, entrant handicaps and the preserved editable/locked
+correction reason are unchanged, as are round ordering and fields. Empty rosters
+and round lists still require an active member session. All four tournament
+membership roles can read; a global administrator has no cross-tournament bypass.
+Round creation and the other mutation/read families retain their existing
+behavior. The repair adds no mutation retry or frontend state change.
 
 ## Production and operator behavior
 

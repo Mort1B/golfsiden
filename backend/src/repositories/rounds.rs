@@ -5,7 +5,10 @@ use uuid::Uuid;
 
 use crate::{
     domain::models::{Round, ScoringFormat},
-    repositories::tournament_authorization::{self, AuthorizationError},
+    repositories::{
+        session_read::{self, SessionReadError},
+        tournament_authorization::{self, AuthorizationError},
+    },
 };
 
 const COLUMNS: &str = "id, tournament_id, round_number, name, round_date, course_id, course_name, tee_id, tee_name, number_of_holes, status, handicap_enabled, handicap_allowance_percent, scoring_format, created_at, updated_at";
@@ -27,43 +30,44 @@ pub async fn list(pool: &PgPool, tournament_id: Uuid) -> Result<Vec<Round>, sqlx
     .await
 }
 
-pub async fn list_for_member(
+pub async fn list_for_session(
     pool: &PgPool,
-    user_id: Uuid,
+    session: Uuid,
     tournament_id: Uuid,
-) -> Result<Vec<Round>, AuthorizationError> {
-    let mut transaction = read_transaction(pool).await?;
-    tournament_authorization::require_tournament_member_read(
-        &mut transaction,
-        user_id,
-        tournament_id,
-    )
-    .await?;
-    let rounds = sqlx::query_as::<_, Round>(&format!(
-        "SELECT {COLUMNS} FROM rounds
-         WHERE tournament_id = $1 ORDER BY round_number, id"
-    ))
-    .bind(tournament_id)
-    .fetch_all(&mut *transaction)
-    .await?;
-    transaction.commit().await?;
-    Ok(rounds)
+) -> Result<Vec<Round>, SessionReadError> {
+    session_read::retry(|| async {
+        let (mut tx, user) = session_read::begin(pool, session).await?;
+        tournament_authorization::require_tournament_member_read(&mut tx, user, tournament_id)
+            .await?;
+        let rounds = sqlx::query_as::<_, Round>(&format!(
+            "SELECT {COLUMNS} FROM rounds WHERE tournament_id=$1 ORDER BY round_number, id"
+        ))
+        .bind(tournament_id)
+        .fetch_all(&mut *tx)
+        .await?;
+        session_read::finish(tx, session).await?;
+        Ok(rounds)
+    })
+    .await
 }
 
-pub async fn get_for_member(
+pub async fn get_for_session(
     pool: &PgPool,
-    user_id: Uuid,
+    session: Uuid,
     round_id: Uuid,
-) -> Result<Round, AuthorizationError> {
-    let mut transaction = read_transaction(pool).await?;
-    tournament_authorization::require_round_member_read(&mut transaction, user_id, round_id)
-        .await?;
-    let round = sqlx::query_as::<_, Round>(&format!("SELECT {COLUMNS} FROM rounds WHERE id = $1"))
-        .bind(round_id)
-        .fetch_one(&mut *transaction)
-        .await?;
-    transaction.commit().await?;
-    Ok(round)
+) -> Result<Round, SessionReadError> {
+    session_read::retry(|| async {
+        let (mut tx, user) = session_read::begin(pool, session).await?;
+        tournament_authorization::require_round_member_read(&mut tx, user, round_id).await?;
+        let round =
+            sqlx::query_as::<_, Round>(&format!("SELECT {COLUMNS} FROM rounds WHERE id=$1"))
+                .bind(round_id)
+                .fetch_one(&mut *tx)
+                .await?;
+        session_read::finish(tx, session).await?;
+        Ok(round)
+    })
+    .await
 }
 
 async fn read_transaction(pool: &PgPool) -> Result<Transaction<'_, Postgres>, sqlx::Error> {

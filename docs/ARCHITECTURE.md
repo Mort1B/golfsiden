@@ -450,7 +450,8 @@ and reapplies runtime grants before the API is started.
   Internal unrestricted and capability-authorized public projections retain
   their existing ownership; sibling workspace reads do not inherit this repair.
 - Private tournament list, own-membership list and detail reads take session IDs
-  through `tournaments/reads.rs`. Its repeatable-read transaction derives the user
+  through `tournaments/reads.rs`, using the shared `session_read.rs` authority
+  owner. Its repeatable-read transaction derives the user
   from locked active session/user rows before acquiring exact membership share
   locks; collections lock all existing memberships in tournament UUID order with
   one query. Payload queries retain the prior display ordering, roles and
@@ -464,6 +465,21 @@ and reapplies runtime grants before the API is started.
   that already hold the corresponding locks. All statuses on these three GET
   routes are `private, no-store`. No mutation retry or sibling read repair follows
   from this boundary, and expiry is not frozen during COMMIT.
+- Private tournament roster and round list/detail reads also take session IDs.
+  `session_read.rs` owns repeatable-read setup, active session/user share locks,
+  the final wall-clock expiry check and one complete retry on direct or nested
+  `40001`. It was extracted from the existing tournament-read boundary without
+  changing that boundary's behavior; `TournamentReadError` remains its public
+  compatibility alias. Payload SQL stays in `rounds.rs` and
+  `tournaments/handicaps.rs`, with exact membership share locks and stored round
+  ownership in the same transaction. The roster includes both ordered players
+  and its preserved handicap-lock reason before the final session check; empty
+  roster/list responses still require current authority. All three selected GET
+  methods apply shared private error mapping and `private, no-store` on every
+  status. Round-creation preflight retains its existing transaction owner, and
+  POST, pairing/team/readiness reads and mutations gain no retry or authority
+  behavior from this change. Each repaired read adds two active-session queries,
+  with no per-player or per-round authorization-query loop.
 - Course discovery is a bundled JSON catalog, not provider free-text search or a
   persistence model. Its tournament-scoped GET handler requires exact admin
   membership, searches names and internal aliases locally, preserves file order,

@@ -11,6 +11,7 @@ mod match_play;
 mod onboarding;
 mod password_recovery;
 mod player_claims;
+mod private_read;
 mod profile;
 mod result_sharing;
 mod round_awards;

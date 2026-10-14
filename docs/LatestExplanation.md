@@ -1,51 +1,51 @@
-# Session-bound private tournament reads
+# Session-bound roster and round reads
 
-The private tournament list, own-membership list and tournament detail now carry
-the session ID through result assembly. All three previously returned HTTP 200
-when session revocation committed while the request waited for tournament data.
-The retained regression reproduces that original behavior and now returns the
-existing private 401 envelope on every route.
+Private tournament rosters and round list/detail now carry the session ID through
+complete result loading. The new controlled regression showed all three routes
+returning HTTP 200 after revocation committed while they waited on membership.
+The same test now returns the established private 401 envelope on each route.
 
-`repositories/tournaments/reads.rs` owns one repeatable-read transaction per
-attempt. It derives the user from a locked active session, holds session/user
-and exact membership share locks, loads the existing payload in the same snapshot
-and rechecks database wall-clock expiry before commit, including for empty lists.
-For example, a waiting list cannot return private tournament names after expiry.
-A revocation or credential change that reaches authority first denies the read;
-a later writer waits behind a read already holding its authority locks.
+`repositories/session_read.rs` shares the existing A1b transaction authority:
+one repeatable-read attempt, active session/user share locks before exact
+membership, a final database wall-clock expiry check and one complete retry on
+40001. The public `TournamentReadError` alias preserves A1b callers and behavior.
+Roster and round SQL remain in their existing repositories, and a round's
+membership scope comes from its stored parent. No user, role or payload from a
+failed snapshot survives retry; a second conflict returns generic private 503.
 
-Collections acquire all existing membership locks in tournament UUID order in
-one query. A newly inserted membership can coherently appear on the next read.
-Removal or demotion that invalidates the current snapshot discards the complete
-attempt and permits one fresh read. A second 40001 returns generic private
-`503 service_unavailable`. No partial data or old role survives a retry, and no
-mutation retry is added. All statuses on these three GET routes are
-`private, no-store`.
+For example, an otherwise valid roster that expires while loading its final
+handicap-lock query returns no player data. Empty roster and round-list replies
+must also pass the final check. Later revocation or credential writes wait behind
+readers that already hold authority locks. The check does not freeze time during
+COMMIT or retract previously delivered results.
 
-Existing list orders, complete/archived membership visibility, roles, conditional
-entrant links and missing/cross-tournament errors are preserved. The repair adds
-session checks and a constant-count collection lock query; it makes no latency or
-production capacity improvement claim. Other private read families remain
-separate work. There is no schema, frontend source, dependency, scoring-rule or
-hosted configuration change.
+Roster ordering, preserved entrant handicaps, first handicap-lock reason and all
+round fields/order are unchanged. Each ordinary read adds two session queries,
+with no per-player/per-round authorization loop or measured speedup claim. Shared
+API mapping/cache support applies `private, no-store` to all selected GET replies.
+Round POST creation and its existing preflight keep their behavior; no mutation
+retry, sibling repair, schema, frontend, dependency or hosting change is included.
 
-Thirteen new PostgreSQL/API regressions cover session revocation, credential
-replacement, natural expiry at controlled waits, empty lists, membership changes,
-snapshot coherence, twelve concurrent valid reads, cancellation and payload/cache
-contracts. Focused suites pass 48 tests and retry/error helpers pass three.
-The full backend suite passes 261 tests; the full PostgreSQL-feature suite passes
-770 tests with four existing manual performance probes ignored. Formatting,
-strict Clippy, all API binary builds, migration and development seed pass.
-Independent read-only review found no remaining findings after test fixtures were
-corrected to use a typed membership role and a separate unclaimed player.
+Thirteen new PostgreSQL/API cases cover revocation, credential replacement,
+membership deletion/demotion, expiry during controlled waits, empty collections,
+twelve concurrent valid reads without writes/SSE, cancellation, every role,
+missing/cross-trip targets, payload parity and GET-only cache behavior. The empty
+fixtures create a naturally empty tournament; real opening preserves
+`snapshot_captured` as the first handicap-lock reason. Independent read-only
+review found no remaining issues after those fixture assumptions were corrected.
 
-All nine Chrome flows pass across 320, 390 and 1280px, covering delayed loading,
-real database-backed payloads, long text, error/read-only retry, empty or denied
-states and private 401 responses after logout. No page exceptions or unexpected
-network failures occurred; representative mobile/desktop screenshots were
-inspected. [The report](validation/tournament-read-session-2026-10-14/README.md)
-contains the original failure, test details, captured browser results and limits.
+Focused suites pass 43 tests and the shared retry helpers pass two. The full
+backend suite passes 261 tests; the PostgreSQL-feature ladder passes 783 with
+four existing manual performance probes ignored. Formatting, strict Clippy,
+all API binary builds, explicit migration and development seed pass.
+
+All nine Chrome flows pass across 320, 390 and 1280px with real API/PostgreSQL
+payloads, delayed loading, long entrant/course/tee names, error/read-only retry,
+empty roster/list or denied detail, and private 401s after logout. No page errors
+or unexpected network failures occurred; representative mobile/desktop screenshots
+were inspected. [The report](validation/roster-round-session-2026-10-14/README.md)
+retains the original failure, browser evidence, exact gate semantics and limits.
 Physical-device, public-host and production-load acceptance remain unchanged.
 
-[PLANS.md](PLANS.md) selects the roster and round list/detail family as A1c next;
-no adjacent repair has started.
+[PLANS.md](PLANS.md) selects pairing/team GET session binding as A1d next;
+that work and the other severity-rated findings remain queued.

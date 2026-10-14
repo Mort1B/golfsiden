@@ -14,6 +14,7 @@ pub mod round_pairings;
 pub mod rounds;
 pub mod score_authorization;
 pub mod scorecards;
+pub mod session_read;
 pub mod teams;
 pub mod tournament_authorization;
 pub mod tournament_creation;

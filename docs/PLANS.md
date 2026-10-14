@@ -9,30 +9,30 @@ None. Awaiting approval of one bounded next step.
 
 ## Next candidate
 
-### A1c — P2: bind private roster and round reads to their session
+### A1d — P2: bind private pairing and team reads to their session
 
 Evidence: [application review](validation/application-review-2026-10-14/README.md#a1--p2-revoked-sessions-can-finish-private-reads).
 
-- Goal: prevent roster and round list/detail replies from completing with revoked
-  or expired session authority during database waits.
-- Scope: `GET /api/tournaments/{id}/players`, `GET
-  /api/tournaments/{id}/rounds`, and `GET /api/rounds/{id}`; their API/repository
-  boundary, focused session support, regressions and docs. Exclude pairing/team
-  reads, readiness endpoints, legacy writes, scoring, schema and frontend changes.
-- Behavior: carry the session ID into one consistent transaction, derive stored
-  tournament ownership, retain session/user/exact-membership locks through
-  assembly and recheck database wall-clock expiry before success. Handle
-  invalidated snapshots with one bounded full-read retry and private generic
-  unavailable responses, preserving ordering and existing payload/error contracts.
-- Validation: reproduce before repairing; cover revocation, credential generation,
-  expiry during membership and later loading waits, membership changes, valid
-  concurrency, missing/cross-tournament targets, every role, cache policy and no
-  writes/SSE. Run full backend/PostgreSQL ladders, focused real-browser evidence
-  and independent read-only review.
-- Invariants: account membership remains independent of player/team membership;
-  preserve roster handicap-lock state, round fields and stored ownership.
-- Stop: publish these three GET repairs only; leave remaining read/write families
-  and assessment findings queued.
+- Goal: prevent private pairing/team replies from completing with revoked or
+  expired session authority during database waits.
+- Scope: `GET /api/rounds/{id}/pairings` and `GET /api/rounds/{id}/teams`;
+  their API/repository authority boundary, shared session support, regressions
+  and docs. Exclude pairing PUT, team/round writes, readiness endpoints, scoring,
+  schema, frontend and team membership-query batching (A8).
+- Behavior: carry session identity through stored round/tournament resolution,
+  hold session/user and exact membership share locks in one consistent snapshot,
+  and recheck database wall-clock expiry after complete payload loading. Permit
+  one fresh whole-read retry on snapshot invalidation, then private generic 503.
+  Preserve existing role, payload, ordering, empty and error/cache contracts.
+- Validation: reproduce first; cover revocation, credential generation, expiry at
+  membership/later loading waits, membership changes, all roles, missing/cross-
+  tournament resources, ordinary concurrency, cancellation, and no writes/SSE.
+  Run full backend/PostgreSQL ladders, focused real-browser evidence and read-only
+  review; retain A1b/A1c compatibility coverage.
+- Invariants: team composition remains round-specific; preserve player/account
+  separation, exact group identities and deterministic membership ordering.
+- Stop: publish these two GET repairs only; leave readiness/remaining read
+  inventory, legacy writes and other assessment findings queued.
 
 ## Later queue
 
@@ -42,8 +42,8 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A1 follow-up after A1c:** repair remaining user-only private
-   pairing/team/readiness families in bounded slices; inventory
+1. **P2 / A1 follow-up after A1d:** repair user-only private readiness reads
+   and inventory any remaining read families in bounded slices; inventory
    analogous expiry gaps in legacy team/round writes as a separate slice.
 2. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
    the SQLx cancellation patch and recheck TLS behavior/advisory reachability.
