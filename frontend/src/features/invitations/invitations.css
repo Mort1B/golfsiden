@@ -1,6 +1,6 @@
 .join-page {
-  min-height: 100vh;
-  padding: max(20px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+  min-height: var(--screen-height);
+  padding: 20px 16px 32px;
 }
 
 .join-shell {

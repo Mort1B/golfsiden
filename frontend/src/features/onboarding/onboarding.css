@@ -1,6 +1,6 @@
 .onboarding-page {
-  min-height: 100vh;
-  padding: max(24px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+  min-height: var(--screen-height);
+  padding: 24px 16px 32px;
 }
 
 .button {

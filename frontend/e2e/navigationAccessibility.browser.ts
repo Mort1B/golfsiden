@@ -70,7 +70,7 @@ test('mobile safe-area clearance follows navigation and does not leak into publi
     await traverseCards(page, 'Shift+Tab', expected)
     await page.screenshot({ path: '/tmp/golf-focus-safe-area.png' })
     await page.setViewportSize({ width: 700, height: 600 })
-    expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollPaddingBottom)).toBe('8px')
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollPaddingBottom)).toBe('32px')
     await page.getByRole('button', { name: 'Logg ut', exact: true }).click()
     await expect(page.getByRole('button', { name: 'Logg inn', exact: true })).toBeVisible()
     expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollPaddingBottom)).toBe('auto')
@@ -105,6 +105,7 @@ for (const width of [320, 1280]) test(`score controls stay visible during keyboa
 test('shared back controls meet the 44px target at mobile and desktop widths', async ({ page }) => {
   const f = await routeWorkspace(page)
   f.state.emptyRounds = true
+  await page.route(`**/api/tournaments/${trip.id}/player-accounts`, route => route.fulfill({ json: [] }))
   try {
     await page.goto(`/manage/tournaments/${trip.id}`)
     for (const width of [320, 390, 699, 700, 1280]) {

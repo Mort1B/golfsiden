@@ -10,7 +10,7 @@
 .result-share-receipt label { display: grid; gap: 5px; min-width: 0; }
 .result-share-receipt input { width: 100%; min-width: 0; min-height: 44px; padding: 8px; border: 1px solid #aeb8b1; border-radius: 5px; }
 .result-share-control [role="alert"], .public-results-page [role="alert"] { padding: 11px; border-left: 4px solid #a33d35; background: #fff2f0; color: #7f2a23; line-height: 1.5; }
-.public-results-page { width: min(100%, 820px); min-height: 100vh; margin: 0 auto; padding: 26px 16px 40px; }
+.public-results-page { width: min(100%, 820px); min-height: var(--screen-height); margin: 0 auto; padding: 26px 16px 40px; }
 .public-results-page > header { margin-bottom: 20px; }
 .public-results-page > header p:last-child { margin-top: 6px; font-weight: 750; }
 .public-results-page > p, .public-standings > p { margin-top: 9px; color: #526058; font-size: .8rem; line-height: 1.5; overflow-wrap: anywhere; }

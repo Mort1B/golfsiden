@@ -56,13 +56,26 @@ remain owned by the existing providers and scoring features.
 
 ## Private-shell scroll clearance
 
-Shared CSS reserves root scroll padding only while `.app-shell` is mounted.
-Below 700px, bottom clearance matches the existing 76px content allowance plus
-the bottom safe-area inset; desktop uses an 8px block margin and 100px left
-clearance for the 92px navigation rail. Native keyboard focus scrolling uses this
-space without a focus listener or route effect. Public/authentication pages retain
-their ordinary scrolling. Shared detail headers allocate a 44px back-control
-column, and small section counts use the established darker secondary text color.
+The viewport uses `viewport-fit=cover`. Root CSS variables read all four
+safe-area insets; body padding owns the content safe area, while fixed navigation
+owns its own edge padding. Account controls are bounded by the inset shell width.
+Public/authentication pages keep ordinary inner padding rather than applying
+safe areas a second time. Shell and public minimum heights use the small viewport
+(`100svh`, with a `100vh` fallback) minus vertical safe areas; private child pages
+do not each add another viewport of empty space.
+
+Root scroll clearance is scoped to `.app-shell`. Below 700px, mobile clearance
+is `max(76px, 44px + 2rem)` plus the bottom inset, growing with enlarged text.
+Navigation labels wrap and links retain a 44px minimum target independently of
+home-indicator padding. At 700px the existing 92px rail remains, offset by the
+left safe area; scroll clearance includes the rail and relevant insets. At
+heights up to 500px rail links use compact 44px minimums. Safe alignment and
+vertical rail scrolling keep controls reachable when available height is smaller.
+
+These are CSS geometry changes. Providers, route lifetimes, drafts, score guards
+and mutations retain existing ownership. There is no resize-driven remount or
+JavaScript focus/scroll handler. Shared detail headers retain a 44px back-control
+column. Sign-in inputs use a readable 1rem size and zoom remains enabled.
 
 ## Production delivery boundary
 

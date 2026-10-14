@@ -925,12 +925,25 @@ events invalidate private match, lifecycle and result queries for fresh reads.
 
 ## Keyboard navigation and layout
 
-Private pages reserve scrolling space around the fixed navigation so Tab and
-Shift+Tab keep focused controls and tournament cards readable. Mobile clearance
-includes the device's bottom safe-area inset. At 700px the menu becomes a left
-rail and the scroll clearance follows that layout. Public and sign-in pages do
-not inherit the private menu spacing. Back controls measure 44×44 CSS pixels;
-small tournament section counts use darker text for readable contrast.
+The layout targets iPhone 15 Pro/Pro Max and newer single-screen iPhones in both
+Chrome and Safari, with portrait as the primary orientation. Desktop and 320px
+layouts remain supported; Duo and foldable-specific layouts are outside this step.
+Content clears all four device safe areas. Public and sign-in pages use the
+available small-viewport height while allowing normal scrolling for longer forms.
+
+Private pages reserve scrolling space around fixed navigation. Navigation links
+remain at least 44×44 CSS pixels, including with home-indicator padding. Enlarged
+labels wrap and the reserved bottom space grows with text size. At 700px the menu
+becomes a left rail; short landscape views use compact links and the rail can
+scroll vertically if needed. Public pages do not inherit private-menu clearance.
+Back controls remain 44×44; sign-in inputs use a 1rem font and pinch zoom stays
+available. Rotation does not replace providers or discard scoring/Fantasy drafts.
+
+Automated Chrome/WebKit checks and simulated inset/reduced-height checks are
+separate from installed iPhone-browser acceptance. Physical iPhone Chrome and
+Safari keyboard, toolbar and native zoom checks remain unverified; see the
+[iPhone layout evidence](validation/iphone-layout-2026-10-14/README.md) for exact
+coverage and limitations.
 
 ## Mobile score entry
 

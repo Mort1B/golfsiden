@@ -31,16 +31,17 @@ export async function routeWorkspace(page: Page) {
   page.on('console', message => { if (message.type() === 'error' && !message.text().startsWith('Failed to load resource:')) errors.push(message.text()) })
   page.on('response', response => {
     const path = new URL(response.url()).pathname
-    if (response.status() >= 400 && !(response.status() === 503 && (path.endsWith('/scores/conditional') || path === '/api/me/profile'))) errors.push(`HTTP ${response.status()} ${path}`)
+    if (response.status() >= 400 && !(response.status() === 401 && path === '/api/auth/session') && !(response.status() === 503 && (path.endsWith('/scores/conditional') || path === '/api/me/profile'))) errors.push(`HTTP ${response.status()} ${path}`)
   })
   page.on('requestfailed', request => {
     const path = new URL(request.url()).pathname, failure = request.failure()?.errorText
-    if (failure !== 'net::ERR_ABORTED' && !allowedChunks.some(pattern => pattern.test(path))) errors.push(`${path} ${failure}`)
+    const cancelledRead = failure === 'Load request cancelled' && (request.resourceType() === 'eventsource' && path === '/live' || request.method() === 'POST' && path === `/api/public/results/${shareId}`)
+    if (!cancelledRead && failure !== 'net::ERR_ABORTED' && !allowedChunks.some(pattern => pattern.test(path))) errors.push(`${path} ${failure}`)
   })
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname
     const currentTrip = state.emptyRounds ? { ...trip, status: 'draft' } : trip
-    if (path === '/api/auth/session') return route.fulfill({ json: state.auth })
+    if (path === '/api/auth/session') return route.fulfill(state.auth ? { json: state.auth } : { status: 401, json: { error: { code: 'unauthorized', message: 'Logg inn' } } })
     if (path === '/api/auth/logout') { state.auth = null; return route.fulfill({ status: 204 }) }
     if (path === '/api/auth/login') { state.auth = state.loginAs; return route.fulfill({ json: state.auth }) }
     if (path === '/api/me/profile' && state.profileError) return route.fulfill({ status: 503, json: { error: { code: 'unavailable', message: 'Profilen er midlertidig utilgjengelig' } } })
@@ -63,7 +64,7 @@ export async function routeWorkspace(page: Page) {
     }
     return route.fallback()
   })
-  return { state, paths, errors, allowedChunks, score, live, async close() { expect(errors).toEqual([]); await live.close() } }
+  return { state, paths, errors, allowedChunks, score, live, async close() { try { expect(errors).toEqual([]) } finally { await live.close() } } }
 }
 
 export async function routeLayout(page: Page, name: string) {
