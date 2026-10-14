@@ -509,11 +509,13 @@ and reapplies runtime grants before the API is started.
 - Session identity at an API/repository boundary alone does not establish final
   expiry enforcement. The [remaining private-read inventory](validation/private-read-inventory-2026-10-14/README.md)
   distinguishes retained session/user/membership locks from the final database
-  wall-clock check. Numeric score-access/cards, four-ball/Stableford cards,
-  match detail/completion/table and invitation metadata retain authority locks
-  but omit that final check. Final-visibility and course GETs retain user-only
-  authorization boundaries. Awards, player-account metadata, result-share status,
-  Fantasy reads and match listing already perform final session checks. Bound
+  wall-clock check. The three ordinary numeric score-access/card GETs now perform
+  that final check; see [A1g acceptance](validation/numeric-read-session-2026-10-14/README.md).
+  Four-ball/Stableford cards, match detail/completion/table and invitation metadata
+  still retain authority locks but omit that final check. Final-visibility and
+  course GETs retain user-only authorization boundaries. Awards, player-account
+  metadata, result-share status, Fantasy reads and match listing already perform
+  final session checks. Bound
   families have different isolation/retry owners; Fantasy selection/results GETs
   can finalize due windows and emit post-commit invalidations. A generic read-only
   retry cannot be applied without preserving that transaction/side-effect boundary.
@@ -615,22 +617,30 @@ and reapplies runtime grants before the API is started.
 - Four-ball separates input and competition ownership: mutations authorize exact
   player cards, while score-access lists a team side only when both frozen partner
   cards are authorized. Side scoring reads and confirmation repeat both checks.
-- The ordinary authenticated scoring-card GET retries its whole repeatable-read
-  transaction once after PostgreSQL serialization failure (`40001`). No principal,
-  membership, owner eligibility, round context or result survives between attempts;
+- The ordinary authenticated numeric member-card, scoring-card and score-access
+  GETs each retry their whole repeatable-read transaction once after PostgreSQL
+  serialization failure (`40001`). No principal, membership, owner eligibility,
+  round context or result survives between attempts;
   the failed transaction is dropped before the fresh attempt. Existing session/user
   and membership share locks remain held through assembly and commit. A revoked
   session or permission is denied on the fresh read. A second serialization failure
   becomes a non-cacheable `503 service_unavailable`; unrelated errors are not
-  retried. This boundary applies only to the ordinary scoring-card read, not score
-  mutations, public/member projections, score-access lists, four-ball side reads
-  or match-card reads. It adds no new session-expiry policy or schema requirement.
+  retried. Each successful attempt rechecks database wall-clock session validity
+  after complete assembly and before commit: member projection and confirmation,
+  full scoring summary, or the complete owner list. Existing `no-store` denials
+  are retained; selected GET responses lacking a cache header receive
+  `private, no-store`. Card retries reuse their existing error owner; access uses
+  a read-specific wrapper so shared mutation authorization stays unchanged.
+  Other format-specific card reads, mutations and public projections remain
+  separate. No schema requirement changes.
 - The private score-access read re-locks the active session/user and exact
   tournament membership through deterministic owner assembly in a repeatable-
   read transaction. Missing target membership is forbidden rather than
   represented as an empty authorized owner set; exact viewers and exact unlinked
-  members retain the empty authorized result. Save and confirm invoke the same
-  resolver under the existing round, session, and membership locks, retaining
+  members retain the empty authorized result. The final active-session check also
+  covers empty viewer/unlinked/singles results and follows four-ball partner-to-
+  team mapping. Save and confirm invoke the same resolver under the existing
+  round, session, and membership locks, retaining
   the session user as audit actor and preventing listing/mutation policy drift.
   Authenticated legacy save and confirmation also recheck the central active
   session predicate immediately before commit, including unchanged-value saves

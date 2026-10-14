@@ -1,5 +1,10 @@
 # Remaining private-read authority inventory — 2026-10-14
 
+Follow-up: [A1g numeric read acceptance](../numeric-read-session-2026-10-14/README.md)
+repairs the three numeric access/card GETs with reproduced late-expiry evidence.
+Ten P2 routes and three P3 course routes remain. The classifications, manifest
+and source anchors below preserve the original A1f assessment revision.
+
 Reviewed source revision: `21917b6931c4f94dfacdbb36ded7f390f6108834`.
 A1f is a **documentation-only source assessment**. No endpoint was called, no
 runtime race was reproduced and no runtime, test, dependency or schema source
@@ -14,8 +19,8 @@ and [A1e readiness repair](../readiness-session-2026-10-14/README.md).
 | R2: session identity discarded | P2 medium | Final-round-visibility GET takes only an extracted user ID. Its exact-admin membership lock cannot revalidate revocation, credential generation or natural expiry for that session. The payload is administrative visibility metadata, not hidden scores. | Source-supported; no new race reproduction |
 | R3: course reads lack complete session binding | P3 low | Three course GETs use user-only admin authorization. Payloads are global bundled/registered course facts; provider fetching is conditional on catalog readiness. No current private-score disclosure or reachable provider-quota abuse is established. | Source-supported; provider-success impact conditional |
 
-The next candidate is **A1g: repair only the three numeric score-access/card
-GETs**, beginning with a failing late-expiry regression. The other families need
+The next candidate at this snapshot was **A1g: repair only the three numeric
+score-access/card GETs**, beginning with a failing late-expiry regression. Other families need
 separate bounded steps. Cache/retry differences below are recorded contract
 facts; they do not independently establish a data disclosure.
 

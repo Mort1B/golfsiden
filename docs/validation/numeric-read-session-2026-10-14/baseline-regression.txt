@@ -1,0 +1,22 @@
+     Running tests/numeric_read_sessions.rs (target/debug/deps/numeric_read_sessions-9106136a0638c840)
+
+running 1 test
+/api/rounds/00000000-0000-0000-0000-000000004001/score-access: status=200 OK, code=null
+/api/rounds/00000000-0000-0000-0000-000000004001/scorecards/team/00000000-0000-0000-0000-000000005001: status=200 OK, code=null
+/api/rounds/00000000-0000-0000-0000-000000004001/scorecards/team/00000000-0000-0000-0000-000000005001/scoring: status=200 OK, code=null
+
+thread 'numeric_read_sessions::expiry::expiry_during_membership_wait_denies_all_three_numeric_reads' (502681) panicked at backend/tests/numeric_read_sessions/expiry.rs:60:9:
+assertion `left == right` failed: /api/rounds/00000000-0000-0000-0000-000000004001/score-access
+  left: 200
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test numeric_read_sessions::expiry::expiry_during_membership_wait_denies_all_three_numeric_reads ... FAILED
+
+failures:
+
+failures:
+    numeric_read_sessions::expiry::expiry_during_membership_wait_denies_all_three_numeric_reads
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 24.63s
+
+error: test failed, to rerun pass `-p golf-api --test numeric_read_sessions`

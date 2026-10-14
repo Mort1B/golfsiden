@@ -21,7 +21,7 @@ use crate::{
     },
     error::{ApiError, ApiResult},
     repositories::{
-        score_authorization::{self, ScoreAuthorizationError},
+        score_authorization::{self, ScoreAccessReadError, ScoreAuthorizationError},
         scorecards::{self, AuthenticatedSaveScore, ScorecardError},
     },
 };
@@ -30,27 +30,30 @@ pub fn routes() -> Router<Arc<AppState>> {
     Router::new()
         .merge(conditional::routes())
         .route("/api/rounds/{round_id}/scores", put(save))
-        .route("/api/rounds/{round_id}/score-access", get(score_access))
+        .route(
+            "/api/rounds/{round_id}/score-access",
+            get(score_access).layer(axum::middleware::map_response(private_response)),
+        )
         .route(
             "/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}",
-            get(get_one),
+            get(get_one).layer(axum::middleware::map_response(private_response)),
         )
         .route(
             "/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/scoring",
-            get(get_scoring).layer(axum::middleware::map_response(
-                |mut response: Response| async move {
-                    response
-                        .headers_mut()
-                        .entry(CACHE_CONTROL)
-                        .or_insert(axum::http::HeaderValue::from_static("private, no-store"));
-                    response
-                },
-            )),
+            get(get_scoring).layer(axum::middleware::map_response(private_response)),
         )
         .route(
             "/api/rounds/{round_id}/scorecards/{owner_type}/{owner_id}/confirm",
             post(confirm),
         )
+}
+
+async fn private_response(mut response: Response) -> Response {
+    response
+        .headers_mut()
+        .entry(CACHE_CONTROL)
+        .or_insert(axum::http::HeaderValue::from_static("private, no-store"));
+    response
 }
 
 #[derive(Deserialize)]
@@ -114,7 +117,7 @@ async fn score_access(
         round_id,
     )
     .await
-    .map_err(map_authorization_error)?;
+    .map_err(map_access_error)?;
     Ok((
         [(CACHE_CONTROL, "private, no-store")],
         Json(ScoreAccessResponse {
@@ -217,5 +220,12 @@ fn map_authorization_error(error: ScoreAuthorizationError) -> ApiError {
         ScoreAuthorizationError::Unauthenticated => ApiError::Unauthenticated,
         ScoreAuthorizationError::Forbidden => ApiError::Forbidden,
         ScoreAuthorizationError::Database(error) => ApiError::Database(error),
+    }
+}
+
+fn map_access_error(error: ScoreAccessReadError) -> ApiError {
+    match error {
+        ScoreAccessReadError::Authorization(error) => map_authorization_error(error),
+        ScoreAccessReadError::Unavailable => ApiError::ServiceUnavailable,
     }
 }

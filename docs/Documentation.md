@@ -544,12 +544,13 @@ The repair adds no mutation retry or frontend state change.
 Private GETs retain different session boundaries. The selected leaderboard,
 workspace and readiness repairs above do not imply every sibling checks expiry
 after loading. The [source inventory](validation/private-read-inventory-2026-10-14/README.md)
-records 27 remaining tournament-scoped GETs: 11 retain authority and perform a
-final active-session check; 16 have incomplete boundaries. Numeric and
-format-specific card/access reads plus invitation metadata retain session locks
-but omit a final expiry check. Final-visibility and course reads still use
-extracted user identity. This assessment executes no routes and adds no runtime
-behavior. In particular, Fantasy selection/results GETs may finalize due windows;
+records its historical snapshot of 27 remaining tournament-scoped GETs: 11 bound
+and 16 incomplete. The subsequent [numeric read repair](validation/numeric-read-session-2026-10-14/README.md)
+closes three of those incomplete boundaries with runtime evidence. Ten P2 routes
+and three P3 course routes remain: format-specific card reads, match detail/
+completion/table and invitations still lack a final expiry check; final-visibility
+and course reads still use extracted user identity. The source inventory itself
+executes no routes. In particular, Fantasy selection/results GETs may finalize due windows;
 they are not side-effect-free inspection tools. The report owns exact routes,
 severity, cache/retry differences and evidence limits.
 
@@ -728,13 +729,21 @@ and membership share locks; it remains private/non-cacheable and rejects locked
 rounds. Database audit actors remain preserved but are absent
 from member read projections.
 
-If an authority update invalidates this scoring read's database snapshot, the
+Ordinary numeric member-card, scoring-card and score-access reads recheck active
+session validity against database wall-clock time after complete assembly and
+before commit. This includes confirmation/projection loading, empty access lists
+and four-ball partner-to-team access mapping. Expiry during those waits returns
+`401 unauthenticated` without a successful payload; it cannot freeze time during
+commit or network delivery.
+
+If an authority update invalidates one of these reads' database snapshots, the
 server retries the complete read once with a fresh snapshot and repeats all
 access checks. Lost session/access returns the usual `401`/`403`; valid access
-returns the current card. A second serialization conflict returns the existing
-`503 service_unavailable` envelope without card data. Scoring-route responses
-are non-cacheable, retaining existing `no-store` denials and adding
-`private, no-store` where no cache header was present. This scoring-read policy
+returns the current card or owner list. A second serialization conflict returns
+the existing `503 service_unavailable` envelope without card or owner data. All
+three routes' responses are non-cacheable, retaining existing `no-store` denials
+and adding
+`private, no-store` where no cache header was present. This read policy
 does not add retries to mutations; private gross/net leaderboards have the
 separate transaction policy described above.
 
@@ -1250,7 +1259,10 @@ player link plus the exact tournament membership inside one repeatable-read
 transaction before it assembles the owner list. An authenticated account without
 that target membership receives `403`; an exact viewer or exact player membership
 without a linked player remains authorized but receives an empty writable-owner
-list.
+list. The final active-session check follows full owner assembly, including
+four-ball side mapping and the viewer, unlinked-player and singles empty paths.
+One whole fresh attempt is allowed after a serialization conflict; no role,
+context or owner facts from the discarded attempt are reused.
 
 ## Authentication and scoring access
 

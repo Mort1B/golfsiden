@@ -1,55 +1,56 @@
-# Remaining private-read authority inventory
+# Numeric score reads recheck session expiry after loading
 
-A1f traced all remaining authenticated tournament-scoped JSON GET boundaries at
-source revision `21917b6`. Of 46 explicit GET routes, 14 belong to previously
-repaired families and five are excluded health/readiness, auth, self-profile or
-SSE routes. The remaining 27 comprise 11 source-bound reads and 16 incomplete
-boundaries, with no unresolved source paths. No application, schema, dependency
-or test source changed, and no endpoint or database was called.
+A1g fixes a reproduced P2 gap in the ordinary numeric member-card, scoring-card
+and shared score-access GETs. Before the change, all three could return 200 after
+the session naturally expired during a membership wait. Existing locks protected
+revocation and credential replacement, but time could advance while those locks
+were held. The original regression now returns non-storeable 401 from each route,
+without score writes or live events.
 
-The findings distinguish two P2 authority gaps. Twelve reads retain session/user
-and exact membership locks but omit the final database wall-clock expiry check:
-three numeric access/cards, four match detail/completion/table reads, two
-four-ball cards, two Stableford cards and invitation metadata. Later revocation
-and credential changes serialize behind those locks, while natural expiry can
-advance during loading. Final-visibility metadata is a separate P2 user-only
-boundary: its membership lock cannot revalidate the extracted session.
+Each successful attempt checks database wall-clock session validity after its
+complete payload is assembled, immediately before commit. This includes card
+confirmation loading and member projection, full scoring summaries, four-ball
+partner-to-team owner mapping, and viewer/unlinked-player/singles empty lists.
+The boundary does not freeze time through commit or network delivery.
 
-Three course GETs have P3 session-binding gaps. Their payloads are globally
-bundled/registered course facts; all eight current catalog entries are missing
-or incomplete, so successful provider fetching and quota impact are conditional.
-No current hidden-score disclosure or provider-quota abuse was established.
-These findings come from source, not newly reproduced races.
+For example, an empty writable-owner list remains a successful authorized reply
+for a valid viewer. If that session expires while waiting for membership, the
+server now rejects the reply instead of returning a stale successful empty list.
+An ordinary member card still uses preserved round handicaps and redacts a
+hidden final's back nine exactly as before.
 
-Awards, player-account metadata, result-share status, all seven Fantasy GETs
-and match listing already retain authority and check the session after loading.
-Their transaction owners differ: some use default isolation and serialized
-round locks or one payload statement, others use repeatable read. Cache and
-retry policies also differ; `no-store` prohibits storage without literal
-`private`. Error-header coverage gaps do not alone establish cached disclosure.
-Fantasy selection/results GETs may finalize due windows and emit invalidations,
-so the inventory inspected source without executing them.
+All three reads retain repeatable read and allow one fresh whole attempt after
+`40001`. Existing scoring-card retry behavior is shared with the member read;
+access owns a read-specific wrapper so shared mutation authorization is unchanged.
+A second conflict yields generic non-storeable 503. No role, context or facts
+survive the discarded attempt; other errors are not retried.
 
-For example, the numeric score-access read holds an active session while
-resolving owners but also commits an empty singles result without a final expiry
-check. The next candidate, A1g, is limited to that GET and the ordinary numeric
-member/scoring card GETs. It must first reproduce late expiry, preserve owner,
-handicap, redaction and retry contracts, and validate without changing mutations
-or format-specific siblings. No repair has started.
+Selected GET middleware preserves `no-store` headers and fills missing ones with
+`private, no-store`, including missing-resource errors. The existing 404 test now
+asserts that deliberate contract. Mutation, conditional delivery, format-specific
+card routes, formulas, schema and frontend source are unchanged. Each successful
+selected read adds one final session query; no speedup or batching is claimed.
 
-Two independent read-only reviews covered every inventoried route and confirmed
-46 unique route declarations and the manifest classifications. Review corrected
-two P3 documentation details about match filtering and the exact unchecked
-commit sites; no inventory findings remain. Local links/source-line targets,
-manifest consistency, the current catalog and documentation-only diff checks pass.
+The 18 new PostgreSQL/API regressions cover authority writers, natural expiry at
+late loading/empty branches, changed hidden-final context on retry, fresh ordering,
+coherent scores/confirmation, cancellation, concurrent full JSON parity, nine-hole
+foursomes snapshots, exact retry counts and no writes/SSE. Corrected focused
+suites pass 58 tests. Independent read-only review found no actionable findings.
+Formatting, the 261-test ordinary backend ladder, strict Clippy and binary build
+pass. The full PostgreSQL ladder passes 831 tests, with four existing performance
+probes ignored. Explicit migration and seed pass at schema 39; local health and
+readiness return 200. The [validation report](validation/numeric-read-session-2026-10-14/README.md)
+records the commands, initial failures and final evidence. Owned local validation
+services were stopped and removed.
 
-The [inventory report](validation/private-read-inventory-2026-10-14/README.md)
-contains every remaining route, source file/line evidence, severity, transaction,
-cache and retry details, and the [46-route manifest](validation/private-read-inventory-2026-10-14/routes.json).
-Backend, PostgreSQL, frontend and browser ladders are unaffected by this
-source/documentation-only step and were not rerun. Previous A1e acceptance is
-linked historical evidence, not new validation of the inventoried routes.
+Chrome passes nine endpoint/width flows at 320, 390 and 1280px: loading, populated,
+unentered/read-only fallback, denial, error and explicit read retry. Long names
+wrap without horizontal overflow. Real typed decoders and 200/401 cache envelopes
+pass; no score writes, page exceptions or unexpected network failures occur.
+The report distinguishes injected UI failures from real database authority races,
+retaining inspected screenshots and initial fixture corrections.
 
-[PLANS.md](PLANS.md) selects one next candidate. Other read repairs, legacy-write
-expiry inventory, dependency/recovery/capacity findings and existing deployment
-acceptance limits remain queued.
+Ten P2 and three P3 routes from the historical A1f inventory remain. Physical
+devices, public hosting, production load and other queued findings keep their
+acceptance limits. [PLANS.md](PLANS.md) selects the next bounded candidate;
+no queued repair is part of A1g.

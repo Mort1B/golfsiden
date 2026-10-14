@@ -4,6 +4,8 @@ pub use conditional::{ConditionalSaveScore, save_conditional};
 mod mutations;
 mod rows;
 
+use std::future::Future;
+
 use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 use thiserror::Error;
 use uuid::Uuid;
@@ -116,6 +118,15 @@ pub async fn get_read_authenticated(
     round_id: Uuid,
     owner: ScoreOwner,
 ) -> Result<ScorecardReadProjection, ScorecardError> {
+    retry_read(|| get_read_once(pool, session_id, round_id, owner)).await
+}
+
+async fn get_read_once(
+    pool: &PgPool,
+    session_id: Uuid,
+    round_id: Uuid,
+    owner: ScoreOwner,
+) -> Result<ScorecardReadProjection, ScorecardError> {
     let mut transaction = pool.begin().await?;
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
         .execute(&mut *transaction)
@@ -142,7 +153,7 @@ pub async fn get_read_authenticated(
     });
     let summary = build_summary(&mut transaction, &context, owner).await?;
     let result = read_projection(summary, metadata);
-    transaction.commit().await?;
+    finish_read(transaction, session_id).await?;
     Ok(result)
 }
 
@@ -152,17 +163,35 @@ pub async fn get_scoring_authenticated(
     round_id: Uuid,
     owner: ScoreOwner,
 ) -> Result<ScorecardSummary, ScorecardError> {
-    // An authority row can change after the repeatable-read snapshot is taken
-    // but before its share lock is acquired. Discard that entire transaction;
-    // the fresh attempt must repeat every lookup and authorization check.
-    match get_scoring_once(pool, session_id, round_id, owner).await {
+    retry_read(|| get_scoring_once(pool, session_id, round_id, owner)).await
+}
+
+async fn retry_read<T, F, Fut>(mut read: F) -> Result<T, ScorecardError>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<T, ScorecardError>>,
+{
+    // Discard the complete failed snapshot, including role, owner and visibility.
+    match read().await {
         Err(error) if error.is_serialization_failure() => {}
         result => return result,
     }
-    match get_scoring_once(pool, session_id, round_id, owner).await {
+    match read().await {
         Err(error) if error.is_serialization_failure() => Err(ScorecardError::ReadUnavailable),
         result => result,
     }
+}
+
+async fn finish_read(
+    mut transaction: Transaction<'_, Postgres>,
+    session_id: Uuid,
+) -> Result<(), ScorecardError> {
+    // Retained locks serialize revocation; natural expiry needs a fresh clock.
+    auth::lock_active_session(&mut transaction, session_id)
+        .await?
+        .ok_or(ScorecardError::Unauthenticated)?;
+    transaction.commit().await?;
+    Ok(())
 }
 
 async fn get_scoring_once(
@@ -200,7 +229,7 @@ async fn get_scoring_once(
         }
     })?;
     let summary = build_summary(&mut transaction, &context, owner).await?;
-    transaction.commit().await?;
+    finish_read(transaction, session_id).await?;
     Ok(summary)
 }
 

@@ -5,41 +5,38 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. Awaiting approval of one bounded next step.
+None. A1g acceptance is in the [numeric read report](validation/numeric-read-session-2026-10-14/README.md).
 
-## Next candidate
+## Next candidate — requires approval
 
-### A1g — P2: finish numeric score-read session authority
+### A1h — P2: finish four-ball card session authority
 
-Evidence: [remaining private-read inventory](validation/private-read-inventory-2026-10-14/README.md#numeric),
-R1 (source-supported; a new late-expiry race still needs reproduction).
+Evidence: [remaining private-read inventory](validation/private-read-inventory-2026-10-14/README.md#four-ball),
+R1 (source-supported; the four-ball card expiry race needs its own reproduction).
 
-- Goal: prevent successful numeric score-access/member-card/scoring-card replies
-  after session expiry during authority or fact-loading waits.
-- Scope: `GET /api/rounds/{id}/score-access`, `GET
-  /api/rounds/{id}/scorecards/{owner_type}/{owner_id}` and that card GET's `/scoring`
-  variant; their focused API/repository boundary, regression evidence and docs.
-  Exclude mutations, conditional delivery, four-ball/Stableford/match siblings,
-  completion reads, scoring formulas, schema, frontend changes and other findings.
-- Behavior: retain session/user/exact-membership authority and one coherent full
-  read, then check database wall-clock session validity after complete assembly
-  before success. Include viewer/unlinked empty owners and the singles empty
-  score-access branch. Preserve stored ownership, role/flight permissions, final
-  visibility, fixed handicap snapshots, payloads, ordering and error precedence.
-  Retain the existing whole-scoring-read `40001` retry; allow one fresh complete
-  attempt for the other two selected GETs, then generic private 503. Reuse no
-  discarded role/context/facts. Cover all selected GET statuses with non-storeable
-  responses, without changing adjacent mutation contracts.
-- Validation: first reproduce controlled late expiry; cover session/credential and
-  membership changes, final loading/empty branches, exact roles and owner formats,
-  hidden finals, retry freshness/exhaustion, cancellation, valid concurrent reads,
-  full JSON parity, no writes/SSE and retained mutation/lifecycle compatibility.
-  Run backend/PostgreSQL ladders using the repository's PostgreSQL 17 Alpine
-  fixture, focused mobile/desktop browser evidence and independent read-only review.
-- Invariants: preserve root scoring/handicap/locked-round rules and existing read
-  versus scoring authority. No mutation retry or side effect; shared mutation
-  helpers retain their established behavior.
-- Stop: publish only these three GET repairs and evidence; start no queued family.
+- Goal: prevent successful four-ball member/scoring card reads after session
+  expiry during authority or complete card-loading waits.
+- Scope: `GET /api/rounds/{id}/four-ball/scorecards/{team_id}` and its `/scoring`
+  variant; only their API/repository read boundary, focused evidence and docs.
+  Exclude conditional input delivery, confirmation, shared score-access, numeric,
+  Stableford/match siblings, scoring formulas, schema, frontend source and other findings.
+- Behavior: retain session/user/exact-membership and both-partner authority through
+  coherent full assembly, then check database wall-clock session validity before
+  success. Preserve stored side/partner identity, fixed handicap snapshots,
+  numeric/pickup/unentered states, counting/tie policy, hidden-final projections,
+  payloads, ordering and error precedence. Allow one fresh complete read after
+  `40001`, then generic private 503; reuse no discarded role/context/facts.
+  Preserve all-status non-storeable headers and mutation/helper contracts.
+- Validation: begin with a failing controlled late-expiry regression; cover final
+  input/confirmation loading, revocation/credential/membership changes, both-partner
+  and exact-role permissions, hidden-final retry freshness, nine/eighteen holes,
+  full JSON parity, retry limits/nonserialization failures, cancellation,
+  concurrent valid reads and no writes/SSE. Run full affected backend/PostgreSQL
+  ladders on PostgreSQL 17 Alpine, mobile/desktop browser checks and read-only review.
+- Invariants: preserve root score ownership, handicap and locked-round rules,
+  distinct player input versus team competition ownership, and existing read
+  versus scoring authority. No mutation retry or side effect.
+- Stop: publish only these two GET repairs and evidence; start no queued family.
 
 ## Later queue
 
@@ -49,9 +46,9 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A1 after A1g:** select one bounded remaining repair from the
-   [source inventory](validation/private-read-inventory-2026-10-14/README.md):
-   match details/completion/table (4), four-ball cards (2), Stableford cards (2),
+1. **P2 / A1 after the selected four-ball candidate:** select one bounded repair
+   from the [source inventory](validation/private-read-inventory-2026-10-14/README.md):
+   match details/completion/table (4), Stableford cards (2),
    invitation metadata (1), or user-only final-visibility metadata (1). Course
    GET binding (3) is P3 and conditional/lower-impact. Keep legacy team/round
    write-expiry inventory a separate slice; this read inventory did not assess it.

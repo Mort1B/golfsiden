@@ -380,7 +380,7 @@ async fn scoring_and_read_errors_preserve_session_and_cross_target_boundaries(po
     .await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     assert_eq!(body["error"]["code"], "not_found");
-    assert!(cache.is_empty());
+    assert_eq!(cache, "private, no-store");
     let unauthenticated = app
         .oneshot(
             Request::get(format!(

@@ -26,7 +26,46 @@ pub enum ScoreAuthorizationError {
     Database(#[from] sqlx::Error),
 }
 
+#[derive(Debug, Error)]
+pub enum ScoreAccessReadError {
+    #[error(transparent)]
+    Authorization(#[from] ScoreAuthorizationError),
+    #[error("score-access read temporarily unavailable")]
+    Unavailable,
+}
+
 pub async fn writable_owners(
+    pool: &PgPool,
+    session_id: Uuid,
+    round_id: Uuid,
+) -> Result<Vec<ScoreOwner>, ScoreAccessReadError> {
+    let conflict = |error: &ScoreAuthorizationError| {
+        matches!(error,
+        ScoreAuthorizationError::Database(error) if error.as_database_error()
+            .is_some_and(|error| error.code().as_deref() == Some("40001")))
+    };
+    match writable_owners_once(pool, session_id, round_id).await {
+        Err(error) if conflict(&error) => {}
+        result => return result.map_err(ScoreAccessReadError::from),
+    }
+    match writable_owners_once(pool, session_id, round_id).await {
+        Err(error) if conflict(&error) => Err(ScoreAccessReadError::Unavailable),
+        result => result.map_err(ScoreAccessReadError::from),
+    }
+}
+
+async fn finish_owner_read(
+    mut transaction: Transaction<'_, Postgres>,
+    session_id: Uuid,
+) -> Result<(), ScoreAuthorizationError> {
+    auth::lock_active_session(&mut transaction, session_id)
+        .await?
+        .ok_or(ScoreAuthorizationError::Unauthenticated)?;
+    transaction.commit().await?;
+    Ok(())
+}
+
+async fn writable_owners_once(
     pool: &PgPool,
     session_id: Uuid,
     round_id: Uuid,
@@ -43,7 +82,7 @@ pub async fn writable_owners(
         .await?
         .ok_or(ScoreAuthorizationError::Forbidden)?;
     if context.1 == ScoringFormat::SinglesMatchPlay {
-        transaction.commit().await?;
+        finish_owner_read(transaction, session_id).await?;
         return Ok(Vec::new());
     }
     let mut owners = resolve_owners(
@@ -63,7 +102,7 @@ pub async fn writable_owners(
             .bind(round_id).bind(players).fetch_all(&mut *transaction).await?;
         owners = ids.into_iter().map(|id| ScoreOwner::Team { id }).collect();
     }
-    transaction.commit().await?;
+    finish_owner_read(transaction, session_id).await?;
     Ok(owners)
 }
 
