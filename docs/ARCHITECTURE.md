@@ -425,6 +425,21 @@ and reapplies runtime grants before the API is started.
   through response assembly; tournament collections join memberships directly.
   Successful private responses are `private, no-store`, and global roles are no
   cross-tournament read bypass.
+- Private round/tournament gross/net leaderboard entry points take the session
+  ID rather than a previously extracted user ID. `leaderboards/authority.rs`
+  owns their repeatable-read transaction boundary: lock/check session and user
+  before membership, retain those share locks through result assembly, then
+  recheck active session with database wall-clock time immediately before commit.
+  A revocation or credential change that precedes transactional authorization
+  denies the read; a later change serializes behind an already-authorized read.
+  Natural expiry during membership or fact-loading waits denies a successful
+  response, including the match-only not-applicable envelope.
+  A `40001` from either direct SQL or nested membership authorization discards the
+  complete attempt and permits one fresh read, repeating session, membership,
+  visibility and facts. A second conflict returns generic `503 service_unavailable`.
+  All four HTTP routes apply `private, no-store` to successful and failed replies.
+  Internal unrestricted and capability-authorized public projections retain
+  their existing ownership; sibling workspace reads do not inherit this repair.
 - Course discovery is a bundled JSON catalog, not provider free-text search or a
   persistence model. Its tournament-scoped GET handler requires exact admin
   membership, searches names and internal aliases locally, preserves file order,

@@ -1,8 +1,9 @@
+mod authority;
 mod load;
 mod response;
 mod rows;
 mod tournament;
-pub use response::{TournamentResponse, tournament_response_for_member};
+pub use response::{TournamentResponse, tournament_response_for_session};
 
 use sqlx::PgPool;
 use thiserror::Error;
@@ -32,6 +33,8 @@ pub enum LeaderboardError {
     OverallUnavailable,
     #[error("stored leaderboard data is inconsistent")]
     InvalidStoredData,
+    #[error("leaderboard read is temporarily unavailable")]
+    ReadUnavailable,
     #[error(transparent)]
     Authorization(#[from] AuthorizationError),
     #[error("database operation failed")]
@@ -52,30 +55,22 @@ pub async fn round(
     round_read(pool, None, round_id, metric).await
 }
 
-pub async fn round_for_member(
+pub async fn round_for_session(
     pool: &PgPool,
-    user_id: Uuid,
+    session_id: Uuid,
     round_id: Uuid,
     metric: LeaderboardMetric,
 ) -> Result<RoundLeaderboard, LeaderboardError> {
-    round_read(pool, Some(user_id), round_id, metric).await
+    authority::retry(|| round_read(pool, Some(session_id), round_id, metric)).await
 }
 
 async fn round_read(
     pool: &PgPool,
-    user_id: Option<Uuid>,
+    session_id: Option<Uuid>,
     round_id: Uuid,
     metric: LeaderboardMetric,
 ) -> Result<RoundLeaderboard, LeaderboardError> {
-    let mut transaction = pool.begin().await?;
-    let transaction_mode = if user_id.is_some() {
-        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ"
-    } else {
-        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"
-    };
-    sqlx::query(transaction_mode)
-        .execute(&mut *transaction)
-        .await?;
+    let (mut transaction, user_id) = authority::begin(pool, session_id).await?;
     let row = sqlx::query_as::<_, RoundRow>(
         "SELECT r.id AS round_id, r.tournament_id, r.round_number, r.status, r.scoring_format, r.number_of_holes, r.handicap_enabled, r.handicap_allowance_percent, t.final_round_back_nine_hidden, t.number_of_rounds AS tournament_round_count FROM rounds r JOIN tournaments t ON t.id = r.tournament_id WHERE r.id = $1",
     )
@@ -107,7 +102,7 @@ async fn round_read(
         Some(_) => build_round_leaderboard_projected(&facts, metric, projection)?,
         None => build_round_leaderboard(&facts, metric)?,
     };
-    transaction.commit().await?;
+    authority::finish(transaction, session_id).await?;
     Ok(result)
 }
 
@@ -119,36 +114,28 @@ pub async fn tournament(
     tournament_read(pool, None, tournament_id, metric).await
 }
 
-pub async fn tournament_for_member(
+pub async fn tournament_for_session(
     pool: &PgPool,
-    user_id: Uuid,
+    session_id: Uuid,
     tournament_id: Uuid,
     metric: LeaderboardMetric,
 ) -> Result<TournamentLeaderboard, LeaderboardError> {
-    tournament_read(pool, Some(user_id), tournament_id, metric).await
+    authority::retry(|| tournament_read(pool, Some(session_id), tournament_id, metric)).await
 }
 
 async fn tournament_read(
     pool: &PgPool,
-    user_id: Option<Uuid>,
+    session_id: Option<Uuid>,
     tournament_id: Uuid,
     metric: LeaderboardMetric,
 ) -> Result<TournamentLeaderboard, LeaderboardError> {
-    let mut transaction = pool.begin().await?;
-    let transaction_mode = if user_id.is_some() {
-        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ"
-    } else {
-        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"
-    };
-    sqlx::query(transaction_mode)
-        .execute(&mut *transaction)
-        .await?;
+    let (mut transaction, user_id) = authority::begin(pool, session_id).await?;
     let projection = user_id.map_or(
         tournament::TournamentProjection::Internal,
         tournament::TournamentProjection::Member,
     );
     let result = tournament::assemble(&mut transaction, tournament_id, metric, projection).await?;
-    transaction.commit().await?;
+    authority::finish(transaction, session_id).await?;
     Ok(result)
 }
 

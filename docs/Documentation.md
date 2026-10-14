@@ -474,13 +474,27 @@ releases them; the admin can re-hide them without any time dependency.
 Admins can deliberately share limited overall standings through a revocable
 30-day link. Existing workspaces and scorecards remain membership-private.
 
+The private round/tournament gross/net leaderboard endpoints validate the active
+session inside the same repeatable-read transaction as membership and results.
+They hold session/user and membership share locks through assembly and check
+database wall-clock expiry again before commit. A session revoked or superseded
+before transactional authorization cannot retrieve results; a later revocation
+waits for an already-authorized read. Expiry during a database wait returns
+`401 unauthenticated`, including for match-only not-applicable responses.
+If an authority update invalidates the snapshot, the entire read retries once
+with fresh session, membership, visibility and score facts. A second serialization
+conflict returns generic `503 service_unavailable` without standings. Every reply
+from these four endpoints is `private, no-store`. Scoring values, result sharing
+and the other private workspace endpoints retain their existing contracts.
+
 ## Production and operator behavior
 
 Interrupted SQLx transaction initialization queues rollback before the connection
 can be reused, including when a disconnected HTTP client cancels a private read.
 The application carries a narrow PostgreSQL-driver backport; build from the full
-checkout including `vendor/sqlx-postgres`. Successful requests retain their query
-counts and pool reuse. Private refreshes, repeatable-read isolation, membership
+checkout including `vendor/sqlx-postgres`. The driver backport adds no cleanup
+query to successful requests and preserves pool reuse. Private refreshes,
+repeatable-read isolation, membership
 checks and wall-clock session expiry keep their existing behavior. See the
 [cancellation validation report](performance/transaction-cancellation/README.md).
 
@@ -644,8 +658,9 @@ access checks. Lost session/access returns the usual `401`/`403`; valid access
 returns the current card. A second serialization conflict returns the existing
 `503 service_unavailable` envelope without card data. Scoring-route responses
 are non-cacheable, retaining existing `no-store` denials and adding
-`private, no-store` where no cache header was present. Mutations and other read
-endpoints do not acquire this retry behavior.
+`private, no-store` where no cache header was present. This scoring-read policy
+does not add retries to mutations; private gross/net leaderboards have the
+separate transaction policy described above.
 
 `POST` to that scorecard path plus `/confirm` requires all holes and records the
 session actor as `confirmed_by` plus `confirmed_at`. Confirmation records represent current state;

@@ -37,9 +37,9 @@ async fn completed(pool: &PgPool, final_round: bool) -> (Fantasy, Uuid) {
         .unwrap();
     (f, r)
 }
-async fn board(pool: &PgPool, user: Uuid, r: Uuid) -> Value {
+async fn board(pool: &PgPool, session: Uuid, r: Uuid) -> Value {
     serde_json::to_value(
-        leaderboards::round_for_member(pool, user, r, LeaderboardMetric::Net)
+        leaderboards::round_for_session(pool, session, r, LeaderboardMetric::Net)
             .await
             .unwrap(),
     )
@@ -60,9 +60,9 @@ async fn awards_replay_correction_removal_preserve_fantasy_and_native_scores(poo
     .await
     .unwrap()
     .source_token;
-    let before = board(&pool, f.base.admin, r).await;
+    let before = board(&pool, f.base.session, r).await;
     let gross_before = serde_json::to_value(
-        leaderboards::round_for_member(&pool, f.base.admin, r, LeaderboardMetric::Gross)
+        leaderboards::round_for_session(&pool, f.base.session, r, LeaderboardMetric::Gross)
             .await
             .unwrap(),
     )
@@ -80,7 +80,7 @@ async fn awards_replay_correction_removal_preserve_fantasy_and_native_scores(poo
         serde_json::to_value(receipt).unwrap(),
         serde_json::to_value(replayed).unwrap()
     );
-    let after = board(&pool, f.base.admin, r).await;
+    let after = board(&pool, f.base.session, r).await;
     let winner = after["entries"]
         .as_array()
         .unwrap()
@@ -101,16 +101,16 @@ async fn awards_replay_correction_removal_preserve_fantasy_and_native_scores(poo
     );
     assert_eq!(
         serde_json::to_value(
-            leaderboards::round_for_member(&pool, f.base.admin, r, LeaderboardMetric::Gross)
+            leaderboards::round_for_session(&pool, f.base.session, r, LeaderboardMetric::Gross)
                 .await
                 .unwrap()
         )
         .unwrap(),
         gross_before
     );
-    let overall = leaderboards::tournament_for_member(
+    let overall = leaderboards::tournament_for_session(
         &pool,
-        f.base.other,
+        f.member_session,
         f.base.tournament,
         LeaderboardMetric::Net,
     )
@@ -224,7 +224,7 @@ async fn awards_replay_correction_removal_preserve_fantasy_and_native_scores(poo
     tx.rollback().await.unwrap();
     assert_eq!(view.awards[0].player_id, None);
     assert_eq!(view.awards[1].player_id, Some(f.players[0]));
-    assert_ne!(board(&pool, f.base.admin, r).await, before);
+    assert_ne!(board(&pool, f.base.session, r).await, before);
     assert!(
         sqlx::query("DELETE FROM round_award_history WHERE round_id=$1")
             .bind(r)
@@ -338,7 +338,7 @@ async fn authorization_state_foreign_player_and_locked_correction(pool: PgPool) 
 async fn hidden_final_and_concurrent_revision_are_safe(pool: PgPool) {
     let (f, r) = completed(&pool, true).await;
     hide(&pool, &f, true).await;
-    let hidden = board(&pool, f.base.other, r).await;
+    let hidden = board(&pool, f.member_session, r).await;
     let first = command(f.players[0], AwardType::ClosestToPin);
     let second = command(f.players[1], AwardType::ClosestToPin);
     let other_admin = Uuid::new_v4();
@@ -366,10 +366,10 @@ async fn hidden_final_and_concurrent_revision_are_safe(pool: PgPool) {
     );
     assert_eq!(usize::from(a.is_ok()) + usize::from(b.is_ok()), 1);
     assert!(matches!(a, Err(AwardError::Revision)) || matches!(b, Err(AwardError::Revision)));
-    assert_eq!(board(&pool, f.base.other, r).await, hidden);
-    let overall = leaderboards::tournament_for_member(
+    assert_eq!(board(&pool, f.member_session, r).await, hidden);
+    let overall = leaderboards::tournament_for_session(
         &pool,
-        f.base.other,
+        f.member_session,
         f.base.tournament,
         LeaderboardMetric::Net,
     )

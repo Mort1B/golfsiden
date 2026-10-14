@@ -22,7 +22,7 @@ async fn outputs(pool: &PgPool, session: Uuid, grant: Uuid, token: &ResultShareT
         .unwrap();
     let mut metrics = Vec::new();
     for metric in [LeaderboardMetric::Gross, LeaderboardMetric::Net] {
-        metrics.push(json!({"round":leaderboards::round_for_member(pool,id(41),id(5),metric).await.unwrap(),"overall":leaderboards::tournament_for_member(pool,id(41),id(2),metric).await.unwrap(),"public":result_sharing::read(pool,grant,token,metric).await.unwrap().results}));
+        metrics.push(json!({"round":leaderboards::round_for_session(pool,session,id(5),metric).await.unwrap(),"overall":leaderboards::tournament_for_session(pool,session,id(2),metric).await.unwrap(),"public":result_sharing::read(pool,grant,token,metric).await.unwrap().results}));
     }
     json!({"card":card,"completion":completion,"metrics":metrics})
 }

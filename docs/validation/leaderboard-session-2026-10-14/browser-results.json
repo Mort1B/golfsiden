@@ -1,0 +1,116 @@
+[
+  {
+    "width": 320,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_and_read_retry": true,
+    "empty": true,
+    "unauthenticated_all_four_routes": true,
+    "injected_503_responses": 2,
+    "page_errors": [],
+    "unexpected_network_failures": [],
+    "endpoints": [
+      {
+        "scope": "round",
+        "metric": "gross",
+        "status": 200,
+        "entries": 4
+      },
+      {
+        "scope": "round",
+        "metric": "net",
+        "status": 200,
+        "entries": 4
+      },
+      {
+        "scope": "tournament",
+        "metric": "gross",
+        "status": 200,
+        "entries": 8
+      },
+      {
+        "scope": "tournament",
+        "metric": "net",
+        "status": 200,
+        "entries": 8
+      }
+    ]
+  },
+  {
+    "width": 390,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_and_read_retry": true,
+    "empty": true,
+    "unauthenticated_all_four_routes": true,
+    "injected_503_responses": 2,
+    "page_errors": [],
+    "unexpected_network_failures": [],
+    "endpoints": [
+      {
+        "scope": "round",
+        "metric": "gross",
+        "status": 200,
+        "entries": 4
+      },
+      {
+        "scope": "round",
+        "metric": "net",
+        "status": 200,
+        "entries": 4
+      },
+      {
+        "scope": "tournament",
+        "metric": "gross",
+        "status": 200,
+        "entries": 8
+      },
+      {
+        "scope": "tournament",
+        "metric": "net",
+        "status": 200,
+        "entries": 8
+      }
+    ]
+  },
+  {
+    "width": 1280,
+    "loading": true,
+    "populated": true,
+    "long_content_no_overflow": true,
+    "error_and_read_retry": true,
+    "empty": true,
+    "unauthenticated_all_four_routes": true,
+    "injected_503_responses": 2,
+    "page_errors": [],
+    "unexpected_network_failures": [],
+    "endpoints": [
+      {
+        "scope": "round",
+        "metric": "gross",
+        "status": 200,
+        "entries": 4
+      },
+      {
+        "scope": "round",
+        "metric": "net",
+        "status": 200,
+        "entries": 4
+      },
+      {
+        "scope": "tournament",
+        "metric": "gross",
+        "status": 200,
+        "entries": 8
+      },
+      {
+        "scope": "tournament",
+        "metric": "net",
+        "status": 200,
+        "entries": 8
+      }
+    ]
+  }
+]

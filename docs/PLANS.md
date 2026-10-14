@@ -9,30 +9,28 @@ None.
 
 ## Next candidate
 
-### A1 — P2: bind private leaderboard reads to the active session
+### A2 — P2: reject expired sessions before round lifecycle commit
 
-Evidence and the complete severity-rated assessment:
-[application review](validation/application-review-2026-10-14/README.md).
-This candidate is planned, not authorized for implementation by the review request.
+Evidence: [application review](validation/application-review-2026-10-14/README.md#a2--p2-lifecycle-authorization-expires-before-commit).
 
-- Goal: prevent a private leaderboard request from using authority from a session
-  already revoked or replaced before its result transaction authorizes access.
-- Scope: round/tournament gross/net leaderboard handlers and repositories,
-  narrowly scoped session-aware authorization support, PostgreSQL/API regressions
-  and affected documentation. No frontend, scoring, schema or deployment change.
-- Behavior: pass session identity into the result transaction, lock/check the
-  session/user and exact membership with a deliberate lock order, retain authority
-  locks through assembly and recheck natural expiry before completion. Define
-  deliberate handling for repeatable-read serialization failures. Preserve API
-  envelopes, cache headers, visibility and valid-session response parity.
-- Validation: reproduce the captured membership-wait/revocation sequence and
-  credential-generation replacement; cover expiry, valid callers, nonmembers,
-  privacy, transaction cancellation and concurrent reads. Run the full backend
-  and PostgreSQL ladders, including migration/seed checks; read-only review.
-- Invariants: preserve membership/session isolation, final-round embargo,
-  handicap snapshots, sporting data, deterministic standings and SSE semantics.
-- Stop: publish the validated leaderboard repair only. Sibling setup reads and
-  A2–A8 remain separate candidates.
+- Goal: prevent round opening, completion or locking from committing after the
+  administrator session expires during a transactional wait.
+- Scope: `backend/src/repositories/round_lifecycle/mod.rs`,
+  `backend/src/repositories/round_completion.rs`, focused session-check support if
+  required, PostgreSQL/API regressions and affected documentation. No frontend,
+  scoring-rule, schema or deployment change; legacy team/round writes remain queued.
+- Behavior: keep the existing locks, readiness checks and mutations; check active
+  session using database wall-clock time immediately before commit. Expiry must
+  return the existing unauthenticated contract, roll back every status/snapshot
+  effect and emit no SSE invalidation. Preserve valid-session behavior.
+- Validation: expiry during membership and late transactional waits for each
+  open/complete/lock action, valid controls, unchanged stored state on rejection,
+  event counts and retained lifecycle/privacy regressions. Run full backend and
+  PostgreSQL ladders, migration/seed checks and read-only review.
+- Invariants: preserve sporting ownership, fixed handicap snapshots, locked-round
+  protections, exact-admin authority, atomic lifecycle state and audit history.
+- Stop: publish the validated lifecycle-expiry repair only. Do not begin A3 or
+  the remaining private-read families without authorization.
 
 ## Later queue
 
@@ -42,22 +40,20 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A2:** recheck expiry before committing round open/complete/lock; assert
-   rejection rolls back status/snapshots and emits no invalidation.
-2. **P2 / A3:** coordinate anonymous onboarding/invitation authentication across
+1. **P2 / A3:** coordinate anonymous onboarding/invitation authentication across
    route lifetimes, including cookie identity and reverse response order.
-3. **P2 / A1 follow-up:** inventory and repair the remaining user-only private
+2. **P2 / A1 follow-up:** inventory and repair the remaining user-only private
    tournament/round/roster/pairing/team read families in bounded slices; inventory
-   analogous expiry gaps in legacy team/round writes alongside A2.
-4. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
+   analogous expiry gaps in legacy team/round writes as a separate slice.
+3. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
    the SQLx cancellation patch and recheck TLS behavior/advisory reachability.
-5. **P2 / A5:** require and bind the restore checksum before invoking restore;
+4. **P2 / A5:** require and bind the restore checksum before invoking restore;
    preserve empty-target and single-transaction protections.
-6. **P2 / A6:** cap password-work admission while retaining four active Argon2
+5. **P2 / A6:** cap password-work admission while retaining four active Argon2
    workers and cancellation-safe capacity release. Capacity impact is unmeasured.
-7. **P2 / A7:** upgrade affected development tools in compatible, validated
+6. **P2 / A7:** upgrade affected development tools in compatible, validated
    dependency steps. Scanner critical labels do not establish production RCE.
-8. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
+7. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
    query count and end-to-end cost. No current frontend latency impact is proven.
 
 Only after these, consider measurement-only steps for remaining Fantasy
@@ -65,6 +61,11 @@ invalidation/fact-loading cost and empty-queue polling. No speculative optimizat
 or load claim is authorized.
 
 ### Previously deferred work
+
+- Retained leaderboard browser-test maintenance: update obsolete score-status
+  assertions at `frontend/e2e/leaderboardLive.browser.ts:71,103` in a separate
+  test-only step before using that suite as a release gate. See the
+  [captured failure and focused A1 browser coverage](validation/leaderboard-session-2026-10-14/README.md#browser-evidence-and-remaining-test-maintenance).
 
 - Optional offline preparation for browser closure/eviction: requires a separately
   scoped app-shell and private scorecard-retention/reauthorization design before

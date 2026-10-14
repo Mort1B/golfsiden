@@ -1,0 +1,15 @@
+thread 'leaderboard_sessions::authorization::revocation_before_transactional_authorization_denies_all_boards' (276363) panicked at backend/tests/leaderboard_sessions/authorization.rs:30:9:
+assertion `left == right` failed: /api/rounds/00000000-0000-0000-0000-000000004001/leaderboards/gross
+  left: 200
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test leaderboard_sessions::authorization::revocation_before_transactional_authorization_denies_all_boards ... FAILED
+
+failures:
+
+failures:
+    leaderboard_sessions::authorization::revocation_before_transactional_authorization_denies_all_boards
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.96s
+
+error: test failed, to rerun pass `-p golf-api --test leaderboard_sessions`

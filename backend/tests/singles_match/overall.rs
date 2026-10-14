@@ -159,7 +159,7 @@ async fn mixed_stroke_draft_stableford_and_open_final_match_keep_units_current_r
         .unwrap();
     let viewer = fixture::session(&pool, 221, None, "viewer", "mixed-viewer").await;
     let board =
-        leaderboards::tournament_for_member(&pool, id(221), id(2), LeaderboardMetric::Gross)
+        leaderboards::tournament_for_session(&pool, viewer, id(2), LeaderboardMetric::Gross)
             .await
             .unwrap();
     assert_eq!(board.current_round_id, Some(id(5)));
@@ -182,7 +182,7 @@ async fn mixed_stroke_draft_stableford_and_open_final_match_keep_units_current_r
         .unwrap();
     // Final scheduled match provides no comparable gross tie-break.
     let board =
-        leaderboards::tournament_for_member(&pool, id(221), id(2), LeaderboardMetric::Gross)
+        leaderboards::tournament_for_session(&pool, viewer, id(2), LeaderboardMetric::Gross)
             .await
             .unwrap();
     assert_eq!(board.current_round_id, None);

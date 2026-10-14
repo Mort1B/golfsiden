@@ -1,6 +1,10 @@
 # Application logic, performance and security review — 2026-10-14
 
 Reviewed revision: `a2554f17c0534de987798cefc80fdc7eff219947`.
+Follow-up: the [private leaderboard repair](../leaderboard-session-2026-10-14/README.md)
+addresses A1's four leaderboard endpoints. Sibling private read families and the
+other findings remain queued. The assessment below describes the reviewed revision.
+
 This is a documentation-only assessment of current application source, database
 contracts, browser state, production configuration and dependency advisories.
 No application, dependency, migration or hosted configuration was changed.
@@ -281,9 +285,10 @@ package reachability must be rechecked when implementing upgrades.
 
 ## Plan
 
-[PLANS.md](../../PLANS.md) selects A1's leaderboard boundary as the single next
-candidate. Then address A2 and A3 as separate correctness steps, followed by A4,
-A5, A6 and A7 in separately validated changes. A8 and further performance
-measurements follow the correctness/security work. Equal P2 ratings do not imply
-identical scope or identical exploitability. Stop here until an implementation
-step is authorized.
+The review selected A1's leaderboard boundary first; its
+[repair evidence](../leaderboard-session-2026-10-14/README.md) is now available.
+[PLANS.md](../../PLANS.md) owns the current next candidate and remaining work.
+Address A2 and A3 as separate correctness steps, followed by A4, A5, A6 and A7
+in separately validated changes. A8 and further performance measurements follow
+the correctness/security work. Equal P2 ratings do not imply identical scope or
+identical exploitability. Each implementation step requires its own authorization.

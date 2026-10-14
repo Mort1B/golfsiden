@@ -12,16 +12,23 @@ pub enum TournamentResponse {
     },
 }
 /// Authorization, unavailable detection and any result assembly share one snapshot.
-pub async fn tournament_response_for_member(
+pub async fn tournament_response_for_session(
     pool: &PgPool,
-    user_id: Uuid,
+    session_id: Uuid,
     tournament_id: Uuid,
     metric: LeaderboardMetric,
 ) -> Result<TournamentResponse, LeaderboardError> {
-    let mut tx = pool.begin().await?;
-    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-        .execute(&mut *tx)
-        .await?;
+    authority::retry(|| tournament_response_once(pool, session_id, tournament_id, metric)).await
+}
+
+async fn tournament_response_once(
+    pool: &PgPool,
+    session_id: Uuid,
+    tournament_id: Uuid,
+    metric: LeaderboardMetric,
+) -> Result<TournamentResponse, LeaderboardError> {
+    let (mut tx, user) = authority::begin(pool, Some(session_id)).await?;
+    let user_id = user.ok_or(AuthorizationError::Unauthenticated)?;
     tournament_authorization::require_tournament_member_read(&mut tx, user_id, tournament_id)
         .await?;
     let counted =
@@ -47,6 +54,6 @@ pub async fn tournament_response_for_member(
             .await?,
         )
     };
-    tx.commit().await?;
+    authority::finish(tx, Some(session_id)).await?;
     Ok(result)
 }

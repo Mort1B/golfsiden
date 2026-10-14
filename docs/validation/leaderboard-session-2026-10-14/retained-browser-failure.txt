@@ -1,0 +1,53 @@
+
+Running 1 test using 1 worker
+
+(node:296118) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+  ✘  1 e2e/leaderboardLive.browser.ts:14:1 › real saved results, same-account desktop/phone, policy exclusions, reconnect and hidden final (10.7s)
+
+
+  1) e2e/leaderboardLive.browser.ts:14:1 › real saved results, same-account desktop/phone, policy exclusions, reconnect and hidden final
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('.score-sync')
+    Expected pattern: /^(Synkronisert|Lagret)$/
+    Received string:  "Lagret på serveren"
+    Timeout: 5000ms
+
+    Call log:
+      - Expect "toHaveText" locator('.score-sync') with timeout 5000ms
+      - waiting for locator('.score-sync')
+        - locator resolved to <div role="status" class="score-sync score-sync-idle">Ikke registrert</div>
+        - unexpected value "Ikke registrert"
+        - locator resolved to <div role="status" class="score-sync score-sync-queued">Lagret på denne enheten · venter på levering</div>
+        - unexpected value "Lagret på denne enheten · venter på levering"
+        6 × locator resolved to <div role="status" class="score-sync score-sync-refreshing">Oppdaterer serverscore · netto venter</div>
+          - unexpected value "Oppdaterer serverscore · netto venter"
+        6 × locator resolved to <div role="status" class="score-sync score-sync-idle">Lagret på serveren</div>
+          - unexpected value "Lagret på serveren"
+
+
+      69 |       const started = Date.now()
+      70 |       await page.getByRole('button', { name: /Registrer par/ }).click()
+    > 71 |       await expect(page.locator('.score-sync')).toHaveText(/^(Synkronisert|Lagret)$/)
+         |                                                 ^
+      72 |       await live
+      73 |       const stored = await scorecard(api, round, owner)
+      74 |       expect(stored.holes[0]?.score?.gross_strokes).toBe(hole.par)
+        at /home/morten/Prog/guttasgolfside/golfsiden/frontend/e2e/leaderboardLive.browser.ts:71:49
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../../../tmp/golf-a1-browser-results/leaderboardLive.browser.ts-8274d--reconnect-and-hidden-final/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../../../tmp/golf-a1-browser-results/leaderboardLive.browser.ts-8274d--reconnect-and-hidden-final/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../../../../../tmp/golf-a1-browser-results/leaderboardLive.browser.ts-8274d--reconnect-and-hidden-final/error-context.md
+
+    Error Context: ../../../../../../tmp/golf-a1-browser-results/leaderboardLive.browser.ts-8274d--reconnect-and-hidden-final/error-context.md
+
+  1 failed
+    e2e/leaderboardLive.browser.ts:14:1 › real saved results, same-account desktop/phone, policy exclusions, reconnect and hidden final
