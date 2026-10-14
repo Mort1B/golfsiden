@@ -16,7 +16,8 @@ confirmed that dual-screen/Duo and foldable layouts are outside this step.
 
 **Goal:** make existing flows comfortable and fully usable on single-screen
 iPhones from iPhone 15 Pro/Pro Max onward, including newer standard and larger
-models. Portrait is the primary layout; landscape must remain usable. Fit means
+models. Chrome and Safari on iPhone are equal acceptance targets. Portrait is
+the primary layout; landscape must remain usable. Fit means
 readable content and reachable controls with normal vertical scrolling, rather
 than squeezing an entire page into one screen.
 
@@ -24,7 +25,8 @@ than squeezing an entire page into one screen.
 but its 700px width breakpoint also selects the desktop rail on landscape phones.
 The viewport meta tag uses the default safe-area behavior. Existing Fantasy
 browser checks use Chrome at 320, 390 and 1280px widths with a fixed 900px height;
-they do not establish iPhone Safari, software-keyboard or browser-toolbar behavior.
+they do not establish Chrome or Safari on iPhone, software-keyboard or
+browser-toolbar behavior.
 These are inspection targets, not confirmed layout defects.
 
 **Scope and ownership:** one frontend layout step, owned by the primary agent.
@@ -48,7 +50,7 @@ installation/offline features and a separate tablet redesign are outside scope.
 - Verify the compact-height landscape layout before changing the 700px rail
   breakpoint. Navigation, headers and scoring controls must leave usable content
   space and keep the final action reachable at the end of a page.
-- Accommodate Safari toolbar expansion/collapse, rotation and the software
+- Accommodate Chrome and Safari toolbar expansion/collapse, rotation and the software
   keyboard. Focused fields, validation messages and submit actions must remain
   reachable by scrolling. Choose viewport-height units from reproduced behavior;
   preserve pinch zoom and avoid forced focus/scroll workarounds without evidence.
@@ -72,17 +74,20 @@ Unrelated usability findings go into a separately bounded candidate.
    these are coverage samples, not an exhaustive promise about future hardware.
    Check portrait and swapped landscape dimensions, shorter available heights,
    plus 320px and 1280px regression widths. Confirm actual device dimensions when
-   running Safari acceptance.
+   running Chrome and Safari acceptance on iPhone.
 2. Exercise each scoped flow in its relevant loading, error, empty, populated,
    long-content and disabled states. Assert overflow, control dimensions and
    fixed-element overlap; inspect viewport screenshots, console and failed
    requests. Include scrolling to the final control, field focus, rotation and
    retaining in-progress scoring/Fantasy input during resizing.
-3. Run a real WebKit browser alongside retained Chrome coverage. Separately
-   verify Safari on an iPhone 15 Pro and a newer/larger iPhone where available,
-   recording device, iOS and browser versions. Check toolbars, keyboard, safe
-   areas and 200% text/page zoom. Simulator evidence must be identified as such;
-   resized Chrome and automated WebKit do not prove physical iPhone acceptance.
+3. Run automated Chrome and WebKit coverage across the viewport matrix, retaining
+   desktop Chrome regressions. Separately verify both installed Chrome and Safari
+   on an iPhone 15 Pro and a newer/larger iPhone where available, recording device,
+   iOS and each browser version. Apply the same acceptance criteria to both:
+   toolbars, keyboard, safe areas, rotation, scrolling and 200% text/page zoom.
+   Record results per browser; a pass in one does not stand in for the other.
+   Simulator evidence must be identified as such; resized desktop Chrome and
+   automated WebKit do not prove acceptance in either installed iPhone browser.
 4. Run the full frontend ladder: tests, typecheck, lint and build, plus browser
    TypeScript checks and relevant existing browser regressions. Review the diff
    for layout-only scope and unchanged state ownership. Record exact unavailable
@@ -96,7 +101,8 @@ the existing visual language; keep source/CSS within repository size limits.
 
 **Stop condition:** close after the scoped fixes, review, applicable validation
 and documentation are resolved or explicitly recorded, then commit/push only
-this step. Any missing Safari/device evidence remains an explicit acceptance gap.
+this step. Any missing Chrome/Safari device evidence remains an explicit
+acceptance gap for that browser.
 Do not start a redesign, hosting work or another queued feature.
 
 Design references: [Apple layout guidance](https://developer.apple.com/design/human-interface-guidelines/layout)
