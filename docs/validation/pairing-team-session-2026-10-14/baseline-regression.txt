@@ -1,0 +1,51 @@
+warning: use of deprecated method `futures_channel::mpsc::UnboundedReceiver::<T>::try_next`: please use `try_recv` instead
+   --> vendor/sqlx-postgres/src/listener.rs:335:56
+    |
+335 |         if let Ok(Some(notification)) = self.buffer_rx.try_next() {
+    |                                                        ^^^^^^^^
+    |
+    = note: `#[warn(deprecated)]` on by default
+
+warning: variant `Flush` is never constructed
+  --> vendor/sqlx-postgres/src/message/mod.rs:76:5
+   |
+68 | pub enum FrontendMessageFormat {
+   |          --------------------- variant in this enum
+...
+76 |     Flush = b'H',
+   |     ^^^^^
+   |
+   = note: `FrontendMessageFormat` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `Flush` is never constructed
+  --> vendor/sqlx-postgres/src/message/flush.rs:11:12
+   |
+11 | pub struct Flush;
+   |            ^^^^^
+
+warning: `sqlx-postgres` (lib) generated 3 warnings
+warning: `sqlx-postgres` (lib) generated 3 warnings (3 duplicates)
+   Compiling golf-api v0.1.0 (/home/morten/Prog/guttasgolfside/golfsiden/backend)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.47s
+     Running tests/pairing_team_sessions.rs (target/debug/deps/pairing_team_sessions-3a4872a11ac05169)
+
+running 1 test
+/api/rounds/00000000-0000-0000-0000-000000004001/pairings: status=200 OK, code=null
+/api/rounds/00000000-0000-0000-0000-000000004001/teams: status=200 OK, code=null
+
+thread 'pairing_team_sessions::authorization::revocation_before_transactional_authorization_denies_both_reads' (428681) panicked at backend/tests/pairing_team_sessions/authorization.rs:46:9:
+assertion `left == right` failed: /api/rounds/00000000-0000-0000-0000-000000004001/pairings
+  left: 200
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test pairing_team_sessions::authorization::revocation_before_transactional_authorization_denies_both_reads ... FAILED
+
+failures:
+
+failures:
+    pairing_team_sessions::authorization::revocation_before_transactional_authorization_denies_both_reads
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.94s
+
+error: test failed, to rerun pass `-p golf-api --test pairing_team_sessions`

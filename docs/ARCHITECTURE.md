@@ -477,9 +477,23 @@ and reapplies runtime grants before the API is started.
   roster/list responses still require current authority. All three selected GET
   methods apply shared private error mapping and `private, no-store` on every
   status. Round-creation preflight retains its existing transaction owner, and
-  POST, pairing/team/readiness reads and mutations gain no retry or authority
-  behavior from this change. Each repaired read adds two active-session queries,
+  POST, remaining readiness reads and mutation boundaries retain their own
+  authority/error owners. Each repaired read adds two active-session queries,
   with no per-player or per-round authorization-query loop.
+- Private pairing-layout and team-list GETs also use `session_read.rs` through
+  explicitly named `*_for_session` entry points. They derive the user from the
+  locked session and resolve membership through the stored round parent in the
+  same repeatable-read snapshot. All entrants, group/member queries and legacy
+  classification finish before the final wall-clock session check, including
+  empty collections. Snapshot invalidation discards the full attempt and permits
+  one fresh read; exhaustion maps to generic private 503. Pairing GET uses shared
+  session-read error mapping, preserving its reachable authorization/database
+  contracts. Pairing PUT/preflight and its error owner remain independent, and
+  existing combined GET/PUT private cache middleware is retained. Team GET adds
+  shared `private, no-store` middleware on all statuses. Pairing payload loading,
+  the distinct name/member ordering of the two endpoints, schedule/identity data
+  and the existing team member-query loop are unchanged. A8 still owns any team
+  batching; session binding adds two authority queries without a speedup claim.
 - Course discovery is a bundled JSON catalog, not provider free-text search or a
   persistence model. Its tournament-scoped GET handler requires exact admin
   membership, searches names and internal aliases locally, preserves file order,

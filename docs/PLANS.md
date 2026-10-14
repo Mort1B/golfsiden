@@ -9,29 +9,30 @@ None. Awaiting approval of one bounded next step.
 
 ## Next candidate
 
-### A1d — P2: bind private pairing and team reads to their session
+### A1e — P2: bind private round readiness reads to their session
 
 Evidence: [application review](validation/application-review-2026-10-14/README.md#a1--p2-revoked-sessions-can-finish-private-reads).
 
-- Goal: prevent private pairing/team replies from completing with revoked or
-  expired session authority during database waits.
-- Scope: `GET /api/rounds/{id}/pairings` and `GET /api/rounds/{id}/teams`;
-  their API/repository authority boundary, shared session support, regressions
-  and docs. Exclude pairing PUT, team/round writes, readiness endpoints, scoring,
-  schema, frontend and team membership-query batching (A8).
-- Behavior: carry session identity through stored round/tournament resolution,
-  hold session/user and exact membership share locks in one consistent snapshot,
-  and recheck database wall-clock expiry after complete payload loading. Permit
-  one fresh whole-read retry on snapshot invalidation, then private generic 503.
-  Preserve existing role, payload, ordering, empty and error/cache contracts.
-- Validation: reproduce first; cover revocation, credential generation, expiry at
-  membership/later loading waits, membership changes, all roles, missing/cross-
-  tournament resources, ordinary concurrency, cancellation, and no writes/SSE.
-  Run full backend/PostgreSQL ladders, focused real-browser evidence and read-only
-  review; retain A1b/A1c compatibility coverage.
-- Invariants: team composition remains round-specific; preserve player/account
-  separation, exact group identities and deterministic membership ordering.
-- Stop: publish these two GET repairs only; leave readiness/remaining read
+- Goal: prevent pairing/completion readiness replies from finishing with revoked
+  or expired session authority during database waits.
+- Scope: `GET /api/rounds/{id}/pairing-validation` and `GET
+  /api/rounds/{id}/completion-validation`; their API/repository boundary, focused
+  shared session support, regressions and docs. Exclude open/complete/lock and
+  other mutations, scoring rules, schema, frontend and remaining-read inventory.
+- Behavior: carry session identity into one consistent read, derive stored round
+  ownership, retain session/user/exact-membership authority through complete
+  readiness assembly and recheck database wall-clock expiry before success.
+  Permit one fresh full-read retry on snapshot invalidation, then private generic
+  unavailable responses. Preserve payloads, blocker ordering, roles and errors.
+- Validation: reproduce before repairing; cover revocation, credential generation,
+  membership changes, expiry during authority/later loading waits, all roles,
+  missing/cross-tournament resources, ready/blocked/empty states, valid concurrent
+  reads, cancellation, private cache policy and no writes/SSE. Run full backend/
+  PostgreSQL ladders, focused browser evidence, retained lifecycle/mutation
+  compatibility and independent read-only review.
+- Invariants: preserve format-specific readiness, fixed handicap/snapshot rules
+  and lifecycle mutation boundaries; this step adds no mutation retry or side effect.
+- Stop: publish only these two readiness GET repairs; leave remaining-read
   inventory, legacy writes and other assessment findings queued.
 
 ## Later queue
@@ -42,9 +43,9 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A1 follow-up after A1d:** repair user-only private readiness reads
-   and inventory any remaining read families in bounded slices; inventory
-   analogous expiry gaps in legacy team/round writes as a separate slice.
+1. **P2 / A1 follow-up after A1e:** perform a bounded read-only inventory of
+   remaining private read authority gaps; inventory analogous expiry gaps in
+   legacy team/round writes as a separate slice.
 2. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
    the SQLx cancellation patch and recheck TLS behavior/advisory reachability.
 3. **P2 / A5:** require and bind the restore checksum before invoking restore;

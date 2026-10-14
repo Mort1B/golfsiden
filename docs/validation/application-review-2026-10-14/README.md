@@ -10,8 +10,9 @@ same-document cookie/continuation ordering. The
 [tournament read repair](../tournament-read-session-2026-10-14/README.md) addresses
 A1b's list, own-membership list and detail routes. The
 [roster and round read repair](../roster-round-session-2026-10-14/README.md)
-addresses A1c's roster and round list/detail routes. Remaining sibling private
-read/write families and the other findings stay queued. The assessment below describes the reviewed revision.
+addresses A1c's roster and round list/detail routes. The
+[pairing and team read repair](../pairing-team-session-2026-10-14/README.md)
+addresses A1d's two GET routes. Remaining private readiness/read/write families and the other findings stay queued. The assessment below describes the reviewed revision.
 
 This is a documentation-only assessment of current application source, database
 contracts, browser state, production configuration and dependency advisories.

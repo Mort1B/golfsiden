@@ -11,6 +11,7 @@ use crate::{
     domain::round_pairings::ReplacementCommand,
     repositories::{
         round_pairings::types::RoundPairings,
+        session_read::{self, SessionReadError},
         tournament_authorization::{self, AuthorizationError},
     },
 };
@@ -39,23 +40,22 @@ pub enum RoundPairingsError {
     Database(#[from] sqlx::Error),
 }
 
-pub async fn get_for_member(
+pub async fn get_for_session(
     pool: &PgPool,
-    user_id: Uuid,
+    session: Uuid,
     round_id: Uuid,
-) -> Result<RoundPairings, RoundPairingsError> {
-    let mut transaction = pool.begin().await?;
-    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-        .execute(&mut *transaction)
-        .await?;
-    tournament_authorization::require_round_member_read(&mut transaction, user_id, round_id)
-        .await?;
-    let round = load::round(&mut transaction, round_id)
-        .await?
-        .ok_or(AuthorizationError::NotFound)?;
-    let model = load::model(&mut transaction, round).await?;
-    transaction.commit().await?;
-    Ok(model)
+) -> Result<RoundPairings, SessionReadError> {
+    session_read::retry(|| async {
+        let (mut tx, user) = session_read::begin(pool, session).await?;
+        tournament_authorization::require_round_member_read(&mut tx, user, round_id).await?;
+        let round = load::round(&mut tx, round_id)
+            .await?
+            .ok_or(AuthorizationError::NotFound)?;
+        let model = load::model(&mut tx, round).await?;
+        session_read::finish(tx, session).await?;
+        Ok(model)
+    })
+    .await
 }
 
 pub async fn preflight_admin(

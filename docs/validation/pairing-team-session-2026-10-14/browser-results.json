@@ -1,0 +1,65 @@
+[
+  {
+    "width": 320,
+    "pairing_ui": {
+      "loading": true,
+      "populated": true,
+      "long_group_names_no_overflow": true,
+      "error_and_read_retry": true,
+      "empty_and_denied": true
+    },
+    "teams_api": {
+      "typed_decoder": true,
+      "groups": 4,
+      "member_and_round_identity": true,
+      "private_http_cache": true,
+      "ui_consumer": false
+    },
+    "logged_out_both_private_401": true,
+    "injected_responses": 4,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  },
+  {
+    "width": 390,
+    "pairing_ui": {
+      "loading": true,
+      "populated": true,
+      "long_group_names_no_overflow": true,
+      "error_and_read_retry": true,
+      "empty_and_denied": true
+    },
+    "teams_api": {
+      "typed_decoder": true,
+      "groups": 4,
+      "member_and_round_identity": true,
+      "private_http_cache": true,
+      "ui_consumer": false
+    },
+    "logged_out_both_private_401": true,
+    "injected_responses": 4,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  },
+  {
+    "width": 1280,
+    "pairing_ui": {
+      "loading": true,
+      "populated": true,
+      "long_group_names_no_overflow": true,
+      "error_and_read_retry": true,
+      "empty_and_denied": true
+    },
+    "teams_api": {
+      "typed_decoder": true,
+      "groups": 4,
+      "member_and_round_identity": true,
+      "private_http_cache": true,
+      "ui_consumer": false
+    },
+    "logged_out_both_private_401": true,
+    "injected_responses": 4,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  }
+]

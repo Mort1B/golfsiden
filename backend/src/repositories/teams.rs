@@ -5,7 +5,10 @@ use uuid::Uuid;
 
 use crate::{
     domain::models::{Team, TeamMember, TeamWithMembers},
-    repositories::tournament_authorization::{self, AuthorizationError},
+    repositories::{
+        session_read::{self, SessionReadError},
+        tournament_authorization::{self, AuthorizationError},
+    },
 };
 
 #[derive(Debug, Error)]
@@ -23,20 +26,19 @@ pub async fn list(pool: &PgPool, round_id: Uuid) -> Result<Vec<TeamWithMembers>,
     Ok(result)
 }
 
-pub async fn list_for_member(
+pub async fn list_for_session(
     pool: &PgPool,
-    user_id: Uuid,
+    session: Uuid,
     round_id: Uuid,
-) -> Result<Vec<TeamWithMembers>, AuthorizationError> {
-    let mut transaction = pool.begin().await?;
-    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-        .execute(&mut *transaction)
-        .await?;
-    tournament_authorization::require_round_member_read(&mut transaction, user_id, round_id)
-        .await?;
-    let result = list_in_transaction(&mut transaction, round_id).await?;
-    transaction.commit().await?;
-    Ok(result)
+) -> Result<Vec<TeamWithMembers>, SessionReadError> {
+    session_read::retry(|| async {
+        let (mut tx, user) = session_read::begin(pool, session).await?;
+        tournament_authorization::require_round_member_read(&mut tx, user, round_id).await?;
+        let result = list_in_transaction(&mut tx, round_id).await?;
+        session_read::finish(tx, session).await?;
+        Ok(result)
+    })
+    .await
 }
 
 async fn list_in_transaction(

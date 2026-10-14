@@ -1,51 +1,53 @@
-# Session-bound roster and round reads
+# Session-bound pairing and team reads
 
-Private tournament rosters and round list/detail now carry the session ID through
-complete result loading. The new controlled regression showed all three routes
-returning HTTP 200 after revocation committed while they waited on membership.
-The same test now returns the established private 401 envelope on each route.
+The private pairing-layout and team-list GETs now carry the session ID through
+complete payload assembly. A controlled regression showed both previously
+returning HTTP 200 after session revocation committed while they waited on
+membership. The same test now returns the existing private 401 body on both routes.
 
-`repositories/session_read.rs` shares the existing A1b transaction authority:
-one repeatable-read attempt, active session/user share locks before exact
-membership, a final database wall-clock expiry check and one complete retry on
-40001. The public `TournamentReadError` alias preserves A1b callers and behavior.
-Roster and round SQL remain in their existing repositories, and a round's
-membership scope comes from its stored parent. No user, role or payload from a
-failed snapshot survives retry; a second conflict returns generic private 503.
+Both repositories reuse the unchanged `session_read.rs` boundary: one
+repeatable-read attempt, initial session/user share locks before exact membership,
+a final database wall-clock expiry check, and one full retry on snapshot
+invalidation. Round ownership comes from its stored tournament relation. All
+entrant, group and member queries finish before the final check, including empty
+layouts/lists. Revocation or credential replacement that wins authority denies
+the read; a later writer waits behind an already authorized reader. The clock is
+not frozen during COMMIT, and already delivered responses are not retracted.
 
-For example, an otherwise valid roster that expires while loading its final
-handicap-lock query returns no player data. Empty roster and round-list replies
-must also pass the final check. Later revocation or credential writes wait behind
-readers that already hold authority locks. The check does not freeze time during
-COMMIT or retract previously delivered results.
+For example, a pairing request that expires while loading final flight members
+returns no layout. Membership changes that invalidate an attempt discard its
+user, authority and payload; a second snapshot conflict returns generic private
+503. Pairing GET uses shared error mapping while PUT/preflight keep their existing
+error and mutation boundaries. Existing pairing cache middleware remains in place;
+team GET adds `private, no-store` for every status. No mutation gains a retry.
 
-Roster ordering, preserved entrant handicaps, first handicap-lock reason and all
-round fields/order are unchanged. Each ordinary read adds two session queries,
-with no per-player/per-round authorization loop or measured speedup claim. Shared
-API mapping/cache support applies `private, no-store` to all selected GET replies.
-Round POST creation and its existing preflight keep their behavior; no mutation
-retry, sibling repair, schema, frontend, dependency or hosting change is included.
+Payload loading is unchanged: flat team JSON, active/inactive entrants, schedules,
+timestamps, distinct group identities, legacy individual groups and the endpoints'
+different name/member ordering are preserved. Each ordinary read adds two session
+queries. The existing member query per team remains A8; no batching or measured
+speedup is claimed. Readiness, scoring, schema, frontend source, dependencies and
+hosting configuration remain outside this repair.
 
-Thirteen new PostgreSQL/API cases cover revocation, credential replacement,
-membership deletion/demotion, expiry during controlled waits, empty collections,
-twelve concurrent valid reads without writes/SSE, cancellation, every role,
-missing/cross-trip targets, payload parity and GET-only cache behavior. The empty
-fixtures create a naturally empty tournament; real opening preserves
-`snapshot_captured` as the first handicap-lock reason. Independent read-only
-review found no remaining issues after those fixture assumptions were corrected.
+Fourteen new PostgreSQL/API cases cover revocation, credential generation,
+later-write serialization, membership changes with fresh payloads, coherent
+multi-query snapshots, expiry during membership/data loading, empty results,
+twelve concurrent valid reads, cancellation, all roles, missing/cross-trip targets
+and legacy contracts. Two fixture assertions were corrected to match the existing
+flat team JSON. Independent read-only review found no remaining findings.
 
-Focused suites pass 43 tests and the shared retry helpers pass two. The full
-backend suite passes 261 tests; the PostgreSQL-feature ladder passes 783 with
-four existing manual performance probes ignored. Formatting, strict Clippy,
-all API binary builds, explicit migration and development seed pass.
+Focused suites pass 31 tests; shared retry helpers pass two. The full backend
+suite passes 261 tests, and the PostgreSQL-feature ladder passes 797 with four
+existing manual performance probes ignored, including retained A1b/A1c and pairing
+PUT coverage. Formatting, strict Clippy, all API builds, migration and seed pass.
 
-All nine Chrome flows pass across 320, 390 and 1280px with real API/PostgreSQL
-payloads, delayed loading, long entrant/course/tee names, error/read-only retry,
-empty roster/list or denied detail, and private 401s after logout. No page errors
-or unexpected network failures occurred; representative mobile/desktop screenshots
-were inspected. [The report](validation/roster-round-session-2026-10-14/README.md)
-retains the original failure, browser evidence, exact gate semantics and limits.
+Chrome passes at 320, 390 and 1280px. The actual pairing UI covers loading,
+populated long group names, error/read-only retry, empty and denied states.
+`/teams` has no current UI consumer; its actual typed API/decoder and HTTP/cache
+contracts were tested separately inside the browser. Both routes return private
+401s after logout. No page errors or unexpected network failures occurred, and
+representative mobile/desktop screenshots were inspected. [The report](validation/pairing-team-session-2026-10-14/README.md)
+retains the original failure, browser results, exact wait gates and limits.
 Physical-device, public-host and production-load acceptance remain unchanged.
 
-[PLANS.md](PLANS.md) selects pairing/team GET session binding as A1d next;
-that work and the other severity-rated findings remain queued.
+[PLANS.md](PLANS.md) selects A1e's pairing/completion readiness GETs next;
+that work and the remaining severity-rated findings stay queued.

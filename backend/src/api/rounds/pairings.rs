@@ -20,12 +20,13 @@ use crate::{
     api::{
         auth::{AuthenticatedSession, MutationSession},
         authorization::map_authorization_error,
+        private_read::map_error as map_read_error,
     },
     domain::round_pairings::{
         self, FlightCommand, LegacyConversionCommand, PairingMemberCommand, ReplacementCommand,
         TeamCommand,
     },
-    error::ApiError,
+    error::{ApiError, ApiResult},
     repositories::round_pairings::{self as pairing_repository, RoundPairingsError},
 };
 
@@ -74,10 +75,14 @@ pub async fn get(
     State(state): State<Arc<AppState>>,
     Path(round_id): Path<Uuid>,
     authenticated: AuthenticatedSession,
-) -> Result<Response, PairingsApiError> {
-    let model =
-        pairing_repository::get_for_member(&state.pool, authenticated.principal.user_id, round_id)
-            .await?;
+) -> ApiResult<Response> {
+    let model = pairing_repository::get_for_session(
+        &state.pool,
+        authenticated.principal.session_id,
+        round_id,
+    )
+    .await
+    .map_err(map_read_error)?;
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(model)).into_response())
 }
 
