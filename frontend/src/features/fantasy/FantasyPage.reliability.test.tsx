@@ -99,7 +99,8 @@ it('does not let an older manual refresh replace a later uncertain write outcome
  await waitFor(()=>expect(screen.getByText('Avklar samme innsending')).toHaveProperty('disabled',false))
  const before=vi.mocked(fantasyApi.round).mock.calls.length
  await act(async()=>finish())
- await waitFor(()=>expect(vi.mocked(fantasyApi.round).mock.calls.length).toBeGreaterThan(before))
+ // The old refresh may reuse the later successful read, but may not replace its feedback.
+ expect(vi.mocked(fantasyApi.round).mock.calls.length).toBe(before)
  expect(screen.queryByText('Handlingen er bekreftet. Visningen er oppdatert.')).toBeNull()
  expect(screen.getByText(/Kunne ikke hente en bekreftelse fra serveren/)).toBeTruthy()
  expect(fantasyApi.save).toHaveBeenCalledTimes(2)

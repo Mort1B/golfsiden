@@ -4,6 +4,7 @@ import { authKeys, type AuthSession } from '../../api/auth'
 import { fantasyKeys } from '../../api/fantasy'
 import { ApiHttpError } from '../../api/http'
 import { loadPrivateResult } from '../../api/privateResults'
+import { trackFantasyRefresh } from './fantasyRefreshProof'
 import { refreshFantasyTarget, type FantasyReadTarget } from './refreshFantasy'
 import { useAuth } from '../auth/authContext'
 export function fantasyError(error: unknown): string {
@@ -48,8 +49,9 @@ export function useFantasyAction(t: string) {
     const queryKey=fantasyKeys.root(session.user_id,t)
     const targets=client.getQueryCache().findAll({queryKey,type:'active'}).map(query=>query.queryKey)
     try {
-      await client.invalidateQueries({queryKey},{throwOnError:true})
-      if(target && current())await refreshFantasyTarget(client,t,session,target,current)
+      const proof=trackFantasyRefresh(client,queryKey)
+      try { await client.invalidateQueries({queryKey},{throwOnError:true}) } finally { proof.stop() }
+      if(target && current())await refreshFantasyTarget(client,t,session,target,current,proof.reusable)
       const visible=[...targets,...client.getQueryCache().findAll({queryKey,type:'active'}).map(query=>query.queryKey)]
       return current() && visible.length>0 && visible.every(key=>{
         const state=client.getQueryState(key)

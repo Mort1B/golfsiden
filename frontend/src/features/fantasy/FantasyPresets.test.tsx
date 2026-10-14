@@ -196,3 +196,15 @@ it('does not dispatch offline and serializes repeated clicks while a save is hel
  await act(async()=>finish(receipt))
  expect(fantasyApi.save).toHaveBeenCalledTimes(1)
 })
+
+it('reconciles each batch target once after its authoritative preflight',async()=>{
+ setupRounds();await prepare()
+ const button=screen.getByRole('button',{name:'Lagre gjennomgåtte utkast (3)'})
+ await waitFor(()=>expect(button).toHaveProperty('disabled',false))
+ const before=vi.mocked(fantasyApi.round).mock.calls.length
+ fireEvent.click(button)
+ await screen.findByText(/Alle gjennomgåtte utkast er lagret/)
+ // Three preflights plus all three active rounds after each write. No extra target GET.
+ expect(vi.mocked(fantasyApi.round).mock.calls.length-before).toBe(12)
+ expect(fantasyApi.save).toHaveBeenCalledTimes(3)
+})

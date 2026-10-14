@@ -9,37 +9,10 @@ None.
 
 ## Next candidate
 
-R2: avoid redundant Fantasy target reads after verified reconciliation.
-Authorized by the user's request to fix all three assessed issues.
-
-- Goal: remove a duplicate target request without weakening acknowledgment or
-  authoritative refresh, including batch saves.
-- Scope: Fantasy refresh coordinator/target helper, a focused ephemeral fetch-proof
-  helper and recovery/request-count tests. Preserve full-root invalidation and SSE.
-- Behavior: reuse an initially active target only after observing a new fetch and
-  non-manual success during this refresh. Immediately recheck query identity,
-  success counter, activity, data, idle/non-invalidated state and canonical
-  session. Otherwise perform the existing explicit authorized target read.
-- Invariants: every batch write still gets fresh preflight; acknowledgment never
-  becomes uncertainty after a refresh failure; no write retries, stale cache reuse,
-  retained projections or changes to privacy erasure/session ownership.
-- Validation: preexisting in-flight reads, manual cache writes, cancellation,
-  erasure/replacement, invalidation, inactive/new targets and activation failures;
-  request-count regression; full frontend ladder and real browser recovery checks.
-- Stop: document/publish R2, then activate the already-authorized R3 separately.
+R3: specialize round-only Fantasy projection after measurement and parity tests.
+Already authorized; preserve shared transaction, loading, authorization and locks.
 
 ## Later queue
-
-### Authorized optimization sequence
-
-- R2: avoid redundant Fantasy target reads after verified reconciliation;
-  three/five-round batches started 24/60 round reads in the local measurement.
-  Preserve authoritative preflight and all session/privacy/recovery fences.
-- R3: profile round-results projection before specializing its all-tournament
-  calculation. No locking or authorization changes are approved.
-- Evidence and boundaries are in the
-  [pre-deployment assessment](validation/predeployment-review-2026-10-14/README.md).
-  R3 is authorized after R2, with profiling and its own bounded implementation step.
 
 ### Previously deferred work
 

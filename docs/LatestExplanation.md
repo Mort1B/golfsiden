@@ -1,21 +1,23 @@
-# Fantasy browser acceptance repair
+# Fantasy refresh duplication removed
 
-R1 from the pre-deployment assessment is fixed. The preset browser test now
-classifies expected read errors by endpoint, method, status and decoded error
-code. It does not reject a verified retryable projection conflict merely because
-the case also injects a 503. Unread bodies require actual cancellation evidence;
-unexpected errors remain failures.
+R2 now reuses a target response only when the current refresh observed a new
+network fetch and successful completion, and the same active query still passes
+session, state and freshness checks. Manual cache writes, older initial requests,
+query erasure/replacement and failed reads cannot substitute for that evidence.
+Otherwise the existing explicit target read runs. Per-write preflight, SSE and
+full-family invalidation remain unchanged.
 
-Both affected boards must recover. A separate deterministic scenario injects
-conflicts after initial reads settle and requires readable delivery on both
-endpoints before accepting their recovery. Production retries, scores, queries
-and write behavior are unchanged.
+A three-round unit fixture now performs 12 reads instead of 15. The real-SSE
+Chrome probes reduced round request starts from 24 to 21 for three saves and
+from 60 to 55 for five saves, with the same three/five writes. Broader overview
+refreshing remains intentionally unchanged; no latency speedup is claimed.
 
-Validation passed: 1,102 frontend tests, typecheck, lint, strict browser TypeScript,
-production build, 20 repeated recovery/conflict Chrome cases and two retained
-copy/lost-response cases. Independent review found no remaining issues.
-[Evidence and commands](validation/predeployment-fixes-2026-10-14/README.md).
+Validation passed: 1,113 frontend tests, typecheck, lint, strict browser TypeScript,
+production build, four preset/recovery Chrome cases and two request-count probes.
+Ten proof tests cover manual data, old requests, replacement, cancellation,
+inactivity and overlapping refreshes. The [evidence report](validation/predeployment-fixes-2026-10-14/README.md)
+also records R1's completed test repair and intermediate fixture corrections.
 
-The user's remaining authorized fixes are R2 (duplicate frontend refresh reads)
-and R3 (unnecessary backend projection). They proceed as separate steps. Physical
-iPhone Chrome/Safari and hosting acceptance remain after deployment.
+The remaining authorized step is R3: measure and specialize the backend's
+round-only result projection while preserving its transaction and authority checks.
+Physical iPhone and hosted acceptance remain separate.

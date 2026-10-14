@@ -49,3 +49,47 @@ a superseded repetition run stalled and was stopped. The final observer reads
 JSON directly, then checks actual request cancellation if reading fails. The
 independent review also required proof that injected conflicts were delivered,
 which is now asserted per endpoint. Intermediate runs are not acceptance evidence.
+
+
+## R2: reuse only a proven current target refresh
+
+The coordinator now records ephemeral evidence of a network fetch followed by a
+non-manual success during its own invalidation. It reuses a target only if the
+same query still has that success counter, active/idle state, data and no pending
+invalidation, with the canonical session checked immediately before access.
+An existing initial request, manual cache write, missing/new/inactive/replaced
+query, failure or erased data cannot provide that proof. The former explicit
+read remains the fallback. The subscription is removed in `finally`.
+
+Full-root invalidation, SSE updates and per-write batch preflight are retained.
+This removes a known duplicate; it does not claim to eliminate the whole batch's
+quadratic overview refresh cost. Broader invalidation changes would need their
+own dependency and privacy analysis.
+
+Proof tests cover active successful refresh, manual writes, older in-flight reads,
+new/inactive targets, erasure/replacement, cancellation, failure and real overlapping
+refreshes where late canceled data cannot satisfy the newer read. Existing tests
+continue to cover session changes, acknowledgment/refresh separation, activation
+that mounts failing queries and exact uncertain-write replay. An older refresh
+feedback test now asserts reuse instead of requiring the duplicate read; it still
+requires the later uncertain outcome and exactly two writes.
+
+The deterministic three-round batch regression requires 12 round reads (three
+preflights plus nine reconciliation reads), compared with 15 before R2. The test
+has no live SSE. Repeating the assessment's real-SSE Chrome probe reduced round
+request starts from 24 to 21 for three saves and from 60 to 55 for five saves.
+The extra game/overall/round-result refresh counts remained 6/6/6 and 10/10/10;
+writes remained exactly three/five. These totals include started requests that
+may be canceled or still pending at the success cutoff. This is one avoided
+round request per saved draft, not a claim about completed database queries.
+
+Validation passed: 1,113 frontend tests across 143 files, typecheck, lint, strict
+browser TypeScript and production build; all four preset/recovery Chrome cases
+and both real-SSE count probes. The final overlapping-refresh proof test was
+rerun after correcting the fixture to resolve both fetches: TanStack's silently
+canceled first promise follows the replacement request, so awaiting it before
+resolving the replacement incorrectly deadlocked the initial test. All ten proof
+cases then passed. Read-only review found no production correctness issue.
+Logs: `/tmp/golf-r2-{focused,tests,build,browser}.log`; the temporary count probe
+was removed from the checkout and retained at `/tmp/golf-r2-Cost.browser.ts`.
+No backend or migration code changed in R2; the backend ladder is deferred to R3.

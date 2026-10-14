@@ -2637,6 +2637,16 @@ separately from refresh errors: a positive response records acknowledgement befo
 refresh, and failed refresh cannot call the write-failure callback. Read-only retry
 checks active query state and reconstructs the original operation's read target
 from identifiers, so unmounting/switching does not lose its reconciliation target.
+Reconciliation observes initially active query identities and network fetch/success
+notifications during the current invalidation. An explicit target read may reuse
+that result only while the same query, successful-fetch counter, active/idle state,
+present data and non-invalidated status still match. Manual cache writes and
+preexisting initial in-flight reads do not prove reconciliation. Missing evidence,
+query removal/erasure, inactivity or newer changes use the existing explicit read.
+The proof is local to one refresh, stores no copied projection and always
+unsubscribes after invalidation. Full-family invalidation, SSE behavior and every
+batch preflight remain unchanged.
+
 Activation explicitly checks the newly enabled results/round reads. The current
 canonical session and private-result denial/cancellation boundaries fence these
 reads too; no retained query closures or server projections substitute for them.

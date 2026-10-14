@@ -1,4 +1,4 @@
-import type { QueryClient } from '@tanstack/react-query'
+import type { QueryClient, QueryKey } from '@tanstack/react-query'
 import type { AuthSession } from '../../api/auth'
 import { fantasyApi, fantasyKeys, type OwnerKind } from '../../api/fantasy'
 import { loadPrivateResult } from '../../api/privateResults'
@@ -12,9 +12,15 @@ export type FantasyReadTarget =
 export async function refreshFantasyTarget(
   client: QueryClient, tournament: string, session: AuthSession,
   target: FantasyReadTarget, current: () => boolean,
+  reusable: (key: QueryKey) => boolean = () => false,
 ): Promise<void> {
   const read = <T,>(parts: string[], load: (signal: AbortSignal) => Promise<T>): Promise<T> => {
     const key = fantasyKeys.query(session.user_id, tournament, ...parts)
+    if (!current()) return Promise.reject(new Error('Sesjonen er endret.'))
+    if (reusable(key)) {
+      const data = client.getQueryData<T>(key)
+      if (data !== undefined) return Promise.resolve(data)
+    }
     return client.fetchQuery({ queryKey: key, staleTime: 0, gcTime: 0, retry: false,
       queryFn: ({ signal }) => loadPrivateResult(client, { userId: session.user_id, tournamentId: tournament }, key, signal, async () => {
         if (!current()) throw new Error('Sesjonen er endret.')
