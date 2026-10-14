@@ -24,13 +24,21 @@ rounds without changing the partner's result. Stableford's points/equivalent
 presentation must be resolved when activating that candidate; match play is
 excluded because it has no net stroke result.
 
-Net albatross or better will award 5 Fantasy points, while an actual hole-in-one
-keeps 10 with single-category ace precedence. The user chose to apply this only
-to games whose selections have not locked yet. Current storage, result metadata
-and frontend decoding support only rules version 1, so the plan includes a new
-version and coordinated compatibility work. Frozen version-1 games retain their
-existing scoring for every round. An already-expired deadline counts as closed
-even when its lock has not yet been materialized by a read.
+Net albatross or better will award 5 Fantasy points. Following the request for
+a larger hole-in-one award, step 3 now proposes 20 for an actual ace, retaining
+single-category precedence and the other hole-point values. Twenty is a balance
+recommendation, not a statistically calibrated value: it equals four net
+albatrosses or twice the first-place placement award. Captain doubling makes it
+40; selecting both partners in a shared-team round makes the ace contribution
+40, or 60 with one captain. The plan requires reviewing these consequences
+before accepting the exact ace value for implementation.
+
+The user chose to apply the new scale only to games whose selections have not
+locked yet. Current storage, result metadata and frontend decoding support only
+rules version 1, so the plan includes a new version and coordinated compatibility
+work. Frozen version-1 games retain their existing +10 ace/albatross scoring for
+every round. An already-expired deadline counts as closed even when its lock has
+not yet been materialized by a read.
 
 The plan was reviewed against current selection, scoring, versioning and result
 boundaries. Local Markdown links/anchors and `git diff --check` were checked.
