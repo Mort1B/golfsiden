@@ -755,6 +755,27 @@ and reapplies runtime grants before the API is started.
   broad reconciliation; disconnect, reconnect, and visibility handling retain
   synchronous projection clearing. Tournament leaderboard loading still fetches
   rounds before validating the response, including after score-only invalidation.
+- Cookie-changing frontend HTTP is owned by `api/identityQueue.ts`, one ephemeral
+  queue per document/runtime shared across route lifetimes. Login, logout,
+  anonymous tournament creation, invitation registration, player claims and own
+  password changes dispatch in order through this boundary. Intent generations
+  fence late results, route continuations and session reads. Ordinary credentialed
+  HTTP waits for the final identity settlement; requests belonging to an earlier
+  settled generation are discarded before dispatch or after response/body arrival.
+  The idle path preserves immediate dispatch/cancellation. Explicit cookie-free
+  capability reads and token previews remain independent.
+  `AuthProvider` publishes the latest successful writer's session/null after its
+  owning continuation can retain a receipt. Failed/ambiguous writers reconcile
+  with a raw session read; failed reconciliation clears private state and exposes
+  deliberate read-only retry. Settlement follows canonical publication, including
+  when that read is slow. No write is automatically replayed. Queued logout reads
+  the actual cookie session before clearing it; queued password changes must still
+  match their original CSRF authority. Forms remain mounted during their own work.
+  Mounted lifetime, intent and canonical identity separately guard onboarding,
+  invitation, login, claim, profile and recovery effects. Claim lost-response
+  recovery retains expected player/username checks. Acknowledged invitation success
+  takes precedence over preview errors. No persistent queue or cross-tab/reload
+  coordination is provided, and no server authority or cookie contract changes.
 - Shared tournament subscriptions listen for visible-page return, persisted
   `pageshow`, and browser `online` events. Return restarts a stopped/retrying native
   EventSource while retaining a healthy stream; concurrent return events do not

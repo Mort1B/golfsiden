@@ -6,6 +6,7 @@ import { decodeRound, decodeTournament } from './tournaments'
 import type { Round, ScoringFormat, Tournament } from './types'
 import { defaultHandicapAllowanceForFormat, isTeamScoringFormat } from './scoringFormats'
 import { validateMandatoryRound } from './mandatoryRounds'
+import { coordinateIdentity } from './identityQueue'
 
 export interface OnboardingRequest {
   creator: {
@@ -122,7 +123,8 @@ export function decodeOnboardingResponse(value: unknown): OnboardingResponse {
 }
 
 export function createOnboarding(input: OnboardingRequest): Promise<OnboardingResponse> {
-  return requestDecoded('/api/onboarding/tournaments', decodeOnboardingResponse, jsonRequest('POST', input))
+  return coordinateIdentity(() => requestDecoded('/api/onboarding/tournaments', decodeOnboardingResponse,
+    { ...jsonRequest('POST', input), identityRequest: true }), result => result.session)
 }
 
 export function buildInvitationUrl(origin: string, invitationId: string, token: string): string {

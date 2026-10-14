@@ -107,6 +107,7 @@ describe('invitation request secrecy', () => {
     expect(requestUrl).toBe(`/api/invitations/${invitationId}/preview`)
     expect(String(requestUrl)).not.toContain(token)
     expect(requestInit?.body).toBe(JSON.stringify({ token }))
+    expect(requestInit?.credentials).toBe('omit')
   })
 
   it('posts registration and acceptance secrets only in JSON bodies', async () => {

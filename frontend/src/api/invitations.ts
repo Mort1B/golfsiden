@@ -11,6 +11,7 @@ import {
   invalidData,
 } from './decoder'
 import { jsonRequest, requestDecoded, requestNoContent } from './http'
+import { coordinateIdentity } from './identityQueue'
 
 export interface InvitationPreview {
   tournament: {
@@ -196,7 +197,7 @@ export function previewInvitation(invitationId: string, token: string): Promise<
   return requestDecoded(
     `/api/invitations/${invitationId}/preview`,
     decodeInvitationPreview,
-    jsonRequest('POST', { token }),
+    { ...jsonRequest('POST', { token }), credentials: 'omit' },
   )
 }
 
@@ -205,11 +206,11 @@ export function registerInvitation(
   token: string,
   input: InvitationRegistrationInput,
 ): Promise<InvitationRegistrationResult> {
-  return requestDecoded(
+  return coordinateIdentity(() => requestDecoded(
     `/api/invitations/${invitationId}/register`,
     decodeInvitationRegistration,
-    jsonRequest('POST', { token, ...input }),
-  )
+    { ...jsonRequest('POST', { token, ...input }), identityRequest: true },
+  ), result => result.session)
 }
 
 export function acceptInvitation(

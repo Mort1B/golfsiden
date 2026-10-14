@@ -1,13 +1,16 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { LogIn } from 'lucide-react'
 import { useAuth } from '../features/auth/authContext'
 import { safeReturnTo } from '../features/auth/navigation'
 import '../features/recovery/recovery.css'
 import { USERNAME_HTML_PATTERN } from '../features/auth/username'
+import { identityVersion } from '../api/identityQueue'
 
 export function SignInPage() {
   const auth = useAuth()
+  const alive = useRef(false)
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
   const location = useLocation()
   const state: unknown = location.state
   const passwordChanged = typeof state === 'object' && state !== null && 'profilePasswordChanged' in state && state.profilePasswordChanged === true
@@ -20,19 +23,23 @@ export function SignInPage() {
   const [error, setError] = useState<string | null>(null)
   const returnTo = safeReturnTo(params.get('returnTo'))
 
-  if (auth.session && !passwordChanged && !recoveryComplete) return <Navigate replace to={returnTo} />
+  if (auth.session && !passwordChanged && !recoveryComplete && !error && !submitting) return <Navigate replace to={returnTo} />
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setSubmitting(true)
     setError(null)
+    let intent = identityVersion()
     try {
-      await auth.signIn(username, password)
+      const pending = auth.signIn(username, password)
+      intent = identityVersion()
+      await pending
+      if (!alive.current || intent !== identityVersion()) return
       navigate(returnTo, { replace: true })
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Innlogging mislyktes')
+      if (alive.current && intent === identityVersion()) setError(caught instanceof Error ? caught.message : 'Innlogging mislyktes')
     } finally {
-      setSubmitting(false)
+      if (alive.current && intent === identityVersion()) setSubmitting(false)
     }
   }
 

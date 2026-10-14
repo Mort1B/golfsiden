@@ -9,28 +9,29 @@ None. Awaiting approval of one bounded next step.
 
 ## Next candidate
 
-### A3 — P2: coordinate identity-changing requests across route lifetimes
+### A1b — P2: bind private tournament list/detail reads to their session
 
-Evidence: [application review](validation/application-review-2026-10-14/README.md#a3--p2-late-account-creation-replaces-newer-authentication).
+Evidence: [application review](validation/application-review-2026-10-14/README.md#a1--p2-revoked-sessions-can-finish-private-reads).
 
-- Goal: prevent a departed anonymous creation or invitation registration from
-  replacing a newer deliberate authentication choice.
-- Scope: existing frontend authentication/request coordination, onboarding and
-  invitation registration continuations, necessary login/logout/session-refresh
-  integration, focused regressions and documentation. No new product feature,
-  sporting rule, schema or deployment change.
-- Behavior: coordinate cookie-changing HTTP operations across route lifetimes,
-  fence late cache/navigation publication and reconcile authoritative cookie
-  identity. Ignoring a React callback alone is insufficient. Preserve immutable
-  mutation recovery and deliberate valid-session behavior.
-- Validation: reverse-response-order and navigation races for creation and
-  invitation registration, newer login/logout and same-user renewal. Assert
-  actual cookie/canonical identity, cache ownership and navigation. Run focused
-  tests, the affected full ladders, real mobile/desktop Chrome and read-only review.
-- Invariants: retain private cache/session isolation, exact uncertain-write
-  replay, acknowledged-write outcomes and existing API contracts.
-- Stop: publish this authentication-ordering repair only; do not begin sibling
-  private-read/write, dependency, recovery or capacity work.
+- Goal: prevent private tournament list, membership-list and detail replies from
+  finishing with authority that was revoked or expired while they waited.
+- Scope: `GET /api/tournaments`, `GET /api/me/tournaments`, and
+  `GET /api/tournaments/{id}`; their API/repository authority boundary, focused
+  session support, regressions and docs. Exclude roster/round/pairing/team reads,
+  legacy writes, scoring rules, schema, frontend and deployment changes.
+- Behavior: carry session identity through authorization and result assembly,
+  retain required session/user/membership locks, recheck wall-clock expiry before
+  completion and preserve list/detail privacy, ordering and roles. Define bounded
+  whole-read retry if repeatable-read authority can invalidate a snapshot; return
+  the established private error contracts without partial data.
+- Validation: reproduce the original race before repairing; cover revocation,
+  credential replacement, expiry, membership changes, missing/cross-tournament
+  resources, valid concurrency, response/cache parity and no writes/SSE. Run full
+  backend/PostgreSQL ladders, affected browser evidence and read-only review.
+- Invariants: exact stored membership owns tournament access; preserve current
+  account/player separation, listing semantics and snapshot coherence.
+- Stop: publish these three private-read repairs only; leave sibling read/write
+  families and other assessment findings queued.
 
 ## Later queue
 
@@ -40,8 +41,8 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A1 follow-up:** inventory and repair the remaining user-only private
-   tournament/round/roster/pairing/team read families in bounded slices; inventory
+1. **P2 / A1 follow-up after A1b:** repair the remaining user-only private
+   round/roster/pairing/team read families in bounded slices; inventory
    analogous expiry gaps in legacy team/round writes as a separate slice.
 2. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
    the SQLx cancellation patch and recheck TLS behavior/advisory reachability.

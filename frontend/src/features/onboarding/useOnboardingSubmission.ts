@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createOnboarding } from '../../api/onboarding'
 import { ApiHttpError } from '../../api/http'
@@ -6,6 +6,9 @@ import { tournamentKeys, withCreatedTournament, type MyTournament } from '../../
 import type { Round, Tournament } from '../../api/types'
 import { useAuth } from '../auth/authContext'
 import { toOnboardingRequest, type WizardDraft } from './wizardState'
+import { authKeys, type AuthSession } from '../../api/auth'
+import { identityVersion } from '../../api/identityQueue'
+import { sameRecoverySession } from '../recovery/refreshRecoverySession'
 
 export interface OnboardingSuccess {
   tournament: Tournament
@@ -36,14 +39,22 @@ export function useOnboardingSubmission(onCreated: () => void) {
   const queryClient = useQueryClient()
   const auth = useAuth()
   const inFlight = useRef(false)
+  const alive = useRef(false)
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
   const [state, setState] = useState<SubmissionState>({ status: 'idle', error: null, success: null })
 
   const submit = async (draft: WizardDraft): Promise<boolean> => {
     if (inFlight.current) return false
     inFlight.current = true
     setState({ status: 'submitting', error: null, success: null })
+    const initial = queryClient.getQueryData<AuthSession | null>(authKeys.session)
+    let intent = identityVersion()
+    const current = () => alive.current && intent === identityVersion() && sameRecoverySession(queryClient, initial)
     try {
-      const response = await createOnboarding(toOnboardingRequest(draft))
+      const pending = createOnboarding(toOnboardingRequest(draft))
+      intent = identityVersion()
+      const response = await pending
+      if (!current()) return false
       const membership: MyTournament = {
         tournament: response.tournament,
         role: response.creator.tournament_role,
@@ -71,7 +82,7 @@ export function useOnboardingSubmission(onCreated: () => void) {
       })
       return true
     } catch (error) {
-      setState({ status: 'error', error: userMessage(error), success: null })
+      if (current()) setState({ status: 'error', error: userMessage(error), success: null })
       return false
     } finally {
       inFlight.current = false

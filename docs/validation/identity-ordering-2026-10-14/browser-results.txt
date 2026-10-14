@@ -1,0 +1,27 @@
+
+Running 18 tests using 1 worker
+
+(node:358780) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+  ✓   1 e2e/identityIntent.browser.ts:21:1 › queued logout clears a departed creation even while canonical identity is anonymous (1.7s)
+  ✓   2 e2e/identityIntent.browser.ts:51:1 › same-user queued renewals preserve the latest cookie and canonical CSRF for a real write (2.9s)
+  ✓   3 e2e/identityIntent.browser.ts:94:1 › failed newer login stays reviewable after cookie reconciliation and can be retried deliberately (3.3s)
+  ✓   4 e2e/identityOrdering.browser.ts:11:5 › onboarding response cannot overtake a newer login at 390px (2.2s)
+  ✓   5 e2e/identityOrdering.browser.ts:11:5 › invitation response cannot overtake a newer login at 390px (2.4s)
+  ✓   6 e2e/identityOrdering.browser.ts:11:5 › onboarding response cannot overtake a newer login at 1280px (2.2s)
+  ✓   7 e2e/identityOrdering.browser.ts:11:5 › invitation response cannot overtake a newer login at 1280px (2.4s)
+  ✓   8 e2e/identityOrdering.browser.ts:59:1 › ordinary onboarding retains the accepted one-time receipt across reconciliation (2.1s)
+  ✓   9 e2e/identityOrdering.browser.ts:75:1 › invitation loading, error retry, long names and accepted registration remain usable (2.0s)
+  ✓  10 e2e/identityOrdering.browser.ts:98:1 › a late anonymous session read cannot replace a newer login (1.4s)
+  ✓  11 e2e/passwordRecovery.browser.ts:34:1 › real administrator issue/copy/redeem/relogin and lost-link revoke preserve unrelated session (13.0s)
+  ✓  12 e2e/passwordRecovery.browser.ts:138:1 › public loading, retry, missing and expired states on mobile and desktop (2.0s)
+  ✓  13 e2e/playerClaims.browser.ts:46:1 › real create, copy, exact identity claim, replay, reissue, revoke and withdrawal (8.6s)
+  ✓  14 e2e/playerClaims.browser.ts:123:1 › public loading, retry, missing and unavailable states at mobile and desktop (1.8s)
+  ✓  15 e2e/playerClaims.browser.ts:148:1 › admin roster empty, loading, error and restored populated states (3.8s)
+(node:359836) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node-22 --trace-warnings ...` to show where the warning was created)
+  ✓  16 e2e/profile.browser.ts:31:1 › profile edits, preserved trip handicap, duplicate/stale failures and all-device password logout (13.8s)
+  ✓  17 e2e/profile.browser.ts:138:1 › loading, retry, empty, archived and inactive profile states remain accessible (6.0s)
+  ✓  18 e2e/profile.browser.ts:171:1 › creator and invitation forms accept multibyte minimum and explain overflow (3.2s)
+
+  18 passed (1.3m)

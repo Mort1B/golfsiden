@@ -142,3 +142,16 @@ describe('AuthProvider private cache transitions', () => {
 })
 
 it('clears administrator award projections on same-account CSRF renewal',()=>{const client=new QueryClient();const current=session('same-user');client.setQueryData(authKeys.session,current);client.setQueryData(awardsKey(current.user_id,'round'),{history:['private']});publishSessionTransition(client,{...current,csrf_token:'renewed'});expect(client.getQueryData(awardsKey(current.user_id,'round'))).toBeUndefined()})
+
+it('does not let an older passive session response replace a newer completed read with the same starting identity', async () => {
+  const client = new QueryClient()
+  const initial = session('initial')
+  client.setQueryData(authKeys.session, initial)
+  let finish: (value: AuthSession) => void = () => { throw new Error('Not started') }
+  const older = resolveSessionTransition(client, () => new Promise(resolve => { finish = resolve }))
+  const latest = { ...initial, display_name: 'Updated name' }
+  publishSessionTransition(client, await resolveSessionTransition(client, async () => latest))
+  finish({ ...initial, display_name: 'Old name' })
+  expect(await older).toEqual(latest)
+  expect(client.getQueryData(authKeys.session)).toEqual(latest)
+})

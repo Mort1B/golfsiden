@@ -1,6 +1,6 @@
 import { decodeRoundLeaderboard, decodeTournamentLeaderboard } from './leaderboards'
 import { decodeAuthSession } from './auth'
-import { ApiHttpError, jsonRequest, requestDecoded, requestUnchecked, tournamentLiveUrl } from './http'
+import { ApiHttpError, jsonRequest, requestDecoded, tournamentLiveUrl } from './http'
 import { decodeExpectedRound, decodeTournamentList, tournamentApi } from './tournaments'
 import {
   decodeCompletionValidation,
@@ -16,11 +16,11 @@ import { roundLifecycleApi } from './roundLifecycle'
 import { scoreRequest } from './scorecards/timeout'
 import { saveConditionalScore } from './scorecards/conditional'
 import { teamApi } from './teams'
+import { authRequests } from './authRequests'
 
 export const api = {
   saveConditionalScore,
-  login: (username: string, password: string) => requestDecoded('/api/auth/login', decodeAuthSession,
-    jsonRequest('POST', { username, password })),
+  login: authRequests.login,
   session: async () => {
     try {
       return await requestDecoded('/api/auth/session', decodeAuthSession)
@@ -29,10 +29,7 @@ export const api = {
       throw error
     }
   },
-  logout: (csrfToken: string) => requestUnchecked<undefined>('/api/auth/logout', {
-    method: 'POST',
-    headers: { 'x-csrf-token': csrfToken },
-  }),
+  logout: authRequests.logout,
   tournaments: () => requestDecoded('/api/tournaments', decodeTournamentList),
   myTournaments: tournamentApi.mine,
   tournament: tournamentApi.detail,

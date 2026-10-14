@@ -1,6 +1,27 @@
 import { decodeObject } from './decoder'
+import { identityChanged, identityVersion, settledIdentityVersion, waitForIdentity } from './identityQueue'
 
 const apiUrl = import.meta.env.VITE_API_URL ?? ''
+
+export interface ApiRequestInit extends RequestInit {
+  /** Only the serialized cookie writer and its internal authority read bypass. */
+  identityRequest?: boolean
+}
+
+const usesIdentity = (init?: ApiRequestInit): boolean => !init?.identityRequest && init?.credentials !== 'omit'
+
+async function fetchResponse(path: string, init?: ApiRequestInit): Promise<Response> {
+  const { identityRequest, ...request } = init ?? {}
+  const origin = settledIdentityVersion()
+  if (!identityRequest && request.credentials !== 'omit') {
+    if (origin !== identityVersion()) await waitForIdentity()
+    request.signal?.throwIfAborted()
+    if (origin !== settledIdentityVersion()) throw identityChanged()
+  }
+  const response = await fetch(`${apiUrl}${path}`, { ...request, credentials: request.credentials ?? 'include' })
+  if (!identityRequest && request.credentials !== 'omit' && origin !== identityVersion()) throw identityChanged()
+  return response
+}
 
 export class ApiHttpError extends Error {
   readonly status: number
@@ -27,9 +48,11 @@ function errorDetails(value: unknown, status: number): { code: string; message: 
   return { code: 'http_error', message: `Forespørselen feilet (${status})` }
 }
 
-async function responseJson(path: string, init?: RequestInit): Promise<unknown> {
-  const response = await fetch(`${apiUrl}${path}`, { ...init, credentials: init?.credentials ?? 'include' })
+async function responseJson(path: string, init?: ApiRequestInit): Promise<unknown> {
+  const origin = settledIdentityVersion()
+  const response = await fetchResponse(path, init)
   const body: unknown = await response.json().catch(() => undefined)
+  if (usesIdentity(init) && origin !== identityVersion()) throw identityChanged()
   if (!response.ok) {
     const details = errorDetails(body, response.status)
     throw new ApiHttpError(response.status, details.code, details.message)
@@ -37,8 +60,8 @@ async function responseJson(path: string, init?: RequestInit): Promise<unknown> 
   return body
 }
 
-export async function requestNoContent(path: string, init?: RequestInit): Promise<void> {
-  const response = await fetch(`${apiUrl}${path}`, { ...init, credentials: init?.credentials ?? 'include' })
+export async function requestNoContent(path: string, init?: ApiRequestInit): Promise<void> {
+  const response = await fetchResponse(path, init)
   if (!response.ok) {
     const body: unknown = await response.json().catch(() => undefined)
     const details = errorDetails(body, response.status)
@@ -50,12 +73,12 @@ export async function requestNoContent(path: string, init?: RequestInit): Promis
 export async function requestDecoded<T>(
   path: string,
   decode: (value: unknown) => T,
-  init?: RequestInit,
+  init?: ApiRequestInit,
 ): Promise<T> {
   return decode(await responseJson(path, init))
 }
 
-export async function requestUnchecked<T>(path: string, init?: RequestInit): Promise<T> {
+export async function requestUnchecked<T>(path: string, init?: ApiRequestInit): Promise<T> {
   return await responseJson(path, init) as T
 }
 

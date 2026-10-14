@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, CheckCircle2, LogIn } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -10,13 +10,15 @@ import {
   type InvitationAcceptanceResult,
   type InvitationRegistrationInput,
 } from '../../api/invitations'
-import { authKeys } from '../../api/auth'
+import { authKeys, type AuthSession } from '../../api/auth'
 import { tournamentKeys } from '../../api/tournaments'
 import { isCanonicalUuid } from '../../api/decoder'
 import { useAuth } from '../auth/authContext'
 import { InlineSignIn, RegistrationForm } from './JoinForms'
 import { joinErrorMessage, previewFailure, type PreviewFailure } from './joinMessages'
 import { clearInvitationFragment, parseInvitationSecret } from './secret'
+import { identityVersion } from '../../api/identityQueue'
+import { sameRecoverySession } from '../recovery/refreshRecoverySession'
 
 interface JoinExperienceProps {
   invitationId: string
@@ -41,6 +43,9 @@ const failureCopy: Record<PreviewFailure, { title: string; message: string }> = 
 export function JoinExperience({ invitationId }: JoinExperienceProps) {
   const auth = useAuth()
   const queryClient = useQueryClient()
+  const alive = useRef(false)
+  const registrationIntent = useRef(0)
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
   const initialSecretStatus = useRef<'missing' | 'malformed' | 'valid' | null>(null)
   const tokenRef = useRef<string | null>(null)
   if (initialSecretStatus.current === null) {
@@ -69,7 +74,9 @@ export function JoinExperience({ invitationId }: JoinExperienceProps) {
     mutationFn: (input: InvitationRegistrationInput) => {
       const token = tokenRef.current
       if (!token) throw new Error('Invitasjonshemmeligheten mangler.')
-      return registerInvitation(invitationId, token, input)
+      const pending = registerInvitation(invitationId, token, input)
+      registrationIntent.current = identityVersion()
+      return pending
     },
     gcTime: 0,
   })
@@ -100,11 +107,12 @@ export function JoinExperience({ invitationId }: JoinExperienceProps) {
   }
 
   const register = async (input: InvitationRegistrationInput) => {
+    const initial = queryClient.getQueryData<AuthSession | null>(authKeys.session)
     try {
       const result = await registration.mutateAsync(input)
+      if (!alive.current || registrationIntent.current !== identityVersion() || !sameRecoverySession(queryClient, initial)) return
       registration.reset()
       auth.establishSession(result.session)
-      queryClient.setQueryData(authKeys.session, result.session)
       await finish(result, result.session.user_id)
     } catch {
       return
@@ -112,8 +120,11 @@ export function JoinExperience({ invitationId }: JoinExperienceProps) {
   }
 
   const accept = async () => {
+    const initial = queryClient.getQueryData<AuthSession | null>(authKeys.session)
+    const intent = identityVersion()
     try {
       const result = await acceptance.mutateAsync()
+      if (!alive.current || intent !== identityVersion() || !sameRecoverySession(queryClient, initial)) return
       acceptance.reset()
       const userId = auth.session?.user_id
       if (!userId) throw new Error('Økten mangler. Logg inn på nytt.')
@@ -126,25 +137,23 @@ export function JoinExperience({ invitationId }: JoinExperienceProps) {
   const signIn = async (username: string, password: string) => {
     setLoginPending(true)
     setLoginError(null)
+    let intent = identityVersion()
     try {
-      await auth.signIn(username, password)
+      const pending = auth.signIn(username, password)
+      intent = identityVersion()
+      await pending
+      if (!alive.current || intent !== identityVersion()) return
       registration.reset()
     } catch (error) {
-      setLoginError(error instanceof Error ? error.message : 'Innlogging mislyktes. Prøv igjen.')
+      if (alive.current && intent === identityVersion()) setLoginError(error instanceof Error ? error.message : 'Innlogging mislyktes. Prøv igjen.')
     } finally {
-      setLoginPending(false)
+      if (alive.current && intent === identityVersion()) setLoginPending(false)
     }
   }
 
   if (!routeValid) return <JoinFailure title="Ugyldig invitasjon" message="Invitasjonsadressen er ikke gyldig." />
   if (initialSecretStatus.current === 'missing') return <JoinFailure title="Lenken mangler en kode" message="Åpne hele invitasjonslenken du fikk tilsendt." />
   if (initialSecretStatus.current === 'malformed') return <JoinFailure title="Ugyldig invitasjonskode" message="Kontroller at du har åpnet hele lenken." />
-  if (preview.isPending) return <div className="join-state" role="status">Henter invitasjonen …</div>
-  if (preview.error) {
-    const failure = previewFailure(preview.error)
-    const copy = failureCopy[failure]
-    return <JoinFailure title={copy.title} message={copy.message} retry={failure === 'retryable' ? () => void preview.refetch() : undefined} />
-  }
   if (success) {
     return (
       <section className="join-success" aria-labelledby="join-success-heading">
@@ -155,6 +164,12 @@ export function JoinExperience({ invitationId }: JoinExperienceProps) {
         <Link className="invitation-primary" to={`/tournaments/${success.tournament_id}`}>Åpne turneringen</Link>
       </section>
     )
+  }
+  if (preview.isPending) return <div className="join-state" role="status">Henter invitasjonen …</div>
+  if (preview.error) {
+    const failure = previewFailure(preview.error)
+    const copy = failureCopy[failure]
+    return <JoinFailure title={copy.title} message={copy.message} retry={failure === 'retryable' ? () => void preview.refetch() : undefined} />
   }
 
   const mutationPending = registration.isPending || acceptance.isPending

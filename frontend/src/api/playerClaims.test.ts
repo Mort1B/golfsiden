@@ -32,6 +32,6 @@ describe('claim transport boundaries', () => {
     const fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(preview)))
     vi.stubGlobal('fetch', fetch)
     await playerClaimsApi.preview(claim, receipt.token)
-    expect(fetch).toHaveBeenCalledWith(`/api/player-claims/${claim}/preview`, expect.objectContaining({ method: 'POST', body: JSON.stringify({ token: receipt.token }), cache: 'no-store', referrerPolicy: 'no-referrer' }))
+    expect(fetch).toHaveBeenCalledWith(`/api/player-claims/${claim}/preview`, expect.objectContaining({ method: 'POST', body: JSON.stringify({ token: receipt.token }), cache: 'no-store', referrerPolicy: 'no-referrer', credentials: 'omit' }))
   })
 })

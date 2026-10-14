@@ -4,7 +4,9 @@ Reviewed revision: `a2554f17c0534de987798cefc80fdc7eff219947`.
 Follow-up: the [private leaderboard repair](../leaderboard-session-2026-10-14/README.md)
 addresses A1's four leaderboard endpoints, and the
 [round lifecycle repair](../round-lifecycle-session-2026-10-14/README.md) addresses
-A2's open/complete/lock expiry gap. Sibling private read/write families and the
+A2's open/complete/lock expiry gap. The
+[identity ordering repair](../identity-ordering-2026-10-14/README.md) addresses A3's
+same-document cookie/continuation ordering. Sibling private read/write families and the
 other findings remain queued. The assessment below describes the reviewed revision.
 
 This is a documentation-only assessment of current application source, database

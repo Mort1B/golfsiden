@@ -421,6 +421,23 @@ strict TypeScript React client. Username/password accounts enter through atomic
 creator onboarding or tournament invitations; tournament membership, rather
 than a global role or player directory, owns access.
 
+Within the running browser document, cookie-changing operations are ordered across
+page navigation. A newer login or logout waits for an earlier onboarding,
+invitation, claim or password-change response to finish, so an older response
+cannot replace its cookie afterward. Departed forms cannot publish private caches,
+receipts or navigation into the newer session. Existing reads cannot publish
+through an identity change. Cookie-free invitation/claim previews and public
+capability reads remain independent.
+
+Accepted creation and invitation receipts remain usable. A failed newer login
+keeps its error visible even if read-only reconciliation discovers an earlier
+valid cookie; the user can deliberately retry login. A failed or ambiguous
+identity request is never automatically replayed. If session reconciliation also
+fails, private data is cleared and the ordinary authentication retry reads the
+session again. Player claims keep their expected player/username recovery checks,
+and queued password changes cannot target a replacement session. This coordination
+uses memory in one document; it does not coordinate separate tabs or reloads.
+
 For continued hands-on testing, use the [practical checklist](testing_checklist.md).
 The [2026-09-29 functional checks](validation/test-ready-2026-09-29/README.md)
 cover real local organizer/player flows and saved-data persistence through

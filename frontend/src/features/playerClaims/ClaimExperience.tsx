@@ -8,7 +8,8 @@ import { ApiHttpError } from '../../api/http'
 import { playerClaimsApi } from '../../api/playerClaims'
 import { useAuth } from '../auth/authContext'
 import { PASSWORD_GUIDANCE, passwordValidationMessage } from '../auth/password'
-import { publishSessionTransition } from '../auth/sessionTransition'
+import { publishSessionTransition, resolveSessionTransition } from '../auth/sessionTransition'
+import { identityVersion } from '../../api/identityQueue'
 import { USERNAME_HTML_PATTERN } from '../auth/username'
 import { sameRecoverySession } from '../recovery/refreshRecoverySession'
 import { recoveryExpiry } from '../recovery/messages'
@@ -59,33 +60,41 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
     const supplied = password
     const accountName = username.trim()
     const expected = preview.data
+    let intent = identityVersion()
+    const current = (allowRecovery = false) => {
+      const session = client.getQueryData<AuthSession | null>(authKeys.session)
+      return alive.current && intent === identityVersion() && (sameRecoverySession(client, initial)
+        || allowRecovery && session?.player_id === expected.player.id && session.username.toLowerCase() === accountName.toLowerCase())
+    }
     expectedClaim.current = {playerId:expected.player.id,tournamentId:expected.tournament.id}
     busy.current = true; setPending(true); setFeedback(null); setPassword('')
     try {
       await client.cancelQueries({ queryKey: authKeys.session })
-      if (!alive.current || !sameRecoverySession(client, initial)) return
+      if (!current()) return
       await mutation.mutateAsync(async () => {
-        const receipt = await playerClaimsApi.register(claimId, token, accountName, supplied, expected)
-        if (!alive.current || !sameRecoverySession(client, initial)) return
+        const pending = playerClaimsApi.register(claimId, token, accountName, supplied, expected)
+        intent = identityVersion()
+        const receipt = await pending
+        if (!current()) return
         await client.cancelQueries({ queryKey: authKeys.session })
-        if (!alive.current || !sameRecoverySession(client, initial)) return
+        if (!current()) return
         secret.current = null; setCaptured(null)
         client.removeQueries({ queryKey: previewKey, exact: true })
         publishSessionTransition(client, receipt.session)
         setSuccess(receipt.tournament_id)
       })
     } catch (error) {
-      if (!alive.current || !sameRecoverySession(client, initial)) return
+      if (!current(true)) return
       if (!(error instanceof ApiHttpError) || error.status >= 500) {
         // The claim may have committed. Never replay it: recover only the
         // prepared identity, and never overwrite a login that won this race.
         let recovered:AuthSession|null = null
         try {
           await client.cancelQueries({queryKey:authKeys.session})
-          if (!alive.current || !sameRecoverySession(client, initial)) return
-          recovered = await api.session()
+          if (!current(true)) return
+          recovered = await resolveSessionTransition(client, api.session)
         } catch { /* Recovery failure is represented by the login fallback below. */ }
-        if (!alive.current || !sameRecoverySession(client, initial)) return
+        if (!current(true)) return
         client.removeQueries({queryKey:previewKey,exact:true})
         if (recovered?.player_id === expected.player.id && recovered.username.toLowerCase() === accountName.toLowerCase()) {
           secret.current = null; setCaptured(null)
@@ -104,14 +113,16 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
   const revalidateClaim = async () => {
     const initial = client.getQueryData<AuthSession|null>(authKeys.session)
     const expected = expectedClaim.current
+    const intent = identityVersion()
+    const current = () => alive.current && intent === identityVersion() && sameRecoverySession(client, initial)
     if (busy.current || !uncertainAccount || !secret.current || !expected) return
     if (initial) { setFeedback('Du er allerede innlogget. Kontroller kontoen før du fortsetter.'); return }
     busy.current = true; setPending(true); setFeedback(null)
     try {
       await client.cancelQueries({queryKey:authKeys.session})
-      if (!alive.current || !sameRecoverySession(client,initial)) return
-      const recovered = await api.session()
-      if (!alive.current || !sameRecoverySession(client,initial)) return
+      if (!current()) return
+      const recovered = await resolveSessionTransition(client, api.session)
+      if (!current()) return
       if (recovered) {
         if (recovered.player_id===expected.playerId && recovered.username.toLowerCase()===uncertainAccount.toLowerCase()) {
           secret.current=null;setCaptured(null)
@@ -120,7 +131,7 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
         return
       }
       const result = await preview.refetch()
-      if (!alive.current || !sameRecoverySession(client,initial)) return
+      if (!current()) return
       if (result.error) throw result.error
       if (!result.data || result.data.player.id!==expected.playerId || result.data.tournament.id!==expected.tournamentId) {
         throw new Error('Claim identity changed')
@@ -128,7 +139,7 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
       setUncertainAccount(null)
       setFeedback('Kontolenken er fortsatt tilgjengelig. Skriv inn passordet og velg selv om du vil opprette kontoen.')
     } catch (error) {
-      if (!alive.current || !sameRecoverySession(client,initial)) return
+      if (!current()) return
       if (error instanceof ApiHttpError && ['claim_invalid','claim_unavailable'].includes(error.code)) {
         secret.current=null;setCaptured(null)
         client.removeQueries({queryKey:previewKey,exact:true})
@@ -140,12 +151,15 @@ export function ClaimExperience({ claimId, fragment }: { claimId: string; fragme
     if (busy.current) return
     busy.current = true; setPending(true); setFeedback(null)
     const initial = client.getQueryData<AuthSession | null>(authKeys.session)
+    let intent = identityVersion()
     try {
       if (!initial) return
-      await api.logout(initial.csrf_token)
-      if (alive.current && sameRecoverySession(client, initial)) publishSessionTransition(client, null)
+      const pending = api.logout(initial.csrf_token)
+      intent = identityVersion()
+      await pending
+      if (alive.current && intent === identityVersion() && sameRecoverySession(client, initial)) publishSessionTransition(client, null)
     } catch (error) {
-      if (alive.current && sameRecoverySession(client, initial)) {
+      if (alive.current && intent === identityVersion() && sameRecoverySession(client, initial)) {
         if (error instanceof ApiHttpError && error.status === 401) publishSessionTransition(client, null)
         else setFeedback(claimMessage(error))
       }

@@ -1,0 +1,11 @@
+Original-source focused regression, before production edits.
+Command: npm run test -- src/api/identityOrdering.test.ts
+Only test names and totals are retained to omit credential-bearing mock diffs.
+
+ FAIL  src/api/identityOrdering.test.ts > dispatches the newer login only after the first cookie response is consumed
+ FAIL  src/api/identityOrdering.test.ts > resolves queued logout against the cookie created by an earlier request
+ FAIL  src/api/identityOrdering.test.ts > does not dispatch a queued password change using a renewed or different session
+ Test Files  1 failed (1)
+      Tests  3 failed | 1 passed (4)
+   Start at  13:50:26
+   Duration  799ms (transform 224ms, setup 0ms, collect 299ms, tests 21ms, environment 0ms, prepare 82ms)

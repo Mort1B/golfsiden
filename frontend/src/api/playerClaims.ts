@@ -1,5 +1,6 @@
 import { jsonRequest, requestDecoded, requestNoContent } from './http'
 import { privateWorkspaceKeys } from './privateWorkspace'
+import { coordinateIdentity } from './identityQueue'
 import { decodeClaimPreview, decodeClaimReceipt, decodeClaimRegistration, decodePlayerAccounts, type ClaimPreview } from './playerClaimDecoders'
 export { decodeClaimPreview, decodeClaimReceipt, decodeClaimRegistration, decodePlayerAccounts, claimTokenPattern } from './playerClaimDecoders'
 export type { ClaimPreview, ClaimReceipt, ClaimRegistration, PlayerAccount } from './playerClaimDecoders'
@@ -15,6 +16,6 @@ export const playerClaimsApi = {
   reissue: (t: string, p: string, csrf: string) => requestDecoded(`${player(t, p)}/claim`, value => decodeClaimReceipt(value, p), post({}, csrf)),
   revoke: (t: string, p: string, csrf: string) => requestNoContent(`${player(t, p)}/claim`, remove(csrf)),
   withdraw: (t: string, p: string, csrf: string) => requestNoContent(player(t, p), remove(csrf)),
-  preview: (id: string, token: string, signal?: AbortSignal) => requestDecoded(`${publicPath(id)}/preview`, decodeClaimPreview, { ...post({ token }), signal }),
-  register: (id: string, token: string, username: string, password: string, expected: ClaimPreview) => requestDecoded(`${publicPath(id)}/register`, value => decodeClaimRegistration(value, expected), post({ token, account: { username, password } })),
+  preview: (id: string, token: string, signal?: AbortSignal) => requestDecoded(`${publicPath(id)}/preview`, decodeClaimPreview, { ...post({ token }), signal, credentials: 'omit' }),
+  register: (id: string, token: string, username: string, password: string, expected: ClaimPreview) => coordinateIdentity(() => requestDecoded(`${publicPath(id)}/register`, value => decodeClaimRegistration(value, expected), { ...post({ token, account: { username, password } }), identityRequest: true }), result => result.session),
 }

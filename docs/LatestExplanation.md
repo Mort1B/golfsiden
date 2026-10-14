@@ -1,44 +1,46 @@
-# Round lifecycle expiry before commit
+# Ordered browser authentication
 
-Authorized round opening, completion and locking now recheck the active session
-with database wall-clock time immediately before commit. The check follows all
-inner lifecycle work, including the separate singles-match transition branch.
-It reuses existing authority locks and leaves readiness and sporting rules intact.
+All six cookie-changing frontend requests now share one in-memory ordering
+boundary across route lifetimes: login, logout, anonymous onboarding, invitation
+registration, player-claim registration and own profile password changes.
+For example, after leaving a held creation response and submitting a newer
+login, the login waits until the earlier response can no longer overwrite its
+cookie. The departed form cannot publish old private caches or navigation.
 
-For example, an opening request can pass initial authorization and then wait on
-membership until its session expires. It previously committed an open round.
-It now returns the existing `401 unauthenticated` response, retaining the draft
-round and rolling back player/team handicap snapshots and the first tournament
-handicap-lock marker. The same guarantee covers later waits after pending status
-writes. Rejected requests emit no SSE; a valid renewed session can deliberately
-submit again and gets the ordinary single round event after successful commit.
-No automatic mutation retry is added, and time is not frozen during COMMIT.
+Intent generations fence session reads and callbacks, while ordinary credentialed
+HTTP cannot cross an unsettled identity boundary. A read begun under an earlier
+settled identity is discarded rather than sent with a newer cookie. Idle requests
+retain immediate dispatch and cancellation, and cookie-free capability/token
+reads remain independent. Failed/ambiguous cookie writers reconcile read-only;
+a failed reconciliation clears private data and exposes authentication retry.
+No write is automatically replayed. Queued logout checks the actual cookie,
+and queued password changes retain their original CSRF authority.
 
-Six PostgreSQL/API regressions cover individual stroke play, two-player foursomes
-and singles match play at membership and late status-write waits. Each exercises
-all three lifecycle actions with expiry and valid renewed-session controls:
-18 rejected and 18 successful requests. Rejections preserve complete stored
-lifecycle state, scoring data, confirmations and audit/receipt history. The new
-regression failed against the original source with 200 instead of 401.
+Submitting forms remain mounted long enough to retain accepted receipts.
+Onboarding/invitation continuations require their lifetime, intent and canonical
+origin. Claim lost-response recovery still checks the prepared player and chosen
+username. Accepted invitation success wins over preview errors. A failed newer
+login remains visible even when reconciliation finds an earlier creator cookie;
+the user can retry deliberately. Coordination covers the current document/runtime,
+with no persistent queue or cross-tab/reload mechanism.
 
-Validation passed: 259 ordinary backend tests, 754 tests in the PostgreSQL-feature
-ladder, formatting, all-feature Clippy, API build and schema-39 migration/seed
-checks. The database total includes ordinary tests; four manual performance
-probes were ignored. The initial default-concurrency database run stopped on an
-unchanged A1 test's controlled-wait timeout. That test passed in isolation, and
-the entire ladder passed with two test threads. The failure and rerun conditions
-are retained; precise timeout attribution and test-only maintenance are deferred.
+Three new regressions failed against the original source. The full frontend suite
+now passes 1,133 tests in 147 files; TypeScript, ESLint and production build pass.
+All 18 real Chrome scenarios pass, covering actual cookie and displayed identity,
+request order, departure, logout, renewal with a real CSRF write, late session
+reads, ordinary receipts, claim recovery, profile changes and password recovery.
+Mobile/desktop loading, error/retry, empty and long-content states were exercised;
+representative masked screenshots were inspected. Final read-only source review
+found no remaining actionable issue.
 
-The unchanged Chrome lifecycle suite passed both scenarios at mobile and desktop
-widths, covering opening/completion/locking, live updates, corrections, access
-restrictions, final privacy and loading/error/retry/empty/long-content states.
-Representative screenshots were inspected. Read-only review found no actionable
-issue. No frontend, API shape, schema, dependency or deployment change is included;
-frontend unit/type/lint/build checks were not repeated for this backend-only step.
-The additional session query has no measured latency claim. Physical-device,
-hosted and production-load acceptance remain separate.
+Validation caught and repaired an idle-path cancellation regression, a slow
+reconciliation settlement race and invitation preview/receipt precedence.
+Browser harness corrections and the disposable API's initially missing recovery
+origin are recorded in the [validation report](validation/identity-ordering-2026-10-14/README.md).
+Backend code, API JSON, schema, dependencies, sporting rules and deployment
+configuration are unchanged. Backend ladders were not repeated; the unchanged
+schema-39 API was migrated/seeded locally for browser fixtures. No latency,
+physical-device, hosted or production-load acceptance is claimed.
 
-The [validation report](validation/round-lifecycle-session-2026-10-14/README.md)
-contains exact evidence and limits. [PLANS.md](PLANS.md) selects A3's authentication
-ordering repair next. Other private read/write families and assessment findings
-remain queued; no adjacent implementation was started.
+[PLANS.md](PLANS.md) selects A1b's three private tournament reads next. Remaining
+private families and assessment findings stay queued; no adjacent repair started.
