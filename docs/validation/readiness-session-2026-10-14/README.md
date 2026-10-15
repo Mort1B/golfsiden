@@ -133,6 +133,10 @@ window investigation remain separate, unchanged work. The PostgreSQL total inclu
 
 ## Existing collation-dependent test limit
 
+Follow-up: the [A1v test-only repair](../pairing-collation-2026-10-15/README.md)
+reproduces this original failure and checks native ordering on both images.
+The original A1e evidence and environment limitation below remain historical.
+
 The first full PostgreSQL run [stopped in an unchanged A1d test](pairing-collation-limit.txt),
 `pairing_team_sessions::contracts::legacy_individual_groups_keep_identity_schedule_and_distinct_sorting`
 at `backend/tests/pairing_team_sessions/contracts.rs:215`. It assumes

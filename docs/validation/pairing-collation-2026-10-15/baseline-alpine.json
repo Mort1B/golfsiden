@@ -1,0 +1,34 @@
+{
+  "image": "docker.io/library/postgres:17-alpine",
+  "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74",
+  "database": {
+    "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "collation": "en_US.utf8",
+    "ctype": "en_US.utf8",
+    "provider": "c",
+    "group_native": [
+      "B-group",
+      "b-group"
+    ],
+    "player_native": [
+      "B-player",
+      "b-player"
+    ],
+    "group_c": [
+      "B-group",
+      "b-group"
+    ]
+  },
+  "checks": {
+    "focused": {
+      "exit": 0,
+      "seconds": 27.3,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "failed_tests": [],
+      "accepted": true
+    }
+  },
+  "owned_container_removed": true
+}

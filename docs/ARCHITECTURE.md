@@ -603,8 +603,12 @@ See the [checksum acceptance report](validation/restore-checksum-2026-10-15/READ
   data are preserved. The shared team-list helper retains its ordered teams
   SELECT and batches members for precisely those team UUIDs through one bound
   UUID-array query in the same transaction. SQL orders members by team UUID,
-  `display_order NULLS LAST`, native display-name collation and player UUID;
-  lookup-only grouping emits teams in their original SQL order, retaining empty
+  `display_order NULLS LAST`, native display-name collation and player UUID.
+  Native team/member case ordering inherits the database collation. Pairing
+  groups/members instead use lowercased names before UUID ties. Regression
+  expectations sort fixture values under the native database collation while
+  retaining explicit case-folded UUID sequences for the pairing endpoint.
+  Lookup-only grouping emits teams in their original SQL order, retaining empty
   teams. Empty lists use one data SELECT; populated lists use two regardless of
   team count. Session/user, stored-parent membership, final expiry and retry
   boundaries are unchanged, including for empty lists. The ordinary internal

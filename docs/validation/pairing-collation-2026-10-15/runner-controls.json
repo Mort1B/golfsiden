@@ -1,0 +1,29 @@
+{
+  "zero": {
+    "exit": 0,
+    "seconds": 0.03,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0,
+    "failed_tests": [],
+    "accepted": false
+  },
+  "one": {
+    "exit": 0,
+    "seconds": 0.02,
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "failed_tests": [],
+    "accepted": true
+  },
+  "two": {
+    "exit": 0,
+    "seconds": 0.02,
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0,
+    "failed_tests": [],
+    "accepted": false
+  }
+}

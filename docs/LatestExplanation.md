@@ -1,41 +1,33 @@
-# Latest iteration — scoped Fantasy sporting fact loading
+# Latest iteration — portable native-order contract test
 
-A1u narrows canonical sporting-fact loading to the requested round for a Fantasy
-round result. It filters the existing ordered tournament owner identifiers before
-the unchanged canonical bulk query. Overall and golfer/manager breakdowns still
-load every round. Full inventories, preauthorization, repeatable read, all-round
-locks, game locking, every due-window finalization/carry-forward, target validation,
-visibility, final session recheck, commit and notification behavior are preserved.
-Only two production files change; API/JSON, schema, dependencies and frontend
-refresh/write behavior remain unchanged.
+A1v closes the retained P3 test portability issue in the legacy individual-group
+contract case. The original test passed on Alpine/musl PostgreSQL 17.10 but failed
+at the predicted team-ID assertion on Debian/glibc PostgreSQL 17.11. Both use
+`en_US.utf8`; their native case ordering differs. This changes one test plus
+evidence/docs. Production SQL, collation, API, UI, schema and dependencies are
+unchanged.
 
-Pinned baseline and candidate debug builds run on identical restored one/five-round
-fixtures: eight golfers, four scramble teams per round, 18 holes and two managers.
-The five-round scoped HTTP median with SQL tracking off falls from 45.03 to 22.45ms;
-bulk SQL averages 10.59 to 2.72ms and canonical owner rows fall 20 to 4. Both builds
-retain 25 statements and five round locks per read; full result/breakdown controls
-retain 20 owners. The one-round control has no consistent timing benefit. These
-are local debug/container measurements, not a production speedup/capacity claim.
+Native team/member expectations now sort parameter-bound fixture values under
+the database's own collation, independently of returned application rows. The
+test retains both case variants, exact sequences and explicit case-folded UUID
+ties for pairing groups/members. It finds the source team by UUID for timestamps
+and preserves schedules, withdrawn entrants and empty-group membership.
 
-All scoped, overall and golfer/manager breakdown JSON remains equal across builds.
-First reads still materialize all one/five windows, two/ten selections and zero/eight
-carries from the same restored initial state, independently of steady timing.
-Existing hidden-result, canonical-fingerprint, invalid-target, sibling-lock and
-carry-forward cases remain. New assertions compare selected rows against full-load
-paths in all six formats, and a new API expiry case waits on canonical facts before
-requiring 401 and complete lazy-finalization rollback. Foreign-round 404s also
-preserve rollback/no-notification behavior.
+For example, Alpine returns `B-group,b-group` while Debian returns
+`b-group,B-group`; both preserve the separate pairing contract's low/high UUID
+sequence. Broader locales, ICU, custom column collations and non-ASCII behavior
+are not newly established.
 
-Validation passes: 22 focused PostgreSQL tests, 264 Rust tests, 953 PostgreSQL-feature
-workspace/all-target tests, formatting, strict Clippy, 39 migrations, seed and builds.
-Five PostgreSQL-feature manual probes remain explicitly ignored; the standalone
-before/after probe runs separately. Real Chrome at 320/1280 shows two manager/eight
-golfer rows, no overflow or unexpected errors, equal results and anonymous denial.
-Independent review and exact evidence/limits are in the
-[comparison report](validation/fantasy-fact-scope-2026-10-15/README.md). Source
-regression checks precede measurement; frontend unit/lint checks are not repeated
-because frontend source/contracts are unchanged. Owned fixtures and credentials
-are removed.
+Validation passes: the exact case and all 14 pairing-session tests on each image,
+264 ordinary Rust tests, 953 PostgreSQL-feature tests, formatting, strict Clippy,
+39 migrations and seed. Five existing manual probes remain ignored in the
+PostgreSQL-feature ladder. Independent review found no test/source defects; its
+evidence-runner count gap was repaired, exercised with negative controls and
+closed. Final exact-count/cleanup checks confirm all four owned fixtures are removed.
+The [acceptance report](validation/pairing-collation-2026-10-15/README.md) retains
+exact environments, evidence and limits. Frontend/browser checks are outside
+the affected ladder because no runtime or user-facing behavior changes.
 
-The next candidate is a separate test-only repair for the retained native-collation
-ordering assumption. No adjacent runtime optimization or hosting work begins here.
+The next candidate is the separately bounded P3 SQLx `verify-ca` contextual-name
+compatibility repair. It has not started. Hosting and broader optimization remain
+outside this step.

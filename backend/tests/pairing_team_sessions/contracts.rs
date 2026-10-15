@@ -210,21 +210,69 @@ async fn legacy_individual_groups_keep_identity_schedule_and_distinct_sorting(po
     for player in [p1, p2] {
         sqlx::query("INSERT INTO team_memberships(team_id,round_id,tournament_id,player_id,display_order) VALUES($1,$2,$3,$4,NULL)").bind(lo).bind(round).bind(trip).bind(player).execute(&pool).await.unwrap();
     }
-    let teams = body(get(&app, &format!("/api/rounds/{round}/teams"), &token).await).await;
-    let pairing = body(get(&app, &format!("/api/rounds/{round}/pairings"), &token).await).await;
-    assert_eq!(teams[0]["id"], hi.to_string());
-    assert_eq!(teams[1]["id"], lo.to_string());
-    assert_eq!(teams[1]["members"][0]["player_id"], p2.to_string());
+    // Native name ordering varies by database collation. Sort only the known fixture
+    // values here, independently of repository queries and their returned rows.
+    let native_team_ids = sqlx::query_scalar::<_, Uuid>(
+        "SELECT id FROM unnest($1::uuid[], $2::text[]) fixture(id, name) ORDER BY name, id",
+    )
+    .bind(vec![hi, lo])
+    .bind(vec!["B-group", "b-group"])
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    let native_player_ids = sqlx::query_scalar::<_, Uuid>(
+        "SELECT id FROM unnest($1::uuid[], $2::text[]) fixture(id, name) ORDER BY name, id",
+    )
+    .bind(vec![p2, p1])
+    .bind(vec!["B-player", "b-player"])
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    let ids = |rows: &serde_json::Value, key: &str| {
+        rows.as_array()
+            .unwrap()
+            .iter()
+            .map(|row| row[key].clone())
+            .collect::<Vec<_>>()
+    };
+    let response = get(&app, &format!("/api/rounds/{round}/teams"), &token).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let teams = body(response).await;
+    let response = get(&app, &format!("/api/rounds/{round}/pairings"), &token).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    let pairing = body(response).await;
+    assert_eq!(json!(ids(&teams, "id")), json!(native_team_ids));
+    let team = teams
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|team| team["id"] == lo.to_string())
+        .unwrap();
+    assert_eq!(
+        json!(ids(&team["members"], "player_id")),
+        json!(native_player_ids)
+    );
+    assert!(
+        teams
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|team| { team["id"] == hi.to_string() && team["members"] == json!([]) })
+    );
     assert_eq!(pairing["teams"], json!([]));
     assert_eq!(pairing["flights"], json!([]));
     let groups = &pairing["legacy_individual_groups"];
-    assert_eq!(groups[0]["id"], lo.to_string());
-    assert_eq!(groups[1]["id"], hi.to_string());
-    assert_eq!(groups[0]["members"][0]["player_id"], p1.to_string());
+    // Case-folded names tie, so UUIDs determine the entire legacy sequence.
+    assert_eq!(json!(ids(groups, "id")), json!([lo, hi]));
+    assert_eq!(
+        json!(ids(&groups[0]["members"], "player_id")),
+        json!([p1, p2])
+    );
+    assert_eq!(groups[1]["members"], json!([]));
     assert_eq!(groups[0]["starting_hole"], 3);
     assert_eq!(groups[0]["tee_time"], "08:30:00");
-    assert_eq!(groups[0]["created_at"], teams[1]["created_at"]);
-    assert_eq!(groups[0]["updated_at"], teams[1]["updated_at"]);
+    assert_eq!(groups[0]["created_at"], team["created_at"]);
+    assert_eq!(groups[0]["updated_at"], team["updated_at"]);
     assert_eq!(
         pairing["inactive_entrants"][0]["player_id"],
         inactive.to_string()

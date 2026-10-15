@@ -1,0 +1,19 @@
+{
+  "checked_artifacts": [
+    "baseline-alpine.json",
+    "baseline-debian.json",
+    "candidate-alpine.json",
+    "candidate-debian.json"
+  ],
+  "exact_focused_counts_verified": true,
+  "exact_pairing_suite_counts_verified": true,
+  "all_candidate_exits_zero": true,
+  "all_owned_containers_removed": true,
+  "postgres_ignored_tests": [
+    "test repositories::fantasy::results::tests::projection_benchmark ... ignored, manual projection-only timing; run release with --ignored --nocapture",
+    "test hundred_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required",
+    "test twelve_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required",
+    "test twenty_four_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required",
+    "test team_loading::measurement::counts_and_complete_local_read_cost ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required"
+  ]
+}

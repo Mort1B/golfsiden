@@ -5,32 +5,36 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The [A1u comparison](validation/fantasy-fact-scope-2026-10-15/README.md)
-records the scoped fact-loading change, same-fixture parity and local benefit.
+None. The [A1v acceptance](validation/pairing-collation-2026-10-15/README.md)
+records the test-only native-collation repair, two-image reproduction and passing
+Rust/PostgreSQL gates. Production ordering is unchanged.
 
 ## Next candidate — requires approval
 
-### A1v — make the legacy-team ordering test portable across native collations
+### A1w — repair SQLx verify-ca contextual-hostname compatibility (P3)
 
-This selects the retained P3 test-only portability limitation documented in the
-[readiness report](validation/readiness-session-2026-10-14/README.md#existing-collation-dependent-test-limit).
-It is not a production ordering or security defect.
+This selects the existing
+[trusted-certificate alias limitation](validation/rustls-update-2026-10-15/README.md#existing-p3-verify-ca-contextual-hostname-compatibility).
+No hosted outage or new security regression was observed.
 
-- Goal: test the existing native `ORDER BY name,id` contract without assuming
-  uppercase-first libc collation.
-- Scope: the one legacy individual-group case in
-  `backend/tests/pairing_team_sessions/contracts.rs`, narrowly needed test support
-  and evidence/docs. No production SQL, collation, API, UI, schema or dependency
-  change; no Fantasy or driver optimization.
-- Behavior/invariants: preserve distinct legacy/team sorting, stable ID ties,
-  identities, membership and schedule assertions. Use fixture-specific native
-  ordering expectations rather than removing the case-variant coverage.
-- Validation: reproduce the old expectation's difference on Alpine/musl and
-  Debian/glibc PostgreSQL, then pass the corrected focused case on both. Run
-  applicable Rust/PostgreSQL gates and independent read-only test/scope review;
-  record exact environments and any remaining limits.
-- Stop: publish only the test-only portability repair and evidence. Do not
-  change application ordering or begin another queued item.
+- Goal: make intentional chain-only `verify-ca` handle Rustls's contextual
+  hostname-mismatch error consistently with its legacy hostname error.
+- Scope: the smallest driver compatibility patch and necessary dependency
+  wiring, focused TLS probes and evidence/docs. Preserve the existing SQLx
+  PostgreSQL cancellation override. No broad dependency upgrade, application
+  SQL/API/UI/schema changes or production TLS-configuration change.
+- Behavior/invariants: only `verify-ca` may accept a trusted, otherwise-valid
+  certificate through a different hostname. `verify-full` must retain hostname
+  verification; unknown issuers, invalid chains and expired certificates must
+  remain rejected in both verification modes. Preserve encrypted SQL execution
+  and strict no-downgrade controls.
+- Validation: reproduce the current contextual error, then run an owned local
+  PKI/PostgreSQL before/after matrix with exact certificate-failure reasons and
+  successful encrypted SQL controls. Run affected Rust/PostgreSQL ladders,
+  cancellation regressions, patch/feature scope checks and independent read-only
+  review; record environmental limits and cleanup.
+- Stop: publish only this compatibility repair and evidence; do not change
+  default TLS policy, administer hosting or start other queued work.
 
 ## Later queue
 
@@ -51,7 +55,8 @@ linked acceptance; the original assessment itself reproduced no runtime race.
 A1r browser checks separately identified the P3 mobile manual-hole labeling
 issue; A1s now closes it with visible headings and frontend/browser acceptance.
 Fantasy A1u now has scoped-fact performance/parity acceptance without a new
-severity rating. The selected test-portability candidate has not begun.
+severity rating. A1v closes the retained P3 test-portability limitation with
+two-image acceptance; the separate P3 driver candidate above remains unstarted.
 Retired granular team writes receive no reachable-route finding. Provisional
 user-only preflight/provider-work observations remain separate and unrated.
 
@@ -60,12 +65,6 @@ deduplication is not selected by A1t's overlapping completion/cancellation
 evidence. No speculative optimization or load claim is authorized.
 
 ### Previously deferred work
-
-- P3 SQLx `verify-ca` compatibility: both original and updated TLS dependencies
-  reject a trusted certificate's contextual hostname mismatch because SQLx core
-  0.8.6 suppresses only the legacy error variant. Repair only in a separately
-  bounded driver step; no hosted outage or new security regression was observed.
-  See the [baseline comparison and limits](validation/rustls-update-2026-10-15/README.md#existing-p3-verify-ca-contextual-hostname-compatibility).
 
 - Retained leaderboard browser-test maintenance: update obsolete score-status
   assertions at `frontend/e2e/leaderboardLive.browser.ts:71,103` in a separate

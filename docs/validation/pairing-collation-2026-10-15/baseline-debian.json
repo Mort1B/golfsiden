@@ -1,0 +1,37 @@
+{
+  "image": "docker.io/library/postgres:17",
+  "image_id": "7296f210ae81031ec955dbad9a67a84fe958572a2153b8d0826a647522904dc1",
+  "database": {
+    "version": "PostgreSQL 17.11 (Debian 17.11-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+    "collation": "en_US.utf8",
+    "ctype": "en_US.utf8",
+    "provider": "c",
+    "group_native": [
+      "b-group",
+      "B-group"
+    ],
+    "player_native": [
+      "b-player",
+      "B-player"
+    ],
+    "group_c": [
+      "B-group",
+      "b-group"
+    ]
+  },
+  "checks": {
+    "focused": {
+      "exit": 101,
+      "seconds": 0.47,
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0,
+      "failed_tests": [
+        "pairing_team_sessions::contracts::legacy_individual_groups_keep_identity_schedule_and_distinct_sorting"
+      ],
+      "original_order_assertion_reproduced": true,
+      "accepted": true
+    }
+  },
+  "owned_container_removed": true
+}

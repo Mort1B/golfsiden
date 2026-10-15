@@ -539,7 +539,12 @@ behavior. Pairing reads retain active/inactive entrants, distinct team/flight
 identities, schedules, timestamps and legacy individual groups. Team JSON remains
 flat with members, including empty teams, optional schedules and timestamps.
 Team order remains native SQL name/UUID order; members retain position with
-nulls last, native display-name order and player-UUID tie-breaks. Team loading
+nulls last, native display-name order and player-UUID tie-breaks. Case ordering
+inherits the database's native collation; uppercase-first
+ordering is not a portable assumption. Pairing groups and their members use
+lowercased names before UUID ties. The
+[A1v test acceptance](validation/pairing-collation-2026-10-15/README.md) covers
+both native orders without changing these endpoint contracts. Team loading
 uses one data SELECT for no teams and two for any populated list, with all
 selected teams' members fetched together. Authority and transaction queries are
 additional and unchanged; the final session check still runs on an empty list.
