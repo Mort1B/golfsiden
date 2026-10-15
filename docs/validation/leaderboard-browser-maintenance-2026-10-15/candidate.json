@@ -1,0 +1,50 @@
+{
+  "phase": "candidate",
+  "checks": {
+    "build_api": {
+      "exit": 0,
+      "seconds": 0.11
+    },
+    "migrate": {
+      "exit": 0,
+      "seconds": 0.36
+    },
+    "seed": {
+      "exit": 0,
+      "seconds": 0.47
+    },
+    "frontend_test": {
+      "exit": 0,
+      "seconds": 44.13
+    },
+    "frontend_typecheck": {
+      "exit": 0,
+      "seconds": 11.19
+    },
+    "frontend_lint": {
+      "exit": 0,
+      "seconds": 7.13
+    },
+    "frontend_build": {
+      "exit": 0,
+      "seconds": 14.4
+    }
+  },
+  "fixture": {
+    "fixture": "browser",
+    "image": "docker.io/library/postgres:17-alpine",
+    "removed": true,
+    "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+  },
+  "browser": {
+    "exit": 0,
+    "expected": 1,
+    "unexpected": 0,
+    "flaky": 0,
+    "skipped": 0
+  },
+  "accepted": true,
+  "owned_services_stopped": true,
+  "temporary_credentials_removed": true
+}

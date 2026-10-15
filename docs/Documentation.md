@@ -2853,6 +2853,15 @@ Request measurements go to `/tmp/golf-leaderboard-measurements.json` unless
 `GOLF_LEADERBOARD_MEASUREMENTS` specifies another file. Mobile/desktop screenshots
 are written to `/tmp/golf-leaderboard-live-*.png`.
 
+The retained suite requires current server acknowledgement (`Synkronisert` or
+`Lagret på serveren`). Its failed-delivery control targets conditional PUT,
+keeps server scores/standings unchanged and explicitly confirms local discard
+before restoring delivery. The
+[A1x acceptance](validation/leaderboard-browser-maintenance-2026-10-15/README.md)
+records the complete live/reconnect/member-visibility sequence, viewport evidence
+and limits. Its `run.py candidate` command owns a fresh PostgreSQL/API/Vite/browser
+fixture and runs the frontend ladder; existing services must leave 3000/5173 free.
+
 ## Public live result-sharing
 
 Match-only tournaments show that public overall sharing is unavailable; creation

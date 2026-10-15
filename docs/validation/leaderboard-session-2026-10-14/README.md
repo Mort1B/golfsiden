@@ -131,6 +131,11 @@ this authority repair.
 
 ## Browser evidence and remaining test maintenance
 
+Follow-up: [A1x test maintenance](../leaderboard-browser-maintenance-2026-10-15/README.md)
+reproduces the stale label, updates the current failed-delivery fixture and passes
+the complete retained reconnect/hidden-final case. The A1 snapshot below remains
+historical and did not establish those later scenarios.
+
 The unchanged broader suite stopped at `frontend/e2e/leaderboardLive.browser.ts:71`:
 it expects `Synkronisert` or `Lagret`, while existing `HoleEntry.tsx:28` renders
 `Lagret på serveren`. The same old assertion appears at line 103. The captured

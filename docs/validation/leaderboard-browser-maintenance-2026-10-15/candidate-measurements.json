@@ -1,0 +1,62 @@
+[
+  {
+    "state": "team_scramble",
+    "metric": "gross",
+    "elapsedMs": 354,
+    "requests": [
+      "/api/tournaments/00000000-0000-0000-0000-000000002001/rounds",
+      "/api/tournaments/00000000-0000-0000-0000-000000002001/leaderboards/gross"
+    ]
+  },
+  {
+    "state": "team_scramble",
+    "metric": "net",
+    "requests": [
+      "/api/tournaments/00000000-0000-0000-0000-000000002001/rounds",
+      "/api/tournaments/00000000-0000-0000-0000-000000002001/leaderboards/net"
+    ]
+  },
+  {
+    "state": "individual_stroke_play",
+    "metric": "gross",
+    "elapsedMs": 364,
+    "requests": [
+      "/api/tournaments/00000000-0000-0000-0000-000000002001/rounds",
+      "/api/tournaments/00000000-0000-0000-0000-000000002001/leaderboards/gross"
+    ]
+  },
+  {
+    "state": "individual_stroke_play",
+    "metric": "net",
+    "requests": [
+      "/api/tournaments/00000000-0000-0000-0000-000000002001/rounds",
+      "/api/tournaments/00000000-0000-0000-0000-000000002001/leaderboards/net"
+    ]
+  },
+  {
+    "state": "two_player_foursomes",
+    "metric": "gross",
+    "elapsedMs": 354,
+    "requests": [
+      "/api/tournaments/00000000-0000-0000-0000-000000002001/rounds",
+      "/api/tournaments/00000000-0000-0000-0000-000000002001/leaderboards/gross"
+    ]
+  },
+  {
+    "state": "two_player_foursomes",
+    "metric": "net",
+    "requests": [
+      "/api/tournaments/00000000-0000-0000-0000-000000002001/rounds",
+      "/api/tournaments/00000000-0000-0000-0000-000000002001/leaderboards/net"
+    ]
+  },
+  {
+    "state": "older-open-excluded",
+    "unchanged": true
+  },
+  {
+    "state": "best-N-excluded",
+    "totalUnchanged": true,
+    "contributionUpdated": true
+  }
+]

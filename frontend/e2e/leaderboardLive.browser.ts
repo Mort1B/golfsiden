@@ -8,6 +8,7 @@ import { login, mutate, progress, scorecard, tournamentBoard, roundBoard, assert
 test.skip(process.env.GOLF_LEADERBOARD_LIVE_BROWSER !== '1', 'Requires fresh disposable seed and GOLF_LEADERBOARD_LIVE_BROWSER=1.')
 
 const server = new LeaderboardTestApi()
+const acknowledgedScore = /^(Synkronisert|Lagret på serveren)$/
 test.beforeAll(() => server.start())
 test.afterAll(() => server.stop())
 
@@ -45,7 +46,7 @@ test('real saved results, same-account desktop/phone, policy exclusions, reconne
       const path = new URL(response.url()).pathname
       if (response.status() >= 400 && !expectedOutage
         && !(path === '/api/auth/session' && response.status() === 401)
-        && !(expectedSaveFailure && path.endsWith('/scores') && response.status() === 503)) failures.push(`${response.status()} ${path}`)
+        && !(expectedSaveFailure && path.endsWith('/scores/conditional') && response.status() === 503)) failures.push(`${response.status()} ${path}`)
     })
     target.on('requestfailed', request => {
       if (!expectedOutage && !request.failure()?.errorText.includes('ERR_ABORTED')) failures.push(new URL(request.url()).pathname)
@@ -68,7 +69,7 @@ test('real saved results, same-account desktop/phone, policy exclusions, reconne
       const live = nextBoard(phone, trip.id, 'gross')
       const started = Date.now()
       await page.getByRole('button', { name: /Registrer par/ }).click()
-      await expect(page.locator('.score-sync')).toHaveText(/^(Synkronisert|Lagret)$/)
+      await expect(page.locator('.score-sync')).toHaveText(acknowledgedScore)
       await live
       const stored = await scorecard(api, round, owner)
       expect(stored.holes[0]?.score?.gross_strokes).toBe(hole.par)
@@ -83,16 +84,42 @@ test('real saved results, same-account desktop/phone, policy exclusions, reconne
       measurements.push({ state: round.scoring_format, metric: 'gross', elapsedMs: Date.now() - started, requests: [...requests] })
       if (round.id === first.id) {
         expectedSaveFailure = true
-        const path = `**/api/rounds/${round.id}/scores`
-        await page.route(path, route => route.fulfill({ status: 503, json: { error: { code: 'unavailable', message: 'Test: lagring utilgjengelig' } } }))
+        const endpoint = `/api/rounds/${round.id}/scores/conditional`
+        const path = `**${endpoint}`
+        let deliveryAttempts = 0
+        await page.route(path, async route => {
+          expect(route.request().method()).toBe('PUT')
+          deliveryAttempts += 1
+          await route.fulfill({ status: 503, json: { error: { code: 'unavailable', message: 'Test: lagring utilgjengelig' } } })
+        })
+        const rejected = page.waitForResponse(response => new URL(response.url()).pathname === endpoint
+          && response.request().method() === 'PUT' && response.status() === 503)
         await page.getByRole('button', { name: 'Legg til ett slag' }).click()
-        await expect(page.locator('.score-save-error')).toBeVisible()
+        await rejected
+        expect(deliveryAttempts).toBeGreaterThanOrEqual(1)
+        const pending = page.locator('#pending-scores')
+        if (await pending.getAttribute('open') === null) await pending.locator('summary').click()
+        const local = pending.locator('ul > li')
+        await expect(local).toHaveCount(1)
+        await expect(local.getByText('Lagret på denne enheten. Levering mislyktes; prøver automatisk igjen.', { exact: true })).toBeVisible()
+        await expect(page.locator('.score-sync')).not.toHaveText(acknowledgedScore)
         expect((await scorecard(api, round, owner)).holes[0]?.score?.gross_strokes).toBe(hole.par)
         expect(await tournamentBoard(phone.request, trip.id, 'gross')).toEqual(board)
         await assertRendered(phone, board)
         await layout(page, 'failed-save')
+        await local.getByRole('button', { name: 'Forkast lokal endring', exact: true }).click()
+        await local.getByRole('button', { name: 'Ja, fjern lokal kopi', exact: true }).click()
+        await expect(pending.locator('summary')).toHaveText('Lokale scoreendringer (0)')
+        await expect(local).toHaveCount(0)
+        await expect(page.locator('.score-sync')).toHaveText(acknowledgedScore)
+        await expect(page.locator('.score-stepper output strong')).toHaveText(String(hole.par))
+        const attemptsAfterDiscard = deliveryAttempts
+        // Keep the fault installed across one queue heartbeat after explicit discard.
+        await page.waitForTimeout(2200)
+        expect(deliveryAttempts).toBe(attemptsAfterDiscard)
+        expect((await scorecard(api, round, owner)).holes[0]?.score?.gross_strokes).toBe(hole.par)
+        expect(await tournamentBoard(phone.request, trip.id, 'gross')).toEqual(board)
         await page.unroute(path)
-        await page.getByRole('button', { name: 'Forkast' }).click()
         expectedSaveFailure = false
       }
       await phone.getByRole('button', { name: 'Netto', exact: true }).click()
@@ -100,7 +127,7 @@ test('real saved results, same-account desktop/phone, policy exclusions, reconne
       requests.length = 0
       const next = nextBoard(phone, trip.id, 'net')
       await page.getByRole('button', { name: 'Legg til ett slag' }).click()
-      await expect(page.locator('.score-sync')).toHaveText(/^(Synkronisert|Lagret)$/)
+      await expect(page.locator('.score-sync')).toHaveText(acknowledgedScore)
       await next
       await assertRendered(phone, await tournamentBoard(phone.request, trip.id, 'net'))
       expect(requests).toEqual([`/api/tournaments/${trip.id}/rounds`, `/api/tournaments/${trip.id}/leaderboards/net`])

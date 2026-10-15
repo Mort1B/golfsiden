@@ -1,38 +1,39 @@
-# Latest iteration — SQLx verify-ca compatibility
+# Latest iteration — retained leaderboard browser-test maintenance
 
-A1w closes the retained P3 SQLx compatibility gap. A trusted certificate used
-through a different hostname previously failed in intentionally chain-only
-`verify-ca` because SQLx 0.8.6 ignored only Rustls's older hostname-error variant.
-The local core patch also handles `NotValidForNameContext`. All other results,
-TLS signature delegation and ordinary `verify-full` verification are unchanged.
+A1x repairs the retained live leaderboard browser test. The original case fails
+at its stale server-status assertion: the component renders `Lagret på serveren`,
+while the test accepts `Synkronisert` or `Lagret`. Both stale assertions now match
+only `Synkronisert` or `Lagret på serveren`. Queued/local/failed delivery labels
+remain excluded. No application UI/API/SQL, schema, dependency or scoring policy
+changes.
 
-The exact published core release is preserved under `vendor/sqlx-core`; one
-source pattern differs. Cargo/Docker wiring includes it, with package versions,
-dependency lists and active features unchanged. All 115 existing PostgreSQL
-vendor files remain byte-identical, retaining the cancellation backport. Future
-TLS updates must revalidate the pinned chain-before-hostname ordering and retained
-certificate matrix. No default TLS mode, system roots, application SQL/API/UI,
-schema or provider HTTPS trust changes.
+Source review also found the negative fixture targeting a retired endpoint/error
+UI. It now faults the actual conditional PUT, proves an attempted 503 delivery,
+requires the current failed durable-queue status and unchanged server/standings,
+then uses explicit two-step local discard. The fault stays installed until the
+queue is empty and the acknowledged server value returns, plus one bounded
+2200ms heartbeat check before restoring normal delivery. Subsequent real saves
+must still pass. This is necessary test support, not a product repair.
 
-Twenty-five actual TLS cases run before and after. Only two outcomes change:
-trusted direct/intermediate-chain aliases now execute encrypted SQL in `verify-ca`.
-`verify-full` still rejects those aliases. Both modes still reject an alias with
-unknown issuer, expired/future leaf, bad certificate signature, invalid EKU or
-missing intermediate; complete chains succeed. Plaintext-only servers remain
-rejected by verification modes/require. Successful controls verify `pg_stat_ssl`
-and `SELECT 42`, negotiating TLS 1.3. TLS 1.2 delegation is unchanged source;
-there is no separate forced TLS 1.2 matrix.
+The complete real Chrome case now reaches all later scenarios: three numeric
+formats and gross/net updates, selection exclusions, historical correction,
+locked-score rejection, actual API crash/offline projection clearing/reconnect,
+and member final-front-nine visibility with release/re-hide. Existing precise
+refresh requests, canonical JSON and UI assertions remain. Its final unexpected
+page/console/network failure list is empty under explicit fault/outage allowances.
 
-Validation passes: five cancellation regressions, 264 Rust tests, 953
-PostgreSQL-feature tests, formatting, strict Clippy, 39 migrations, seed and the
-locked release build on host Rust 1.99.0. Five existing manual probes remain
-ignored in the PostgreSQL ladder. Independent source/harness review found no
-actionable issues. All owned fixtures/temporary credentials/PKI are removed,
-including a controlled startup-failure cleanup check. Exact source delta,
-receipts, review and limits are in the
-[acceptance report](validation/sqlx-verify-ca-2026-10-15/README.md).
+All 1,133 frontend tests, TypeScript, ESLint and production build pass. Both phases
+use fresh migrated/seeded PostgreSQL and the locked API build. Twenty-one fresh
+screenshots cover seven states at 320/390/1280px with horizontal-width checks;
+representative mobile populated, desktop failed-delivery and member re-hidden
+screenshots were inspected. Independent test review finds no material issues.
+Owned services, database and temporary credentials are removed. Exact receipts,
+review and limits are in the
+[acceptance report](validation/leaderboard-browser-maintenance-2026-10-15/README.md).
 
-Container image/pinned-toolchain builds, deployment and hosted TLS remain
-operator-owned. Frontend/browser checks do not apply to this driver-only change.
-The next candidate is the retained leaderboard browser-test maintenance; it has
-not started. No adjacent implementation or broader optimization begins here.
+This is one combined desktop/mobile case, not separate complete runs at every
+width. The late-retry check covers one current heartbeat; physical devices,
+every timer interleaving, production proxy/TLS and broad security/performance
+sign-off remain outside acceptance. Backend ladders are not repeated because
+application source, schema and dependencies are unchanged. The next candidate
+is the retained expiry-test timing investigation, which has not started.

@@ -5,33 +5,37 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The [A1w acceptance](validation/sqlx-verify-ca-2026-10-15/README.md)
-records the P3 SQLx compatibility repair, 25-case TLS before/after controls,
-preserved cancellation override and passing Rust/PostgreSQL/release gates.
+None. The [A1x acceptance](validation/leaderboard-browser-maintenance-2026-10-15/README.md)
+records the original stale-label failure, current failed-delivery test control,
+complete browser sequence and passing frontend ladder. Application behavior is
+unchanged.
 
 ## Next candidate — requires approval
 
-### A1x — repair retained leaderboard browser assertions
+### A1y — investigate retained leaderboard expiry-test timing
 
-This selects the existing
-[obsolete score-status assertions](validation/leaderboard-session-2026-10-14/README.md#browser-evidence-and-remaining-test-maintenance)
-before using that suite as a release gate. It is test maintenance, not a confirmed
-application synchronization defect.
+This selects the retained
+[default-concurrency test timeout](validation/round-lifecycle-session-2026-10-14/README.md#validation).
+The original cause remains unproven; the full two-thread ladders pass.
 
-- Goal: require the actual acknowledged score state so the retained browser
-  suite can exercise its later reconnection and hidden-final scenarios.
-- Scope: the two obsolete assertions in
-  `frontend/e2e/leaderboardLive.browser.ts`, narrowly needed test support and
-  evidence/docs. No application UI/API/SQL/schema/dependency change.
-- Behavior/invariants: retain explicit server-acknowledgement checks and the
-  existing live-update, crash/restart, privacy and final-visibility expectations.
-  Do not weaken them to accept pending, failed or merely local saves.
-- Validation: reproduce the old label assertion on a fresh owned local fixture;
-  pass the repaired complete retained suite in a real browser at mobile/desktop
-  widths and the affected frontend ladder. Record exact later-scenario outcomes,
-  console/network failures and independent read-only scope review.
-- Stop: publish only the test-maintenance repair and evidence. Record any newly
-  exposed product defect separately; do not fix it or other queued work here.
+- Goal: determine why `expiry_during_score_loading_denies_all_boards` missed its
+  controlled loading wait under default test concurrency, and stabilize only an
+  evidenced fixture/setup timing defect.
+- Scope: that one test and narrowly needed setup/diagnostic support plus
+  evidence/docs. No production authority, expiry, query, retry, concurrency or
+  sporting behavior changes; no blanket timeout increase or unrelated test work.
+- Behavior/invariants: the request must begin with valid authority and expire
+  during the intended data-loading wait. Preserve every private 401/no-store,
+  payload-denial and existing control assertion. Do not replace the expiry race
+  with an unrelated early rejection or treat thread-limited success as diagnosis.
+- Validation: reproduce or explicitly bound the retained default-concurrency
+  failure on owned PostgreSQL; record gate/response/deadline ordering and exact
+  scheduling. If a test repair is justified, pass focused repetitions and the
+  affected Rust/PostgreSQL ladders, including the relevant default-concurrency
+  run and two-thread control, with independent read-only review.
+- Stop: publish the bounded test repair/evidence or documented non-reproduction
+  limits. Record any product defect separately; do not implement it or other
+  queued work here.
 
 ## Later queue
 
@@ -54,8 +58,8 @@ issue; A1s now closes it with visible headings and frontend/browser acceptance.
 Fantasy A1u now has scoped-fact performance/parity acceptance without a new
 severity rating. A1v closes the retained P3 test-portability limitation with
 two-image acceptance. A1w closes the separate P3 driver compatibility limitation
-with retained strict/certificate controls. The next browser-test candidate is
-unstarted.
+with retained strict/certificate controls. A1x restores retained browser acceptance
+without a product change. The next expiry-test investigation is unstarted.
 Retired granular team writes receive no reachable-route finding. Provisional
 user-only preflight/provider-work observations remain separate and unrated.
 
@@ -64,13 +68,6 @@ deduplication is not selected by A1t's overlapping completion/cancellation
 evidence. No speculative optimization or load claim is authorized.
 
 ### Previously deferred work
-
-- Retained A1 PostgreSQL expiry-test timing investigation: the unchanged
-  score-loading expiry case timed out before observing its wait at default test
-  concurrency, then passed in isolation and in the full two-thread ladder.
-  Investigate its pre-gate expiry window in a separate test-only step; no precise
-  cause or product regression was established. See the
-  [captured failure and rerun evidence](validation/round-lifecycle-session-2026-10-14/README.md#validation).
 
 - Optional offline preparation for browser closure/eviction: requires a separately
   scoped app-shell and private scorecard-retention/reauthorization design before

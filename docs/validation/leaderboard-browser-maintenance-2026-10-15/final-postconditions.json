@@ -1,0 +1,23 @@
+{
+  "browser_tests_passed": 1,
+  "browser_seconds": 20.52,
+  "browser": "Google Chrome 155.0.8059.79",
+  "playwright": "1.63.0",
+  "node": "v22.22.2",
+  "npm": "10.9.7",
+  "frontend_tests_passed": 1133,
+  "frontend_test_files": 147,
+  "all_frontend_gates_passed": true,
+  "screenshots_fresh": 21,
+  "viewport_widths": [
+    320,
+    390,
+    1280
+  ],
+  "inspected_screenshots": [
+    "team_scramble-390",
+    "failed-save-1280",
+    "re-hidden-320"
+  ],
+  "all_owned_fixture_services_and_credentials_removed": true
+}

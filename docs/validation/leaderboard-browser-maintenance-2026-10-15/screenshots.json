@@ -1,0 +1,128 @@
+[
+  {
+    "path": "/tmp/golf-leaderboard-live-disconnected-1280.png",
+    "width": 1280,
+    "height": 900,
+    "sha256": "f10c6823abfb87dd713c9e9b16d3c09c18553361ad5a4d7b18637ecfd7b0addf"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-disconnected-320.png",
+    "width": 320,
+    "height": 900,
+    "sha256": "621632476c00b82b5f4e8beea9b24c40d68f3af54577daa9e1a825ff034f3260"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-disconnected-390.png",
+    "width": 390,
+    "height": 900,
+    "sha256": "a369503ccca99ef0e84f04c3ebe90761f64ed8cc6913e40f3c283efdb22979fe"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-failed-save-1280.png",
+    "width": 1280,
+    "height": 1499,
+    "sha256": "edd6c8f32d6fa5b6238f1960a264194d19c553c2fc9d9c9ef50f1f6a4806a670"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-failed-save-320.png",
+    "width": 320,
+    "height": 1805,
+    "sha256": "2eee0f732765eda8e43779de37ff07a48e20dfb2001ddacbe3586df7f4bc8c0f"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-failed-save-390.png",
+    "width": 390,
+    "height": 1710,
+    "sha256": "f6de26c370d8afdbcc6d2859b9dbef0df8b503216c05a0b0148d6d67d90e3d20"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-individual_stroke_play-1280.png",
+    "width": 1280,
+    "height": 1182,
+    "sha256": "9ce00a61327ea0ba78b11abf3b6de7293fd1f5c36a645e150feec19c407265af"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-individual_stroke_play-320.png",
+    "width": 320,
+    "height": 1868,
+    "sha256": "46f7ba814b00cd625486da7eabd66870c911bdb14c0b1ea73cd037d6b4c37f3f"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-individual_stroke_play-390.png",
+    "width": 390,
+    "height": 1604,
+    "sha256": "be7711e9bf1b8d569c95ed5204f923e1ff3e3266b1ccd6cb2fbd0c35a926f19f"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-re-hidden-1280.png",
+    "width": 1280,
+    "height": 1240,
+    "sha256": "b96ebb054625d1eba53ce2b030bb56fb96931851aae1fa751481ccc2d3892900"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-re-hidden-320.png",
+    "width": 320,
+    "height": 1993,
+    "sha256": "f7e92ae82e1ff123c09e8b62a88eeb71f595157531e4a74c09ac7cdce2c610f7"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-re-hidden-390.png",
+    "width": 390,
+    "height": 1680,
+    "sha256": "f5254de1f1bb893e3c796f080e3a2324b9ecf76093dfb429cd263ee5b6101379"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-released-1280.png",
+    "width": 1280,
+    "height": 1182,
+    "sha256": "610f3ebfceea9ef62776866f17ce611ed576eaa9168933f68031a4fe458b137a"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-released-320.png",
+    "width": 320,
+    "height": 1899,
+    "sha256": "4181ae5ae94450c1a73eb1697184dd701accf58ad1bb55930a6377f4a3a52a5d"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-released-390.png",
+    "width": 390,
+    "height": 1604,
+    "sha256": "d44558a698fdee9867100a5880b45ba54fae4d698a4b6e865fcf7f34ed4cd655"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-team_scramble-1280.png",
+    "width": 1280,
+    "height": 1204,
+    "sha256": "12cae1685a65242eeb0fae75e56e90e9c34a1a3b1e19930507cf78a4c10ab5d1"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-team_scramble-320.png",
+    "width": 320,
+    "height": 1904,
+    "sha256": "dcf508346f92f7f0c04fee6e8c5ec69e203867e6f11a356c3a573a6e594263d8"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-team_scramble-390.png",
+    "width": 390,
+    "height": 1625,
+    "sha256": "99d39edfebde952e2e8afb1a4cc827a2a17aea5783dba656b5191a9656caca45"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-two_player_foursomes-1280.png",
+    "width": 1280,
+    "height": 1204,
+    "sha256": "3e7591187cd1d1cdf47f210bb4cfd260eb02a425b4c616883dd05ffb3e2dc093"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-two_player_foursomes-320.png",
+    "width": 320,
+    "height": 1904,
+    "sha256": "359079eb401d2d3323ddd0525e7cad16b3cc125a8e8a07af2ab79cf8e0e751ba"
+  },
+  {
+    "path": "/tmp/golf-leaderboard-live-two_player_foursomes-390.png",
+    "width": 390,
+    "height": 1625,
+    "sha256": "594666fd665b6dcf437c078933cef6996c19a074455075dd177d0b75f1e98cbd"
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "baseline_revision": "4f4da790ce638f942f21aa95bbe7af9887d5f37d",
+  "file": "frontend/e2e/leaderboardLive.browser.ts",
+  "line": 71,
+  "locator": ".score-sync",
+  "expected": "/^(Synkronisert|Lagret)$/",
+  "received": "Lagret p\u00e5 serveren",
+  "observed_phase": "idle",
+  "unexpected_tests": 1
+}
