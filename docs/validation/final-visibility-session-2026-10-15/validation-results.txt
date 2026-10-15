@@ -1,0 +1,31 @@
+A1m local validation — 2026-10-15
+PostgreSQL 17.10 Alpine/musl; en_US.utf8; disposable local database
+
+Production baseline: 81830935463f825f2d88b176b256466dfcfda4d1
+Original regression: expected exit101; original GET returned200 after expiry, revocation and credential replacement.
+Focused: cargo test -p golf-api --features database-tests --test final_visibility_read_sessions --test final_round_visibility -- --test-threads=2 --nocapture
+Focused: exit0;14 new tests and4 existing visibility tests passed.
+
+cargo fmt --all -- --check: exit0
+cargo test --workspace --all-targets: exit0;261 passed,1 existing ignored
+cargo clippy --workspace --all-targets --all-features -- -D warnings: exit0
+cargo build -p golf-api --bins: exit0
+cargo test --workspace --all-targets --features database-tests -- --test-threads=2: exit0;928 passed,4 existing ignored;764 seconds
+cargo run -p golf-api --bin migrate: exit0;39/39 migrations current
+cargo run -p golf-api --bin seed: exit0;seeded eight players and five rounds
+
+Database-feature totals include ordinary tests; do not add these totals.
+Existing ignored tests: projection_benchmark; hundred_matches; twelve_matches; twenty_four_matches.
+Unchanged vendored SQLx warnings: deprecated try_next; unused Flush variant and struct.
+
+Frontend npm run test: exit0;147 files,1133 tests passed
+Frontend npm run typecheck: exit0
+Frontend npm run lint: exit0
+Frontend npm run build: exit0
+Chrome browser-probe.mjs: exit0;320,390,1280px typed metadata/loading/retry/denial/logout cases
+Independent read-only source/test/documentation review: no remaining actionable findings
+Changed production source lines excluding blank/comments: API90; repository185; both below400
+Final formatting and unstaged/staged diff whitespace checks: exit0
+Affected Markdown file targets verified present
+No production source or test changes after the complete ladders began
+Owned local API/Vite processes stopped; disposable PostgreSQL stopped/removed

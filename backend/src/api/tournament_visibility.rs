@@ -24,7 +24,11 @@ use crate::{
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new().route(
         "/api/tournaments/{tournament_id}/final-round-visibility",
-        get(get_visibility).patch(update_visibility),
+        get(get_visibility)
+            .layer(axum::middleware::map_response(
+                super::private_read::response,
+            ))
+            .patch(update_visibility),
     )
 }
 
@@ -40,13 +44,13 @@ async fn get_visibility(
     Path(tournament_id): Path<Uuid>,
     authenticated: AuthenticatedSession,
 ) -> ApiResult<impl IntoResponse> {
-    let visibility = tournament_visibility::get_for_admin(
+    let visibility = tournament_visibility::get_for_session(
         &state.pool,
-        authenticated.principal.user_id,
+        authenticated.principal.session_id,
         tournament_id,
     )
     .await
-    .map_err(map_error)?;
+    .map_err(super::private_read::map_error)?;
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(visibility)))
 }
 

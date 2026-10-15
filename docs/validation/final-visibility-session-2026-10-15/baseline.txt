@@ -1,0 +1,50 @@
+Production baseline: 81830935463f825f2d88b176b256466dfcfda4d1
+New regression tests applied before production repair.
+Command: DATABASE_URL=<disposable local PostgreSQL> cargo test -p golf-api --features database-tests --test final_visibility_read_sessions -- --test-threads=2 --nocapture
+Expected exit: 101
+
+     Running tests/final_visibility_read_sessions.rs (target/debug/deps/final_visibility_read_sessions-5412ecad13a2d5c3)
+
+running 5 tests
+
+thread 'final_visibility_read_sessions::authorization::credential_replacement_before_authority_denies_metadata_read' (723038) panicked at backend/tests/final_visibility_read_sessions/authorization.rs:85:9:
+assertion `left == right` failed: /api/tournaments/00000000-0000-0000-0000-000000000002/final-round-visibility
+  left: 200
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test final_visibility_read_sessions::authorization::credential_replacement_before_authority_denies_metadata_read ... FAILED
+
+thread 'final_visibility_read_sessions::authorization::membership_removal_observes_current_authority_on_metadata_read' (723050) panicked at backend/tests/final_visibility_read_sessions/authorization.rs:174:31:
+no entry found for key "cache-control"
+test final_visibility_read_sessions::authorization::membership_removal_observes_current_authority_on_metadata_read ... FAILED
+/api/tournaments/00000000-0000-0000-0000-000000000002/final-round-visibility: status=200 OK, code=null
+
+thread 'final_visibility_read_sessions::authorization::revocation_before_transactional_authorization_denies_metadata_read' (723058) panicked at backend/tests/final_visibility_read_sessions/authorization.rs:45:9:
+assertion `left == right` failed: /api/tournaments/00000000-0000-0000-0000-000000000002/final-round-visibility
+  left: 200
+ right: 401
+test final_visibility_read_sessions::authorization::revocation_before_transactional_authorization_denies_metadata_read ... FAILED
+/api/tournaments/00000000-0000-0000-0000-000000000002/final-round-visibility: status=200 OK, code=null
+
+thread 'final_visibility_read_sessions::expiry::expiry_during_membership_wait_is_denied' (723066) panicked at backend/tests/final_visibility_read_sessions/expiry.rs:33:9:
+assertion `left == right` failed
+  left: 200
+ right: 401
+test final_visibility_read_sessions::expiry::expiry_during_membership_wait_is_denied ... FAILED
+
+thread 'final_visibility_read_sessions::authorization::authorized_reads_serialize_before_later_revocation_and_credential_changes' (723037) panicked at backend/tests/final_visibility_read_sessions/../invitation_read_sessions/support.rs:78:14:
+read must reach controlled database wait: Elapsed(())
+test final_visibility_read_sessions::authorization::authorized_reads_serialize_before_later_revocation_and_credential_changes ... FAILED
+
+failures:
+
+failures:
+    final_visibility_read_sessions::authorization::authorized_reads_serialize_before_later_revocation_and_credential_changes
+    final_visibility_read_sessions::authorization::credential_replacement_before_authority_denies_metadata_read
+    final_visibility_read_sessions::authorization::membership_removal_observes_current_authority_on_metadata_read
+    final_visibility_read_sessions::authorization::revocation_before_transactional_authorization_denies_metadata_read
+    final_visibility_read_sessions::expiry::expiry_during_membership_wait_is_denied
+
+test result: FAILED. 0 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.56s
+
+error: test failed, to rerun pass `-p golf-api --test final_visibility_read_sessions`

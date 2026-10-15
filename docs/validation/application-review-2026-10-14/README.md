@@ -29,10 +29,13 @@ more with final note-loading expiry evidence. The
 [match completion/table repair](../match-summary-session-2026-10-15/README.md)
 closes two more with final match-loading expiry evidence. The
 [invitation metadata repair](../invitation-read-session-2026-10-15/README.md) closes
-one more with final metadata/count-loading expiry evidence. One P2 route and
-three P3 course routes remain; those remaining inventory findings are
-source-supported, not new race reproductions. Remaining repairs and legacy-write
-inventory stay queued. The assessment below describes the originally reviewed revision.
+one more with final metadata/count-loading expiry evidence. The
+[final-visibility metadata repair](../final-visibility-session-2026-10-15/README.md)
+closes the last P2 route in that inventory with reproduced expiry, revocation
+and credential-loss evidence. Zero P2 routes and three P3 course routes remain
+in A1f; the course findings remain source-supported without new race reproduction.
+Other P2 findings below and legacy-write inventory stay queued. The assessment
+below describes the originally reviewed revision.
 
 This is a documentation-only assessment of current application source, database
 contracts, browser state, production configuration and dependency advisories.

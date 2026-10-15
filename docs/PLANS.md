@@ -5,40 +5,37 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A1l acceptance is in the [invitation metadata report](validation/invitation-read-session-2026-10-15/README.md).
+None. A1m acceptance is in the [final-visibility metadata report](validation/final-visibility-session-2026-10-15/README.md).
 
 ## Next candidate — requires approval
 
-### A1m — P2: bind final-visibility metadata GET to its session
+### A4 — P2: update the reachable Rustls dependency
 
-Evidence: [remaining private-read inventory](validation/private-read-inventory-2026-10-14/README.md#visibility),
-R2 (source-supported; post-extractor authority loss needs its own reproduction).
+Evidence: [original review A4](validation/application-review-2026-10-14/README.md#a4--p2-reachable-rust-tls-advisory).
+The current lockfile still selects `rustls 0.23.43`; revalidate the advisory and
+compatible patched release before changing dependencies.
 
-- Goal: prevent final-round-visibility metadata reads from succeeding with an
-  expired, revoked or credential-replaced session after extraction.
-- Scope: `GET /api/tournaments/{tournament}/final-round-visibility`; only its
-  API/repository read boundary, focused evidence and docs. Exclude visibility
-  PATCH behavior, score/result projections, other reads/mutations, schema,
-  frontend source, dependencies and other findings.
-- Behavior: pass session identity into a session-bound read owner; retain active
-  session/user and exact tournament-admin membership through the complete
-  metadata read, then recheck database wall-clock session validity before success.
-  Preserve stored tournament lookup and error precedence, repeatable-read
-  coherence, the three-field DTO and version precision. Allow one fresh complete
-  read after `40001`, then generic private 503; reuse no discarded authority,
-  context or metadata. Apply `private, no-store` to all GET statuses, including
-  extraction failures, while preserving PATCH/helper contracts and headers.
-- Validation: reproduce lost authority during a controlled real database wait
-  first; cover natural expiry, post-extractor revocation/credential changes,
-  membership loss/demotion and fresh visibility on retry, exact roles and
-  cross-tournament denial, missing/invalid identities, full JSON/version parity,
-  retry limits/nonserialization errors, cancellation/concurrent reads and no
-  writes/SSE. Run full affected backend/PostgreSQL ladders, mobile/desktop browser
-  checks and independent read-only review.
-- Invariants: preserve root sporting/handicap/locked-round rules, exact-admin
-  scope, hidden-final policy and auditable versioned PATCH behavior. No new
-  visibility policy, publication, mutation retry or side effects.
-- Stop: publish only this GET repair and evidence; begin no queued family.
+- Goal: resolve the reachable Rustls advisory with the smallest compatible
+  dependency update while preserving client TLS behavior.
+- Scope: the locked Rustls dependency and unavoidable compatible transitive
+  changes; manifest constraints only if required by the resolver; focused TLS
+  evidence, tests and docs. Exclude unrelated dependency upgrades, course-read
+  binding, application behavior, migrations, deployment and hosted infrastructure.
+- Behavior: preserve certificate/hostname verification, supported provider HTTPS
+  and PostgreSQL TLS configuration. Retain the vendored SQLx transaction-start
+  cancellation patch and its workspace override. No TLS bypass, weakened checks,
+  broad dependency refresh or new provider behavior.
+- Validation: fresh authoritative advisory/version evidence, before/after audit
+  and normal/all-feature dependency reachability; inspect the exact lock diff.
+  Exercise provider-client TLS and supported database TLS locally, including
+  rejected invalid/untrusted identities; run SQLx cancellation regressions and
+  the complete affected backend/PostgreSQL ladders plus independent read-only
+  review. Record any network/environment blocker precisely.
+- Invariants: preserve root sporting/handicap/locked-round rules, session and
+  membership authority, fail-closed TLS and cancellation-safe transaction state.
+- Stop: publish only the compatible update and evidence. If a broader upgrade
+  or behavior change is necessary, document it for a separate approved step;
+  begin no later queued work.
 
 ## Later queue
 
@@ -48,24 +45,21 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
-   the SQLx cancellation patch and recheck TLS behavior/advisory reachability.
-2. **P2 / A5:** require and bind the restore checksum before invoking restore;
+1. **P2 / A5:** require and bind the restore checksum before invoking restore;
    preserve empty-target and single-transaction protections.
-3. **P2 / A6:** cap password-work admission while retaining four active Argon2
+2. **P2 / A6:** cap password-work admission while retaining four active Argon2
    workers and cancellation-safe capacity release. Capacity impact is unmeasured.
-4. **P2 / A7:** upgrade affected development tools in compatible, validated
+3. **P2 / A7:** upgrade affected development tools in compatible, validated
    dependency steps. Scanner critical labels do not establish production RCE.
-5. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
+4. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
    query count and end-to-end cost. No current frontend latency impact is proven.
 
-6. **P3 / A1 course reads:** bind the three lower-impact course GETs in a
+5. **P3 / A1 course reads:** bind the three lower-impact course GETs in a
    separately selected step; provider-success impact remains conditional in the
    [source inventory](validation/private-read-inventory-2026-10-14/README.md#courses).
 
 Keep legacy team/round write-expiry inventory separate; the private-read inventory
-never assessed those writes. Selecting the final-visibility candidate does not
-complete it or authorize the later queue.
+never assessed those writes. Selecting the Rustls candidate does not complete it or authorize the later queue.
 
 Only after these, consider measurement-only steps for remaining Fantasy
 invalidation/fact-loading cost and empty-queue polling. No speculative optimization

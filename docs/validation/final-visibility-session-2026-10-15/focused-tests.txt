@@ -1,0 +1,32 @@
+     Running tests/final_round_visibility.rs (target/debug/deps/final_round_visibility-80f94dde77326240)
+
+running 4 tests
+test database_guard_requires_exact_active_session_and_manages_timestamp ... ok
+test concurrent_expected_token_writes_serialize_without_deadlock ... ok
+test schema_17_upgrade_preserves_only_already_visible_finals ... ok
+test private_api_enforces_auth_csrf_shape_stale_tokens_and_post_commit_event ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.44s
+
+     Running tests/final_visibility_read_sessions.rs (target/debug/deps/final_visibility_read_sessions-5412ecad13a2d5c3)
+
+running 14 tests
+test final_visibility_read_sessions::authorization::credential_replacement_before_authority_denies_metadata_read ... ok
+test final_visibility_read_sessions::authorization::authorized_reads_serialize_before_later_revocation_and_credential_changes ... ok
+test final_visibility_read_sessions::authorization::membership_removal_observes_current_authority_on_metadata_read ... ok
+/api/tournaments/00000000-0000-0000-0000-000000000002/final-round-visibility: status=401 Unauthorized, code="unauthenticated"
+test final_visibility_read_sessions::authorization::revocation_before_transactional_authorization_denies_metadata_read ... ok
+test final_visibility_read_sessions::contracts::cancellation_releases_authority_and_allows_later_reads ... ok
+test final_visibility_read_sessions::contracts::exact_roles_missing_identity_and_lookup_precedence_stay_intact ... ok
+test final_visibility_read_sessions::contracts::exhausted_snapshot_retry_is_private_generic_503 ... ok
+test final_visibility_read_sessions::contracts::full_dto_version_and_both_flags_survive_concurrent_reads_without_effects ... ok
+test final_visibility_read_sessions::contracts::patch_headers_stale_noop_and_notification_contracts_are_unchanged ... ok
+test final_visibility_read_sessions::contracts::retry_observes_membership_demotion_or_removal ... ok
+test final_visibility_read_sessions::contracts::retry_reloads_complete_visibility_and_version_after_membership_conflict ... ok
+test final_visibility_read_sessions::contracts::unrelated_database_error_is_private_generic_500_without_retry ... ok
+/api/tournaments/00000000-0000-0000-0000-000000000002/final-round-visibility: status=401 Unauthorized, code="unauthenticated"
+test final_visibility_read_sessions::expiry::expiry_during_membership_wait_is_denied ... ok
+/api/tournaments/00000000-0000-0000-0000-000000000002/final-round-visibility: status=401 Unauthorized, code="unauthenticated"
+test final_visibility_read_sessions::expiry::expiry_during_metadata_lookup_is_denied ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 17.27s

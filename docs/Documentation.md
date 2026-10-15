@@ -554,8 +554,21 @@ The two [match card GETs](validation/match-card-session-2026-10-15/README.md)
 are also repaired, followed by the two
 [match completion/table GETs](validation/match-summary-session-2026-10-15/README.md).
 The [invitation metadata GET](validation/invitation-read-session-2026-10-15/README.md)
-is now repaired too. One P2 route and three P3 course routes remain:
-final-visibility and course reads still use extracted user identity.
+is now repaired too, followed by the
+[final-visibility metadata GET](validation/final-visibility-session-2026-10-15/README.md).
+Zero P2 routes and three P3 course routes remain in that inventory; the course
+reads still use extracted user identity. This does not close the review's other
+P2 findings.
+
+Final-visibility metadata retains active session/user and exact-admin membership
+locks in one repeatable-read transaction and checks database wall-clock expiry
+before success. Missing stored tournaments retain 404 precedence within the
+repository; invalid HTTP UUIDs retain 400. One complete fresh read is allowed
+for a snapshot conflict, followed by generic 503 on another conflict. Every GET
+status has `private, no-store`, including session/path extraction failures. The
+three metadata fields and full timestamp version remain unchanged. This GET
+performs no visibility write or SSE notification. Its auditable, versioned PATCH
+flow and internal user-only helper keep their existing contracts.
 The source inventory itself
 executes no routes. In particular, Fantasy selection/results GETs may finalize due windows;
 they are not side-effect-free inspection tools. The report owns exact routes,
@@ -2511,7 +2524,11 @@ deadline column, helper functions, and confirmation-maintenance triggers are
 removed.
 
 `GET /api/tournaments/{tournament_id}/final-round-visibility` returns the focused
-private resource to the exact tournament admin. `PATCH` accepts an absolute
+private resource to the exact tournament admin. It retains active session/user
+and membership locks, rechecks wall-clock session expiry before success and
+applies `private, no-store` to every status. Snapshot conflicts permit one fresh
+complete read, then generic 503. The response still contains only tournament ID,
+hidden flag and the full timestamp version. `PATCH` accepts an absolute
 `back_nine_hidden` value and `expected_visibility_updated_at`, revalidates the
 active session and exact admin membership under the established
 rounds-before-tournament lock order, and returns

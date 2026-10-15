@@ -1,40 +1,55 @@
-# Latest iteration — invitation metadata session authority
+# Latest iteration — final-visibility metadata session authority
 
-A1l repairs only the invitation metadata GET. A real controlled wait at the
-metadata query reproduced the original endpoint returning 200 after session
-expiry. The repaired endpoint returns 401 with the existing `no-store` header.
-The final check follows all metadata and redemption-count loading, including
-empty results, while existing exclusive session/user and exact-admin membership
-locks remain held.
+A1m repairs the final-round-visibility metadata GET. Real controlled PostgreSQL
+waits reproduced the original endpoint returning 200 after natural session
+expiry, revocation and credential replacement. The repaired GET returns private
+401 when authority is lost before transactional authorization or while an
+otherwise valid request waits for membership.
 
-The production change is four lines in the repository read: call the existing
-exclusive active-session helper after `fetch_all` and before commit, retaining
-its existing database/unauthenticated error mapping. Default `READ COMMITTED`,
-stronger authority locks, SQL, metadata fields/order, cache behavior and all
-mutation/shared-helper contracts remain. No retry was added. A role demotion
-committed during a membership wait is observed by the existing locking read and
-returns 403 directly; there is no repeatable-read conflict to retry.
+The API passes session identity to a dedicated repository entry. Each
+repeatable-read attempt loads stored tournament metadata before authorization,
+derives the user from shared active-session/user locks, retains exact-admin
+membership and makes a final database wall-clock session check before commit.
+The lookup/error order and three-field response, including the full timestamp
+version, remain unchanged. The final check covers earlier waits; it does not
+freeze time through commit, serialization or delivery.
 
-An expired invitation remains visible history for an active administrator. An
-expired requester session now receives 401 instead of that history. Rotated
-predecessor/successor rows still share the same redemption count, and metadata
-contains neither raw invitation tokens nor their hashes. No read path issues,
-rotates, revokes or replays an invitation write.
+One complete fresh attempt is allowed after a `40001` snapshot conflict. A
+second conflict returns generic private 503; unrelated database failures stay
+single-attempt generic 500. Real conflict tests change visibility while a read
+waits: the retry returns the new flag and version, or denies a newly demoted or
+removed admin. Discarded authority and metadata never survive the retry.
 
-Fourteen focused PostgreSQL/API cases passed: membership/metadata/count/empty
-expiry, revocation/credential serialization, current exact-admin scope, history/
-series/count/order parity, token secrecy, cancellation, unchanged single-attempt
-errors and concurrent valid reads without writes or SSE. Independent read-only
-source/test review found no actionable issues. Workspace tests, strict Clippy
-and API binaries passed, as did all 1,133 frontend tests, typecheck, lint and build.
-Chrome passed at 320, 390 and 1280 px: actual typed metadata/history, loading,
-read-only error retry, empty, denied and logout states, without page errors,
-unexpected network failures or invitation mutations during read observations.
-The full PostgreSQL 17.10 Alpine ladder passed 914 tests with four existing
-ignored probes/benchmarks; migrate and seed passed through unchanged schema 39.
-See the [acceptance report](validation/invitation-read-session-2026-10-15/README.md).
+All GET statuses now use `private, no-store`, including extraction failures.
+PATCH retains its independent versioned write owner, CSRF requirements,
+database guards, stale errors and post-commit notifications. Its existing cache
+contract is covered explicitly: private success, `no-store` on unauthenticated
+rejection, and headerless stale conflict. Existing internal user-only reads
+retain their helper contract.
 
-No API source, frontend source, schema, dependency or hosting changes. Existing same-user
-serialization remains; each ordinary success adds one session query without a
-speedup claim. The final check does not freeze expiry through commit/delivery.
-One P2 route and three P3 course routes remain in the historical read inventory.
+Fourteen new PostgreSQL/API cases and four existing visibility cases pass.
+They cover both natural-expiry waits, revocation/credential serialization, exact
+roles and other-tournament admin isolation, errors/cache/lookup order, full JSON
+parity, fresh bounded retries, concurrent reads, cancellation and read-only
+business state/SSE behavior. Independent read-only review found no remaining
+issues. Workspace tests passed with 261 tests and one existing ignored benchmark;
+strict Clippy and API binaries passed. All 1,133 frontend tests, typecheck, lint
+and build passed. The full PostgreSQL suite passed 928 tests with four existing
+ignored diagnostic/benchmark cases; migrate/seed passed with all 39 migrations
+current. Database-feature totals include ordinary tests and are not additive.
+
+Chrome passed at 320, 390 and 1280 px with actual typed metadata and full version
+strings, hidden/released controls, held loading, 500/503 read retry, denied/missing
+states and logout. Selected screenshots were visually inspected. There were no
+visibility writes during observations, page errors or unexpected network failures.
+Error/denial UI states use explicit injections; real PostgreSQL races prove the
+authority behavior separately. A singleton metadata response has no empty-list
+state. Physical-device, native-zoom, load and hosted acceptance remain separate.
+
+This GET adds two session queries per ordinary success; no speedup is claimed.
+The historical A1f private-read inventory now has zero remaining P2 routes and
+three P3 course GETs. Other review findings remain open. The next candidate is
+a compatible Rustls update in [the plan](PLANS.md).
+
+Detailed evidence, exact validation and limits are in the
+[final-visibility report](validation/final-visibility-session-2026-10-15/README.md).

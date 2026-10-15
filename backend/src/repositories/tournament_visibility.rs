@@ -5,6 +5,10 @@ use thiserror::Error;
 use uuid::Uuid;
 
 use super::tournament_authorization::{self, AuthorizationError};
+use super::{
+    auth,
+    session_read::{self, SessionReadError},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow)]
 pub struct FinalRoundVisibility {
@@ -32,6 +36,46 @@ pub enum FinalRoundVisibilityError {
 
 const COLUMNS: &str =
     "id AS tournament_id, final_round_back_nine_hidden AS back_nine_hidden, visibility_updated_at";
+
+pub async fn get_for_session(
+    pool: &PgPool,
+    session_id: Uuid,
+    tournament_id: Uuid,
+) -> Result<FinalRoundVisibility, SessionReadError> {
+    session_read::retry(|| get_session_once(pool, session_id, tournament_id)).await
+}
+
+async fn get_session_once(
+    pool: &PgPool,
+    session_id: Uuid,
+    tournament_id: Uuid,
+) -> Result<FinalRoundVisibility, SessionReadError> {
+    let mut transaction = pool.begin().await?;
+    sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        .execute(&mut *transaction)
+        .await?;
+    // Keep the stored-resource lookup ahead of authorization, as on the
+    // original GET. Every retry owns a fresh snapshot and metadata value.
+    let visibility = sqlx::query_as::<_, FinalRoundVisibility>(&format!(
+        "SELECT {COLUMNS} FROM tournaments WHERE id = $1"
+    ))
+    .bind(tournament_id)
+    .fetch_optional(&mut *transaction)
+    .await?
+    .ok_or(AuthorizationError::NotFound)?;
+    let user_id = auth::lock_active_session(&mut transaction, session_id)
+        .await?
+        .ok_or(AuthorizationError::Unauthenticated)?
+        .user_id;
+    tournament_authorization::require_tournament_admin_read_in_transaction(
+        &mut transaction,
+        user_id,
+        tournament_id,
+    )
+    .await?;
+    session_read::finish(transaction, session_id).await?;
+    Ok(visibility)
+}
 
 pub async fn get_for_admin(
     pool: &PgPool,

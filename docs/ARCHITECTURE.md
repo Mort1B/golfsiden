@@ -534,8 +534,10 @@ and reapplies runtime grants before the API is started.
   [A1k acceptance](validation/match-summary-session-2026-10-15/README.md).
   Invitation metadata now rechecks expiry too; see
   [A1l acceptance](validation/invitation-read-session-2026-10-15/README.md).
-  Final-visibility and course GETs retain user-only authorization boundaries. Awards, player-account
-  metadata, result-share status, Fantasy reads and match listing already perform
+  Final-visibility metadata now does too; see
+  [A1m acceptance](validation/final-visibility-session-2026-10-15/README.md).
+  The three course GETs retain user-only authorization boundaries. Awards,
+  player-account metadata, result-share status, Fantasy reads and match listing already perform
   final session checks. Bound
   families have different isolation/retry owners; Fantasy selection/results GETs
   can finalize due windows and emit post-commit invalidations. A generic read-only
@@ -731,6 +733,16 @@ and reapplies runtime grants before the API is started.
   hidden, then removes the deadline column and confirmation-maintenance triggers.
   A narrow PostgreSQL trigger accepts changes only from the exact active-admin
   workflow and advances the dedicated timestamp monotonically.
+- Final-visibility metadata GET uses a dedicated session-bound repository entry.
+  Each repeatable-read attempt loads the stored tournament metadata before
+  authorization, then retains active session/user and exact-admin membership
+  locks through a final database wall-clock session check. The shared
+  `session_read` owner permits one complete fresh attempt after `40001`, then
+  generic private 503; metadata and version are discarded with the failed attempt.
+  All GET statuses, including extraction failures, are `private, no-store`.
+  The three-field DTO/version, user-only internal helper and versioned PATCH
+  owner/error/cache contracts remain independent and unchanged. Ordinary success
+  adds two session queries; no speedup or new mutation retry is claimed.
 - Final-round identity is immutable after tournament start: PostgreSQL freezes
   both `tournaments.number_of_rounds` and each child `rounds.round_number` across
   the start boundary. Round-number checks lock round then parent tournament,
