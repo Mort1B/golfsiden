@@ -1,0 +1,17 @@
+running 14 tests
+test invitation_read_sessions::authorization::credential_replacement_before_authority_denies_metadata_read ... ok
+test invitation_read_sessions::authorization::authorized_reads_serialize_before_later_revocation_and_credential_changes ... ok
+test invitation_read_sessions::authorization::membership_removal_observes_current_authority_on_metadata_read ... ok
+test invitation_read_sessions::authorization::revocation_before_transactional_authorization_denies_metadata_read ... ok
+test invitation_read_sessions::contracts::cancellation_releases_exclusive_session_and_user_authority ... ok
+test invitation_read_sessions::contracts::committed_membership_demotion_or_removal_during_wait_denies_without_retry ... ok
+test invitation_read_sessions::contracts::exact_roles_cross_tournament_global_admin_and_error_contracts_stay_intact ... ok
+test invitation_read_sessions::contracts::synthetic_serialization_failure_keeps_single_attempt_and_generic_500 ... ok
+test invitation_read_sessions::contracts::metadata_history_series_counts_order_and_secrecy_survive_concurrent_reads ... ok
+test invitation_read_sessions::contracts::unrelated_database_failure_keeps_single_attempt_and_generic_500 ... ok
+test invitation_read_sessions::expiry::empty_list_still_rechecks_expiry_after_metadata_wait ... ok
+test invitation_read_sessions::expiry::expiry_during_final_metadata_loading_is_denied ... ok
+test invitation_read_sessions::expiry::expiry_during_membership_wait_is_denied ... ok
+test invitation_read_sessions::expiry::expiry_during_redemption_count_loading_is_denied ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 20.62s

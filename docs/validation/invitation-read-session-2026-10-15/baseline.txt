@@ -1,0 +1,18 @@
+running 1 test
+/api/tournaments/00000000-0000-0000-0000-000000000002/invitations: status=200 OK, code=null
+
+thread 'invitation_read_sessions::expiry::expiry_during_final_metadata_loading_is_denied' (688130) panicked at backend/tests/invitation_read_sessions/expiry.rs:76:9:
+assertion `left == right` failed
+  left: 200
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test invitation_read_sessions::expiry::expiry_during_final_metadata_loading_is_denied ... FAILED
+
+failures:
+
+failures:
+    invitation_read_sessions::expiry::expiry_during_final_metadata_loading_is_denied
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1 filtered out; finished in 8.47s
+
+error: test failed, to rerun pass `--test invitation_read_sessions`

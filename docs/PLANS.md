@@ -5,38 +5,39 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A1k acceptance is in the [match completion/table report](validation/match-summary-session-2026-10-15/README.md).
+None. A1l acceptance is in the [invitation metadata report](validation/invitation-read-session-2026-10-15/README.md).
 
 ## Next candidate — requires approval
 
-### A1l — P2: finish invitation metadata session authority
+### A1m — P2: bind final-visibility metadata GET to its session
 
-Evidence: [remaining private-read inventory](validation/private-read-inventory-2026-10-14/README.md#invitations),
-R1 (source-supported; invitation metadata waits need their own expiry reproduction).
+Evidence: [remaining private-read inventory](validation/private-read-inventory-2026-10-14/README.md#visibility),
+R2 (source-supported; post-extractor authority loss needs its own reproduction).
 
-- Goal: prevent successful invitation metadata reads after session expiry during
-  authority or metadata/redemption-count loading.
-- Scope: `GET /api/tournaments/{tournament}/invitations`; only its API/repository
-  read boundary, focused evidence and docs. Exclude invitation creation, rotation,
-  revocation, redemption, registration, other mutations/reads, schema, frontend
-  source, dependencies and other review findings.
-- Behavior: retain active session/user and exact tournament-admin authority
-  through all metadata loading, then check database wall-clock session validity
-  before success. Preserve existing isolation, stronger authority locks,
-  lookup/error precedence, metadata fields, redemption counts, ordering and
-  all-status non-storeable headers. Preserve the established retry/error contract;
-  any new retry requires a reproduced selected-read need and must reload the
-  complete read without reusing discarded authority/facts. Never return invitation
-  token secrets, mint a token or repeat a write as part of read recovery.
-- Validation: reproduce late expiry at controlled real database waits first;
-  cover membership and final metadata waits, empty/populated and revoked/expired/
-  redeemed metadata, exact roles and cross-tournament denial, revocation and
-  credential serialization, cancellation/concurrent reads, complete JSON parity,
-  cache/error contracts and no writes/SSE. Run full affected backend/PostgreSQL
-  ladders, mobile/desktop browser checks and independent read-only review.
-- Invariants: preserve root tournament/score/handicap rules, exact-admin scope,
-  invitation series/redemption history, token secrecy and mutation idempotency.
-  No new invitation behavior, weaker locks or mutation retry.
+- Goal: prevent final-round-visibility metadata reads from succeeding with an
+  expired, revoked or credential-replaced session after extraction.
+- Scope: `GET /api/tournaments/{tournament}/final-round-visibility`; only its
+  API/repository read boundary, focused evidence and docs. Exclude visibility
+  PATCH behavior, score/result projections, other reads/mutations, schema,
+  frontend source, dependencies and other findings.
+- Behavior: pass session identity into a session-bound read owner; retain active
+  session/user and exact tournament-admin membership through the complete
+  metadata read, then recheck database wall-clock session validity before success.
+  Preserve stored tournament lookup and error precedence, repeatable-read
+  coherence, the three-field DTO and version precision. Allow one fresh complete
+  read after `40001`, then generic private 503; reuse no discarded authority,
+  context or metadata. Apply `private, no-store` to all GET statuses, including
+  extraction failures, while preserving PATCH/helper contracts and headers.
+- Validation: reproduce lost authority during a controlled real database wait
+  first; cover natural expiry, post-extractor revocation/credential changes,
+  membership loss/demotion and fresh visibility on retry, exact roles and
+  cross-tournament denial, missing/invalid identities, full JSON/version parity,
+  retry limits/nonserialization errors, cancellation/concurrent reads and no
+  writes/SSE. Run full affected backend/PostgreSQL ladders, mobile/desktop browser
+  checks and independent read-only review.
+- Invariants: preserve root sporting/handicap/locked-round rules, exact-admin
+  scope, hidden-final policy and auditable versioned PATCH behavior. No new
+  visibility policy, publication, mutation retry or side effects.
 - Stop: publish only this GET repair and evidence; begin no queued family.
 
 ## Later queue
@@ -47,21 +48,24 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A1 after the selected invitation candidate:** select one bounded repair
-   from the [source inventory](validation/private-read-inventory-2026-10-14/README.md):
-   user-only final-visibility metadata (1). Course
-   GET binding (3) is P3 and conditional/lower-impact. Keep legacy team/round
-   write-expiry inventory a separate slice; this read inventory did not assess it.
-2. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
+1. **P2 / A4:** update reachable Rustls to a compatible patched release, retain
    the SQLx cancellation patch and recheck TLS behavior/advisory reachability.
-3. **P2 / A5:** require and bind the restore checksum before invoking restore;
+2. **P2 / A5:** require and bind the restore checksum before invoking restore;
    preserve empty-target and single-transaction protections.
-4. **P2 / A6:** cap password-work admission while retaining four active Argon2
+3. **P2 / A6:** cap password-work admission while retaining four active Argon2
    workers and cancellation-safe capacity release. Capacity impact is unmeasured.
-5. **P2 / A7:** upgrade affected development tools in compatible, validated
+4. **P2 / A7:** upgrade affected development tools in compatible, validated
    dependency steps. Scanner critical labels do not establish production RCE.
-6. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
+5. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
    query count and end-to-end cost. No current frontend latency impact is proven.
+
+6. **P3 / A1 course reads:** bind the three lower-impact course GETs in a
+   separately selected step; provider-success impact remains conditional in the
+   [source inventory](validation/private-read-inventory-2026-10-14/README.md#courses).
+
+Keep legacy team/round write-expiry inventory separate; the private-read inventory
+never assessed those writes. Selecting the final-visibility candidate does not
+complete it or authorize the later queue.
 
 Only after these, consider measurement-only steps for remaining Fantasy
 invalidation/fact-loading cost and empty-queue polling. No speculative optimization

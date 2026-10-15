@@ -27,8 +27,10 @@ two further P2 routes with the same late-loading reproduction. The
 [match card read repair](../match-card-session-2026-10-15/README.md) closes two
 more with final note-loading expiry evidence. The
 [match completion/table repair](../match-summary-session-2026-10-15/README.md)
-closes two more with final match-loading expiry evidence. Two P2 routes and three
-P3 course routes remain; those remaining inventory findings are
+closes two more with final match-loading expiry evidence. The
+[invitation metadata repair](../invitation-read-session-2026-10-15/README.md) closes
+one more with final metadata/count-loading expiry evidence. One P2 route and
+three P3 course routes remain; those remaining inventory findings are
 source-supported, not new race reproductions. Remaining repairs and legacy-write
 inventory stay queued. The assessment below describes the originally reviewed revision.
 

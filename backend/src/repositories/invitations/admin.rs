@@ -30,6 +30,10 @@ pub async fn list(
     .fetch_all(&mut *transaction)
     .await
     .map_err(InvitationError::Database)?;
+    crate::repositories::auth::lock_active_session_exclusive(&mut transaction, session_id)
+        .await
+        .map_err(InvitationError::Database)?
+        .ok_or(InvitationError::Unauthenticated)?;
     transaction.commit().await.map_err(classify_database)?;
     Ok(rows)
 }

@@ -10,7 +10,9 @@ both Stableford card GETs with late confirmation-loading expiry evidence.
 both detail/scoring GETs with final note-loading expiry evidence.
 [A1k completion/table acceptance](../match-summary-session-2026-10-15/README.md)
 closes the other two match GETs with final match-loading expiry evidence.
-Two P2 routes and three P3 course routes remain. The classifications, manifest
+[A1l invitation metadata acceptance](../invitation-read-session-2026-10-15/README.md)
+closes its GET with final metadata/count-loading expiry evidence.
+One P2 route and three P3 course routes remain. The classifications, manifest
 and source anchors below preserve the original A1f assessment revision.
 
 Reviewed source revision: `21917b6931c4f94dfacdbb36ded7f390f6108834`.

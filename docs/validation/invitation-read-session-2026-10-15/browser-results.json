@@ -1,0 +1,50 @@
+[
+  {
+    "width": 320,
+    "actual_no_store_200": true,
+    "typed_decoder": true,
+    "safe_metadata_fields": true,
+    "loading": true,
+    "populated_active_exhausted_revoked": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_initial_denied": true,
+    "logged_out_no_store_401": true,
+    "no_invitation_mutations": true,
+    "page_errors": [],
+    "unexpected_network_failures": [],
+    "injected_responses": 4
+  },
+  {
+    "width": 390,
+    "actual_no_store_200": true,
+    "typed_decoder": true,
+    "safe_metadata_fields": true,
+    "loading": true,
+    "populated_active_exhausted_revoked": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_initial_denied": true,
+    "logged_out_no_store_401": true,
+    "no_invitation_mutations": true,
+    "page_errors": [],
+    "unexpected_network_failures": [],
+    "injected_responses": 4
+  },
+  {
+    "width": 1280,
+    "actual_no_store_200": true,
+    "typed_decoder": true,
+    "safe_metadata_fields": true,
+    "loading": true,
+    "populated_active_exhausted_revoked": true,
+    "long_content_no_overflow": true,
+    "error_read_only_retry": true,
+    "empty_and_initial_denied": true,
+    "logged_out_no_store_401": true,
+    "no_invitation_mutations": true,
+    "page_errors": [],
+    "unexpected_network_failures": [],
+    "injected_responses": 4
+  }
+]

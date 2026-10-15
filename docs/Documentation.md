@@ -553,13 +553,27 @@ closes two more, followed by the two
 The two [match card GETs](validation/match-card-session-2026-10-15/README.md)
 are also repaired, followed by the two
 [match completion/table GETs](validation/match-summary-session-2026-10-15/README.md).
-Two P2 routes and three P3 course routes remain: invitation metadata still lacks
-a final expiry check; final-visibility and course reads still use extracted user
-identity.
+The [invitation metadata GET](validation/invitation-read-session-2026-10-15/README.md)
+is now repaired too. One P2 route and three P3 course routes remain:
+final-visibility and course reads still use extracted user identity.
 The source inventory itself
 executes no routes. In particular, Fantasy selection/results GETs may finalize due windows;
 they are not side-effect-free inspection tools. The report owns exact routes,
 severity, cache/retry differences and evidence limits.
+
+Invitation metadata GET keeps active session/user and exact tournament-admin
+authority locked while its single query loads metadata and series redemption
+counts. It rechecks database wall-clock session validity before commit; expiry
+during loading returns 401 with `no-store`, including empty lists. Expired or
+revoked invitations remain ordinary history rows for an active administrator;
+expiry of the requester session is a separate authentication failure. Existing
+`READ COMMITTED` isolation and stronger `FOR UPDATE` locks remain. No read or
+mutation retry was added; unrelated database failures retain generic 500.
+Metadata fields, ordering, revocation provenance and shared series counts are
+unchanged. List responses contain neither raw invitation tokens nor token hashes;
+issuing/rotation still reveal a new secret only through their existing mutation
+responses. The final check covers preceding waits, not expiry through commit or
+delivery. See the [acceptance report](validation/invitation-read-session-2026-10-15/README.md).
 
 ## Production and operator behavior
 

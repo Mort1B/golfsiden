@@ -357,6 +357,19 @@ and reapplies runtime grants before the API is started.
   the fragment. PostgreSQL stores only its SHA-256 hash. The invitation creator
   must be a member of the same tournament, and the raw secret is returned once
   with a non-cacheable response.
+- Invitation metadata GET retains its default `READ COMMITTED` transaction and
+  exclusive session/user plus exact-admin membership locks. The existing single
+  metadata query includes series redemption counts in one statement snapshot;
+  this is not a whole-transaction repeatable-read guarantee. After complete loading,
+  it rechecks the active session with the existing exclusive helper before commit.
+  Natural expiry returns 401 with the existing all-status `no-store` header, even
+  for an empty list. Role changes committed before the membership lock resolves
+  are observed directly under `READ COMMITTED`. No retry is added: database errors,
+  including an injected `40001`, keep their single-attempt generic 500 contract.
+  Metadata fields/order, history/counts, token secrecy and mutation/shared-helper
+  behavior are unchanged. Concurrent same-user reads retain the existing lock
+  serialization. Ordinary success adds one session query; no measured speedup or
+  expiry freeze through commit/delivery is claimed.
 - Invitation rotation creates an immutable successor in the same series and
   preserves expiry and maximum-use policy. Redemptions are exact user/player/
   membership/entrant facts, unique per tournament identity, and append-only
@@ -519,7 +532,8 @@ and reapplies runtime grants before the API is started.
   [A1j acceptance](validation/match-card-session-2026-10-15/README.md).
   Match completion/table now do too; see
   [A1k acceptance](validation/match-summary-session-2026-10-15/README.md).
-  Invitation metadata still retains authority locks but omits that final check.
+  Invitation metadata now rechecks expiry too; see
+  [A1l acceptance](validation/invitation-read-session-2026-10-15/README.md).
   Final-visibility and course GETs retain user-only authorization boundaries. Awards, player-account
   metadata, result-share status, Fantasy reads and match listing already perform
   final session checks. Bound

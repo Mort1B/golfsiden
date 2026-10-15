@@ -1,40 +1,40 @@
-# Latest iteration — match completion and table session authority
+# Latest iteration — invitation metadata session authority
 
-A1k repairs the match completion and tournament match-table GETs. A real
-controlled wait on the final match query reproduced both original endpoints
-returning 200 after session expiry. The same regression now returns private 401,
-including genuinely empty results. Existing active session/user and exact
-membership locks remain held while each repeatable-read attempt loads all facts
-and projects the result; a final database wall-clock check runs before commit.
+A1l repairs only the invitation metadata GET. A real controlled wait at the
+metadata query reproduced the original endpoint returning 200 after session
+expiry. The repaired endpoint returns 401 with the existing `no-store` header.
+The final check follows all metadata and redemption-count loading, including
+empty results, while existing exclusive session/user and exact-admin membership
+locks remain held.
 
-A `40001` snapshot conflict permits one fresh whole read. Stored context, exact
-role, hidden-final policy, progress, participants and awards are discarded and
-reloaded. An exhausted conflict maps to generic private 503 in these GET handlers.
-Other errors, lookup order and payloads retain their meanings. The completion
-projection is built before its final check. Card/list reads, transitions, commands,
-shared authorization helpers and all sporting rules are unchanged.
+The production change is four lines in the repository read: call the existing
+exclusive active-session helper after `fetch_all` and before commit, retaining
+its existing database/unauthenticated error mapping. Default `READ COMMITTED`,
+stronger authority locks, SQL, metadata fields/order, cache behavior and all
+mutation/shared-helper contracts remain. No retry was added. A role demotion
+committed during a membership wait is observed by the existing locking read and
+returns 403 directly; there is no repeatable-read conflict to retry.
 
-For example, an administrator read queued on membership can lose that role while
-final visibility changes from released to hidden. Its retry must use the new
-policy: completion returns null progress/readiness, and the table excludes those
-confirmed final awards. A table read waiting on awards keeps participant names
-and award facts in the same snapshot; a subsequent GET sees a deliberate
-concurrent name and confirmation change together.
+An expired invitation remains visible history for an active administrator. An
+expired requester session now receives 401 instead of that history. Rotated
+predecessor/successor rows still share the same redemption count, and metadata
+contains neither raw invitation tokens nor their hashes. No read path issues,
+rotates, revokes or replays an invitation write.
 
-Seventeen focused PostgreSQL/API cases passed, including expiry, empty results,
-revocation/credential serialization, fresh retry authority/visibility, bounded
-attempt counts, win/draw/loss units and shared ranks, lifecycle readiness,
-coherent snapshots, cancellation and concurrent full JSON parity without writes
-or SSE. Independent read-only design/source/test review found no actionable
-issues. Workspace tests, strict Clippy and API binaries passed, as did all 1,133
-frontend tests, typecheck, lint and build. Chrome passed both typed views at 320,
-390 and 1280 px: loading, populated long names, private 503/read-only retry, empty,
-denied and logout states, with no page errors, unexpected network failures or
-mutations. The full PostgreSQL 17.10 Alpine ladder passed 900 tests with four
-existing ignored probes/benchmarks; migrate and seed passed through unchanged
-schema 39. See the [acceptance report](validation/match-summary-session-2026-10-15/README.md).
+Fourteen focused PostgreSQL/API cases passed: membership/metadata/count/empty
+expiry, revocation/credential serialization, current exact-admin scope, history/
+series/count/order parity, token secrecy, cancellation, unchanged single-attempt
+errors and concurrent valid reads without writes or SSE. Independent read-only
+source/test review found no actionable issues. Workspace tests, strict Clippy
+and API binaries passed, as did all 1,133 frontend tests, typecheck, lint and build.
+Chrome passed at 320, 390 and 1280 px: actual typed metadata/history, loading,
+read-only error retry, empty, denied and logout states, without page errors,
+unexpected network failures or invitation mutations during read observations.
+The full PostgreSQL 17.10 Alpine ladder passed 914 tests with four existing
+ignored probes/benchmarks; migrate and seed passed through unchanged schema 39.
+See the [acceptance report](validation/invitation-read-session-2026-10-15/README.md).
 
-No schema, frontend source, dependency or hosting changes. Ordinary success adds
-one session query per GET; no measured speedup is claimed. The final check closes
-preceding waits, not expiry through commit/serialization/delivery. Two P2 routes
-and three P3 course routes remain in the historical read inventory.
+No API source, frontend source, schema, dependency or hosting changes. Existing same-user
+serialization remains; each ordinary success adds one session query without a
+speedup claim. The final check does not freeze expiry through commit/delivery.
+One P2 route and three P3 course routes remain in the historical read inventory.
