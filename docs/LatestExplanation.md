@@ -1,42 +1,54 @@
-# Latest iteration — production images and deployment contract
+# Latest iteration — production integration and private proxy logs
 
-DEPLOY-2 builds all three unchanged production Dockerfiles from immutable source
-b73d13e and one tracked-only context. PostgreSQL, API and web images succeed on
-rootless Podman/amd64. The API compiles on the actual Rust 1.88 image toolchain;
-frontend builds use Node 22.23.2/npm 10.9.8. No source, compiler, dependency,
-Dockerfile, Compose or schema repair was needed.
+DEPLOY-3 completes iteration three of the six-step Sunday readiness path. The
+actual production Compose assembly runs with fresh schema 39, owner-only
+migrations, real restricted runtime grants, secure browser sessions and native
+SSE through Caddy. Docker Compose CLI 5.6.0 uses a private temporary rootless
+Podman 5.8.7 API on amd64 because local Docker socket access is denied. No host
+socket, group, daemon or deployed service changed.
 
-Eleven offline checks of the real Compose file verify production settings,
-private database/API exposure, owner/runtime configuration and all ten required
-variable failures. Twenty-three real-image preflights pass with network disabled,
-read-only filesystems and no image volumes. API UID10001, required binaries and
-dynamic libraries, no seed/source, 65 built web assets and actual startup guards
-are checked. Caddy config adaptation preserves the proxy identity headers and
-negative flush interval; it does not establish live HTTP or SSE behavior.
+The final live audit found a P2 deployment defect: Caddy reverse-proxy error
+records contain the attached shared proxy secret when native streams close.
+The default logger now drops whole request and response-header objects, keeping
+status/duration/error diagnostics. This also avoids recording cookie, CSRF and
+capability-bearing request metadata. The real web Dockerfile rebuilt with only
+that reviewed Caddy overlay; API/PostgreSQL inputs and all 65 built web assets
+remain unchanged. Actual error/access records from the rebuilt container omit
+the secret and private canaries, with operational fields retained.
 
-The preflight harness needed one correction: its initial name shadowed Python's
-standard inspect module, and its missing-variable shell assertion expected exit
-1 while the shell returned 2. The renamed helper requires a nonzero 1/2 exit plus
-the exact denial reason. The complete corrected probe sequence and final receipt
-identity/source/cleanup audit pass. No image or product defect was inferred.
+Thirty-nine named checks pass. Actual API startup rejects unexpected identity,
+owner/excess authority, schema creation and migration-history writes. Missing,
+pending, dirty, unknown and changed-checksum histories reject startup and return
+generic readiness 503 while liveness remains 200. Database outage/reconnect
+restores readiness. Runtime authority is checked at startup; readiness checks
+database reachability and exact schema, not continuing role grants.
 
-This workspace cannot access its local Docker API socket; noninteractive sudo
-requires a password. No socket, group or daemon change was made. Podman image
-acceptance and offline Docker Compose validation remain distinct from native
-Docker Engine execution. Recorded cached base IDs were used, not claims about
-latest registry tags or image security. Actual database initialization/grants,
-production API startup, HTTPS/browser cookies and live SSE remain next-step gates.
+Seven real-Chrome checks cover distinct organizer/player UI login, Secure/
+HttpOnly/SameSite=Lax host-only `/api` cookies, CSRF rejection, an acknowledged
+persisted score and a native same-origin event updating the player's gross total
+from 5 to 9. The player's final-round view preserves nine visible holes. Mobile
+320/390 and desktop 1280 layouts, login errors, no-score/populated rows and long
+names pass. Forged forwarding/internal headers cannot evade login quota.
 
-All 23 final owned probe containers and private contexts/logs/configuration are
-removed. Three uniquely tagged images with exact IDs and source/context labels
-remain for the next isolated rehearsal. Production build/runtime inputs still
-match the tested candidate. Unaffected full Rust, PostgreSQL, frontend-test and
-browser ladders were not repeated; actual release image builds and their scoped
-preflights were run. The [report](validation/production-images-2026-10-15/README.md)
-retains versions, IDs, receipts, harness correction, review and limits.
+Read-only review also caught inherited environment variables overriding the
+private fixture. The runner now clears interpolation keys, binds generated
+values, validates rendered destinations before service startup and passes
+poisoned database/provider/port controls. Browser harness assumptions about
+unscored links and player-visible holes were corrected; successful checks were
+repeated against the rebuilt web. An early log check correctly failed before
+native streams closed; complete post-browser logs pass. Fresh post-fix image
+selection/rendering has a separate offline pre-start control.
 
-Two of the six planned Sunday iterations are complete, with no contingency used.
-DEPLOY-3 is bounded to isolated production integration and real proxy/database
-acceptance; no hosted deployment or new feature is authorized. The operator's
-install/upgrade choice, actual host architecture/Docker access, DNS/TLS, off-host
-backups and playing-phone checks remain explicit prerequisites.
+Cleanup removes the three owned containers, three volumes, two networks and
+private credentials/logs/CA/socket tree. Browsers close; four exact baseline/
+repaired images remain. The [report](validation/production-rehearsal-2026-10-15/README.md)
+retains receipts, immutable IDs, review, screenshot evidence and limits. Unchanged
+Rust/frontend unit/type/lint/Clippy/domain ladders were not repeated; the affected
+image/configuration/migration/grant/proxy/browser/log ladder was exercised.
+
+DEPLOY-4 is next: critical organizer/player/Fantasy journeys using distinct
+accounts. Current-application restore and final freeze/advisory/launch handoff
+remain after it. Native Docker Engine, public DNS/ACME/certificate trust,
+standard-port redirect following, the actual playing phone and off-host recovery
+remain operator/release gates. This local run does not establish host readiness,
+capacity or deployment sign-off. No feature or speculative optimization is added.

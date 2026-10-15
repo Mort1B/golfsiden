@@ -5,47 +5,40 @@
 
 ## Active step
 
-None. [DEPLOY-2](validation/production-images-2026-10-15/README.md) records three
-successful actual Dockerfile builds, 11 Compose and 23 packaged-artifact/guard
-probes on rootless Podman/amd64. Production source/configuration is unchanged.
-Native Docker socket access is denied; no host privileges or daemons were changed.
+None. The previous bounded step is published with its
+[production integration evidence](validation/production-rehearsal-2026-10-15/README.md).
 
-## Next candidate — requires approval
+## Next candidate
 
-### DEPLOY-3 — isolated production integration rehearsal
+### DEPLOY-4 — critical organizer/player acceptance
 
-Sunday 18 October targets the confirmed single-host Docker Compose model. This
-is iteration 3 of six; iterations 7–8 remain contingency for confirmed blockers.
-
-- Goal: verify the built matching artifacts together under production settings,
-  including real database authority and browser/proxy behavior.
-- Scope: one owned isolated Compose project, private synthetic configuration,
-  database/network/volumes and temporary browser trust/profile, with narrowly
-  necessary integration repairs and evidence/docs. Reuse DEPLOY-2 image IDs while
-  build inputs remain unchanged. No hosted deployment, feature or schema work.
-- Behavior/invariants: owner-only migration, real restricted runtime grants,
-  exact schema 39 compatibility, no production seed, secure cookies, trusted
-  proxy headers, private PostgreSQL and preserved session/scoring rules. Bind
-  rehearsal web ports only to loopback. Never weaken production guards.
-- Validation: initialize/migrate/grant and start the actual production API/web;
-  verify health/readiness, runtime authority and schema failure controls,
-  organizer/player login with secure cookies and actual SSE through Caddy.
-  Exercise mobile/desktop browser states appropriate to this integration scope.
-  Use native Docker when available; an owned temporary rootless Podman API socket
-  may support Compose-compatible rehearsal, with exact engine/compatibility limits
-  recorded. Do not alter host socket permissions, groups or daemons to proceed.
-- Stop: publish integrated evidence or exact tooling blockers, remove only owned
-  rehearsal services/data/trust/credentials, and define the critical-flow step.
-  Do not start that next iteration or administer the user's host.
+- Goal: establish that Sunday's required existing journeys work together in the
+  production assembly, using distinct organizer/player accounts.
+- Scope: isolated synthetic fixtures and real browser/API evidence for login/
+  invitation, roster/round setup, score save/recovery, gross/net, lock/correction,
+  final visibility and the required existing Fantasy flow. Reuse unchanged
+  artifact and focused acceptance evidence. Repair only confirmed serious defects
+  or unusable required flows; no new features, schema redesign or broad polish.
+- Behavior/invariants: retain session/membership fencing, exact uncertain-write
+  replay, acknowledged-write reconciliation, owner-exclusive scores, historical
+  handicaps, locked-round audit paths and final-round privacy. Fantasy remains
+  separate from sporting scores/completion and keeps versioned rules/receipts.
+- Validation: actual production settings/proxy and real restricted grants;
+  distinct-account successful and denied reads/writes, authoritative saved state,
+  relevant failure/retry states, mobile 320/390 and desktop widths. Run the full
+  affected ladder for any necessary source repair; retain exact engine/physical-
+  device limits. No combinatorial format/device matrix is required this step.
+- Stop: publish critical-flow acceptance or exact remaining blockers, remove owned
+  fixtures and define DEPLOY-5 recovery. Do not start recovery or administer the
+  operator's host in this iteration.
 
 ## Sunday readiness path
 
-Iterations 1–2 are complete. Work one bounded step per iteration; each next candidate
+Iterations 1–3 are complete. Work one bounded step per iteration; each next candidate
 is defined before implementation. The six-iteration target is:
 
 | Iteration | Required outcome |
 | --- | --- |
-| 3 | Local production rehearsal: matching API/web, real schema 39/grants, production startup, health/readiness, secure-cookie browser access and SSE through Caddy |
 | 4 | Critical organizer/player acceptance with distinct accounts: login/invitation, roster/round setup, score save/recovery, gross/net, lock/correction, final visibility and required Fantasy flow, at mobile/desktop widths |
 | 5 | Actual current-application backup/checksum/restore into a fresh isolated project, state parity, real grants, readiness/login and restart/reconnect; short operating handoff |
 | 6 | Release freeze: affected final gates and current dependency/image advisory triage, immutable tested candidate, READY / READY WITH KNOWN LIMITATIONS / NOT READY verdict, concise operator launch/rollback checklist |
@@ -84,8 +77,10 @@ acceptance is not public Docker Engine/DNS/ACME acceptance.
   [legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md)
   retains W1/W2/W3 acceptance. The
   [DEPLOY-2 report](validation/production-images-2026-10-15/README.md)
-  separates current image acceptance from open integration/recovery and native
-  Docker/hosted acceptance. No new P0–P2 product bug is established.
+  retains the original image acceptance. The
+  [DEPLOY-3 report](validation/production-rehearsal-2026-10-15/README.md) records
+  integrated acceptance and the repaired P2 proxy-secret logging leak; recovery,
+  native Docker and hosted/final release acceptance remain open.
 - [A1z](validation/lifecycle-expiry-investigation-2026-10-15/README.md) retains the
   unexplained full-default lifecycle test failure and passing focused controls.
   Revisit only with actionable evidence or a required release-validation blocker.

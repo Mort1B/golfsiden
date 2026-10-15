@@ -25,7 +25,24 @@ the frontend builds on Node 22/npm 10. No source/toolchain repair was needed.
 The current local Docker socket denies access, and noninteractive sudo is
 unavailable. These results do not establish native Docker Engine runtime.
 Production-mode database/proxy/browser and current-schema recovery acceptance
-remain open; this target is not deployment sign-off.
+were the remaining gates after that image-build step.
+
+[DEPLOY-3 integrated acceptance](validation/production-rehearsal-2026-10-15/README.md)
+now passes 39 named checks on the actual Compose assembly through a private
+rootless Podman API: fresh schema 39, actual runtime grants, production
+startup/readiness rejection, secure organizer/player browser sessions and native
+SSE. It also repairs a reproduced P2 shared-secret logging leak in Caddy. The
+rebuilt web image omits request/response-header metadata in runtime and access
+logs while preserving status/duration/error diagnostics. Include the current
+`deploy/Caddyfile` when building web; the old DEPLOY-2 web image lacks this fix.
+API/PostgreSQL inputs and frontend assets remain unchanged.
+
+Three of six iterations are complete. Critical-flow acceptance, current-schema
+backup/restore and final freeze/advisory/launch handoff remain open; this is not
+deployment sign-off. Local Caddy certificate exceptions prove encrypted proxy
+behavior, not public trust. The high-port rehearsal checks redirect scheme/host/
+path only; verify following HTTP→HTTPS on actual host ports 80/443. Native Docker
+Engine and the operator's chosen public host still need acceptance.
 
 Prepare the operator prerequisites early: new installation versus upgrade,
 domain/DNS and ports, private runtime secrets, persistent storage and an off-host
@@ -55,6 +72,7 @@ Do not skip intermediate migrations when upgrading an older installation.
 | Compatible development-dependency patches | Use the current frontend lockfile in CI/future builder installs; no new schema/API/environment setting; local built assets are byte-identical |
 | Bounded password-work admission | Rebuild/redeploy the API; eight admitted operations/four worker slots per process; no new schema, frontend or environment setting |
 | Required restore checksum binding | Use the current host restore script, original dump/sidecar pair, `sha256sum` and `cmp`; no image or schema change |
+| Proxy-secret logging repair | Rebuild web with the current Caddyfile; runtime/access logs omit request and response-header objects; no API, schema or frontend-asset change |
 
 Fantasy includes four picks and a double-points captain, automatic eligible
 carry-forward, and round/overall manager and golfer leaderboards. Non-match

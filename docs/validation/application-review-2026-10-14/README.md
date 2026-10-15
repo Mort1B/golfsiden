@@ -65,6 +65,12 @@ The historical dependency audit below remains pinned to the original review;
 current versions, feature conditions and remaining audit entries belong to that
 follow-up report.
 
+The later [production integration rehearsal](../production-rehearsal-2026-10-15/README.md)
+finds and repairs an additional P2 Caddy proxy-secret logging leak in actual
+runtime error records. Its rebuilt web, real grants/schema controls, distinct
+secure sessions and native SSE acceptance supplement this historical assessment;
+native Docker/public-host and final release gates remain separate.
+
 The [restore-checksum repair](../restore-checksum-2026-10-15/README.md) closes A5:
 it requires the exact archive's canonical sidecar before Docker, with reproduced
 binding bypasses and disposable PostgreSQL rollback acceptance. The historical

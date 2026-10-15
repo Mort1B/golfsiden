@@ -1,0 +1,22 @@
+{
+  "base_commit": "22e90af40a9ba2e04d1a0ff2c02fbe26aaf634d1",
+  "overlays": {
+    "deploy/Caddyfile": "d3ccbbf1007c0d431b5ed119131f11c623dc168652710dcdef2e0d4ef7c4305e"
+  },
+  "context_sha256": "0e116c0531485bf26b3f1e4a3b8a20da0863fdca401746e26b7c4d87cf245634",
+  "tag": "localhost/golfsiden-web:deploy3-22e90af40a9b-0e116c053148",
+  "image": {
+    "Id": "badbe24d6c7b796cb174a733e9124a792fbb666319fcbc9ee046637a2d6741e6",
+    "Created": "2026-10-15T18:20:56.283730932Z",
+    "Architecture": "amd64",
+    "RepoDigests": [
+      "localhost/golfsiden-web@sha256:1acb9403b470a32071ca48ac8f25ae4641dbd6e11747edbc172871497f731f52"
+    ]
+  },
+  "actual_dockerfile": "frontend/Dockerfile.production",
+  "pull": "never",
+  "elapsed_seconds": 1.51,
+  "exit_code": 0,
+  "context_from_git_archive_plus_only_caddyfile_overlay": true,
+  "temporary_context_removed": true
+}

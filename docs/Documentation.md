@@ -697,8 +697,18 @@ The current production Dockerfiles have
 on rootless Podman/amd64: all three builds, the API's actual Rust 1.88 toolchain,
 65 packaged web assets, 11 offline Compose cases and 23 artifact/startup-guard
 probes pass. Seed remains excluded from the API runtime. No application or
-deployment configuration changed. This does not establish native Docker Engine,
-database-backed startup, live HTTPS cookies or SSE; integrated rehearsal is next.
+deployment configuration changed in that image-build step.
+
+The subsequent [DEPLOY-3 integration rehearsal](validation/production-rehearsal-2026-10-15/README.md)
+runs the actual production Compose assembly through a private rootless Podman
+API, with schema 39, real owner/runtime grants, startup/readiness failure
+controls, distinct organizer/player secure-cookie login and native SSE through
+Caddy. It repairs a reproduced P2 proxy-secret logging leak: the default logger
+omits request and response-header objects from runtime/access logs while keeping
+operational status/duration/error fields. Rebuild web to include this repair;
+API/PostgreSQL inputs and all 65 web assets are unchanged. Local acceptance does
+not establish native Docker Engine, public certificate trust, hosted readiness
+or backup/restore acceptance.
 
 The deployment runbook uses explicit migration and permission actions, never a
 production seed. Its backup script creates an atomic custom-format PostgreSQL

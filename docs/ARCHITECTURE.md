@@ -140,6 +140,13 @@ certificate state. The single-instance assumption deliberately permits bounded
 in-process request throttling and provider quota accounting; a multi-API
 deployment would require shared implementations for both.
 
+The default Caddy logger removes `request` and `resp_headers` objects from
+runtime and access records. This prevents reverse-proxy failures from recording
+the attached shared secret, cookies/CSRF headers or capability-bearing request
+metadata. Status, duration, sizes and upstream error diagnostics remain. The
+actual proxy request still carries its required identity headers; filtering is
+at log encoding, not transport.
+
 Caddy overwrites `X-Golf-Client-IP` and attaches a 256-bit shared proxy secret.
 The API accepts that client identity only after a constant-time secret match and
 otherwise collapses the request to a non-spoofable direct identity. Public

@@ -1,0 +1,83 @@
+{
+  "engine": "rootless Podman 5.8.7 via private Docker-compatible API",
+  "compose_cli": "5.6.0",
+  "native_docker_engine_acceptance": false,
+  "source_candidate": "b73d13e7f3aa8ee3508e306fdbb0b20584595937",
+  "context_sha256": "a32af6b17ec12f63abd5570d582c1ca49711a14a601de640aff0e1a8363ecea3",
+  "web_build": {
+    "base_commit": "22e90af40a9ba2e04d1a0ff2c02fbe26aaf634d1",
+    "overlays": {
+      "deploy/Caddyfile": "d3ccbbf1007c0d431b5ed119131f11c623dc168652710dcdef2e0d4ef7c4305e"
+    },
+    "context_sha256": "0e116c0531485bf26b3f1e4a3b8a20da0863fdca401746e26b7c4d87cf245634",
+    "tag": "localhost/golfsiden-web:deploy3-22e90af40a9b-0e116c053148",
+    "image": {
+      "Id": "badbe24d6c7b796cb174a733e9124a792fbb666319fcbc9ee046637a2d6741e6",
+      "Created": "2026-10-15T18:20:56.283730932Z",
+      "Architecture": "amd64",
+      "RepoDigests": [
+        "localhost/golfsiden-web@sha256:1acb9403b470a32071ca48ac8f25ae4641dbd6e11747edbc172871497f731f52"
+      ]
+    },
+    "actual_dockerfile": "frontend/Dockerfile.production",
+    "pull": "never",
+    "elapsed_seconds": 1.51,
+    "exit_code": 0,
+    "context_from_git_archive_plus_only_caddyfile_overlay": true,
+    "temporary_context_removed": true
+  },
+  "images": {
+    "postgres": "localhost/golfsiden-postgres:deploy2-b73d13e7f3aa-a32af6b17ec1",
+    "api": "localhost/golfsiden-api:deploy2-b73d13e7f3aa-a32af6b17ec1",
+    "web": "localhost/golfsiden-web:deploy3-22e90af40a9b-0e116c053148"
+  },
+  "checks": {
+    "exact_images_unchanged_inputs_private_configuration": true,
+    "compose_postgres_fresh_cluster_healthy": true,
+    "owner_migrates_39_real_grants_no_seed": true,
+    "production_api_web_healthy_https_through_caddy": true,
+    "actual_runtime_login_restricted_and_ddl_history_writes_denied": true,
+    "matching_migration_rerun_idempotent": true,
+    "startup_rejects_wrong_identity": true,
+    "startup_rejects_owner_authority": true,
+    "startup_rejects_schema_create": true,
+    "startup_rejects_history_write": true,
+    "startup_rejects_pending": true,
+    "live_schema_pending_ready503_health200_generic_error": true,
+    "startup_rejects_dirty": true,
+    "live_schema_dirty_ready503_health200_generic_error": true,
+    "startup_rejects_checksum": true,
+    "live_schema_checksum_ready503_health200_generic_error": true,
+    "startup_rejects_unknown": true,
+    "live_schema_unknown_ready503_health200_generic_error": true,
+    "startup_rejects_missing_history": true,
+    "live_schema_missing_history_ready503_health200_generic_error": true,
+    "database_unavailable_ready503_health200": true,
+    "database_reconnect_restores_readiness": true,
+    "schema_and_restricted_runtime_restored_after_controls": true,
+    "real_runtime_dml_onboarding_invitation_course_round": true,
+    "distinct_organizer_player_ui_login_secure_host_only_api_cookies": true,
+    "csrf_absent_rejected_without_score_write": true,
+    "native_sse_same_https_origin_distinct_player_observes_5_to_9_and_reload": true,
+    "security_headers_and_mobile_desktop_long_content_no_overflow": true,
+    "no_unexpected_browser_console_network_or_response_failures": true,
+    "forged_forwarding_and_internal_headers_do_not_evade_login_quota": true,
+    "baseline_actual_upstream_cancellation_exposes_proxy_secret_reproduced": true,
+    "actual_web_dockerfile_rebuilt_with_only_logging_repair": true,
+    "inherited_database_provider_port_sentinels_cannot_escape_owned_configuration": true,
+    "rebuilt_web_actual_upstream_and_access_logs_no_secret_or_request_metadata": true,
+    "actual_container_image_ids_production_environment_uid_no_restarts_or_secret_logs": true,
+    "actual_private_database_network_and_only_loopback_web_publications": true,
+    "rebuilt_web_65_assets_byte_identical_and_actual_default_logger_filter_adapted": true,
+    "http_redirect_https_scheme_host_path_only_standard443": true,
+    "final_live_health_ready200": true
+  },
+  "owned_containers_networks_volumes_removed": true,
+  "owned_resource_counts_before_removal": {
+    "containers": 3,
+    "volumes": 3,
+    "networks": 2
+  },
+  "private_configuration_diagnostics_ca_profile_removed": true,
+  "three_deploy2_images_and_repaired_web_retained": true
+}
