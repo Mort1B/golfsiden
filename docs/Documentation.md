@@ -588,6 +588,23 @@ issuing/rotation still reveal a new secret only through their existing mutation
 responses. The final check covers preceding waits, not expiry through commit or
 delivery. See the [acceptance report](validation/invitation-read-session-2026-10-15/README.md).
 
+## Frontend dependency maintenance
+
+The frontend lockfile now selects compatible development-only patches:
+brace-expansion 1.1.21 and nested 5.0.12, js-yaml 4.3.2 and source-map-js 1.2.2.
+Only their version, resolved URL and integrity fields change; the manifest, all
+other lock entries, application source and tooling configuration are unchanged.
+Use `npm ci` to install the committed tree, then run the normal frontend
+unit/type/lint/build ladder.
+
+The 2026-10-15 full npm audit falls from six affected packages to three; the
+production-only audit remains zero. Vitest 3.2.7, @vitest/mocker 3.2.7 and Tinypool
+1.1.1 remain flagged (two critical package entries and one moderate). They require
+a separately planned Vitest major upgrade; the audit is not globally clean.
+Counts are scanner package labels, not demonstrated application exploits. The
+[A7 report](validation/development-dependencies-2026-10-15/README.md) records the
+fresh audits, paths, 1,133 passing tests and identical local build assets.
+
 ## Client TLS dependency maintenance
 
 The current lockfile uses Rustls `0.23.46` and WebPKI `0.103.14` through the

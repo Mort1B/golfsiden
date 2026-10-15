@@ -10,6 +10,24 @@
 
 Backend request handling is split into `api`, `repositories`, and `domain`. Handlers own HTTP validation and response mapping, repositories own SQL and transaction mechanics, and pure handicap/scoring/lifecycle behavior stays in `domain`. Authentication and score authorization are isolated modules rather than handler-local policy.
 
+## Frontend development tooling
+
+The frontend manifest separates application dependencies from build/test/lint
+packages. Dependency repairs preserve that boundary and the strict TypeScript,
+ESLint and test contracts. Compatible transitive patches stay within existing
+parent ranges; a test-framework major migration is a separately bounded step.
+Do not force incompatible transitive versions through overrides to suppress an
+audit entry.
+
+The production Dockerfile uses Node/npm in its builder and copies only `dist`
+into the final Caddy image. Development-only advisories still matter to build/test
+environments; their presence is not proof of public application execution.
+Production-only npm scans do not audit the image or hosted deployment. For the
+current compatible four-entry patch, clean installs and the full frontend ladder
+passed and all 65 local production artifacts are byte-identical. Three
+Vitest-family audit entries remain open; dated versions, paths and limits are in
+[the A7 report](validation/development-dependencies-2026-10-15/README.md).
+
 ## Client TLS dependencies
 
 The lockfile selects Rustls `0.23.46` and its minimum compatible WebPKI

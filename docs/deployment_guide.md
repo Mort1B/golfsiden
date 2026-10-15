@@ -27,6 +27,7 @@ Do not skip intermediate migrations when upgrading an older installation.
 | Offline return to the last opened scorecard | Updated frontend against the schema-33 API; no further migration or configuration |
 | Recent score-read, session, pairing/start and navigation repairs | Deploy the current API/frontend builds; retain the vendored SQLx patch |
 | Rustls client TLS advisory repair | Rebuild/redeploy the API from the current lockfile; retain the vendored SQLx patch; no new migration |
+| Compatible development-dependency patches | Use the current frontend lockfile in CI/future builder installs; no new schema/API/environment setting; local built assets are byte-identical |
 | Bounded password-work admission | Rebuild/redeploy the API; eight admitted operations/four worker slots per process; no new schema, frontend or environment setting |
 | Required restore checksum binding | Use the current host restore script, original dump/sidecar pair, `sha256sum` and `cmp`; no image or schema change |
 
@@ -81,6 +82,14 @@ credential-policy, schema or environment change is needed. This process-local
 policy does not establish production throughput or protect every stage of request
 handling; [local A6 evidence](validation/password-admission-2026-10-15/README.md)
 covers cancellation, API parity and recovery using synthetic data.
+
+The compatible frontend dependency repair changes only four development lock
+entries. CI and future image builds use the current lock through `npm ci`.
+Application sources and all 65 local production-build files are unchanged;
+there is no schema, API or environment migration. Three Vitest-family advisory
+entries remain for a separate test-framework major upgrade. The production-only
+npm audit remains zero, which does not establish image or hosted security. See
+[the A7 acceptance and limits](validation/development-dependencies-2026-10-15/README.md).
 
 Caddy obtains and renews public certificates automatically. `SITE_ADDRESS` must
 be a hostname only: no scheme, path, query, fragment, or port. The web container

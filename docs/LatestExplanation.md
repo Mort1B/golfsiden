@@ -1,45 +1,36 @@
-# Latest iteration — bounded password-work admission
+# Latest iteration — compatible development-dependency repairs
 
-A6 adds immediate admission control around password work. The original helper
-limited execution to four blocking workers but allowed additional operations to
-wait indefinitely for those slots. A regression test filled four workers plus
-four waiters and showed the ninth operation still waiting instead of rejecting.
+The compatible portion of A7 updates four development-only lock entries:
+brace-expansion 1.1.18 to 1.1.21 and nested 5.0.9 to 5.0.12, js-yaml 4.3.1 to
+4.3.2, and source-map-js 1.2.1 to 1.2.2. npm resolves these patches within the
+existing parent ranges. Only version, registry URL and integrity fields change;
+all other lock entries, the manifest, application source and tool configuration
+remain unchanged. Fresh registry metadata matches the selected integrity values.
 
-Hashing, real-user verification and unknown-user dummy verification now share a
-process-local limit of eight admitted operations and four blocking-worker slots.
-Excess work returns the existing capacity error in one poll. Callers retain their
-generic 500 `internal_error` mapping; route rate limiting keeps its separate 429
-contract. Argon2 parameters, credential-generation checks, account/session write
-ordering, request quotas, dependencies, schema and frontend are unchanged.
+The full audit falls from six affected development packages to three, removing
+all three high-severity package entries. It still exits 1: Vitest 3.2.7,
+@vitest/mocker 3.2.7 and Tinypool 1.1.1 remain, labelled two critical and one
+moderate. These are package-entry labels with inherited findings, not three
+independent application exploits. The production-only audit remains zero. No
+hostile-input exploit or production remote-execution chain was reproduced.
 
-Both permits belong to the dispatched blocking closure, including time queued
-inside Tokio's pool. Cancelling a waiting request frees admission. Cancelling a
-request after dispatch retains both permits until the actual work finishes;
-completion, operation errors and panic unwinding release them. This bounds
-password-helper admission, not every request stage or process memory. Eight is
-a finite policy, not a measured production capacity or latency claim.
+The remaining family requires a separately bounded Vitest major upgrade. Read-only
+metadata for patched Vitest 4.1.11 overlaps the current Node 22/Vite 7 toolchain,
+but that family has not been installed, resolved or tested here. The next step
+must verify its resulting dependencies and current advisories before acceptance.
+No incompatible override or blind force-update is included.
 
-Seven focused tests pass, covering the ninth-operation regression, shared entry
-points, waiting/active cancellation, pool-queued work, error/panic/closed-limiter
-release and later recovery. The database-backed API test confirms known/dummy
-login parity and creator-onboarding failure without any table-count change,
-followed by successful login/onboarding and unchanged generic wrong-password
-behavior. Unit tests touching the process-wide static share a test lock;
-scheduling tests use local limiters and gates that open on drop.
+Clean `npm ci` passed for both original and repaired lockfiles. The repaired tree
+also passes `npm ls --all`, all 1,133 tests across 147 files, strict typechecking,
+ESLint and production build. All 65 local production-mode output files are byte-
+identical before/after clean installs. The browser application therefore has no
+changed local asset in this step. No browser/backend/PostgreSQL ladder or image/
+hosted deployment acceptance is claimed for this dependency-only repair.
 
-Formatting, the 264-test backend suite and strict Clippy passed, with one existing
-ignored benchmark and three unchanged vendored SQLx warnings. The first sandboxed
-backend run could not bind eight existing provider HTTP fixtures; the full rerun
-with socket permission passed. The complete PostgreSQL ladder passed 932 tests
-with four existing ignored diagnostics/benchmarks, then migration/seed completed
-with all 39 migrations current. Database-enabled counts include ordinary tests.
-Its unique local fixture and temporary directory were removed; separate container
-inventory confirmed cleanup. No production source changed during validation.
-Independent read-only source/test/harness/documentation review has no remaining
-findings.
-
-The [A6 report](validation/password-admission-2026-10-15/README.md) contains the
-baseline, focused checks and validation limits. No hosted action or production
-capacity test was performed. Rebuild the API to adopt the change; no migration or
-new environment setting is needed. Compatible development-dependency repairs are
-the next candidate in [the plan](PLANS.md); no queued work was started.
+Independent lock/evidence review found no issues. The reviewer's separate registry
+refresh was unavailable, so registry provenance rests on the successful primary
+metadata checks and clean installations. Final documentation and bounded-plan
+review found no issues.
+The [A7 report](validation/development-dependencies-2026-10-15/README.md) retains
+exact paths, versions, audit snapshots and validation. A7 remains partly open;
+[the plan](PLANS.md) selects the major-family migration as the next candidate.

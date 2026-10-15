@@ -1,0 +1,29 @@
+A7 compatible development-dependency acceptance — 2026-10-15
+Baseline: 88e80f0e8e4891c5f7988a9c8137391d80b6dfe3
+Host Node22.22.2; npm10.9.7; Vite7.3.6/Vitest3.2.7 retained
+
+Fresh full npm audit --package-lock-only --ignore-scripts --json before: exit1;6 affected packages(2critical,3high,1moderate)
+Fresh production-only npm audit --omit=dev --package-lock-only --ignore-scripts --json before: exit0;0
+Targeted npm update --package-lock-only --ignore-scripts --no-audit --no-fund brace-expansion js-yaml source-map-js: exit0;isolated temporary copy
+Exact four dev entries;only version,resolved,integrity change;manifest/all other entries unchanged
+Fresh npm view metadata for exact four versions: available;integrities/dependencies/engines checked
+npm ci --no-audit --no-fund before: exit0;271 platform-installed packages
+npm run build before: exit0
+npm ci --no-audit --no-fund after: exit0;271 platform-installed packages
+npm ls --all --json after: exit0
+npm explain targeted/remaining packages --json before/after: exit0
+npm run test: exit0;147 files,1133 tests passed
+npm run typecheck: exit0
+npm run lint: exit0
+npm run build after: exit0
+All65 emitted local production files SHA256/bytes identical before/after clean installs
+Fresh full npm audit after: exit1;3 affected packages(2critical,0high,1moderate),Vitest/mocker/Tinypool unresolved
+Fresh production-only npm audit after: exit0;0
+Registry/update/install/audit commands used --cache /tmp/golf-a7-npm-cache in addition to the arguments above
+
+Independent read-only lock/evidence review: no findings;reviewer registry refresh unavailable,primary metadata+clean-install provenance retained
+Final documentation/plan review: no findings
+No manifest/source/config/runtime/backend/schema/Cargo lock changes;no new ignored or weakened tests
+Browser/backend/PostgreSQL/image/hosted checks not rerun;outside affected boundary and local application assets unchanged
+Original advisory snapshot retained;candidate major metadata is read-only,not installed/resolved/tested
+Owned temporary update directory removed;generated dist/node_modules remain normal ignored local build/install outputs

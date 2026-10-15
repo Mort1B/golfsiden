@@ -5,36 +5,44 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A6 acceptance is in the [password-admission report](validation/password-admission-2026-10-15/README.md).
+None. The compatible portion of A7 is accepted in the
+[development-dependency report](validation/development-dependencies-2026-10-15/README.md).
+The Vitest-family findings remain open as the next candidate.
 
 ## Next candidate — requires approval
 
-### A7 — P2: compatible development-dependency repairs
+### A7b — P2: migrate the flagged Vitest family to a patched major
 
-Evidence: [original review A7](validation/application-review-2026-10-14/README.md#a7--p2-development-tool-advisories-need-a-separate-upgrade).
-The original audit found development-only advisories; its snapshot does not
-establish today's versions, reachability or production remote execution.
+Evidence: [remaining audited paths](validation/development-dependencies-2026-10-15/README.md#fresh-audit-and-unresolved-findings).
+The installed Vitest/mocker 3.2.7 and Tinypool 1.1.1 still produce three audit
+entries (two critical package labels and one moderate). The maintainer does not
+plan a 3.x mocker backport. Read-only metadata for Vitest 4.1.11 matches existing
+Node 22/Vite 7 peer ranges; its resolved tree and compatibility remain untested.
 
-- Goal: remove currently confirmed advisories that can be fixed within the
-  existing development-tool majors, preserving application behavior.
-- Scope: frontend development dependency declarations/lockfile, necessary focused
-  tool configuration and validation/docs. Refresh full and production-only audits
-  before selecting exact compatible patched versions. Exclude runtime dependency
-  changes, application features, hosted actions, blind force-updates and major
-  tool migrations; document a separate candidate if a major migration is required.
-- Behavior: preserve strict TypeScript, test isolation, lint/build semantics and
-  existing API/UI contracts. Keep fixes confined to development tooling and the
-  minimum necessary transitive updates. Distinguish scanner severity from an
-  application exploit and record any remaining advisory with its actual path.
-- Validation: clean lockfile-based installation, focused compatibility checks,
-  complete frontend unit/type/lint/build ladder, refreshed full and production-only
-  audits and independent read-only review. Browser checks apply if a required
-  configuration change affects runtime delivery or browser behavior. Record exact
-  versions, advisory snapshot, reachability, unresolved limits and skipped checks.
-- Invariants: preserve root scoring/handicap/locked-round rules, private/session
-  handling, source behavior and production dependency boundary.
-- Stop: publish compatible development-tool repairs and evidence only. Begin no
-  major migration, team-query optimization, course-read or driver work.
+- Goal: remove the remaining Vitest/mocker/Tinypool findings through a deliberate
+  test-framework major upgrade while preserving application and test behavior.
+- Scope: the Vitest development declaration/lockfile family, minimum required
+  test/configuration migrations and evidence/docs. Refresh audits/registry and
+  maintainer migration guidance before choosing a patched 4.x version at least
+  4.1.11 with matching internal packages. Exclude Vitest 5, unrelated tool majors,
+  application features/source changes, runtime dependency upgrades, hosted work
+  and transitive overrides that violate parent ranges.
+- Behavior: keep the existing Node 22/Vite 7 build boundary, strict typing,
+  test isolation, mocks/timers and user-visible assertions. Resolve a coherent
+  patched tool family; remove or patch affected Tinypool paths rather than hiding
+  audit output. Preserve runtime package entries, API/UI contracts and produced
+  application behavior. Do not weaken, delete or ignore tests to pass migration.
+- Validation: clean lockfile-based install, installed peer/dependency check,
+  focused mock/timer/jsdom compatibility cases, complete frontend unit/type/lint/
+  build ladder, and fresh full/production-only audits. Verify no remaining
+  Vitest/mocker/Tinypool advisory and record other newly reported findings without
+  expanding scope. Compare local production assets; browser checks apply if
+  runtime delivery or behavior changes. Independent read-only review must cover
+  lock changes, any mechanical test migration, evidence and remaining limits.
+- Invariants: preserve root scoring/handicap/locked-round rules, privacy/session
+  handling, application behavior and the production dependency boundary.
+- Stop: publish only the bounded Vitest 4 migration and evidence. Begin no other
+  major upgrade, team-query optimization, course-read or driver work.
 
 ## Later queue
 
@@ -52,7 +60,7 @@ Select one bounded step at a time; none is implemented by this plan.
    [source inventory](validation/private-read-inventory-2026-10-14/README.md#courses).
 
 Keep legacy team/round write-expiry inventory separate; the private-read inventory
-never assessed those writes. Selecting the development-tool candidate does not authorize the later queue.
+never assessed those writes. Selecting the Vitest-family candidate does not authorize the later queue.
 
 Only after these, consider measurement-only steps for remaining Fantasy
 invalidation/fact-loading cost and empty-queue polling. No speculative optimization

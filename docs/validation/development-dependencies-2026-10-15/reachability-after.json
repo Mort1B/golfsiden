@@ -1,0 +1,92 @@
+[
+  {
+    "name": "brace-expansion",
+    "version": "1.1.21",
+    "location": "node_modules/brace-expansion",
+    "dev": true,
+    "parents": [
+      {
+        "name": "minimatch",
+        "version": "3.1.5",
+        "range": "^1.1.7",
+        "type": "prod"
+      }
+    ]
+  },
+  {
+    "name": "brace-expansion",
+    "version": "5.0.12",
+    "location": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+    "dev": true,
+    "parents": [
+      {
+        "name": "minimatch",
+        "version": "10.2.6",
+        "range": "^5.0.8",
+        "type": "prod"
+      }
+    ]
+  },
+  {
+    "name": "js-yaml",
+    "version": "4.3.2",
+    "location": "node_modules/js-yaml",
+    "dev": true,
+    "parents": [
+      {
+        "name": "@eslint/eslintrc",
+        "version": "3.3.6",
+        "range": "^4.3.0",
+        "type": "prod"
+      }
+    ]
+  },
+  {
+    "name": "source-map-js",
+    "version": "1.2.2",
+    "location": "node_modules/source-map-js",
+    "dev": true,
+    "parents": [
+      {
+        "name": "css-tree",
+        "version": "3.2.1",
+        "range": "^1.2.1",
+        "type": "prod"
+      },
+      {
+        "name": "postcss",
+        "version": "8.5.26",
+        "range": "^1.2.1",
+        "type": "prod"
+      }
+    ]
+  },
+  {
+    "name": "tinypool",
+    "version": "1.1.1",
+    "location": "node_modules/tinypool",
+    "dev": true,
+    "parents": [
+      {
+        "name": "vitest",
+        "version": "3.2.7",
+        "range": "^1.1.1",
+        "type": "prod"
+      }
+    ]
+  },
+  {
+    "name": "@vitest/mocker",
+    "version": "3.2.7",
+    "location": "node_modules/@vitest/mocker",
+    "dev": true,
+    "parents": [
+      {
+        "name": "vitest",
+        "version": "3.2.7",
+        "range": "3.2.7",
+        "type": "prod"
+      }
+    ]
+  }
+]

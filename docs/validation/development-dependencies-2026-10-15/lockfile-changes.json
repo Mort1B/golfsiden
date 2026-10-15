@@ -1,0 +1,57 @@
+{
+  "baseline": "88e80f0e8e4891c5f7988a9c8137391d80b6dfe3",
+  "changes": [
+    {
+      "path": "node_modules/@typescript-eslint/typescript-estree/node_modules/brace-expansion",
+      "before": "5.0.9",
+      "after": "5.0.12",
+      "fields": [
+        "integrity",
+        "resolved",
+        "version"
+      ],
+      "dev": true,
+      "integrity": "sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ=="
+    },
+    {
+      "path": "node_modules/brace-expansion",
+      "before": "1.1.18",
+      "after": "1.1.21",
+      "fields": [
+        "integrity",
+        "resolved",
+        "version"
+      ],
+      "dev": true,
+      "integrity": "sha512-9zeA+KLZNNzglF2TPKRQEDyx6Yby7daAkuy8MiPzpXPsYDWi/DRM8jmwUDxokQjYqBpv5DgPiwD4h4ZZSy1Ujw=="
+    },
+    {
+      "path": "node_modules/js-yaml",
+      "before": "4.3.1",
+      "after": "4.3.2",
+      "fields": [
+        "integrity",
+        "resolved",
+        "version"
+      ],
+      "dev": true,
+      "integrity": "sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA=="
+    },
+    {
+      "path": "node_modules/source-map-js",
+      "before": "1.2.1",
+      "after": "1.2.2",
+      "fields": [
+        "integrity",
+        "resolved",
+        "version"
+      ],
+      "dev": true,
+      "integrity": "sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw=="
+    }
+  ],
+  "all_other_entries_identical": true,
+  "manifest_identical": true,
+  "integrities_match_fresh_npm_view_metadata": true,
+  "registry_metadata_command": "npm view PACKAGE@VERSION version dist.integrity dependencies engines --json"
+}

@@ -53,6 +53,12 @@ addresses A6 with eight admitted operations, four worker slots and prompt overlo
 rejection. The historical A6 risk below remains source-supported at the reviewed
 revision; the follow-up records controlled saturation and cancellation acceptance.
 
+The [compatible development-dependency repair](../development-dependencies-2026-10-15/README.md)
+addresses the patch-compatible portion of A7: four lock entries remove three
+high-severity package entries from a fresh audit. Vitest/mocker/Tinypool findings
+remain open for the separate major upgrade; the historical A7 snapshot below is
+unchanged.
+
 This is a documentation-only assessment of current application source, database
 contracts, browser state, production configuration and dependency advisories.
 No application, dependency, migration or hosted configuration was changed.
