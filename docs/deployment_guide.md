@@ -37,9 +37,20 @@ logs while preserving status/duration/error diagnostics. Include the current
 `deploy/Caddyfile` when building web; the old DEPLOY-2 web image lacks this fix.
 API/PostgreSQL inputs and frontend assets remain unchanged.
 
-Three of six iterations are complete. Critical-flow acceptance, current-schema
-backup/restore and final freeze/advisory/launch handoff remain open; this is not
-deployment sign-off. Local Caddy certificate exceptions prove encrypted proxy
+[DEPLOY-4 critical-flow acceptance](validation/critical-flows-2026-10-15/README.md)
+passes one complete fresh sequence on the unchanged production images: 32 named
+checks, including 27 real-browser checks. Distinct organizer/player invitation,
+claim, setup, score recovery/conflict, gross/net, correction/reconfirmation,
+locked-write denial, final privacy and two-round Fantasy journeys pass at
+320/390/1280 widths. No production source/configuration changed. A P3 Fantasy
+entry read-reconciliation limitation remains: when the UI says the action is
+acknowledged but the view could not refresh, use **Oppdater Fantasy**. This
+performs a read retry; the tested fresh entry submits exactly one entry write.
+Do not treat that notice as an instruction to repeat the mutation.
+
+Four of six iterations are complete. Current-schema backup/restore and final
+freeze/advisory/launch handoff remain open; this is not deployment sign-off.
+Local Caddy certificate exceptions prove encrypted proxy
 behavior, not public trust. The high-port rehearsal checks redirect scheme/host/
 path only; verify following HTTP→HTTPS on actual host ports 80/443. Native Docker
 Engine and the operator's chosen public host still need acceptance.

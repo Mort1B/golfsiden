@@ -5,41 +5,41 @@
 
 ## Active step
 
-None. The previous bounded step is published with its
-[production integration evidence](validation/production-rehearsal-2026-10-15/README.md).
+None. DEPLOY-4 acceptance is recorded in the
+[critical-flow report](validation/critical-flows-2026-10-15/README.md).
 
-## Next candidate
+## Next candidate — requires implementation approval
 
-### DEPLOY-4 — critical organizer/player acceptance
+### DEPLOY-5 — current-application recovery rehearsal
 
-- Goal: establish that Sunday's required existing journeys work together in the
-  production assembly, using distinct organizer/player accounts.
-- Scope: isolated synthetic fixtures and real browser/API evidence for login/
-  invitation, roster/round setup, score save/recovery, gross/net, lock/correction,
-  final visibility and the required existing Fantasy flow. Reuse unchanged
-  artifact and focused acceptance evidence. Repair only confirmed serious defects
-  or unusable required flows; no new features, schema redesign or broad polish.
-- Behavior/invariants: retain session/membership fencing, exact uncertain-write
-  replay, acknowledged-write reconciliation, owner-exclusive scores, historical
-  handicaps, locked-round audit paths and final-round privacy. Fantasy remains
-  separate from sporting scores/completion and keeps versioned rules/receipts.
-- Validation: actual production settings/proxy and real restricted grants;
-  distinct-account successful and denied reads/writes, authoritative saved state,
-  relevant failure/retry states, mobile 320/390 and desktop widths. Run the full
-  affected ladder for any necessary source repair; retain exact engine/physical-
-  device limits. No combinatorial format/device matrix is required this step.
-- Stop: publish critical-flow acceptance or exact remaining blockers, remove owned
-  fixtures and define DEPLOY-5 recovery. Do not start recovery or administer the
-  operator's host in this iteration.
+- Goal: prove that the current schema-39 application can recover its acknowledged
+  state using the supplied single-host backup/restore procedure.
+- Scope: synthetic source data on the tested production images, actual backup
+  script and checksum sidecar, restoration into a fresh isolated project/volume,
+  owner/runtime grants, state parity and a short operating handoff. Reuse
+  unchanged build, integration and critical-flow evidence. Repair only confirmed
+  recovery or essential-flow blockers; no feature or schema redesign.
+- Behavior/invariants: never target an operator database or reuse a populated
+  restore destination. Preserve exact score revisions, confirmations, lifecycle,
+  historical handicaps, Fantasy receipts and private session/membership facts.
+  Restored runtime remains restricted; unsent browser drafts are outside server
+  backups. Never expose archive content, credentials or capability/session data.
+- Validation: actual production backup/checksum/restore commands, a fresh target
+  volume, representative complete state parity, real runtime grants, schema and
+  readiness, existing-account UI login/read, owned service restart/reconnect and
+  exact owned cleanup. Run the affected full ladder for any necessary repair;
+  keep native Docker, public host and off-host limits explicit.
+- Stop: publish recovery evidence or exact blockers, clean owned fixtures and
+  define DEPLOY-6 freeze/advisory/launch handoff. Do not start final sign-off or
+  administer the operator's host in this iteration.
 
 ## Sunday readiness path
 
-Iterations 1–3 are complete. Work one bounded step per iteration; each next candidate
+Iterations 1–4 are complete. Work one bounded step per iteration; each next candidate
 is defined before implementation. The six-iteration target is:
 
 | Iteration | Required outcome |
 | --- | --- |
-| 4 | Critical organizer/player acceptance with distinct accounts: login/invitation, roster/round setup, score save/recovery, gross/net, lock/correction, final visibility and required Fantasy flow, at mobile/desktop widths |
 | 5 | Actual current-application backup/checksum/restore into a fresh isolated project, state parity, real grants, readiness/login and restart/reconnect; short operating handoff |
 | 6 | Release freeze: affected final gates and current dependency/image advisory triage, immutable tested candidate, READY / READY WITH KNOWN LIMITATIONS / NOT READY verdict, concise operator launch/rollback checklist |
 
@@ -79,8 +79,12 @@ acceptance is not public Docker Engine/DNS/ACME acceptance.
   [DEPLOY-2 report](validation/production-images-2026-10-15/README.md)
   retains the original image acceptance. The
   [DEPLOY-3 report](validation/production-rehearsal-2026-10-15/README.md) records
-  integrated acceptance and the repaired P2 proxy-secret logging leak; recovery,
-  native Docker and hosted/final release acceptance remain open.
+  integrated acceptance and the repaired P2 proxy-secret logging leak. The
+  [DEPLOY-4 report](validation/critical-flows-2026-10-15/README.md) records the
+  complete critical-flow sequence and P3 acknowledged Fantasy entry/read-retry
+  limitation. Recovery, native Docker and hosted/final release acceptance remain
+  open. No further Fantasy diagnosis is selected without new serious or unusable
+  required-flow evidence.
 - [A1z](validation/lifecycle-expiry-investigation-2026-10-15/README.md) retains the
   unexplained full-default lifecycle test failure and passing focused controls.
   Revisit only with actionable evidence or a required release-validation blocker.

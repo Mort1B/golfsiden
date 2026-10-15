@@ -1,54 +1,72 @@
-# Latest iteration — production integration and private proxy logs
+# Latest iteration — critical production journeys
 
-DEPLOY-3 completes iteration three of the six-step Sunday readiness path. The
-actual production Compose assembly runs with fresh schema 39, owner-only
-migrations, real restricted runtime grants, secure browser sessions and native
-SSE through Caddy. Docker Compose CLI 5.6.0 uses a private temporary rootless
-Podman 5.8.7 API on amd64 because local Docker socket access is denied. No host
-socket, group, daemon or deployed service changed.
+DEPLOY-4 completes iteration four of the six-step Sunday readiness path. One
+fresh five-phase sequence passes 32 named checks, including 27 real-browser
+checks, on the unchanged production API/PostgreSQL and repaired DEPLOY-3 web
+images. No application, schema, dependency or deployment configuration changed.
+The [report](validation/critical-flows-2026-10-15/README.md) retains findings by
+severity, exact artifacts, receipts, screenshots and limits.
 
-The final live audit found a P2 deployment defect: Caddy reverse-proxy error
-records contain the attached shared proxy secret when native streams close.
-The default logger now drops whole request and response-header objects, keeping
-status/duration/error diagnostics. This also avoids recording cookie, CSRF and
-capability-bearing request metadata. The real web Dockerfile rebuilt with only
-that reviewed Caddy overlay; API/PostgreSQL inputs and all 65 built web assets
-remain unchanged. Actual error/access records from the rebuilt container omit
-the secret and private canaries, with operational fields retained.
+Separate organizer, invited player, claimed golfer and outsider accounts exercise
+actual UI login/registration, two-round setup, roster, manual courses, flights,
+permissions, scoring and Fantasy. The monitor checks relevant failed-response
+bodies and distinguishes controlled failures, cancelled reads and specifically
+acknowledged no-content writes. Mobile 320/390 and desktop 1280 widths cover
+loading, error, empty, populated, long-name, conflict and hidden/released states.
 
-Thirty-nine named checks pass. Actual API startup rejects unexpected identity,
-owner/excess authority, schema creation and migration-history writes. Missing,
-pending, dirty, unknown and changed-checksum histories reject startup and return
-generic readiness 503 while liveness remains 200. Database outage/reconnect
-restores readiness. Runtime authority is checked at startup; readiness checks
-database reachability and exact schema, not continuing role grants.
+A real player score commits but loses its response; exact replay returns the
+same acknowledgement. Offline local 5 meets newer server 7, presents a conflict
+and retains 7 after explicit server choice. Gross/net views use preserved cards.
+The organizer corrects a Completed card from 72 to 73, clearing confirmation and
+blocking locking until reconfirmed. Locked ordinary writes reject for both
+organizer and player. Correction while already locked is not claimed.
 
-Seven real-Chrome checks cover distinct organizer/player UI login, Secure/
-HttpOnly/SameSite=Lax host-only `/api` cookies, CSRF rejection, an acknowledged
-persisted score and a native same-origin event updating the player's gross total
-from 5 to 9. The player's final-round view preserves nine visible holes. Mobile
-320/390 and desktop 1280 layouts, login errors, no-score/populated rows and long
-names pass. Forged forwarding/internal headers cannot evade login quota.
+Fantasy rules 2 saves both round presets in order. A lost second response pauses
+the batch, then exact immutable replay returns the original revision-1 receipt.
+Other managers' drafts remain private, including from the organizer. Final-round
+opening materializes the member's carry-forward; late selection changes reject.
+All-par cards yield golfer 10 / manager 50. Correcting the organizer's card yields
+38 for captain-organizer and 44 for captain-member. Final par cards add 50 each,
+producing exact settled two-round totals 88/94 and eight contribution rows.
+Numeric and Fantasy final-round privacy withholds hidden facts and responds to
+organizer release/re-hide through the actual browser's native live refresh.
 
-Read-only review also caught inherited environment variables overriding the
-private fixture. The runner now clears interpolation keys, binds generated
-values, validates rendered destinations before service startup and passes
-poisoned database/provider/port controls. Browser harness assumptions about
-unscored links and player-visible holes were corrected; successful checks were
-repeated against the rebuilt web. An early log check correctly failed before
-native streams closed; complete post-browser logs pass. Fresh post-fix image
-selection/rendering has a separate offline pre-start control.
+One P3 usability limitation remains: joining Fantasy can acknowledge the write
+while read reconciliation fails, leaving editing disabled until **Oppdater
+Fantasy**. The tested fresh claimed golfer uses that read retry, submits exactly
+one entry write and saves its selection. This working recovery does not justify
+an unproven runtime refactor before Sunday.
 
-Cleanup removes the three owned containers, three volumes, two networks and
-private credentials/logs/CA/socket tree. Browsers close; four exact baseline/
-repaired images remain. The [report](validation/production-rehearsal-2026-10-15/README.md)
-retains receipts, immutable IDs, review, screenshot evidence and limits. Unchanged
-Rust/frontend unit/type/lint/Clippy/domain ladders were not repeated; the affected
-image/configuration/migration/grant/proxy/browser/log ladder was exercised.
+Separately, local Chrome reports an aborted-request event after actual response
+204 on entry/logout. Passive native-fetch controls of entry reproduce it without
+a tournament stream and with both original/default proxy flush settings. The cause
+is unproven; the report does not label this an application or Caddy defect. The
+monitor requires exact declared POST paths and actual 204 responses, with entry
+and logout counts separated. The exploratory Caddy setting was restored; no
+runtime repair was selected.
 
-DEPLOY-4 is next: critical organizer/player/Fantasy journeys using distinct
-accounts. Current-application restore and final freeze/advisory/launch handoff
-remain after it. Native Docker Engine, public DNS/ACME/certificate trust,
-standard-port redirect following, the actual playing phone and off-host recovery
-remain operator/release gates. This local run does not establish host readiness,
-capacity or deployment sign-off. No feature or speculative optimization is added.
+Early attempts exposed harness selector, async-state, wire-field and monitoring
+assumptions. Read-only review improved fault-window boundaries, exact actor/row
+assertions, member-card denial, no-store checks and fixture ownership. A later
+run correctly failed the monitor because organizer entry lacked its declaration.
+After that repair, the complete sequence reran from empty state. Partial earlier
+attempts remain explicitly separate and are not counted as acceptance.
+
+Fresh schema 39 uses owner migrations and actual restricted runtime grants.
+Final readiness, restricted schema reads, no restarts and absence of generated
+database passwords/proxy secret in complete service logs pass. Every owned
+fixture's three containers, three volumes, two networks and private credentials/
+diagnostics/CA/socket tree were removed; browsers close and four exact prior
+image IDs remain. Postconditions audit current source equality, receipts,
+retained images, harness syntax and cleanup. Unchanged full Rust/frontend unit,
+type, lint, Clippy and database-domain ladders were reused because no runtime
+source changed.
+
+Docker Compose CLI 5.6.0 used rootless Podman 5.8.7/amd64 through a private API;
+native Docker access remains denied. Local disposable Caddy certificate
+exceptions do not prove public trust. Actual host architecture, DNS/ACME,
+standard ports, physical playing phones, capacity and off-host recovery remain
+operator/release gates. The prior full-default lifecycle-test limitation remains
+explicit. DEPLOY-5 is next: actual current-application backup/checksum/restore,
+state parity, real grants, readiness/login and restart/reconnect. DEPLOY-6 owns
+the final freeze/advisory/verdict/launch handoff. Neither begins in this step.

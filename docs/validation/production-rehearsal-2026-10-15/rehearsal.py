@@ -181,7 +181,7 @@ class Rehearsal:
         self.save()
         self.receipt('production_api_web_healthy_https_through_caddy')
 
-    def cleanup(self):
+    def cleanup(self, receipt_path=None):
         project = self.state.get('project')
         counts = {}
         if project:
@@ -220,7 +220,8 @@ class Rehearsal:
         pointer = Path('/tmp/golf-deploy3-control-path')
         if pointer.exists() and pointer.read_text() == str(self.path):
             pointer.unlink()
-        (HERE / 'integration.json').write_text(json.dumps(safe, indent=2) + '\n')
+        destination = Path(receipt_path) if receipt_path else HERE / 'integration.json'
+        destination.write_text(json.dumps(safe, indent=2) + '\n')
         print(json.dumps({'cleanup': 'passed', 'checks': len(self.checks)}))
 
 

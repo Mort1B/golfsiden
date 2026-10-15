@@ -1,0 +1,79 @@
+{
+  "observations": {
+    "baseline": {
+      "statuses": [
+        204,
+        204,
+        204
+      ],
+      "events": [
+        {
+          "event": "response",
+          "status": 204
+        },
+        {
+          "event": "failed",
+          "error": "net::ERR_ABORTED",
+          "acknowledged_status": 204
+        },
+        {
+          "event": "response",
+          "status": 204
+        },
+        {
+          "event": "failed",
+          "error": "net::ERR_ABORTED",
+          "acknowledged_status": 204
+        },
+        {
+          "event": "response",
+          "status": 204
+        },
+        {
+          "event": "failed",
+          "error": "net::ERR_ABORTED",
+          "acknowledged_status": 204
+        }
+      ]
+    },
+    "default-flush": {
+      "statuses": [
+        204,
+        204,
+        204
+      ],
+      "events": [
+        {
+          "event": "response",
+          "status": 204
+        },
+        {
+          "event": "failed",
+          "error": "net::ERR_ABORTED",
+          "acknowledged_status": 204
+        },
+        {
+          "event": "response",
+          "status": 204
+        },
+        {
+          "event": "failed",
+          "error": "net::ERR_ABORTED",
+          "acknowledged_status": 204
+        },
+        {
+          "event": "response",
+          "status": 204
+        },
+        {
+          "event": "failed",
+          "error": "net::ERR_ABORTED",
+          "acknowledged_status": 204
+        }
+      ]
+    }
+  },
+  "original_caddy_configuration_restored": true,
+  "application_or_caddy_defect_established": false,
+  "scope": "idempotent native fetch from profile without tournament stream; local Chrome only"
+}

@@ -710,6 +710,19 @@ API/PostgreSQL inputs and all 65 web assets are unchanged. Local acceptance does
 not establish native Docker Engine, public certificate trust, hosted readiness
 or backup/restore acceptance.
 
+The [DEPLOY-4 critical-flow acceptance](validation/critical-flows-2026-10-15/README.md)
+adds one complete fresh five-phase run on those unchanged images: 32 named
+checks, including 27 real-browser checks at mobile/desktop widths. Distinct
+organizer/player invitation and claim flows, roster/course/flight setup,
+exact score/Fantasy replay, offline conflict choice, gross/net results,
+Completed-round correction/reconfirmation, locked-write denial, final visibility
+and two-round Fantasy totals pass. Joining Fantasy can retain its acknowledged
+action while read reconciliation fails; **Oppdater Fantasy** restores editing
+without another entry write. This P3 usability limitation remains explicit.
+Local Chrome's aborted-request event after response `204` is separately recorded
+and does not establish a runtime defect. No application source changed in this
+step. Current-schema restore and final release acceptance remain open.
+
 The deployment runbook uses explicit migration and permission actions, never a
 production seed. Its backup script creates an atomic custom-format PostgreSQL
 dump and relocatable SHA-256 sidecar. Restore requires explicit confirmation
