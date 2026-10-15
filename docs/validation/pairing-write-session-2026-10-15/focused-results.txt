@@ -1,0 +1,38 @@
+running 14 tests
+test pairing_team_sessions::authorization::changed_membership_reloads_payload_from_a_fresh_snapshot ... ok
+test pairing_team_sessions::authorization::authorized_reads_serialize_before_later_revocation_and_credential_changes ... ok
+test pairing_team_sessions::authorization::credential_replacement_before_authority_denies_both_reads ... ok
+test pairing_team_sessions::authorization::membership_removal_retries_with_fresh_authority_on_both_reads ... ok
+test pairing_team_sessions::authorization::revocation_before_transactional_authorization_denies_both_reads ... ok
+test pairing_team_sessions::contracts::cancellation_releases_session_authority_for_both_reads ... ok
+test pairing_team_sessions::contracts::empty_round_reads_preserve_typed_pairing_and_empty_team_envelopes ... ok
+test pairing_team_sessions::contracts::concurrent_valid_reads_preserve_payloads_and_do_not_write_or_emit_sse ... ok
+test pairing_team_sessions::contracts::legacy_individual_groups_keep_identity_schedule_and_distinct_sorting ... ok
+test pairing_team_sessions::contracts::member_loading_uses_one_snapshot_for_group_and_member_facts ... ok
+test pairing_team_sessions::contracts::roles_cross_tournament_missing_invalid_and_put_contracts_are_preserved ... ok
+test pairing_team_sessions::expiry::empty_pairing_and_team_results_still_recheck_expiry ... ok
+test pairing_team_sessions::expiry::expiry_during_final_pairing_query_or_team_members_denies_reads ... ok
+test pairing_team_sessions::expiry::expiry_during_membership_wait_denies_both_reads ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 43.68s
+
+     Running tests/round_pairings.rs (target/debug/deps/round_pairings-ad81cf6334f1f95d)
+
+running 15 tests
+test auth_decode_missing_and_cache_contract_is_uniform ... ok
+test concurrent_membership_revocation_is_reauthorized_after_round_lock ... ok
+test concurrent_round_change_becomes_stable_stale_conflict ... ok
+test concurrent_opening_wins_round_lock_and_suppresses_pairing_event ... ok
+test entrant_activity_is_effective_and_ineligible_submissions_write_nothing ... ok
+test empty_and_partial_draft_rosters_are_valid_for_both_formats ... ok
+test expiry::expiry_after_roster_writes_rolls_back_pairings ... ok
+test expiry::expiry_during_final_membership_wait_rolls_back_pairings ... ok
+test granular_team_writes_are_retired ... ok
+test identity_legacy_and_referenced_deletion_conflicts_are_stable_and_atomic ... ok
+test member_read_and_exact_legacy_conversion_are_private_atomic_and_auditable ... ok
+test pairing_first_holds_round_lock_until_commit_before_opening_rechecks ... ok
+test scramble_identity_is_retained_and_schedule_transfer_must_be_explicit ... ok
+test simultaneous_same_token_replacements_commit_once_and_emit_once ... ok
+test stale_invalid_and_non_admin_replacements_roll_back_without_events ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 20.79s

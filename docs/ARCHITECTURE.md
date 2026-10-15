@@ -210,17 +210,24 @@ See the [checksum acceptance report](validation/restore-checksum-2026-10-15/READ
   retains its 201 response and one post-commit round event. No mutation retry is
   added, and time during COMMIT/deferred constraints is outside the check. See
   [round-creation acceptance](validation/round-creation-session-2026-10-15/README.md).
-- Aggregate pairing replacement and course attachment retain the actual
-  session/user and exact-admin membership locks in their write transactions,
-  but currently have no final wall-clock expiry check after dependent
-  SQL/assembly. Revocation and membership writers serialize on those
+- Aggregate pairing replacement retains its stored-round, session/user and
+  exact-admin membership locks, then rechecks the same session with database
+  wall-clock time after the complete replacement response is assembled and
+  immediately before commit. Expiry during membership or later work rolls back
+  group/member/timestamp changes and returns private 401 without an event.
+  Successful replacements retain their model and one post-commit event, with
+  no mutation retry. See
+  [pairing-write acceptance](validation/pairing-write-session-2026-10-15/README.md).
+- Course attachment retains actual session/user and exact-admin membership locks
+  in its write transaction, but currently has no final wall-clock expiry check
+  after dependent SQL. Revocation and membership writers serialize on those
   locks; natural expiry remains unchecked after the initial session query.
   Draft/roster/course database guards enforce domain facts, not this missing
   session boundary. Granular team writes are retired and their retained helpers
   have no callers. See the source-only
   [legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md)
-  for the original three P2 findings, W1's linked repair, exact route/caller scope
-  and the two remaining separate repairs.
+  for the original three P2 findings, W1/W2's linked repairs, exact route/caller
+  scope and the remaining course-attachment repair.
 - Tournament start is a separate exact-admin lifecycle boundary. Its transaction
   locks the stored round set deterministically before reauthorizing the session
   and exact tournament membership, locking the tournament, and share-locking
@@ -715,7 +722,9 @@ See the [checksum acceptance report](validation/restore-checksum-2026-10-15/READ
   grouping teams convert only through an exact mapping that preserves schedule,
   membership order, and timestamps. Scramble and foursomes teams remain durable score-owner
   identities; old team schedule moves only to an explicitly named flight with
-  identical members and facts. One round event follows commit.
+  identical members and facts. The final same-session wall-clock check follows
+  complete response assembly and precedes commit; one round event follows a
+  successful commit.
 - Member round details consume that same decoded aggregate and canonical
   user/round pairings query as management. Flight schedules are presentation
   facts only; team cards and legacy individual groups remain distinct. Round

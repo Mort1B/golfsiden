@@ -8,6 +8,7 @@ use uuid::Uuid;
 use crate::{
     domain::{models::RoundStatus, round_pairings::ReplacementCommand},
     repositories::{
+        auth,
         round_pairings::{RoundPairingsError, load, types::RoundPairings},
         tournament_authorization,
     },
@@ -44,6 +45,9 @@ pub(super) async fn execute(
         .await?
         .ok_or(tournament_authorization::AuthorizationError::NotFound)?;
     let model = load::model(&mut tx, updated).await?;
+    auth::lock_active_session(&mut tx, session_id)
+        .await?
+        .ok_or(tournament_authorization::AuthorizationError::Unauthenticated)?;
     tx.commit().await?;
     Ok(model)
 }

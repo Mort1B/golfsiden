@@ -2,7 +2,9 @@
 
 Follow-up: [A1p round-creation repair](../round-creation-session-2026-10-15/README.md)
 repairs W1 with reproduced membership-wait and late-insert expiry, full rollback
-and valid-session controls. W2 and W3 remain separate P2 repairs. Classifications,
+and valid-session controls. [A1q pairing-write repair](../pairing-write-session-2026-10-15/README.md)
+repairs W2 with membership/late-write expiry and rollback/control evidence.
+W3 remains a separate P2 repair. Classifications,
 counts, source anchors and the manifest below preserve the original A1o source
 snapshot; the assessment itself did not reproduce a runtime race.
 

@@ -1,0 +1,29 @@
+running 2 tests
+test expiry::expiry_after_roster_writes_rolls_back_pairings ... FAILED
+test expiry::expiry_during_final_membership_wait_rolls_back_pairings ... FAILED
+
+failures:
+
+---- expiry::expiry_after_roster_writes_rolls_back_pairings stdout ----
+
+thread 'expiry::expiry_after_roster_writes_rolls_back_pairings' (970298) panicked at backend/tests/round_pairings/expiry.rs:160:9:
+assertion `left == right` failed: expiry=true, late=true
+  left: 200
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- expiry::expiry_during_final_membership_wait_rolls_back_pairings stdout ----
+
+thread 'expiry::expiry_during_final_membership_wait_rolls_back_pairings' (970299) panicked at backend/tests/round_pairings/expiry.rs:160:9:
+assertion `left == right` failed: expiry=true, late=false
+  left: 200
+ right: 401
+
+
+failures:
+    expiry::expiry_after_roster_writes_rolls_back_pairings
+    expiry::expiry_during_final_membership_wait_rolls_back_pairings
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 13 filtered out; finished in 9.12s
+
+error: test failed, to rerun pass `-p golf-api --test round_pairings`

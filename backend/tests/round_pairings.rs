@@ -1,5 +1,8 @@
 #![cfg(feature = "database-tests")]
 
+#[path = "round_pairings/expiry.rs"]
+mod expiry;
+
 use axum::{
     body::Body,
     http::{Request, StatusCode, header},

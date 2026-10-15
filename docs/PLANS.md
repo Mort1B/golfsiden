@@ -5,43 +5,49 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A1p acceptance is in the
-[round-creation report](validation/round-creation-session-2026-10-15/README.md).
+None. A1q pairing-replacement expiry is complete; its reproduction, rollback,
+browser and validation evidence is in the
+[acceptance report](validation/pairing-write-session-2026-10-15/README.md).
 
 ## Next candidate — requires approval
 
-### A1q — P2 pairing-replacement final session expiry
+### A1r — P2 course-configuration final session expiry
 
-The [legacy-write inventory W2](validation/legacy-write-inventory-2026-10-15/README.md#w2--aggregate-pairing-replacement-incomplete-p2)
-supports this separate candidate. It is not started by A1p.
+The [legacy-write inventory W3](validation/legacy-write-inventory-2026-10-15/README.md#w3--course-configuration-incomplete-p2)
+supports this separate candidate. It is not started by A1q.
 
-- Goal: reject aggregate pairing replacement if its initially authorized session
-  expires during membership or dependent validation/write/response-loading work.
-- Scope: only `PUT /api/rounds/{round_id}/pairings`, its final replacement
-  transaction, focused PostgreSQL/API regression support and affected docs.
-  Exclude course attachment, preflight redesign, retained team helpers, frontend
-  implementation, scoring, schema/dependencies, provider and hosted work.
-- Behavior: preserve stored-round, session/user and exact-admin membership locks;
-  recheck the same session with database wall-clock time after the updated
-  response model is loaded and immediately before commit. Expiry uses the
-  existing private/no-store 401, rolls back groups/memberships/timestamps and
-  emits no event. Preserve CSRF, draft/version checks, validation order, roster
-  identity/schedule/order rules, successful response and one post-commit event.
-  Add no mutation retry. COMMIT/deferred-constraint/delivery time remains outside
-  the final-check guarantee.
-- Validation: first reproduce expiry during a final-transaction membership wait
-  and after pending roster writes or late response loading, with observable
-  deterministic PostgreSQL/API gates. Assert 401, full stored-state rollback and
-  no event, plus valid controls preserving one replacement/event. Run focused
-  pairing/authorization regressions, backend formatting/tests/strict Clippy,
-  full PostgreSQL-feature/migrate/seed validation and independent read-only
-  authorization review. Validate the existing pairing editor at mobile and
-  desktop widths, including loading/error, empty/populated and long-content
-  states; keep its current mutation/error behavior. Check docs and scoped diff.
-- Invariants: preserve one team per player/round, stored-parent authority, draft
-  pairing protection, durable historical score-owner references and atomicity.
+- Goal: reject course attachment if its initially authorized session expires
+  during membership or course/revision/round-update work before commit.
+- Scope: only `PUT /api/rounds/{round_id}/course-configuration`, its final
+  `round_configuration::configure` transaction, focused PostgreSQL/API support
+  and affected docs. Exclude preflight redesign, course GETs, provider/cache/quota
+  behavior, retained helpers, frontend implementation, schema/dependencies,
+  sporting rules and hosted work.
+- Behavior: retain stored-round, session/user and exact-admin membership locks,
+  then recheck the same session with database wall-clock time after the complete
+  hierarchy insertion and round UPDATE/RETURNING, immediately before commit.
+  Expiry uses existing private/no-store 401, rolls back course/tee/hole rows and
+  attachment/timestamp changes, and emits no event. Preserve draft/version/format
+  guards, immutable revision facts, validation precedence, successful 200 model
+  and one post-commit event. Add no mutation retry or repeated provider fetch;
+  keep external I/O outside the final transaction. COMMIT/deferred-constraint/
+  delivery time remains outside the final-check guarantee.
+- Validation: first reproduce final membership-wait and late pending hierarchy/
+  attachment expiry against current source using deterministic PostgreSQL/API
+  gates, distinct from preflight. Assert private 401, complete rollback without
+  orphan revisions and no event, plus renewed-session controls creating one
+  hierarchy/attachment/event. Run focused configuration/authorization tests,
+  backend formatting/tests/strict Clippy, full PostgreSQL-feature/migrate/seed
+  validation and independent read-only review. Check the existing configuration
+  UI at mobile/desktop widths with relevant loading/error/empty/populated and
+  long-content states. Preserve the unusable-catalog/provider coverage limit;
+  do not claim a successful remote provider flow from helper fixtures. Check
+  documentation, source size and scoped diff.
+- Invariants: preserve stored-parent authority, draft-only attachment, historical
+  course/handicap data, immutable complete revisions and atomicity.
 - Stop: publish this single validated repair and a concise next candidate; do
-  not begin W3, preflight/provider, helper, driver or optimization work.
+  not begin preflight/provider, helper, driver, test-maintenance or optimization
+  work.
 
 ## Later queue
 
@@ -55,9 +61,10 @@ The selected private-read findings have linked acceptance. The separate
 [legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md)
 preserves the original three source-supported P2 expiry gaps. The linked
 round-creation repair closes W1 with reproduced expiry and rollback evidence.
-W2 (pairing replacement) is the sole next candidate above; W3 (course
-configuration) requires a later separate step. The original assessment itself
-reproduced no runtime race.
+The linked pairing-replacement repair closes W2 with the same expiry/rollback
+acceptance. W3 (course configuration) is the sole remaining P2 write-expiry
+candidate above and requires a separate approved step. The original assessment
+itself reproduced no runtime race.
 Retired granular team writes receive no reachable-route finding. Provisional
 user-only preflight/provider-work observations remain separate and unrated.
 

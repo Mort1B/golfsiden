@@ -1,40 +1,44 @@
-# Latest iteration — round-creation session expiry
+# Latest iteration — pairing-replacement session expiry
 
-A1p repairs direct `POST /api/tournaments/{tournament_id}/rounds`, W1 in the
+A1q repairs W2, aggregate `PUT /api/rounds/{round_id}/pairings`, from the
 [legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md).
-After INSERT/RETURNING and immediate triggers, the repository rechecks the same
-session with database wall-clock time immediately before commit. It retains the
-existing session/user and exact-admin membership locks and error mapping.
+After all roster mutations, timestamp updates and complete response assembly,
+the repository rechecks the same active session with database wall-clock time
+immediately before commit. Existing round/session/admin locks, validation,
+response fields and error mapping remain intact. No mutation retry is added.
 
-An initially active session could previously expire during the membership wait
-or insert work, then still create a round. Both new controlled API tests
-reproduced `201` instead of `401` against unchanged production code. They now
-return `401 unauthenticated` / `no-store`, roll back the complete round and
-conditional Fantasy window, preserve parent/game/overall-guard facts and publish
-no event. The late test verifies those pending round/child rows inside its
-isolated AFTER INSERT trigger before waiting.
+Both new API/PostgreSQL cases reproduced `200` instead of `401` on unchanged
+production code. The membership test first observes the final transaction's
+round wait, then holds the unchanged membership after preflight. The late test
+verifies pending legacy-team/member and old-flight deletion, new flights/members
+and a changed timestamp inside its isolated trigger before waiting. It covers a
+late-write wait; a separate final-loader wait was not reproduced.
 
-Fresh valid-session controls traverse the same gates, create exactly one draft
-round and child, return `201` and publish one matching event. All six focused
-round-creation tests pass, including the four retained admission/preflight/
-authorization/commit cases. No mutation retry is added, and the final check does
-not freeze time inside COMMIT, deferred constraints or network delivery.
+Both now return private/no-store `401 unauthenticated`, restore the complete
+stored roster/round snapshot and publish no event. Fresh valid-session controls
+reuse the original optimistic timestamp and identities, commit one replacement
+and publish one matching event. All 29 focused pairing/team cases pass.
+Independent read-only source/test review found no actionable findings.
 
-Backend formatting, 264 all-target tests and strict Clippy pass. Eight existing
-provider-unit tests first hit the sandbox's loopback-bind restriction; the full
-rerun with socket permission passed without an external provider call.
-Independent read-only authorization/test review found no actionable findings.
-The full PostgreSQL-feature ladder passes 948 tests with zero failures and five
-existing manual probes ignored, including a repeat of all six round-creation
-cases. Migrate and seed pass with all 39 migrations. The owned local PostgreSQL
-container and private environment files were removed. Independent documentation/
-next-plan review and source-size, link, anchor and diff checks also pass. The
-[acceptance report](validation/round-creation-session-2026-10-15/README.md)
-records baseline failures, focused/full results, commands and limits.
+Real Chrome editor checks pass at 320, 390 and 1280px: loading, populated/empty,
+long-content layout, saving feedback, one real PUT and persisted reload, read
+error/retry and no unexpected browser/network errors. A deliberately injected
+PUT 401 leaves GET authority valid and checks existing access feedback, disabled
+editing, current-draft retention, explicit discard/read recovery and no mutation
+retry. This does not claim retained drafts across genuine auth-loss unmounts.
+Actual logout plus forced reload separately confirms private 401/login gating.
+An initial probe's same-fragment navigation assumption was corrected without
+application changes; the complete final probe and focused screenshots pass.
 
-No production UI consumer calls this direct POST; creation screens use excluded
-aggregate APIs. No frontend, schema, provider or dependency change is included.
-Pairing replacement and course configuration remain separate P2 repairs, as do
-provisional preflight observations and retained helper cleanup. No adjacent
-implementation began. The [plan](PLANS.md) closes A1p and proposes pairing
-replacement alone as the next bounded repair.
+Backend formatting, 264 all-target tests, strict Clippy and API binaries pass.
+The complete PostgreSQL-feature ladder passes 950 tests with zero failures and
+five existing ignored measurement probes. Explicit migration/seed checks pass
+with all 39 migrations successful, eight players and five rounds. Independent
+source/test, browser-evidence and documentation/next-plan reviews found no
+actionable findings. Local links, source anchors, file scope/size and diff
+whitespace checks pass. Evidence and remaining limits are in the
+[acceptance report](validation/pairing-write-session-2026-10-15/README.md).
+Time during COMMIT, deferred constraints and network delivery remains outside
+the final-check guarantee. No frontend, schema, dependency, provider or hosted
+change is included. Course configuration remains the separate P2 follow-up;
+no adjacent implementation began.

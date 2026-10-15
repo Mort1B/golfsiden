@@ -784,16 +784,24 @@ matching round event after commit. There is no automatic mutation retry. The
 records both reproduced expiry gaps and their rollback/control coverage. Time
 during COMMIT/deferred constraints and delivery remains outside this guarantee.
 
-Pairing replacement and course configuration retain a different current limit:
-their final write transactions check the actual session and exact admin
-membership initially, but do not recheck natural expiry after subsequent waits,
-writes or response assembly. Retained locks serialize later revocation and
-membership changes; they do not stop the clock. Draft, roster and course
+Pairing replacement also rechecks the same session after complete response
+assembly and immediately before commit. Expiry during membership or later work
+returns private/no-store `401 unauthenticated`, rolls back groups, memberships
+and the round timestamp, and publishes no event. Successful replacements retain
+their model and one post-commit event. There is no mutation retry. The
+[pairing-write report](validation/pairing-write-session-2026-10-15/README.md)
+records both reproduced waits, rollback/control coverage and real editor checks.
+
+Course configuration retains a different current limit: its final write
+transaction checks the actual session and exact admin membership initially, but
+does not recheck natural expiry after subsequent waits and writes. Retained
+locks serialize later revocation and membership changes; they do not stop the
+clock. Draft, roster and course
 invariants still apply. The source-only
 [legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md)
-rates these remaining gaps P2 and preserves the original assessment of all three
+rates this remaining gap P2 and preserves the original assessment of all three
 writes. The assessment itself reproduced no runtime race or behavior change;
-round-creation reproduction and repair belong to the separate report above.
+round-creation and pairing reproduction/repairs belong to the separate reports.
 
 ## Live scorecards
 
@@ -2248,8 +2256,10 @@ membership display order.
 
 The final transaction locks the round, reauthorizes the active session and admin
 membership, repeats draft/version checks, validates identities and references,
-then replaces the roster and advances the round timestamp atomically. Only a
-successful commit emits one identifier-free round event. Errors, including
+then replaces the roster and advances the round timestamp atomically. After the
+complete response model is loaded, it rechecks wall-clock session expiry before
+commit; expiry returns private 401 and rolls back all roster/timestamp effects.
+Only a successful commit emits one identifier-free round event. Errors, including
 malformed, oversized, stale, opened, identity-conflict, conversion, and
 referenced-team failures, are private/non-cacheable and leave no partial rows or
 event.
