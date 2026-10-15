@@ -1,0 +1,60 @@
+Initial sandboxed workspace command: cargo test --locked --workspace --all-targets
+Exit: 101. Rerun with local socket permission passed all264 tests,1 existing ignored.
+No source change between these runs.
+
+failures:
+
+---- course_provider::tests::detail_uses_bearer_auth_parses_envelope_and_caches stdout ----
+
+thread 'course_provider::tests::detail_uses_bearer_auth_parses_envelope_and_caches' (2923) panicked at backend/src/course_provider/tests.rs:24:59:
+called `Result::unwrap()` on an `Err` value: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }
+
+---- course_provider::tests::detail_rejects_courses_without_tees stdout ----
+
+thread 'course_provider::tests::detail_rejects_courses_without_tees' (2920) panicked at backend/src/course_provider/tests.rs:24:59:
+called `Result::unwrap()` on an `Err` value: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }
+
+---- course_provider::tests::local_daily_quota_is_checked_after_cache_and_before_upstream stdout ----
+
+thread 'course_provider::tests::local_daily_quota_is_checked_after_cache_and_before_upstream' (2924) panicked at backend/src/course_provider/tests.rs:24:59:
+called `Result::unwrap()` on an `Err` value: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }
+
+---- course_provider::tests::detail_rejects_stroke_indexes_outside_the_hole_count_permutation stdout ----
+
+thread 'course_provider::tests::detail_rejects_stroke_indexes_outside_the_hole_count_permutation' (2922) panicked at backend/src/course_provider/tests.rs:24:59:
+called `Result::unwrap()` on an `Err` value: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }
+
+---- course_provider::tests::timeout_and_saturation_are_deliberate_errors stdout ----
+
+thread 'course_provider::tests::timeout_and_saturation_are_deliberate_errors' (2926) panicked at backend/src/course_provider/tests.rs:24:59:
+called `Result::unwrap()` on an `Err` value: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }
+
+---- course_provider::tests::upstream_statuses_are_mapped_without_reading_error_bodies stdout ----
+
+thread 'course_provider::tests::upstream_statuses_are_mapped_without_reading_error_bodies' (2927) panicked at backend/src/course_provider/tests.rs:24:59:
+called `Result::unwrap()` on an `Err` value: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }
+
+---- course_provider::tests::detail_rejects_missing_stroke_index_and_wrong_envelope stdout ----
+
+thread 'course_provider::tests::detail_rejects_missing_stroke_index_and_wrong_envelope' (2921) panicked at backend/src/course_provider/tests.rs:24:59:
+called `Result::unwrap()` on an `Err` value: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }
+
+---- course_provider::tests::oversized_and_invalid_json_responses_fail_closed stdout ----
+
+thread 'course_provider::tests::oversized_and_invalid_json_responses_fail_closed' (2925) panicked at backend/src/course_provider/tests.rs:24:59:
+called `Result::unwrap()` on an `Err` value: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }
+
+
+failures:
+    course_provider::tests::detail_rejects_courses_without_tees
+    course_provider::tests::detail_rejects_missing_stroke_index_and_wrong_envelope
+    course_provider::tests::detail_rejects_stroke_indexes_outside_the_hole_count_permutation
+    course_provider::tests::detail_uses_bearer_auth_parses_envelope_and_caches
+    course_provider::tests::local_daily_quota_is_checked_after_cache_and_before_upstream
+    course_provider::tests::oversized_and_invalid_json_responses_fail_closed
+    course_provider::tests::timeout_and_saturation_are_deliberate_errors
+    course_provider::tests::upstream_statuses_are_mapped_without_reading_error_bodies
+
+test result: FAILED. 254 passed; 8 failed; 1 ignored; 0 measured; 0 filtered out; finished in 10.97s
+
+error: test failed, to rerun pass `--lib`

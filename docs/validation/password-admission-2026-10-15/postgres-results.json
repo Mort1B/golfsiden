@@ -1,0 +1,69 @@
+{
+  "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "focused-api": {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "golf-api",
+      "--lib",
+      "--features",
+      "database-tests",
+      "auth::password::api_tests::",
+      "--",
+      "--test-threads=2"
+    ],
+    "exit": 0,
+    "seconds": 27.98,
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  "database-suite": {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "database-tests",
+      "--",
+      "--test-threads=2"
+    ],
+    "exit": 0,
+    "seconds": 818.72,
+    "passed": 932,
+    "failed": 0,
+    "ignored": 4
+  },
+  "migrate": {
+    "command": [
+      "cargo",
+      "run",
+      "--locked",
+      "-p",
+      "golf-api",
+      "--bin",
+      "migrate"
+    ],
+    "exit": 0,
+    "seconds": 0.62
+  },
+  "seed": {
+    "command": [
+      "cargo",
+      "run",
+      "--locked",
+      "-p",
+      "golf-api",
+      "--bin",
+      "seed"
+    ],
+    "exit": 0,
+    "seconds": 0.57
+  },
+  "migrations_current": "39",
+  "owned_container_removed": true
+}

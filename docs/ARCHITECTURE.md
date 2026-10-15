@@ -111,8 +111,9 @@ The API accepts that client identity only after a constant-time secret match and
 otherwise collapses the request to a non-spoofable direct identity. Public
 `Forwarded`, `X-Forwarded-For`, and lookalike internal headers never select a
 rate-limit bucket. Abuse-sensitive authentication and invitation routes use a
-bounded two-level limiter, while password verification uses a separate shared
-four-task Argon2 semaphore. The limiter checks existing quotas before admitting
+bounded two-level limiter, while asynchronous password hashing/verification uses
+a separate process-local budget of eight admitted operations and four blocking
+worker slots. The request-rate limiter checks existing quotas before admitting
 new buckets and never evicts an unexpired counter to make room. Its single mutex
 owns expiry pruning, capacity admission and accounting atomically. At shared
 capacity, new client/resource buckets fail closed until space expires; already
@@ -458,9 +459,19 @@ See the [checksum acceptance report](validation/restore-checksum-2026-10-15/READ
   secondary-field decoding. Registration hashes outside the transaction after a
   cheap link preflight, then revalidates with database time after row-lock waits.
   Cookies and SSE invalidations remain post-commit only.
-- Argon2 creation work is capped to four blocking tasks. An owned semaphore
-  permit stays inside the non-cancellable blocking closure, so request
-  cancellation cannot release capacity while hashing continues.
+- Asynchronous Argon2 hashing and real/dummy verification share one process-local
+  admission boundary: `try_acquire_owned` admits at most eight operations before
+  awaiting one of four blocking-worker slots. Excess work immediately returns
+  the existing capacity error; API callers retain their generic 500
+  `internal_error` mapping. This is separate from request rate limiting and its
+  429 contract. Waiting cancellation drops admission; both owned permits move
+  into the blocking closure and remain held through Tokio pool queuing and
+  execution, even if the request is cancelled. Completion, operation errors and
+  panic unwinding release capacity. No database transaction spans password work.
+  The synchronous seed helper, Argon2 parameters and credential rechecks are
+  unchanged. This bounds helper admission, not all HTTP requests or process
+  memory; the limit is a finite policy, not measured service capacity. See
+  [the A6 evidence](validation/password-admission-2026-10-15/README.md).
 - Tournament mutation repositories resolve the target trip from tournament,
   round, or team identifiers and revalidate the active session plus membership
   inside the write transaction. A global administrator is not a cross-tournament

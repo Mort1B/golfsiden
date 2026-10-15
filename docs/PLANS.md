@@ -5,43 +5,36 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A5 acceptance is in the [restore-checksum report](validation/restore-checksum-2026-10-15/README.md).
+None. A6 acceptance is in the [password-admission report](validation/password-admission-2026-10-15/README.md).
 
 ## Next candidate — requires approval
 
-### A6 — P2: bound password-work admission
+### A7 — P2: compatible development-dependency repairs
 
-Evidence: [original review A6](validation/application-review-2026-10-14/README.md#a6--p2-password-work-admission-has-no-explicit-queue-bound).
-The current helper limits active workers to four but lets every caller await
-that semaphore while retaining its operation and inputs.
+Evidence: [original review A7](validation/application-review-2026-10-14/README.md#a7--p2-development-tool-advisories-need-a-separate-upgrade).
+The original audit found development-only advisories; its snapshot does not
+establish today's versions, reachability or production remote execution.
 
-- Goal: bound process-local active-plus-waiting password work without weakening
-  Argon2, credential checks or cancellation safety.
-- Scope: the shared password blocking-work boundary, focused unit/API/PostgreSQL
-  tests and docs. Preserve existing callers' API contracts and error mappings;
-  exclude authentication-policy changes, rate-limit redesign, frontend work,
-  dependencies, hosted configuration and other findings.
-- Behavior: admit at most eight password operations in total, retaining the
-  existing maximum of four active blocking workers and at most four waiting
-  operations. Reject excess admission promptly using the existing capacity error
-  and generic non-secret HTTP error mapping. Share the same budget across
-  hashing, real-user verification and dummy-user verification. Waiting-request
-  cancellation releases admission; already-started blocking work holds all its
-  capacity until completion even if its request is cancelled. Errors/panics must
-  release capacity. Preserve credentials, hashes, generic login failures and
-  account/session write ordering. This finite policy is not a measured service-
-  capacity or latency claim.
-- Validation: deterministic saturation gates prove the four-active/eight-admitted
-  bounds, prompt excess rejection, waiting cancellation, active cancellation,
-  error/panic release and later legitimate recovery. Cover known/dummy-user
-  parity, unchanged generic HTTP errors and no account/session write on failure;
-  run the complete affected backend/PostgreSQL ladders and independent read-only
-  review. Record evidence without passwords, encoded hashes or session secrets.
-- Invariants: preserve root sporting/handicap/locked-round rules, constant-time
-  credential verification intent, existing rate limits and no unauthenticated
-  account/session mutation. Capacity belongs to work until it actually ends.
-- Stop: publish only bounded password admission and evidence. Begin no queued
-  dependency, query-performance, course-read or driver work.
+- Goal: remove currently confirmed advisories that can be fixed within the
+  existing development-tool majors, preserving application behavior.
+- Scope: frontend development dependency declarations/lockfile, necessary focused
+  tool configuration and validation/docs. Refresh full and production-only audits
+  before selecting exact compatible patched versions. Exclude runtime dependency
+  changes, application features, hosted actions, blind force-updates and major
+  tool migrations; document a separate candidate if a major migration is required.
+- Behavior: preserve strict TypeScript, test isolation, lint/build semantics and
+  existing API/UI contracts. Keep fixes confined to development tooling and the
+  minimum necessary transitive updates. Distinguish scanner severity from an
+  application exploit and record any remaining advisory with its actual path.
+- Validation: clean lockfile-based installation, focused compatibility checks,
+  complete frontend unit/type/lint/build ladder, refreshed full and production-only
+  audits and independent read-only review. Browser checks apply if a required
+  configuration change affects runtime delivery or browser behavior. Record exact
+  versions, advisory snapshot, reachability, unresolved limits and skipped checks.
+- Invariants: preserve root scoring/handicap/locked-round rules, private/session
+  handling, source behavior and production dependency boundary.
+- Stop: publish compatible development-tool repairs and evidence only. Begin no
+  major migration, team-query optimization, course-read or driver work.
 
 ## Later queue
 
@@ -51,17 +44,15 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A7:** upgrade affected development tools in compatible, validated
-   dependency steps. Scanner critical labels do not establish production RCE.
-2. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
+1. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
    query count and end-to-end cost. No current frontend latency impact is proven.
 
-3. **P3 / A1 course reads:** bind the three lower-impact course GETs in a
+2. **P3 / A1 course reads:** bind the three lower-impact course GETs in a
    separately selected step; provider-success impact remains conditional in the
    [source inventory](validation/private-read-inventory-2026-10-14/README.md#courses).
 
 Keep legacy team/round write-expiry inventory separate; the private-read inventory
-never assessed those writes. Selecting the password-admission candidate does not complete it or authorize the later queue.
+never assessed those writes. Selecting the development-tool candidate does not authorize the later queue.
 
 Only after these, consider measurement-only steps for remaining Fantasy
 invalidation/fact-loading cost and empty-queue polling. No speculative optimization

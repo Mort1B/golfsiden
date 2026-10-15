@@ -1,0 +1,16 @@
+[
+  {
+    "controlled_startup_failure": true,
+    "controlled_removal_failure": false,
+    "reported_removal_matches_result": true,
+    "failure_retains_owned_id_only_when_needed": true,
+    "real_container_invoked": false
+  },
+  {
+    "controlled_startup_failure": true,
+    "controlled_removal_failure": true,
+    "reported_removal_matches_result": true,
+    "failure_retains_owned_id_only_when_needed": true,
+    "real_container_invoked": false
+  }
+]

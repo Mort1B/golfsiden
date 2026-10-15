@@ -1386,9 +1386,18 @@ Login creates a revocable server session and returns an opaque token only in an
 `HttpOnly`, `SameSite=Lax` cookie. PostgreSQL stores only the token's SHA-256
 hash. Auth responses are not cacheable. Password syntax and a 4 KiB login-body
 limit are checked before database work, and Argon2 verification runs through a
-shared four-task semaphore off the async executor so credential bursts cannot
-consume unbounded blocking workers. Score mutations plus logout require the
-session-derived CSRF token. Score writes lock and revalidate the session in their
+shared process-local budget off the async executor: at most eight admitted
+operations and four blocking-worker slots. Hashing, real-user verification and
+unknown-user dummy verification share this budget. Excess work is rejected
+immediately with the existing generic 500 `internal_error` response, without a
+cookie or account/session mutation. This is distinct from the request limiter's
+429 response below. Cancellation while waiting frees admission; cancellation
+after dispatch retains both permits until blocking work actually ends, including
+time queued in Tokio's blocking pool. Argon2 parameters and credential rechecks
+are unchanged. The [A6 acceptance report](validation/password-admission-2026-10-15/README.md)
+covers saturation and later valid work; it makes no production capacity claim.
+
+Score mutations plus logout require the session-derived CSRF token. Score writes lock and revalidate the session in their
 existing round transaction, so logout cannot complete before an
 already-authorized write.
 

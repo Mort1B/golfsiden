@@ -1,0 +1,25 @@
+A6 local acceptance — 2026-10-15
+Baseline production revision: 81689e68f07d0b3ac7b6600de39bbc1d0feb65e6
+
+Original helper ninth-operation regression: expected exit101; four active/four waiting, ninth fails to reject within200ms
+cargo test -p golf-api --lib auth::password::tests: exit0;7 passed
+cargo fmt --all -- --check: exit0
+Initial sandboxed cargo test --locked --workspace --all-targets: exit101;8 unchanged HTTP fixture listeners receive PermissionDenied
+Same complete workspace command with local socket permission: exit0;264 passed,1 existing ignored
+cargo clippy --locked --workspace --all-targets --all-features -- -D warnings: exit0;3 unchanged vendored SQLx warnings
+
+python3 docs/validation/password-admission-2026-10-15/postgres_ladder.py --output /tmp/golf-a6-postgres-logs
+Focused cargo test --locked -p golf-api --lib --features database-tests auth::password::api_tests:: -- --test-threads=2: exit0;1 passed
+cargo test --locked --workspace --all-targets --features database-tests -- --test-threads=2: exit0;932 passed,4 existing ignored;818.72seconds
+cargo run --locked -p golf-api --bin migrate: exit0;39 migrations current
+cargo run --locked -p golf-api --bin seed: exit0
+PostgreSQL17.10 Alpine/musl;unique synthetic fixture, ephemeral loopback-only port
+Live fixture removal: true after successful rm;separate inventory shows no A6 container;temporary fixture directory removed
+Database-enabled totals include ordinary tests;not additive
+Existing ignored cases: projection_benchmark,hundred_matches,twelve_matches,twenty_four_matches
+Two controlled fake-Podman startup/removal reporting cases: passed; no real container invoked
+Independent read-only source/test/harness/documentation review: no remaining findings
+
+Runtime change confined to password.rs; API callers, Argon2 settings, rate limits, credentials, SQLx override, schema, Cargo lockfile and frontend retained
+No real credentials, public load, hosted administration, production image/deploy or measured capacity claim
+Frontend/browser: not rerun; no frontend source, response shape or user-facing state changes

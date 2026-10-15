@@ -1,0 +1,25 @@
+A6 regression baseline — 2026-10-15
+Original production revision: 81689e68f07d0b3ac7b6600de39bbc1d0feb65e6
+Command: cargo test -p golf-api --lib auth::password::tests::bounded_runner_rejects_ninth_operation_without_waiting -- --exact
+Expected regression exit: 101; no production repair applied yet
+Four blocked workers plus four explicitly polled waiters; ninth operation failed to reject within 200 ms. Gate released and workers joined before assertion.
+The final test uses an isolated two-budget limiter and requires rejection in one poll.
+
+running 1 test
+test auth::password::tests::bounded_runner_rejects_ninth_operation_without_waiting ... FAILED
+
+failures:
+
+---- auth::password::tests::bounded_runner_rejects_ninth_operation_without_waiting stdout ----
+
+thread 'auth::password::tests::bounded_runner_rejects_ninth_operation_without_waiting' (288) panicked at backend/src/auth/password.rs:235:9:
+assertion failed: matches!(rejection, Ok(Err(AsyncPasswordHashError::CapacityUnavailable)))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    auth::password::tests::bounded_runner_rejects_ninth_operation_without_waiting
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 260 filtered out; finished in 0.20s
+
+error: test failed, to rerun pass `-p golf-api --lib`

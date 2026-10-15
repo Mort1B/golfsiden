@@ -1,0 +1,20 @@
+[
+  {
+    "check": "format",
+    "exit": 0,
+    "seconds": 0.72
+  },
+  {
+    "check": "workspace",
+    "exit": 0,
+    "seconds": 14.23,
+    "passed": 264,
+    "failed": 0,
+    "ignored": 1
+  },
+  {
+    "check": "clippy",
+    "exit": 0,
+    "seconds": 21.83
+  }
+]

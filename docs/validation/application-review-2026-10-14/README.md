@@ -48,6 +48,11 @@ it requires the exact archive's canonical sidecar before Docker, with reproduced
 binding bypasses and disposable PostgreSQL rollback acceptance. The historical
 A5 assessment below retains its original source/evidence snapshot.
 
+The [password-admission repair](../password-admission-2026-10-15/README.md)
+addresses A6 with eight admitted operations, four worker slots and prompt overload
+rejection. The historical A6 risk below remains source-supported at the reviewed
+revision; the follow-up records controlled saturation and cancellation acceptance.
+
 This is a documentation-only assessment of current application source, database
 contracts, browser state, production configuration and dependency advisories.
 No application, dependency, migration or hosted configuration was changed.

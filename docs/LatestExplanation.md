@@ -1,44 +1,45 @@
-# Latest iteration — required restore checksum binding
+# Latest iteration — bounded password-work admission
 
-A5 closes the P2 restore-integrity gap. The original script reached simulated
-restore without a sidecar and when the sidecar validated another file. Three
-additional reproductions used a trailing-newline alias, exported `CDPATH` or a
-symlink/`..` directory decoy. All five now fail before any Docker command.
+A6 adds immediate admission control around password work. The original helper
+limited execution to four blocking workers but allowed additional operations to
+wait indefinitely for those slots. A regression test filled four workers plus
+four waiters and showed the ninth operation still waiting instead of rejecting.
 
-The script requires readable, regular, nonempty archive/sidecar files. It hashes
-the selected archive, reconstructs its exact canonical GNU SHA-256 basename
-record and compares the complete sidecar bytes. The sidecar never chooses a
-filename for verification. Extra records, changed data and malformed/noncanonical
-formats are rejected. Exact shell path splitting, cleared `CDPATH` and physical
-directory traversal ensure the hash names the selected file, including GNU-
-escaped filenames. Literal basename `-` is rejected as the hash tool's stdin
-sentinel. The host requires `sha256sum` and `cmp`.
+Hashing, real-user verification and unknown-user dummy verification now share a
+process-local limit of eight admitted operations and four blocking-worker slots.
+Excess work returns the existing capacity error in one poll. Callers retain their
+generic 500 `internal_error` mapping; route rate limiting keeps its separate 429
+contract. Argon2 parameters, credential-generation checks, account/session write
+ordering, request quotas, dependencies, schema and frontend are unchanged.
 
-The backup script and its normal relocatable one-record format remain unchanged.
-The restore's subsequent pristine-target query, existing stop policy,
-transactional restore flags and runtime-permissions recovery retain their original
-behavior. There is no application, schema, dependency or frontend change.
+Both permits belong to the dispatched blocking closure, including time queued
+inside Tokio's pool. Cancelling a waiting request frees admission. Cancelling a
+request after dispatch retains both permits until the actual work finishes;
+completion, operation errors and panic unwinding release them. This bounds
+password-helper admission, not every request stage or process memory. Eight is
+a finite policy, not a measured production capacity or latency claim.
 
-All 41 focused script cases passed with a nondelegating Docker shim. They cover
-the five bypasses, unusual quoted paths, canonical-format failures, tool failures,
-confirmation, input/target guards and failure/action ordering. Host sh/Bash POSIX
-and independent Alpine ash syntax checks passed. Read-only review found no
-source/harness issue.
+Seven focused tests pass, covering the ninth-operation regression, shared entry
+points, waiting/active cancellation, pool-queued work, error/panic/closed-limiter
+release and later recovery. The database-backed API test confirms known/dummy
+login parity and creator-onboarding failure without any table-count change,
+followed by successful login/onboarding and unchanged generic wrong-password
+behavior. Unit tests touching the process-wide static share a test lock;
+scheduling tests use local limiters and gates that open on drop.
 
-A disposable PostgreSQL 17.10 fixture also passed the unchanged backup script,
-moved-pair restore with spaces, 3,001-row/digest parity and populated-target
-rejection. A late-truncated archive with valid checksum and readable TOC failed
-during the actual restore wrapper and rolled back to zero public objects. No
-permissions action followed failure; a separate verbose control confirmed table
-and data work before rollback. Stop and permission actions are shimmed and
-checked for ordering, not actual application grant recovery. Owned containers,
-temporary archives and comparison copies were removed.
+Formatting, the 264-test backend suite and strict Clippy passed, with one existing
+ignored benchmark and three unchanged vendored SQLx warnings. The first sandboxed
+backend run could not bind eight existing provider HTTP fixtures; the full rerun
+with socket permission passed. The complete PostgreSQL ladder passed 932 tests
+with four existing ignored diagnostics/benchmarks, then migration/seed completed
+with all 39 migrations current. Database-enabled counts include ordinary tests.
+Its unique local fixture and temporary directory were removed; separate container
+inventory confirmed cleanup. No production source changed during validation.
+Independent read-only source/test/harness/documentation review has no remaining
+findings.
 
-A checksum is transfer-integrity evidence rather than authenticity. The staging
-directory must remain operator-controlled and unchanged during verification and
-restore; concurrent file replacement is outside this repair. Full application,
-frontend/browser and hosted recovery acceptance were not rerun or claimed.
-
-Exact baseline, commands, results, format compatibility and limits are in the
-[restore report](validation/restore-checksum-2026-10-15/README.md). The next
-candidate is bounded password-work admission in [the plan](PLANS.md).
+The [A6 report](validation/password-admission-2026-10-15/README.md) contains the
+baseline, focused checks and validation limits. No hosted action or production
+capacity test was performed. Rebuild the API to adopt the change; no migration or
+new environment setting is needed. Compatible development-dependency repairs are
+the next candidate in [the plan](PLANS.md); no queued work was started.

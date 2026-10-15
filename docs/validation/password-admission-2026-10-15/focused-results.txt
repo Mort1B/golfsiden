@@ -1,0 +1,13 @@
+Command: cargo test -p golf-api --lib auth::password::tests
+Exit: 0
+
+running 7 tests
+test auth::password::tests::cancelled_work_queued_in_tokio_pool_keeps_both_permits ... ok
+test auth::password::tests::active_cancellation_keeps_both_permits_until_work_finishes ... ok
+test auth::password::tests::waiting_cancellation_releases_admission_without_running_operation ... ok
+test auth::password::tests::operation_error_panic_and_closed_limiters_release_admission ... ok
+test auth::password::tests::bounded_runner_rejects_ninth_operation_without_waiting ... ok
+test auth::password::tests::bounded_hashes_and_verification_preserve_argon2_behavior ... ok
+test auth::password::tests::hashing_and_verification_share_prompt_admission_rejection ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 256 filtered out; finished in 1.39s
