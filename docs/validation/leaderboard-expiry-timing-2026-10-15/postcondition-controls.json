@@ -1,0 +1,45 @@
+{
+  "offline_only": true,
+  "controls": [
+    {
+      "case": "zero-tests",
+      "rejected": true
+    },
+    {
+      "case": "missing-target",
+      "rejected": true
+    },
+    {
+      "case": "missing-board",
+      "rejected": true
+    },
+    {
+      "case": "expired-at-gate",
+      "rejected": true
+    },
+    {
+      "case": "release-before-expiry",
+      "rejected": true
+    },
+    {
+      "case": "negative-control-wrong-status",
+      "rejected": true
+    },
+    {
+      "case": "negative-control-active-session",
+      "rejected": true
+    },
+    {
+      "case": "unconfirmed-cleanup",
+      "rejected": true
+    },
+    {
+      "case": "relabel-default-failure-success",
+      "rejected": true
+    },
+    {
+      "case": "different-default-failure",
+      "rejected": true
+    }
+  ]
+}

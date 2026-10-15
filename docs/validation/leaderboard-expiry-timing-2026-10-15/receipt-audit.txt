@@ -1,0 +1,7 @@
+VERIFIED receipt: baseline — passed
+VERIFIED receipt: controlled-original — expected negative control
+VERIFIED receipt: controlled-before — expected negative control
+VERIFIED receipt: controlled-after — passed
+VERIFIED receipt: repaired — passed
+VERIFIED receipt: ladder — blocked by separate unchanged test
+VERIFIED receipt: continuation — passed

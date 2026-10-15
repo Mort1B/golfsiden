@@ -1,0 +1,254 @@
+{
+  "phase": "repaired",
+  "source_sha256": "c19f80006722f3928ba37e861a0d62bdba0101a9d7566b9c253015ee6952755f",
+  "base_commit": "e92aa70d4ebe63e17c6b75cba07935cea52d2b54",
+  "scheduling": {
+    "cpu_count": 8,
+    "affinity_count": 8,
+    "inherited_thread_setting_removed": false,
+    "default_thread_setting": "libtest default; RUST_TEST_THREADS unset"
+  },
+  "runs": [
+    {
+      "name": "default-1",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "leaderboard_sessions",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 12.024,
+      "load_before": [
+        0.3623046875,
+        0.2880859375,
+        0.20458984375
+      ],
+      "load_after": [
+        0.43017578125,
+        0.306640625,
+        0.2119140625
+      ],
+      "totals": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [
+        "ok"
+      ],
+      "diagnostics": [
+        "A1Y board=0 event=armed setup_ms=1.406 remaining_ms=1961.759",
+        "A1Y board=0 event=gate remaining_ms=1907.614 query_wait_ms=11.330",
+        "A1Y board=0 event=release remaining_ms=-11.437",
+        "A1Y board=0 event=response status=401",
+        "A1Y board=1 event=armed setup_ms=2.541 remaining_ms=1999.296",
+        "A1Y board=1 event=gate remaining_ms=1984.217 query_wait_ms=7.960",
+        "A1Y board=1 event=release remaining_ms=-5.119",
+        "A1Y board=1 event=response status=401",
+        "A1Y board=2 event=armed setup_ms=2.703 remaining_ms=1998.814",
+        "A1Y board=2 event=gate remaining_ms=1983.196 query_wait_ms=6.153",
+        "A1Y board=2 event=release remaining_ms=-10.974",
+        "A1Y board=2 event=response status=401",
+        "A1Y board=3 event=armed setup_ms=2.644 remaining_ms=1999.172",
+        "A1Y board=3 event=gate remaining_ms=1981.261 query_wait_ms=5.559",
+        "A1Y board=3 event=release remaining_ms=-16.690",
+        "A1Y board=3 event=response status=401"
+      ],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": false
+    },
+    {
+      "name": "default-2",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "leaderboard_sessions",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 9.994,
+      "load_before": [
+        0.43017578125,
+        0.306640625,
+        0.2119140625
+      ],
+      "load_after": [
+        0.36376953125,
+        0.2958984375,
+        0.208984375
+      ],
+      "totals": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [
+        "ok"
+      ],
+      "diagnostics": [
+        "A1Y board=0 event=armed setup_ms=1.261 remaining_ms=1961.601",
+        "A1Y board=0 event=gate remaining_ms=1909.521 query_wait_ms=9.218",
+        "A1Y board=0 event=release remaining_ms=-2.686",
+        "A1Y board=0 event=response status=401",
+        "A1Y board=1 event=armed setup_ms=3.303 remaining_ms=1998.979",
+        "A1Y board=1 event=gate remaining_ms=1976.280 query_wait_ms=12.740",
+        "A1Y board=1 event=release remaining_ms=-12.835",
+        "A1Y board=1 event=response status=401",
+        "A1Y board=2 event=armed setup_ms=3.199 remaining_ms=1998.950",
+        "A1Y board=2 event=gate remaining_ms=1971.913 query_wait_ms=12.121",
+        "A1Y board=2 event=release remaining_ms=-2.371",
+        "A1Y board=2 event=response status=401",
+        "A1Y board=3 event=armed setup_ms=2.673 remaining_ms=1999.080",
+        "A1Y board=3 event=gate remaining_ms=1984.785 query_wait_ms=0.655",
+        "A1Y board=3 event=release remaining_ms=-14.722",
+        "A1Y board=3 event=response status=401"
+      ],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": false
+    },
+    {
+      "name": "default-3",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "leaderboard_sessions",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 10.057,
+      "load_before": [
+        0.36376953125,
+        0.2958984375,
+        0.208984375
+      ],
+      "load_after": [
+        0.3076171875,
+        0.28564453125,
+        0.2060546875
+      ],
+      "totals": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [
+        "ok"
+      ],
+      "diagnostics": [
+        "A1Y board=0 event=armed setup_ms=1.166 remaining_ms=1972.451",
+        "A1Y board=0 event=gate remaining_ms=1919.926 query_wait_ms=8.039",
+        "A1Y board=0 event=release remaining_ms=-9.323",
+        "A1Y board=0 event=response status=401",
+        "A1Y board=1 event=armed setup_ms=2.892 remaining_ms=1999.154",
+        "A1Y board=1 event=gate remaining_ms=1978.142 query_wait_ms=10.410",
+        "A1Y board=1 event=release remaining_ms=-2.458",
+        "A1Y board=1 event=response status=401",
+        "A1Y board=2 event=armed setup_ms=4.261 remaining_ms=1998.509",
+        "A1Y board=2 event=gate remaining_ms=1968.605 query_wait_ms=13.974",
+        "A1Y board=2 event=release remaining_ms=-17.462",
+        "A1Y board=2 event=response status=401",
+        "A1Y board=3 event=armed setup_ms=2.154 remaining_ms=1999.271",
+        "A1Y board=3 event=gate remaining_ms=1982.746 query_wait_ms=9.315",
+        "A1Y board=3 event=release remaining_ms=-11.738",
+        "A1Y board=3 event=response status=401"
+      ],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": false
+    },
+    {
+      "name": "two-thread-control",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "leaderboard_sessions",
+        "--",
+        "--nocapture",
+        "--test-threads=2"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 15.89,
+      "load_before": [
+        0.3076171875,
+        0.28564453125,
+        0.2060546875
+      ],
+      "load_after": [
+        0.38134765625,
+        0.30419921875,
+        0.21337890625
+      ],
+      "totals": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [
+        "ok"
+      ],
+      "diagnostics": [
+        "A1Y board=0 event=armed setup_ms=1.319 remaining_ms=1973.118",
+        "A1Y board=0 event=gate remaining_ms=1920.622 query_wait_ms=8.455",
+        "A1Y board=0 event=release remaining_ms=-17.833",
+        "A1Y board=0 event=response status=401",
+        "A1Y board=1 event=armed setup_ms=2.119 remaining_ms=1999.359",
+        "A1Y board=1 event=gate remaining_ms=1984.844 query_wait_ms=6.834",
+        "A1Y board=1 event=release remaining_ms=-13.931",
+        "A1Y board=1 event=response status=401",
+        "A1Y board=2 event=armed setup_ms=4.082 remaining_ms=1998.885",
+        "A1Y board=2 event=gate remaining_ms=1978.203 query_wait_ms=4.297",
+        "A1Y board=2 event=release remaining_ms=-9.262",
+        "A1Y board=2 event=response status=401",
+        "A1Y board=3 event=armed setup_ms=1.865 remaining_ms=1999.224",
+        "A1Y board=3 event=gate remaining_ms=1983.794 query_wait_ms=2.992",
+        "A1Y board=3 event=release remaining_ms=-15.938",
+        "A1Y board=3 event=response status=401"
+      ],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": false
+    }
+  ],
+  "database": {
+    "fixture": "timing",
+    "image": "docker.io/library/postgres:17-alpine",
+    "removed": true,
+    "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+  },
+  "private_fixture_files_removed": true
+}

@@ -504,6 +504,14 @@ conflict returns generic `503 service_unavailable` without standings. Every repl
 from these four endpoints is `private, no-store`. Scoring values, result sharing
 and the other private workspace endpoints retain their existing contracts.
 
+The score-loading expiry regression acquires its database gate before arming the
+two-second session deadline. It proves the request is waiting on `scores` while
+still active, waits for natural expiry, then requires the private 401 response
+for all four routes. Early rejection fails setup. The
+[timing investigation](validation/leaderboard-expiry-timing-2026-10-15/README.md)
+separates the reproduced fixture exposure from the unproven cause of an older
+default-concurrency timeout; no product authorization behavior changed.
+
 `GET /api/tournaments`, `GET /api/me/tournaments` and `GET
 /api/tournaments/{id}` also bind the entire read to the active session. Session,
 user and membership share locks remain held through one consistent snapshot and

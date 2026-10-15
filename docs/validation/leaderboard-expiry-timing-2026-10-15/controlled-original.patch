@@ -1,0 +1,4 @@
+--- a/backend/tests/leaderboard_sessions/expiry.rs
++++ b/backend/tests/leaderboard_sessions/expiry.rs
+@@ -64,0 +65 @@
++        sleep(Duration::from_millis(2250)).await;

@@ -5,37 +5,36 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The [A1x acceptance](validation/leaderboard-browser-maintenance-2026-10-15/README.md)
-records the original stale-label failure, current failed-delivery test control,
-complete browser sequence and passing frontend ladder. Application behavior is
-unchanged.
+None. The [A1y acceptance](validation/leaderboard-expiry-timing-2026-10-15/README.md)
+records the bounded P3 test setup repair, default-concurrency target acceptance,
+full two-thread ladder and separate unresolved lifecycle failure. The historical
+leaderboard timeout's exact cause remains unproven.
 
 ## Next candidate — requires approval
 
-### A1y — investigate retained leaderboard expiry-test timing
+### A1z — investigate separate match-lifecycle late-expiry failure
 
-This selects the retained
-[default-concurrency test timeout](validation/round-lifecycle-session-2026-10-14/README.md#validation).
-The original cause remains unproven; the full two-thread ladders pass.
+The A1y full default-concurrency ladder passed its selected leaderboard case but
+stopped at the unchanged
+`lifecycle_expiry::scenarios::match_late_expiry_rolls_back_all_actions`.
+The retained receipt identifies the test/counts, not its panic location or cause;
+the case passes the full two-thread control. No product or fixture cause, or new
+severity, is established.
 
-- Goal: determine why `expiry_during_score_loading_denies_all_boards` missed its
-  controlled loading wait under default test concurrency, and stabilize only an
-  evidenced fixture/setup timing defect.
-- Scope: that one test and narrowly needed setup/diagnostic support plus
-  evidence/docs. No production authority, expiry, query, retry, concurrency or
-  sporting behavior changes; no blanket timeout increase or unrelated test work.
-- Behavior/invariants: the request must begin with valid authority and expire
-  during the intended data-loading wait. Preserve every private 401/no-store,
-  payload-denial and existing control assertion. Do not replace the expiry race
-  with an unrelated early rejection or treat thread-limited success as diagnosis.
-- Validation: reproduce or explicitly bound the retained default-concurrency
-  failure on owned PostgreSQL; record gate/response/deadline ordering and exact
-  scheduling. If a test repair is justified, pass focused repetitions and the
-  affected Rust/PostgreSQL ladders, including the relevant default-concurrency
-  run and two-thread control, with independent read-only review.
-- Stop: publish the bounded test repair/evidence or documented non-reproduction
-  limits. Record any product defect separately; do not implement it or other
-  queued work here.
+- Goal: capture and explain that separate failure before selecting a repair.
+- Scope: that case and narrowly needed diagnostic/setup support plus evidence
+  and docs. No production authorization, lifecycle, transaction, retry, scoring
+  or timeout-policy changes; no unrelated test repair.
+- Behavior/invariants: preserve the intended late-write gate, actual preceding
+  work, natural expiry, every denial/rollback assertion and valid-session
+  control. Early rejection must not substitute for the intended late-expiry race.
+- Validation: retain the actual failure details and database-clock/gate/response
+  ordering on owned PostgreSQL under relevant default concurrency with a
+  separately identified two-thread control. Repair only an evidenced fixture
+  defect, then run affected ladders and independent review; otherwise record
+  non-reproduction limits. A product defect requires a separate bounded step.
+- Stop: publish this one investigation/justified fixture repair and its limits;
+  do not begin optimization or another lifecycle case.
 
 ## Later queue
 
@@ -59,7 +58,8 @@ Fantasy A1u now has scoped-fact performance/parity acceptance without a new
 severity rating. A1v closes the retained P3 test-portability limitation with
 two-image acceptance. A1w closes the separate P3 driver compatibility limitation
 with retained strict/certificate controls. A1x restores retained browser acceptance
-without a product change. The next expiry-test investigation is unstarted.
+without a product change. A1y has linked test-timing acceptance; its separate
+lifecycle failure is the next candidate.
 Retired granular team writes receive no reachable-route finding. Provisional
 user-only preflight/provider-work observations remain separate and unrated.
 

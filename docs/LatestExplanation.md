@@ -1,39 +1,43 @@
-# Latest iteration — retained leaderboard browser-test maintenance
+# Latest iteration — leaderboard expiry-test timing
 
-A1x repairs the retained live leaderboard browser test. The original case fails
-at its stale server-status assertion: the component renders `Lagret på serveren`,
-while the test accepts `Synkronisert` or `Lagret`. Both stale assertions now match
-only `Synkronisert` or `Lagret på serveren`. Queued/local/failed delivery labels
-remain excluded. No application UI/API/SQL, schema, dependency or scoring policy
-changes.
+A1y repairs a P3 timing exposure in one retained leaderboard integration test.
+Its two-second session deadline previously started before connection acquisition,
+blocker lookup and scores-gate locking. The original historical timeout did not
+reproduce in three fresh default-concurrency module runs or the two-thread
+control; its precise cause remains unproven.
 
-Source review also found the negative fixture targeting a retired endpoint/error
-UI. It now faults the actual conditional PUT, proves an attempted 503 delivery,
-requires the current failed durable-queue status and unchanged server/standings,
-then uses explicit two-step local discard. The fault stays installed until the
-queue is empty and the acknowledged server value returns, plus one bounded
-2200ms heartbeat check before restoring normal delivery. Subsequent real saves
-must still pass. This is necessary test support, not a product repair.
+A controlled 2250ms pre-gate delay reproduced the original wait timeout. The
+instrumented same-order control proved that the session had expired and returned
+an early 401 without reaching scores. Arming expiry after gate acquisition passed
+the same delay for all four routes. This demonstrates a fixture exposure and its
+repair, without attributing the old failure to an unobserved historical delay.
 
-The complete real Chrome case now reaches all later scenarios: three numeric
-formats and gross/net updates, selection exclusions, historical correction,
-locked-score rejection, actual API crash/offline projection clearing/reconnect,
-and member final-front-nine visibility with release/re-hide. Existing precise
-refresh requests, canonical JSON and UI assertions remain. Its final unexpected
-page/console/network failure list is empty under explicit fault/outage allowances.
+The final test retains the two-second lifetime, five-second waits and all
+401/no-store/unauthenticated assertions. It now races early completion against
+an exact ungranted scores lock blocked by the owned gate, requires positive
+database-clock lifetime there, then waits for natural expiry before release.
+An early 401 fails setup; a late successful response still fails. No retry,
+artificial delay, production source, API, schema, dependency or sporting change
+remains. Its relative-time diagnostics contain no credentials, identities or
+payloads. `query_wait_ms` describes query age, not isolated lock-wait cost.
 
-All 1,133 frontend tests, TypeScript, ESLint and production build pass. Both phases
-use fresh migrated/seeded PostgreSQL and the locked API build. Twenty-one fresh
-screenshots cover seven states at 320/390/1280px with horizontal-width checks;
-representative mobile populated, desktop failed-delivery and member re-hidden
-screenshots were inspected. Independent test review finds no material issues.
-Owned services, database and temporary credentials are removed. Exact receipts,
-review and limits are in the
-[acceptance report](validation/leaderboard-browser-maintenance-2026-10-15/README.md).
+Three repaired default module repetitions and the two-thread control pass all
+10 tests each. All 16 selected route requests reached scores while active,
+expired while blocked and returned the expected private denial. Formatting,
+264 ordinary Rust tests and all-feature Clippy pass. Independent review found
+no weakened race or source defect; a P3 evidence-runner acceptance gap was fixed
+with exact counts, target execution, four-board ordering and cleanup checks.
 
-This is one combined desktop/mobile case, not separate complete runs at every
-width. The late-retry check covers one current heartbeat; physical devices,
-every timer interleaving, production proxy/TLS and broad security/performance
-sign-off remain outside acceptance. Backend ladders are not repeated because
-application source, schema and dependencies are unchanged. The next candidate
-is the retained expiry-test timing investigation, which has not started.
+The full default-concurrency PostgreSQL run passed the selected leaderboard case
+but stopped in the unchanged match-lifecycle late-expiry test: 477 passed,
+1 failed, 1 ignored. Only the failed name/counts were retained, so its exact cause
+is unknown. This step does not repair that separate case. The complete two-thread
+continuation passes 953 tests with five manual probes ignored; migration and seed
+pass. All seven receipts and final source fingerprints pass the offline audit,
+which explicitly labels the default run as blocked. Owned databases, raw logs and
+temporary credentials are removed. Exact commands, review and limits are in the
+[acceptance report](validation/leaderboard-expiry-timing-2026-10-15/README.md).
+The next candidate is investigation of the separate lifecycle failure.
+Frontend/browser and release-build checks are unaffected by this test-only scope.
+Local fixture evidence establishes no universal flake elimination, load capacity
+or hosted security readiness.

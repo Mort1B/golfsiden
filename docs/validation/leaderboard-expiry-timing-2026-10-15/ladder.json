@@ -1,0 +1,163 @@
+{
+  "phase": "ladder",
+  "source_sha256": "c19f80006722f3928ba37e861a0d62bdba0101a9d7566b9c253015ee6952755f",
+  "base_commit": "e92aa70d4ebe63e17c6b75cba07935cea52d2b54",
+  "scheduling": {
+    "cpu_count": 8,
+    "affinity_count": 8,
+    "inherited_thread_setting_removed": false,
+    "default_thread_setting": "libtest default; RUST_TEST_THREADS unset"
+  },
+  "runs": [
+    {
+      "name": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.716,
+      "load_before": [
+        0.322265625,
+        0.29345703125,
+        0.21044921875
+      ],
+      "load_after": [
+        0.322265625,
+        0.29345703125,
+        0.21044921875
+      ],
+      "totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [],
+      "diagnostics": [],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": false
+    },
+    {
+      "name": "rust-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--workspace",
+        "--all-targets"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 8.785,
+      "load_before": [
+        0.322265625,
+        0.29345703125,
+        0.21044921875
+      ],
+      "load_after": [
+        0.5009765625,
+        0.333984375,
+        0.224609375
+      ],
+      "totals": {
+        "passed": 264,
+        "failed": 0,
+        "ignored": 1
+      },
+      "failed_tests": [],
+      "target_outcomes": [],
+      "diagnostics": [],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": false
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.067,
+      "load_before": [
+        0.5009765625,
+        0.333984375,
+        0.224609375
+      ],
+      "load_after": [
+        0.5009765625,
+        0.333984375,
+        0.224609375
+      ],
+      "totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [],
+      "diagnostics": [],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": false
+    },
+    {
+      "name": "database-default",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--workspace",
+        "--all-targets",
+        "--features",
+        "database-tests"
+      ],
+      "exit_code": 101,
+      "elapsed_seconds": 152.88,
+      "load_before": [
+        0.5009765625,
+        0.333984375,
+        0.224609375
+      ],
+      "load_after": [
+        2.3427734375,
+        1.18896484375,
+        0.56201171875
+      ],
+      "totals": {
+        "passed": 477,
+        "failed": 1,
+        "ignored": 1
+      },
+      "failed_tests": [
+        "lifecycle_expiry::scenarios::match_late_expiry_rolls_back_all_actions"
+      ],
+      "target_outcomes": [
+        "ok"
+      ],
+      "diagnostics": [],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": false
+    }
+  ],
+  "database": {
+    "fixture": "timing",
+    "image": "docker.io/library/postgres:17-alpine",
+    "removed": true,
+    "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+  },
+  "private_fixture_files_removed": true
+}

@@ -1,0 +1,69 @@
+{
+  "phase": "controlled-before",
+  "source_sha256": "502b841f560ce344b06a712a2522b55012d5d4b8d65783547c13991cac96244d",
+  "base_commit": "e92aa70d4ebe63e17c6b75cba07935cea52d2b54",
+  "scheduling": {
+    "cpu_count": 8,
+    "affinity_count": 8,
+    "inherited_thread_setting_removed": false,
+    "default_thread_setting": "libtest default; RUST_TEST_THREADS unset"
+  },
+  "runs": [
+    {
+      "name": "controlled-setup-delay",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "leaderboard_sessions",
+        "leaderboard_sessions::expiry::expiry_during_score_loading_denies_all_boards",
+        "--",
+        "--exact",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "elapsed_seconds": 5.1,
+      "load_before": [
+        0.3203125,
+        0.2724609375,
+        0.197265625
+      ],
+      "load_after": [
+        0.29443359375,
+        0.267578125,
+        0.19580078125
+      ],
+      "totals": {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0
+      },
+      "failed_tests": [
+        "leaderboard_sessions::expiry::expiry_during_score_loading_denies_all_boards"
+      ],
+      "target_outcomes": [
+        "FAILED"
+      ],
+      "diagnostics": [
+        "A1Y board=0 event=armed setup_ms=2292.040 remaining_ms=-317.577",
+        "A1Y board=0 event=early_response status=401 remaining_ms=-367.747"
+      ],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": true
+    }
+  ],
+  "database": {
+    "fixture": "timing",
+    "image": "docker.io/library/postgres:17-alpine",
+    "removed": true,
+    "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+  },
+  "private_fixture_files_removed": true
+}

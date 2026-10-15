@@ -96,6 +96,12 @@ cause or a product regression.
 The thread limit changes test-case scheduling only; the races still spawn their
 concurrent requests and transactions inside each case.
 
+The later [A1y timing investigation](../leaderboard-expiry-timing-2026-10-15/README.md)
+bounds natural non-reproduction and uses a controlled setup delay to demonstrate
+a pre-gate deadline exposure. It repairs that one test's setup and adds explicit
+active-at-scores-gate proof. The original historical timeout's precise cause
+remains unproven; this paragraph does not replace the captured evidence above.
+
 ## Browser evidence
 
 The unchanged retained suite passed both scenarios in real Chrome:

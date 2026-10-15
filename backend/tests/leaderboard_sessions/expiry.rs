@@ -1,7 +1,10 @@
 use super::support::*;
 use axum::http::{StatusCode, header};
 use sqlx::PgPool;
-use tokio::time::{Duration, sleep, timeout};
+use tokio::{
+    task::JoinHandle,
+    time::{Duration, Instant, sleep, timeout},
+};
 
 async fn expires_soon(pool: &PgPool, session: uuid::Uuid) {
     sqlx::query(
@@ -32,6 +35,61 @@ async fn wait_expired(pool: &PgPool, session: uuid::Uuid) {
     .unwrap();
 }
 
+async fn remaining_ms(pool: &PgPool, session: uuid::Uuid) -> f64 {
+    sqlx::query_scalar(
+        "SELECT EXTRACT(EPOCH FROM (expires_at-clock_timestamp()))::float8*1000 FROM user_sessions WHERE id=$1",
+    )
+    .bind(session)
+    .fetch_one(pool)
+    .await
+    .unwrap()
+}
+
+// Only the score-loading expiry case needs this stricter gate proof. An early
+// 401 must fail setup rather than masquerade as expiry during fact loading.
+async fn wait_active_scores_gate(
+    pool: &PgPool,
+    blocker: i32,
+    session: uuid::Uuid,
+    board: usize,
+    task: &mut JoinHandle<axum::response::Response>,
+) {
+    tokio::select! {
+        response = &mut *task => {
+            let response = response.unwrap();
+            let remaining = remaining_ms(pool, session).await;
+            println!("A1Y board={board} event=early_response status={} remaining_ms={remaining:.3}", response.status().as_u16());
+            panic!("request completed before the scores wait");
+        }
+        observed = timeout(Duration::from_secs(5), async {
+            loop {
+                let timing: Option<(f64, f64)> = sqlx::query_as(
+                    "SELECT EXTRACT(EPOCH FROM (s.expires_at-clock_timestamp()))::float8*1000, EXTRACT(EPOCH FROM (clock_timestamp()-a.query_start))::float8*1000 FROM pg_stat_activity a JOIN pg_locks l ON l.pid=a.pid JOIN user_sessions s ON s.id=$2 WHERE a.datname=current_database() AND $1=ANY(pg_blocking_pids(a.pid)) AND l.relation='scores'::regclass AND l.mode='AccessShareLock' AND NOT l.granted",
+                )
+                .bind(blocker)
+                .bind(session)
+                .fetch_optional(pool)
+                .await
+                .unwrap();
+                if let Some(timing) = timing {
+                    break timing;
+                }
+                sleep(Duration::from_millis(10)).await;
+            }
+        }) => {
+            let (remaining, query_wait) = observed.unwrap_or_else(|_| {
+                task.abort();
+                panic!("read must reach the controlled scores wait within five seconds");
+            });
+            println!("A1Y board={board} event=gate remaining_ms={remaining:.3} query_wait_ms={query_wait:.3}");
+            if remaining <= 0.0 {
+                task.abort();
+                panic!("scores wait must be observed before expiry");
+            }
+        }
+    }
+}
+
 #[sqlx::test(migrations = "../migrations")]
 async fn expiry_during_membership_wait_denies_all_boards(pool: PgPool) {
     let f = fixture(&pool).await;
@@ -59,25 +117,40 @@ async fn expiry_during_membership_wait_denies_all_boards(pool: PgPool) {
 #[sqlx::test(migrations = "../migrations")]
 async fn expiry_during_score_loading_denies_all_boards(pool: PgPool) {
     let f = fixture(&pool).await;
-    for path in paths() {
+    for (board, path) in paths().into_iter().enumerate() {
         let (session, token) = session(&pool).await;
-        expires_soon(&pool, session).await;
+        let setup_started = Instant::now();
         let mut gate = pool.begin().await.unwrap();
         let pid = blocker(&mut gate).await;
         sqlx::query("LOCK TABLE scores IN ACCESS EXCLUSIVE MODE")
             .execute(&mut *gate)
             .await
             .unwrap();
+        // Gate setup must not consume the request's two-second expiry window.
+        expires_soon(&pool, session).await;
+        println!(
+            "A1Y board={board} event=armed setup_ms={:.3} remaining_ms={:.3}",
+            setup_started.elapsed().as_secs_f64() * 1000.0,
+            remaining_ms(&pool, session).await
+        );
         let app = f.app.clone();
         let pending_path = path.clone();
-        let task = tokio::spawn(async move { get(&app, &pending_path, &token).await });
-        wait_blocked(&pool, pid).await;
+        let mut task = tokio::spawn(async move { get(&app, &pending_path, &token).await });
+        wait_active_scores_gate(&pool, pid, session, board, &mut task).await;
         wait_expired(&pool, session).await;
+        println!(
+            "A1Y board={board} event=release remaining_ms={:.3}",
+            remaining_ms(&pool, session).await
+        );
         gate.commit().await.unwrap();
         let response = timeout(Duration::from_secs(5), task)
             .await
             .unwrap()
             .unwrap();
+        println!(
+            "A1Y board={board} event=response status={}",
+            response.status().as_u16()
+        );
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED, "{path}");
         assert_eq!(
             response.headers()[header::CACHE_CONTROL],

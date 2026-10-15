@@ -1,0 +1,186 @@
+{
+  "phase": "baseline",
+  "source_sha256": "a4e45055b7e4338c04e4de53e6eef668305085aeb503f70353a4dac573f1cfcb",
+  "base_commit": "e92aa70d4ebe63e17c6b75cba07935cea52d2b54",
+  "scheduling": {
+    "cpu_count": 8,
+    "affinity_count": 8,
+    "inherited_thread_setting_removed": false,
+    "default_thread_setting": "libtest default; RUST_TEST_THREADS unset"
+  },
+  "runs": [
+    {
+      "name": "default-1",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "leaderboard_sessions",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 10.091,
+      "load_before": [
+        0.2431640625,
+        0.18603515625,
+        0.1611328125
+      ],
+      "load_after": [
+        0.2861328125,
+        0.1962890625,
+        0.1650390625
+      ],
+      "totals": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [
+        "ok"
+      ],
+      "diagnostics": [],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": false
+    },
+    {
+      "name": "default-2",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "leaderboard_sessions",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 10.046,
+      "load_before": [
+        0.2861328125,
+        0.1962890625,
+        0.1650390625
+      ],
+      "load_after": [
+        0.47021484375,
+        0.23974609375,
+        0.18017578125
+      ],
+      "totals": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [
+        "ok"
+      ],
+      "diagnostics": [],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": false
+    },
+    {
+      "name": "default-3",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "leaderboard_sessions",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 10.029,
+      "load_before": [
+        0.47021484375,
+        0.23974609375,
+        0.18017578125
+      ],
+      "load_after": [
+        0.3974609375,
+        0.23095703125,
+        0.17822265625
+      ],
+      "totals": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [
+        "ok"
+      ],
+      "diagnostics": [],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": false
+    },
+    {
+      "name": "two-thread-control",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "leaderboard_sessions",
+        "--",
+        "--nocapture",
+        "--test-threads=2"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 15.891,
+      "load_before": [
+        0.3974609375,
+        0.23095703125,
+        0.17822265625
+      ],
+      "load_after": [
+        0.37646484375,
+        0.2353515625,
+        0.1806640625
+      ],
+      "totals": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [
+        "ok"
+      ],
+      "diagnostics": [],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": false
+    }
+  ],
+  "database": {
+    "fixture": "timing",
+    "image": "docker.io/library/postgres:17-alpine",
+    "removed": true,
+    "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+  },
+  "private_fixture_files_removed": true
+}

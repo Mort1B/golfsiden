@@ -1,0 +1,81 @@
+{
+  "phase": "controlled-after",
+  "source_sha256": "4e9580d4e0e2bedc04acc22d94f7f3b870d4c7b7c49c592f39a6fe2668e99051",
+  "base_commit": "e92aa70d4ebe63e17c6b75cba07935cea52d2b54",
+  "scheduling": {
+    "cpu_count": 8,
+    "affinity_count": 8,
+    "inherited_thread_setting_removed": false,
+    "default_thread_setting": "libtest default; RUST_TEST_THREADS unset"
+  },
+  "runs": [
+    {
+      "name": "controlled-setup-delay",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "leaderboard_sessions",
+        "leaderboard_sessions::expiry::expiry_during_score_loading_denies_all_boards",
+        "--",
+        "--exact",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 20.047,
+      "load_before": [
+        0.36474609375,
+        0.283203125,
+        0.20166015625
+      ],
+      "load_after": [
+        0.3408203125,
+        0.28076171875,
+        0.20166015625
+      ],
+      "totals": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [
+        "ok"
+      ],
+      "diagnostics": [
+        "A1Y board=0 event=armed setup_ms=2319.430 remaining_ms=1973.562",
+        "A1Y board=0 event=gate remaining_ms=1918.332 query_wait_ms=11.878",
+        "A1Y board=0 event=release remaining_ms=-3.767",
+        "A1Y board=0 event=response status=401",
+        "A1Y board=1 event=armed setup_ms=2308.427 remaining_ms=1971.148",
+        "A1Y board=1 event=gate remaining_ms=1914.218 query_wait_ms=12.106",
+        "A1Y board=1 event=release remaining_ms=-5.195",
+        "A1Y board=1 event=response status=401",
+        "A1Y board=2 event=armed setup_ms=2319.407 remaining_ms=1973.190",
+        "A1Y board=2 event=gate remaining_ms=1921.820 query_wait_ms=7.070",
+        "A1Y board=2 event=release remaining_ms=-13.190",
+        "A1Y board=2 event=response status=401",
+        "A1Y board=3 event=armed setup_ms=2316.764 remaining_ms=1973.900",
+        "A1Y board=3 event=gate remaining_ms=1921.323 query_wait_ms=7.279",
+        "A1Y board=3 event=release remaining_ms=-5.227",
+        "A1Y board=3 event=response status=401"
+      ],
+      "controlled_wait_timeout": false,
+      "active_gate_assertion_failed": false,
+      "early_response": false
+    }
+  ],
+  "database": {
+    "fixture": "timing",
+    "image": "docker.io/library/postgres:17-alpine",
+    "removed": true,
+    "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+  },
+  "private_fixture_files_removed": true
+}
