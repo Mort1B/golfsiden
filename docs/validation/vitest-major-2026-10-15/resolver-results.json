@@ -1,0 +1,36 @@
+{
+  "node": "22.22.2",
+  "project_npm_before_and_after": "10.9.7",
+  "observed_npm10_error": "Cannot read properties of null (reading 'edgesOut')",
+  "temporary_generation_only_npm": "11.21.0",
+  "generation_command": [
+    "npm",
+    "exec",
+    "--yes",
+    "--package=npm@11.21.0",
+    "--cache",
+    "/tmp/golf-a7b-npm-cache",
+    "--",
+    "npm",
+    "install",
+    "--package-lock-only",
+    "--ignore-scripts",
+    "--prefer-dedupe",
+    "--no-audit",
+    "--no-fund",
+    "--cache",
+    "/tmp/golf-a7b-npm-cache"
+  ],
+  "generation_exit": 0,
+  "normal_npm10_clean_ci_exit": 0,
+  "normal_npm10_tree_validation_exit": 0,
+  "force_legacy_peers_or_overrides_used": false,
+  "global_or_project_npm_changed": false,
+  "related_upstream_issue": "https://github.com/npm/cli/issues/9787",
+  "identical_upstream_root_cause_proven": false,
+  "normal_npm10_config": {
+    "legacy-peer-deps": false,
+    "force": false,
+    "ignore-scripts": false
+  }
+}

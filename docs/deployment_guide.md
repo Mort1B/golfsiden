@@ -27,6 +27,7 @@ Do not skip intermediate migrations when upgrading an older installation.
 | Offline return to the last opened scorecard | Updated frontend against the schema-33 API; no further migration or configuration |
 | Recent score-read, session, pairing/start and navigation repairs | Deploy the current API/frontend builds; retain the vendored SQLx patch |
 | Rustls client TLS advisory repair | Rebuild/redeploy the API from the current lockfile; retain the vendored SQLx patch; no new migration |
+| Patched Vitest 4 test tooling | Use the current frontend manifest/lock in CI/future builder installs; normal npm 10 remains supported; no application asset/schema/API/environment change |
 | Compatible development-dependency patches | Use the current frontend lockfile in CI/future builder installs; no new schema/API/environment setting; local built assets are byte-identical |
 | Bounded password-work admission | Rebuild/redeploy the API; eight admitted operations/four worker slots per process; no new schema, frontend or environment setting |
 | Required restore checksum binding | Use the current host restore script, original dump/sidecar pair, `sha256sum` and `cmp`; no image or schema change |
@@ -83,13 +84,16 @@ policy does not establish production throughput or protect every stage of reques
 handling; [local A6 evidence](validation/password-admission-2026-10-15/README.md)
 covers cancellation, API parity and recovery using synthetic data.
 
-The compatible frontend dependency repair changes only four development lock
-entries. CI and future image builds use the current lock through `npm ci`.
-Application sources and all 65 local production-build files are unchanged;
-there is no schema, API or environment migration. Three Vitest-family advisory
-entries remain for a separate test-framework major upgrade. The production-only
-npm audit remains zero, which does not establish image or hosted security. See
-[the A7 acceptance and limits](validation/development-dependencies-2026-10-15/README.md).
+CI and future frontend image builds use the current manifest and lock through
+`npm ci`. The compatible development patches remain in place and the Vitest
+family is now 4.1.11, removing the remaining Vitest/mocker/Tinypool npm audit
+entries. Application sources and all 65 local production-build files are
+unchanged; there is no schema, API or environment migration. Current
+full and production-only audits both report zero; this does not establish image
+or hosted security. Standard npm 10 clean installation remains accepted. The
+temporary npm 11 CLI was only a proposal-generation workaround, with no global
+or project toolchain change. See [the Vitest acceptance and limits](validation/vitest-major-2026-10-15/README.md)
+and the historical [compatible A7 evidence](validation/development-dependencies-2026-10-15/README.md).
 
 Caddy obtains and renews public certificates automatically. `SITE_ADDRESS` must
 be a hostname only: no scheme, path, query, fragment, or port. The web container

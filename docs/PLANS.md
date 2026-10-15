@@ -5,44 +5,47 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The compatible portion of A7 is accepted in the
-[development-dependency report](validation/development-dependencies-2026-10-15/README.md).
-The Vitest-family findings remain open as the next candidate.
+None. A7b acceptance is in the
+[Vitest major report](validation/vitest-major-2026-10-15/README.md).
 
 ## Next candidate — requires approval
 
-### A7b — P2: migrate the flagged Vitest family to a patched major
+### A8 — P3: batch team-member loading without changing read authority
 
-Evidence: [remaining audited paths](validation/development-dependencies-2026-10-15/README.md#fresh-audit-and-unresolved-findings).
-The installed Vitest/mocker 3.2.7 and Tinypool 1.1.1 still produce three audit
-entries (two critical package labels and one moderate). The maintainer does not
-plan a 3.x mocker backport. Read-only metadata for Vitest 4.1.11 matches existing
-Node 22/Vite 7 peer ranges; its resolved tree and compatibility remain untested.
+Evidence: [original review A8](validation/application-review-2026-10-14/README.md#a8--p3-team-member-queries-grow-with-team-count).
+The current shared team-list helper reads teams once, then fetches members once
+per team. This is source-confirmed 1+N data SELECTs; frontend latency impact
+remains unmeasured.
 
-- Goal: remove the remaining Vitest/mocker/Tinypool findings through a deliberate
-  test-framework major upgrade while preserving application and test behavior.
-- Scope: the Vitest development declaration/lockfile family, minimum required
-  test/configuration migrations and evidence/docs. Refresh audits/registry and
-  maintainer migration guidance before choosing a patched 4.x version at least
-  4.1.11 with matching internal packages. Exclude Vitest 5, unrelated tool majors,
-  application features/source changes, runtime dependency upgrades, hosted work
-  and transitive overrides that violate parent ranges.
-- Behavior: keep the existing Node 22/Vite 7 build boundary, strict typing,
-  test isolation, mocks/timers and user-visible assertions. Resolve a coherent
-  patched tool family; remove or patch affected Tinypool paths rather than hiding
-  audit output. Preserve runtime package entries, API/UI contracts and produced
-  application behavior. Do not weaken, delete or ignore tests to pass migration.
-- Validation: clean lockfile-based install, installed peer/dependency check,
-  focused mock/timer/jsdom compatibility cases, complete frontend unit/type/lint/
-  build ladder, and fresh full/production-only audits. Verify no remaining
-  Vitest/mocker/Tinypool advisory and record other newly reported findings without
-  expanding scope. Compare local production assets; browser checks apply if
-  runtime delivery or behavior changes. Independent read-only review must cover
-  lock changes, any mechanical test migration, evidence and remaining limits.
-- Invariants: preserve root scoring/handicap/locked-round rules, privacy/session
-  handling, application behavior and the production dependency boundary.
-- Stop: publish only the bounded Vitest 4 migration and evidence. Begin no other
-  major upgrade, team-query optimization, course-read or driver work.
+- Goal: bound team/member data loading to one SELECT for an empty team list and
+  two SELECTs for populated lists, independent of team count, while preserving
+  complete response and authorization behavior.
+- Scope: the shared team-list repository helper and focused PostgreSQL/API tests,
+  a disposable local query-count/cost comparison and docs. Exclude team/round
+  mutations, schema/index changes, API/DTO/frontend changes, pagination, course
+  reads, generic repository refactors and hosted performance work.
+- Behavior: retain the existing ordered team query; load all selected team IDs'
+  members in one parameter-bound query and group them without changing team or
+  member order, empty-team inclusion or fields. Preserve native SQL collation,
+  `display_order NULLS LAST`, display-name and player-UUID tie-breaks, and team
+  name/UUID ordering. Keep the same shared transaction/snapshot, session retry,
+  round membership authorization and final active-session gate even for empty
+  results. Preserve ordinary internal-list behavior and private/no-store HTTP
+  mapping. Do not parallelize SQL on the transaction or weaken locking/fences.
+- Validation: baseline regression proves per-team query growth; repaired counts
+  prove one/two data SELECTs for 0/1/12/100 synthetic teams, separately identifying
+  authorization/transaction queries. Compare complete payloads, empty teams,
+  null/duplicate member positions, name/UUID ties and round/tournament isolation.
+  Exercise revocation/expiry/cancellation and concurrent membership changes using
+  the existing pairing/team session suite. Run the complete backend/PostgreSQL
+  ladders, migrate/seed and independent read-only review. Measure local complete
+  handler/read cost before/after under matching data/session conditions; record
+  limits without claiming frontend or hosted speedup from query counts alone.
+- Invariants: tournament players remain independent of teams; team/round scope,
+  one-team-per-round constraints, preserved handicap/score rules and read authority
+  stay unchanged. No data write, SSE event, payload or cache-policy change.
+- Stop: publish only bounded team-member batching and evidence. Begin no course-
+  read, driver, collation/test-maintenance, UI or other performance work.
 
 ## Later queue
 
@@ -52,15 +55,12 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
-   query count and end-to-end cost. No current frontend latency impact is proven.
-
-2. **P3 / A1 course reads:** bind the three lower-impact course GETs in a
+1. **P3 / A1 course reads:** bind the three lower-impact course GETs in a
    separately selected step; provider-success impact remains conditional in the
    [source inventory](validation/private-read-inventory-2026-10-14/README.md#courses).
 
 Keep legacy team/round write-expiry inventory separate; the private-read inventory
-never assessed those writes. Selecting the Vitest-family candidate does not authorize the later queue.
+never assessed those writes. Selecting team-member batching does not authorize the later queue.
 
 Only after these, consider measurement-only steps for remaining Fantasy
 invalidation/fact-loading cost and empty-queue polling. No speculative optimization

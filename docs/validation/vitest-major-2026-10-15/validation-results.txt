@@ -1,0 +1,36 @@
+A7b Vitest major acceptance — 2026-10-15
+Baseline: a7fb638454384669753b1f37972753c3c05f035e
+Host Node22.22.2/npm10.9.7/Vite7.3.6;Vitest3.2.7→4.1.11 matching eight-package family
+
+Fresh npm audit --package-lock-only --ignore-scripts --json before: exit1;3affecteddevpackages(2critical labels,1moderate)
+Fresh npm audit --omit=dev --package-lock-only --ignore-scripts --json before: exit0;0
+npm view vitest@4 version --json: latest available stable4.1.11
+npm view vitest@4.1.11 version dist.integrity dependencies engines peerDependencies --json: exit0;captured metadata
+npm ci --no-audit --no-fund before: exit0
+npm run test -- --reporter=json --outputFile=/tmp/golf-a7b-tests-before.json: exit0;147files/1133tests passed
+npm run build before: exit0;65files hashed
+
+Four isolated npm10 proposal approaches: internal loadPeerSet edgesOut failure;no failed proposal applied
+Temporary npm11.21.0 package/version/engines verified;only proposal generation via npm exec;exact command in resolver-results.json
+Proposal generated with normal peer validation;no force/legacy-peer/overrides;temporary proposal workspace removed
+Only Vitest manifest range and25 related dev package entries plus lock root declaration change
+All10 runtime package entries,Vite7.3.6,prior A7patches identical;Tinypool/vite-node absent
+npm10 version after generation:10.9.7;legacy-peer-deps=false,force=false,ignore-scripts=false
+npm ci --no-audit --no-fund after using npm10: exit0;263platform-installed packages
+npm ls --all --json after: exit0
+Focused existing mock/timer/jsdom tests: exit0;11files/176tests;exact arguments in frontend-results.json
+npm run test -- --reporter=default --reporter=json --outputFile.json=/tmp/golf-a7b-tests-after.json: exit0;147files/1133tests passed
+Normalized(file,ancestorTitles,title) case multiset identical before/after;every assertion passed;no pending/todo
+npm run typecheck: exit0
+npm run lint: exit0
+npm run build after: exit0
+All65 local production file SHA256 values match before/after clean installs
+Fresh full npm audit after: exit0;0
+Fresh production-only npm audit after: exit0;0
+Registry/audit/install commands used --cache /tmp/golf-a7b-npm-cache
+
+Independent read-only manifest/lock/evidence review: no findings;reviewer independently confirmed test identity/hash parity
+Final documentation/plan review: no findings
+No application/test/script/config/backend/schema/Cargo lock changes;no weakened/ignored/deleted tests
+Browser/backend/PostgreSQL/image/hosted checks not rerun;outside affected boundary and every local application asset unchanged
+Related upstream npm issue is corroborating context,not proof of identical root cause

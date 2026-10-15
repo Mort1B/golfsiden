@@ -1,36 +1,33 @@
-# Latest iteration — compatible development-dependency repairs
+# Latest iteration — patched Vitest 4 family
 
-The compatible portion of A7 updates four development-only lock entries:
-brace-expansion 1.1.18 to 1.1.21 and nested 5.0.9 to 5.0.12, js-yaml 4.3.1 to
-4.3.2, and source-map-js 1.2.1 to 1.2.2. npm resolves these patches within the
-existing parent ranges. Only version, registry URL and integrity fields change;
-all other lock entries, the manifest, application source and tool configuration
-remain unchanged. Fresh registry metadata matches the selected integrity values.
+A7b completes the remaining development-dependency repair. The only manifest
+change is Vitest `^3.2.4` to `^4.1.11`; the lock selects matching 4.1.11 packages
+and their required development dependencies. Tinypool and vite-node are removed.
+Every application runtime entry, Vite 7.3.6 and the earlier A7 patches remain
+identical. No application, test, script or tool-configuration edits were needed.
 
-The full audit falls from six affected development packages to three, removing
-all three high-severity package entries. It still exits 1: Vitest 3.2.7,
-@vitest/mocker 3.2.7 and Tinypool 1.1.1 remain, labelled two critical and one
-moderate. These are package-entry labels with inherited findings, not three
-independent application exploits. The production-only audit remains zero. No
-hostile-input exploit or production remote-execution chain was reproduced.
+Fresh full and production-only npm audits both report zero findings. The prior
+three development package entries (two critical labels and one moderate) are
+absent. This closes the audited Vitest family, not an assertion that every image,
+Rust dependency or hosted application is vulnerability-free. No exploit was
+replayed or production workload measured.
 
-The remaining family requires a separately bounded Vitest major upgrade. Read-only
-metadata for patched Vitest 4.1.11 overlaps the current Node 22/Vite 7 toolchain,
-but that family has not been installed, resolved or tested here. The next step
-must verify its resulting dependencies and current advisories before acceptance.
-No incompatible override or blind force-update is included.
+The normal npm 10 resolver crashed during isolated proposal generation. A
+verified temporary npm 11 CLI generated the lockfile with peer checks intact;
+project/global npm stayed at 10.9.7. Standard npm 10 then passed clean `npm ci`,
+installed-tree validation and all frontend checks. No force/legacy-peer flag,
+transitive override or global toolchain change was used.
 
-Clean `npm ci` passed for both original and repaired lockfiles. The repaired tree
-also passes `npm ls --all`, all 1,133 tests across 147 files, strict typechecking,
-ESLint and production build. All 65 local production-mode output files are byte-
-identical before/after clean installs. The browser application therefore has no
-changed local asset in this step. No browser/backend/PostgreSQL ladder or image/
-hosted deployment acceptance is claimed for this dependency-only repair.
+The clean Vitest 3 baseline and Vitest 4 run both pass exactly the same 1,133 test
+identities across 147 files. A focused set of 176 existing tests covers module
+mocks, fake timers, jsdom, request timeouts, identity ordering and live ownership.
+Strict typecheck, ESLint and production build pass. All 65 local production
+output files are byte-identical after clean before/after installs. No test was
+weakened, renamed, deleted or ignored.
 
-Independent lock/evidence review found no issues. The reviewer's separate registry
-refresh was unavailable, so registry provenance rests on the successful primary
-metadata checks and clean installations. Final documentation and bounded-plan
-review found no issues.
-The [A7 report](validation/development-dependencies-2026-10-15/README.md) retains
-exact paths, versions, audit snapshots and validation. A7 remains partly open;
-[the plan](PLANS.md) selects the major-family migration as the next candidate.
+Independent manifest/lock/evidence review found no issues and independently
+confirmed test identity and build-hash parity. Final documentation and bounded-
+plan review also found no issues. Browser/backend/PostgreSQL ladders and image/hosted acceptance are outside
+the affected boundary and were not rerun. The [Vitest report](validation/vitest-major-2026-10-15/README.md)
+records commands, resolver provenance, audit snapshots and limits. The next
+candidate in [the plan](PLANS.md) is P3 team-membership query batching.

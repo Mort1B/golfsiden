@@ -1,0 +1,346 @@
+{
+  "baseline": "a7fb638454384669753b1f37972753c3c05f035e",
+  "changes": [
+    {
+      "path": "",
+      "before": "0.1.0",
+      "after": "0.1.0",
+      "dev": false,
+      "fields": [
+        "devDependencies"
+      ]
+    },
+    {
+      "path": "node_modules/@standard-schema/spec",
+      "before": null,
+      "after": "1.1.0",
+      "dev": true,
+      "fields": [
+        "dev",
+        "integrity",
+        "license",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/@vitest/expect",
+      "before": "3.2.7",
+      "after": "4.1.11",
+      "dev": true,
+      "fields": [
+        "dependencies",
+        "integrity",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/@vitest/mocker",
+      "before": "3.2.7",
+      "after": "4.1.11",
+      "dev": true,
+      "fields": [
+        "dependencies",
+        "integrity",
+        "peerDependencies",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/@vitest/pretty-format",
+      "before": "3.2.7",
+      "after": "4.1.11",
+      "dev": true,
+      "fields": [
+        "dependencies",
+        "integrity",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/@vitest/runner",
+      "before": "3.2.7",
+      "after": "4.1.11",
+      "dev": true,
+      "fields": [
+        "dependencies",
+        "integrity",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/@vitest/snapshot",
+      "before": "3.2.7",
+      "after": "4.1.11",
+      "dev": true,
+      "fields": [
+        "dependencies",
+        "integrity",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/@vitest/spy",
+      "before": "3.2.7",
+      "after": "4.1.11",
+      "dev": true,
+      "fields": [
+        "dependencies",
+        "integrity",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/@vitest/utils",
+      "before": "3.2.7",
+      "after": "4.1.11",
+      "dev": true,
+      "fields": [
+        "dependencies",
+        "integrity",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/cac",
+      "before": "6.7.14",
+      "after": null,
+      "dev": true,
+      "fields": [
+        "dev",
+        "engines",
+        "integrity",
+        "license",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/chai",
+      "before": "5.3.3",
+      "after": "6.3.0",
+      "dev": true,
+      "fields": [
+        "dependencies",
+        "integrity",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/check-error",
+      "before": "2.1.3",
+      "after": null,
+      "dev": true,
+      "fields": [
+        "dev",
+        "engines",
+        "integrity",
+        "license",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/deep-eql",
+      "before": "5.0.2",
+      "after": null,
+      "dev": true,
+      "fields": [
+        "dev",
+        "engines",
+        "integrity",
+        "license",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/es-module-lexer",
+      "before": "1.7.0",
+      "after": "2.3.2",
+      "dev": true,
+      "fields": [
+        "integrity",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/loupe",
+      "before": "3.2.1",
+      "after": null,
+      "dev": true,
+      "fields": [
+        "dev",
+        "integrity",
+        "license",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/obug",
+      "before": null,
+      "after": "2.2.1",
+      "dev": true,
+      "fields": [
+        "dev",
+        "engines",
+        "funding",
+        "integrity",
+        "license",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/pathval",
+      "before": "2.0.1",
+      "after": null,
+      "dev": true,
+      "fields": [
+        "dev",
+        "engines",
+        "integrity",
+        "license",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/std-env",
+      "before": "3.10.0",
+      "after": "4.3.0",
+      "dev": true,
+      "fields": [
+        "integrity",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/strip-literal",
+      "before": "3.1.0",
+      "after": null,
+      "dev": true,
+      "fields": [
+        "dependencies",
+        "dev",
+        "funding",
+        "integrity",
+        "license",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/strip-literal/node_modules/js-tokens",
+      "before": "9.0.1",
+      "after": null,
+      "dev": true,
+      "fields": [
+        "dev",
+        "integrity",
+        "license",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/tinyexec",
+      "before": "0.3.2",
+      "after": "1.3.1",
+      "dev": true,
+      "fields": [
+        "engines",
+        "integrity",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/tinypool",
+      "before": "1.1.1",
+      "after": null,
+      "dev": true,
+      "fields": [
+        "dev",
+        "engines",
+        "integrity",
+        "license",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/tinyrainbow",
+      "before": "2.0.0",
+      "after": "3.2.0",
+      "dev": true,
+      "fields": [
+        "integrity",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/tinyspy",
+      "before": "4.0.4",
+      "after": null,
+      "dev": true,
+      "fields": [
+        "dev",
+        "engines",
+        "integrity",
+        "license",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/vite-node",
+      "before": "3.2.4",
+      "after": null,
+      "dev": true,
+      "fields": [
+        "bin",
+        "dependencies",
+        "dev",
+        "engines",
+        "funding",
+        "integrity",
+        "license",
+        "resolved",
+        "version"
+      ]
+    },
+    {
+      "path": "node_modules/vitest",
+      "before": "3.2.7",
+      "after": "4.1.11",
+      "dev": true,
+      "fields": [
+        "dependencies",
+        "engines",
+        "integrity",
+        "peerDependencies",
+        "peerDependenciesMeta",
+        "resolved",
+        "version"
+      ]
+    }
+  ],
+  "runtime_entries_identical": true,
+  "vite_entry_identical": true,
+  "prior_a7_patches_identical": true,
+  "only_manifest_change": "vitest ^3.2.4 to ^4.1.11",
+  "tinypool_and_vite_node_absent": true
+}

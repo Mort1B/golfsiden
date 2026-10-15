@@ -1,0 +1,19 @@
+npm10.9.7 proposal attempts failed inside npm peer resolution;no project source was changed by these isolated attempts.
+Normal npm10 ci later passed with the npm11-generated lock.
+
+golf-a7b-update.log:
+npm error Cannot read properties of null (reading 'edgesOut')
+npm error A complete log of this run can be found in: /tmp/golf-a7b-npm-cache/_logs/2026-10-15T08_39_01_203Z-debug-0.log
+
+golf-a7b-update-reconcile.log:
+npm error Cannot read properties of null (reading 'edgesOut')
+npm error A complete log of this run can be found in: /tmp/golf-a7b-npm-cache/_logs/2026-10-15T08_40_00_986Z-debug-0.log
+
+golf-a7b-update-root-vite.log:
+npm error Cannot read properties of null (reading 'edgesOut')
+npm error A complete log of this run can be found in: /tmp/golf-a7b-npm-cache/_logs/2026-10-15T08_41_15_498Z-debug-0.log
+
+golf-a7b-update-installed-tree.log:
+added 271 packages in 2s
+npm error Cannot read properties of null (reading 'edgesOut')
+npm error A complete log of this run can be found in: /tmp/golf-a7b-npm-cache/_logs/2026-10-15T08_43_14_283Z-debug-0.log

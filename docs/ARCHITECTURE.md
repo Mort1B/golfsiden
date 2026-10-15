@@ -22,11 +22,19 @@ audit entry.
 The production Dockerfile uses Node/npm in its builder and copies only `dist`
 into the final Caddy image. Development-only advisories still matter to build/test
 environments; their presence is not proof of public application execution.
-Production-only npm scans do not audit the image or hosted deployment. For the
-current compatible four-entry patch, clean installs and the full frontend ladder
-passed and all 65 local production artifacts are byte-identical. Three
-Vitest-family audit entries remain open; dated versions, paths and limits are in
-[the A7 report](validation/development-dependencies-2026-10-15/README.md).
+Production-only npm scans do not audit the image or hosted deployment. The
+current test runner and its seven internal Vitest packages are locked to 4.1.11;
+Tinypool and vite-node are absent. Node 22, Vite 7 and every application runtime
+package entry remain unchanged. Standard npm 10 clean installation and strict
+validation pass; temporary npm 11 was used only to generate the major-upgrade
+proposal after an npm 10 resolver failure, not as a new project requirement.
+
+All 1,133 test identities and 65 local production output files match the original
+runner baseline. No test or configuration migration was needed. Current full and
+production-only npm audits report zero findings; dated evidence and limits are in
+[the Vitest report](validation/vitest-major-2026-10-15/README.md). The preceding
+[compatible A7 patches](validation/development-dependencies-2026-10-15/README.md)
+remain in place; their older unresolved audit snapshot is historical.
 
 ## Client TLS dependencies
 

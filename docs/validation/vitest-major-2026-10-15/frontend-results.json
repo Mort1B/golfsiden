@@ -1,0 +1,89 @@
+[
+  {
+    "check": "tree",
+    "command": [
+      "npm",
+      "ls",
+      "--all",
+      "--json"
+    ],
+    "exit": 0,
+    "seconds": 0.46
+  },
+  {
+    "check": "focused",
+    "command": [
+      "npm",
+      "run",
+      "test",
+      "--",
+      "src/api/scorecards/timeout.test.ts",
+      "src/api/resultSharing.test.ts",
+      "src/features/resultSharing/SharedResultsPage.test.tsx",
+      "src/features/scoring/prepared/PreparedScoreProvider.test.tsx",
+      "src/features/fantasy/FantasySettlement.test.tsx",
+      "src/features/fantasy/MyFour.test.tsx",
+      "src/features/tournaments/details/TournamentDetailsEditor.test.tsx",
+      "src/features/auth/identityFlows.test.tsx",
+      "src/pages/MatchResultGate.test.tsx",
+      "src/pages/MatchLiveOwnership.test.tsx",
+      "src/pages/ScorePage.test.tsx",
+      "--reporter=json",
+      "--outputFile=/tmp/golf-a7b-focused-after.json"
+    ],
+    "exit": 0,
+    "seconds": 9.87,
+    "test_files_passed": 11,
+    "tests_passed": 176,
+    "tests_failed": 0,
+    "pending_or_todo": 0
+  },
+  {
+    "check": "tests",
+    "command": [
+      "npm",
+      "run",
+      "test",
+      "--",
+      "--reporter=default",
+      "--reporter=json",
+      "--outputFile.json=/tmp/golf-a7b-tests-after.json"
+    ],
+    "exit": 0,
+    "seconds": 44.26,
+    "test_files_passed": 147,
+    "tests_passed": 1133,
+    "tests_failed": 0,
+    "pending_or_todo": 0
+  },
+  {
+    "check": "typecheck",
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "exit": 0,
+    "seconds": 10.99
+  },
+  {
+    "check": "lint",
+    "command": [
+      "npm",
+      "run",
+      "lint"
+    ],
+    "exit": 0,
+    "seconds": 6.83
+  },
+  {
+    "check": "build",
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "exit": 0,
+    "seconds": 14.65
+  }
+]

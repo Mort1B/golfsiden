@@ -2,8 +2,13 @@
 
 This is the compatible-patch portion of P2 [A7](../application-review-2026-10-14/README.md#a7--p2-development-tool-advisories-need-a-separate-upgrade).
 Baseline: `88e80f0e8e4891c5f7988a9c8137391d80b6dfe3`.
-The remaining Vitest-family findings require a separately approved major upgrade;
-A7 as a whole is not closed.
+At this snapshot the remaining Vitest-family findings required a separately
+approved major upgrade, so A7 as a whole was not yet closed.
+
+Follow-up: [A7b](../vitest-major-2026-10-15/README.md) addresses the remaining
+Vitest-family entries with a separately approved major migration. Its current
+full/production-only npm audits are zero. This report retains the compatible
+step's original versions, unresolved findings and acceptance snapshot.
 
 ## Exact repair
 

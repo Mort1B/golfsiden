@@ -1,0 +1,25 @@
+[
+  {
+    "check": "tests",
+    "command": [
+      "npm",
+      "run",
+      "test",
+      "--",
+      "--reporter=json",
+      "--outputFile=/tmp/golf-a7b-tests-before.json"
+    ],
+    "exit": 0,
+    "seconds": 46.49
+  },
+  {
+    "check": "build",
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "exit": 0,
+    "seconds": 14.8
+  }
+]

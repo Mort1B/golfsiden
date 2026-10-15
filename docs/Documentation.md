@@ -592,18 +592,24 @@ delivery. See the [acceptance report](validation/invitation-read-session-2026-10
 
 The frontend lockfile now selects compatible development-only patches:
 brace-expansion 1.1.21 and nested 5.0.12, js-yaml 4.3.2 and source-map-js 1.2.2.
-Only their version, resolved URL and integrity fields change; the manifest, all
-other lock entries, application source and tooling configuration are unchanged.
+Those four entries remain identical to the accepted compatible-patch snapshot.
 Use `npm ci` to install the committed tree, then run the normal frontend
 unit/type/lint/build ladder.
 
-The 2026-10-15 full npm audit falls from six affected packages to three; the
-production-only audit remains zero. Vitest 3.2.7, @vitest/mocker 3.2.7 and Tinypool
-1.1.1 remain flagged (two critical package entries and one moderate). They require
-a separately planned Vitest major upgrade; the audit is not globally clean.
-Counts are scanner package labels, not demonstrated application exploits. The
-[A7 report](validation/development-dependencies-2026-10-15/README.md) records the
-fresh audits, paths, 1,133 passing tests and identical local build assets.
+The patched test runner changes only its development declaration and required
+lockfile family relative to that snapshot: Vitest and seven internal packages are 4.1.11;
+Tinypool and vite-node are removed. The existing Node 22/Vite 7 setup, application
+runtime entries, tests and tool configuration remain unchanged. Standard npm 10
+`npm ci` works; a temporary npm 11 CLI generated the proposal after npm 10's
+resolver crashed, with no project/global npm upgrade or peer-check bypass.
+
+The 2026-10-15 full and production-only npm audits now both report zero findings.
+This is a dependency snapshot, not proof of hosted/image security or absence of
+all application defects. The [Vitest report](validation/vitest-major-2026-10-15/README.md)
+records 1,133 identical passing test identities, 176 focused compatibility cases
+and all 65 byte-identical local build files. The older compatible-patch
+[A7 report](validation/development-dependencies-2026-10-15/README.md) retains its
+historical three-finding snapshot; A7b addresses those remaining entries.
 
 ## Client TLS dependency maintenance
 

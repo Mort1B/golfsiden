@@ -1,0 +1,13 @@
+{
+  "before_vitest": "3.2.7",
+  "after_vitest": "4.1.11",
+  "files_before": 147,
+  "files_after": 147,
+  "tests_before": 1133,
+  "tests_after": 1133,
+  "all_identities_identical": true,
+  "all_passed_before_and_after": true,
+  "identity_sha256_before": "6a2431667c5ef7738429c8ccf69b9d481076457c53831a26690b743067313361",
+  "identity_sha256_after": "6a2431667c5ef7738429c8ccf69b9d481076457c53831a26690b743067313361",
+  "pending_or_todo_tests": 0
+}

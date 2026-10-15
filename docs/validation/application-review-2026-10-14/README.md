@@ -59,6 +59,12 @@ high-severity package entries from a fresh audit. Vitest/mocker/Tinypool finding
 remain open for the separate major upgrade; the historical A7 snapshot below is
 unchanged.
 
+The [Vitest major migration](../vitest-major-2026-10-15/README.md) completes A7's
+remaining Vitest-family repair: current full and production-only npm audits both
+report zero. The full test identities and local build assets match the original
+runner baseline; the historical audit below remains pinned to the reviewed
+revision and does not describe the updated lockfile.
+
 This is a documentation-only assessment of current application source, database
 contracts, browser state, production configuration and dependency advisories.
 No application, dependency, migration or hosted configuration was changed.
