@@ -48,8 +48,9 @@ closes W2 with reproduced expiry, rollback/valid controls and editor acceptance.
 The [course-write repair](../course-write-session-2026-10-15/README.md) closes W3
 with reproduced membership/late-hierarchy expiry and complete rollback/control
 coverage. All three selected P2 write gaps now have linked acceptance. Its
-browser checks separately identify a P3 mobile manual-hole labeling issue for
-a later step. The source inventory itself claims no runtime reproduction. The
+browser checks separately identify a P3 mobile manual-hole labeling issue,
+subsequently repaired by [A1s](../manual-hole-labels-2026-10-15/README.md).
+The source inventory itself claims no runtime reproduction. The
 assessment below describes the originally reviewed revision.
 
 The [Rustls dependency repair](../rustls-update-2026-10-15/README.md) follows A4,

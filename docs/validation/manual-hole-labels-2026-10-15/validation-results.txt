@@ -1,0 +1,32 @@
+A1s current-run validation
+Base revision: 8d884f2cfe75c960507bbc04259229f5c242f65b
+Production scope: two CSS rules; component, parser, state and backend source unchanged.
+
+npm run test: exit 0; 147 files, 1133 tests passed.
+npm run typecheck: exit 0.
+npm run lint: exit 0.
+npm run build: exit 0.
+
+cargo build --locked -p golf-api --bins: exit 0 (unchanged browser API).
+Fixture migration first connection reset; after pg_isready accepted connections:
+cargo run --locked -p golf-api --bin migrate: exit 0.
+cargo run --locked -p golf-api --bin seed: exit 0.
+PostgreSQL 17.10; migration count=39, max(version)=39, all successful=true.
+Seed counts: players=8, rounds=5.
+Fixture only: empty draft final round set to individual_stableford for fixed-18 checks.
+
+Final Chrome probe with compact captures: exit 0; 320/390/1280 all passed.
+Two real manual saves per width (six total), plus one injected PUT 401 per width.
+No unexpected page/console/network errors; zero provider-detail requests.
+Header text-line bounds and first-row alignment/44px input targets measured directly.
+Empty/filled/error rows, first-invalid focus, keyboard order and nine-to-18 retention passed.
+Variable round GET/reload checks course+tee names and hole count.
+Fixed Stableford GET/reload checks course name and hole count; exact hole facts not separately queried.
+Injected PUT 401 preserves server round data and mounted inputs; no automatic retry.
+Injected saved-course GET 503/error/retry, empty and long-name states passed.
+Real unusable catalog fallback and logout/private round GET 401/login redirect passed.
+
+Independent CSS/source, saved-browser and documentation/next-plan reviews: no actionable findings.
+Final local links/source anchors, file-size/scope and diff/EOF whitespace checks: passed.
+Backend/SQLx regression ladders not rerun: only CSS production source changed.
+Owned API/Vite stopped; ports released; container removed; two private env files deleted.

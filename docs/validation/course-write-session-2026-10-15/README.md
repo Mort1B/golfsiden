@@ -1,5 +1,10 @@
 # A1r — course-configuration session expiry
 
+Follow-up: [A1s mobile-label repair](../manual-hole-labels-2026-10-15/README.md)
+closes the separate P3 presentation issue. The P3 section, source anchors and
+screenshots below preserve A1r's original CSS snapshot; they are historical
+evidence, not the repaired layout.
+
 Base revision: `69482bc566ac20f799dbd47162923c42c32172fe`.
 Scope: `PUT /api/rounds/{round_id}/course-configuration`, its final transaction,
 PostgreSQL/API regressions, existing-editor browser acceptance and affected docs.

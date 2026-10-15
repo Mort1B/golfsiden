@@ -5,39 +5,46 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A1r course-configuration expiry is complete; reproduction, rollback,
-browser coverage and validation limits are in the
-[acceptance report](validation/course-write-session-2026-10-15/README.md).
+None. A1s mobile manual-hole labels are complete; current behavior, screenshots
+and validation limits are in the
+[acceptance report](validation/manual-hole-labels-2026-10-15/README.md).
 
 ## Next candidate — requires approval
 
-### A1s — P3 visible mobile manual-hole labels
+### A1t — measure Fantasy result reads and refresh fan-out
 
-A1r's [browser evidence](validation/course-write-session-2026-10-15/README.md#separate-p3-mobile-manual-hole-labels)
-confirms this separate pre-existing usability issue. It is not started by A1r.
+This is an unrated performance investigation from the
+[original review](validation/application-review-2026-10-14/README.md#performance-conclusions-and-remaining-measurements),
+not a confirmed new defect or runtime-optimization approval. It is not started
+by A1s.
 
-- Goal: let sighted administrators identify Par, Slagindeks and Avstand fields
-  while manually configuring holes at mobile widths.
-- Scope: only manual-hole label presentation in `ManualCourseForm.tsx` and
-  `course-configuration.css` as needed, relevant frontend/browser acceptance and
-  affected documentation. Exclude course persistence, authorization, provider,
-  mutation state/retry behavior, sporting rules, schema/dependencies and hosted
-  work.
-- Behavior: retain compact visible column or row labels below 700px, preserving
-  accessible input names and hole identity. Keep existing values, validation,
-  fixed/variable hole-count behavior, optional distance units, save controls,
-  desktop layout and error feedback. Avoid horizontal overflow at 320px.
-- Validation: compare against captured mobile/desktop evidence; run the affected
-  frontend test/type/lint/build ladder and real-browser checks at 320, 390 and
-  1280px. Cover empty/filled rows, validation errors, long course/tee text,
-  18-hole fixed and variable layouts, saving/denial feedback and persisted real
-  save; inspect screenshots, keyboard focus, control reachability, console and
-  network. Use read-only review, documentation/link, file-size and scope checks.
-- Invariants: do not change course facts, numeric parsers, stroke-index
-  uniqueness, format guards, session isolation or explicit save semantics.
-- Stop: publish this single validated presentation repair and a concise next
-  candidate; do not begin adjacent form-state, provider, driver or performance
-  work.
+- Goal: establish completed request counts and local SQL/fact-loading/lock cost
+  for a round-scoped Fantasy results read and one acknowledged selection save
+  followed by its existing SSE/read reconciliation.
+- Scope: only existing Fantasy result loading and refresh/invalidation paths,
+  disposable one/five-round fixtures, diagnostic probes/evidence and docs.
+  Production application, API, schema/index, dependency and hosted changes are
+  excluded, as are batch actions and empty offline-queue polling.
+- Behavior: observe current behavior without changing request ownership,
+  authorization, locks, finalization side effects, expiry, privacy, freshness,
+  session fencing or immutable write/recovery semantics. Record normalized
+  query fingerprints/counts and durations without parameters, personal data,
+  credentials or sensitive payloads. Add no mutation retry or runtime tuning.
+- Validation: predeclare fixture size, warm/cold states, sample count and metric
+  scopes before measurement. Measure idle, explicit scoped read and one save/SSE
+  reconciliation using real browser/API/PostgreSQL fixtures; separate completed
+  requests from cancellations and browser/API/SQL cost from projection-only
+  timings. Check observer overhead, unchanged visible results, acknowledged
+  write count and auth/privacy gates. Run applicable checks for diagnostic
+  support, independent read-only review and documentation/scope validation.
+  Report local-only limits without a production-capacity claim.
+- Invariants: preserve exact sporting/Fantasy separation, rules versions,
+  selection deadlines, authorization, session isolation, read consistency and
+  acknowledged-write/read-recovery boundaries.
+- Stop: publish a reproducible measurement report and at most one separately
+  bounded optimization candidate supported by the measured bottleneck; if
+  evidence is insufficient, state that no optimization is justified. Do not
+  optimize runtime code or begin queued work.
 
 ## Later queue
 
@@ -55,8 +62,9 @@ The linked pairing-replacement repair closes W2 with the same expiry/rollback
 acceptance. The linked course-configuration repair closes W3 with complete
 hierarchy rollback/control coverage. All three selected P2 write gaps now have
 linked acceptance; the original assessment itself reproduced no runtime race.
-A1r browser checks separately identify the P3 mobile manual-hole labels candidate
-above. No frontend implementation began in A1r.
+A1r browser checks separately identified the P3 mobile manual-hole labeling
+issue; A1s now closes it with visible headings and frontend/browser acceptance.
+The next candidate above is measurement-only and has no confirmed new rating.
 Retired granular team writes receive no reachable-route finding. Provisional
 user-only preflight/provider-work observations remain separate and unrated.
 

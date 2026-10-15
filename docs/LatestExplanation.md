@@ -1,54 +1,40 @@
-# Latest iteration — course-configuration session expiry
+# Latest iteration — visible mobile manual-hole labels
 
-A1r repairs W3, `PUT /api/rounds/{round_id}/course-configuration`, from the
-[legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md).
-After inserting the complete immutable revision and awaiting round
-UPDATE/RETURNING, the repository rechecks the same session with database
-wall-clock time immediately before commit. Stored-round/session/admin locks,
-CSRF, preflight/provider placement, validation and response contracts remain
-unchanged. No mutation retry or repeated provider fetch is added.
+A1s closes the P3 presentation issue found during A1r browser acceptance. The
+manual hole grid now shows Hull, Par, Slagindeks and Avstand (yards) headings
+at mobile widths. The existing desktop heading rule becomes the base rule with
+mobile row spacing; the desktop breakpoint retains its previous spacing and
+appearance. Only two CSS rules changed. Component markup, accessible field/hole
+names, parsing, validation, state, optional distances and save behavior remain
+unchanged.
 
-Both new PostgreSQL/API cases reproduced `200` instead of `401` against unchanged
-production source. The first observes a final round wait before holding an
-unchanged membership, proving preflight completed. The second verifies complete
-pending course/tee/hole facts and changed attachment/timestamp inside a targeted
-AFTER UPDATE trigger before its advisory wait. Deferred constraints are not
-forced early.
+Real Chrome checks pass at 320, 390 and 1280px. Rendered heading lines remain
+inside their columns and viewport, with clean distance-unit wrapping and
+separation from the first row. Header/input edges align; directly measured
+first-row inputs remain at least 44px. Empty, filled and validation-error rows
+are readable, first-invalid focus and Tab order are preserved, and a nine-to-18
+resize retains existing values while new rows remain empty.
 
-Both now return private/no-store `401 unauthenticated`, roll back all hierarchy
-and attachment changes and publish no event. Full snapshots catch orphan rows
-and preserve the other opened round, original courses and handicap/history
-facts. Fresh-session controls reuse the original optimistic timestamp and
-command, create exactly one hierarchy/attachment and publish one matching event. All 36 focused cases
-pass, and independent read-only implementation/test review found no findings.
+Each width makes two real private-200 saves, one variable layout and one fixed
+18-hole Stableford form. Receipts, collapse/focus and GET/reload verify returned
+names/counts; exact stored hole facts are not separately queried. Clearly
+injected denial/read-error/empty/long-preset states preserve existing behavior,
+including mounted-form retention and no automatic PUT retry. Real logout and
+the unchanged unusable-catalog fallback are covered without a remote provider
+request.
 
-Real Chrome checks pass at 320, 390 and 1280px: saved-picker loading/populated,
-injected long names/error/retry/empty, manual saving feedback, one real PUT,
-receipt/collapse/focus and persisted round names/hole count after reload. A
-clearly injected PUT 401 retains inputs in the same mounted form, shows existing
-access feedback and re-enables fields/save without an automatic retry. Server
-round data is unchanged. Retention across mode changes/reload/auth-loss unmounts
-is not claimed. Actual logout plus reload verifies private round GET 401 and
-login gating. The real unusable catalog shows its manual fallback; no provider
-detail request or remote provider success is claimed. An initial probe selector
-was corrected without application changes before the complete successful run.
+All 1,133 frontend tests across 147 files, typecheck, lint and production build
+pass. The unchanged API build and disposable PostgreSQL migration/seed checks
+pass with all 39 migrations, eight players and five rounds. Initial fixture
+connection and probe selector/capture issues were resolved before the final
+complete browser run. No backend or SQLx regression ladder was rerun for this
+CSS-only change. Owned services, container and private environment files were
+removed. Independent source/browser and documentation/next-plan reviews found
+no actionable findings. Final local links/source anchors, file-size/scope and
+diff/EOF whitespace checks pass. The
+[acceptance report](validation/manual-hole-labels-2026-10-15/README.md) retains
+commands, screenshots and precise validation limits.
 
-Browser inspection separately confirms a pre-existing **P3 mobile labeling
-issue**: below 700px, manual hole rows lack visible Par/Slagindeks/Avstand labels,
-although accessible input names remain. Desktop headings are visible. This is
-recorded with screenshots and proposed as A1s; no frontend implementation began.
-Independent browser-evidence review confirms that distinction.
-
-Backend formatting, 264 all-target tests, strict Clippy and API binaries pass.
-The complete PostgreSQL rerun passes 952 tests with zero failures and five
-existing ignored probes. The first full attempt ended with exit 143 after its
-unit target; no failing case was reported and its cause remains unconfirmed.
-That incomplete attempt is recorded separately. Explicit migration/seed checks
-pass with all 39 migrations successful, eight players and five rounds. The
-owned container and private environment files were removed. Independent
-source/test, browser-evidence and documentation/next-plan reviews are resolved;
-local links/source anchors, file scope/size and diff whitespace checks pass.
-The [acceptance report](validation/course-write-session-2026-10-15/README.md)
-retains exact results, the separate P3 finding and validation limits.
-Time during COMMIT, deferred constraints and delivery remains outside the final
-check. No schema, dependency, provider or hosted change is included.
+A separate measurement-only Fantasy result/refresh candidate is proposed next.
+No performance investigation, runtime optimization, provider, dependency,
+schema or hosted work began in A1s.

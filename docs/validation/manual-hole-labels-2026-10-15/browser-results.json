@@ -1,0 +1,244 @@
+[
+  {
+    "width": 320,
+    "saved_loading_populated": true,
+    "injected_saved_long_names": true,
+    "manual_real_save_and_reload": true,
+    "real_ui_puts": 2,
+    "visible_aligned_unclipped_heading_lines": true,
+    "heading_geometry": [
+      {
+        "left": 48,
+        "right": 82,
+        "bottom": 836.234375,
+        "lines": [
+          {
+            "left": 54.5,
+            "right": 75.484375,
+            "bottom": 821.234375
+          }
+        ]
+      },
+      {
+        "left": 88,
+        "right": 145.328125,
+        "bottom": 836.234375,
+        "lines": [
+          {
+            "left": 107.828125,
+            "right": 125.5,
+            "bottom": 821.234375
+          }
+        ]
+      },
+      {
+        "left": 151.328125,
+        "right": 208.65625,
+        "bottom": 836.234375,
+        "lines": [
+          {
+            "left": 151.734375,
+            "right": 208.25,
+            "bottom": 821.234375
+          }
+        ]
+      },
+      {
+        "left": 214.65625,
+        "right": 271.984375,
+        "bottom": 836.234375,
+        "lines": [
+          {
+            "left": 222.15625,
+            "right": 264.46875,
+            "bottom": 821.234375
+          },
+          {
+            "left": 225.640625,
+            "right": 260.984375,
+            "bottom": 836.234375
+          }
+        ]
+      }
+    ],
+    "empty_and_filled_rows": true,
+    "client_validation_and_first_invalid_focus": true,
+    "variable_9_to_18_retains_values": true,
+    "keyboard_par_index_distance_order": true,
+    "fixed_18_readonly_real_save_reload": true,
+    "saving_state": true,
+    "private_success_and_denial": true,
+    "injected_put_401": true,
+    "injected_denial_preserves_server_round": true,
+    "current_access_feedback": true,
+    "draft_retained_in_same_mounted_form": true,
+    "form_reenabled_after_denial": true,
+    "no_automatic_put_retry": true,
+    "injected_read_error_retry_and_empty": true,
+    "long_content_no_horizontal_overflow": true,
+    "actual_logout_private_401_login_redirect": true,
+    "real_catalog_unusable_fallback": true,
+    "provider_detail_requests": 0,
+    "manual_hole_column_headings_visible": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  },
+  {
+    "width": 390,
+    "saved_loading_populated": true,
+    "injected_saved_long_names": true,
+    "manual_real_save_and_reload": true,
+    "real_ui_puts": 2,
+    "visible_aligned_unclipped_heading_lines": true,
+    "heading_geometry": [
+      {
+        "left": 48,
+        "right": 82,
+        "bottom": 879.578125,
+        "lines": [
+          {
+            "left": 54.5,
+            "right": 75.484375,
+            "bottom": 879.578125
+          }
+        ]
+      },
+      {
+        "left": 88,
+        "right": 168.65625,
+        "bottom": 879.578125,
+        "lines": [
+          {
+            "left": 119.484375,
+            "right": 137.15625,
+            "bottom": 879.578125
+          }
+        ]
+      },
+      {
+        "left": 174.65625,
+        "right": 255.328125,
+        "bottom": 879.578125,
+        "lines": [
+          {
+            "left": 186.734375,
+            "right": 243.25,
+            "bottom": 879.578125
+          }
+        ]
+      },
+      {
+        "left": 261.328125,
+        "right": 341.984375,
+        "bottom": 879.578125,
+        "lines": [
+          {
+            "left": 261.375,
+            "right": 341.921875,
+            "bottom": 879.578125
+          }
+        ]
+      }
+    ],
+    "empty_and_filled_rows": true,
+    "client_validation_and_first_invalid_focus": true,
+    "variable_9_to_18_retains_values": true,
+    "keyboard_par_index_distance_order": true,
+    "fixed_18_readonly_real_save_reload": true,
+    "saving_state": true,
+    "private_success_and_denial": true,
+    "injected_put_401": true,
+    "injected_denial_preserves_server_round": true,
+    "current_access_feedback": true,
+    "draft_retained_in_same_mounted_form": true,
+    "form_reenabled_after_denial": true,
+    "no_automatic_put_retry": true,
+    "injected_read_error_retry_and_empty": true,
+    "long_content_no_horizontal_overflow": true,
+    "actual_logout_private_401_login_redirect": true,
+    "real_catalog_unusable_fallback": true,
+    "provider_detail_requests": 0,
+    "manual_hole_column_headings_visible": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  },
+  {
+    "width": 1280,
+    "saved_loading_populated": true,
+    "injected_saved_long_names": true,
+    "manual_real_save_and_reload": true,
+    "real_ui_puts": 2,
+    "visible_aligned_unclipped_heading_lines": true,
+    "heading_geometry": [
+      {
+        "left": 302,
+        "right": 336,
+        "bottom": 836.171875,
+        "lines": [
+          {
+            "left": 308.5,
+            "right": 329.484375,
+            "bottom": 836.171875
+          }
+        ]
+      },
+      {
+        "left": 344,
+        "right": 580.65625,
+        "bottom": 836.171875,
+        "lines": [
+          {
+            "left": 453.484375,
+            "right": 471.15625,
+            "bottom": 836.171875
+          }
+        ]
+      },
+      {
+        "left": 588.65625,
+        "right": 825.328125,
+        "bottom": 836.171875,
+        "lines": [
+          {
+            "left": 678.734375,
+            "right": 735.25,
+            "bottom": 836.171875
+          }
+        ]
+      },
+      {
+        "left": 833.328125,
+        "right": 1070,
+        "bottom": 836.171875,
+        "lines": [
+          {
+            "left": 911.390625,
+            "right": 991.9375,
+            "bottom": 836.171875
+          }
+        ]
+      }
+    ],
+    "empty_and_filled_rows": true,
+    "client_validation_and_first_invalid_focus": true,
+    "variable_9_to_18_retains_values": true,
+    "keyboard_par_index_distance_order": true,
+    "fixed_18_readonly_real_save_reload": true,
+    "saving_state": true,
+    "private_success_and_denial": true,
+    "injected_put_401": true,
+    "injected_denial_preserves_server_round": true,
+    "current_access_feedback": true,
+    "draft_retained_in_same_mounted_form": true,
+    "form_reenabled_after_denial": true,
+    "no_automatic_put_retry": true,
+    "injected_read_error_retry_and_empty": true,
+    "long_content_no_horizontal_overflow": true,
+    "actual_logout_private_401_login_redirect": true,
+    "real_catalog_unusable_fallback": true,
+    "provider_detail_requests": 0,
+    "manual_hole_column_headings_visible": true,
+    "page_errors": [],
+    "unexpected_network_failures": []
+  }
+]

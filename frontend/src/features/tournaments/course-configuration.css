@@ -40,7 +40,7 @@
 .manual-course-form label small { color: #6b766f; font-weight: 500; }
 .manual-holes { min-width: 0; margin: 4px 0 0; padding: 0; border: 0; }
 .manual-holes > p { margin-bottom: 10px; color: #68736c; font-size: .78rem; line-height: 1.45; }
-.hole-grid-heading { display: none; }
+.hole-grid-heading { display: grid; grid-template-columns: 34px repeat(3, minmax(0, 1fr)); gap: 6px; padding: 0 0 6px; color: #69746d; font-size: .7rem; text-align: center; }
 .manual-hole-row { display: grid; grid-template-columns: 34px repeat(3, minmax(0, 1fr)); align-items: end; gap: 6px; padding: 9px 0; border-top: 1px solid #e3e7e3; }
 .manual-hole-row > strong { align-self: center; color: #28734f; text-align: center; }
 .manual-hole-row label span { overflow: hidden; position: absolute; width: 1px; height: 1px; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -58,7 +58,7 @@
 @media (min-width: 700px) {
   .management-section#courses { grid-column: 1 / -1; }
   .course-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .hole-grid-heading { display: grid; grid-template-columns: 34px repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 0 6px; color: #69746d; font-size: .7rem; text-align: center; }
+  .hole-grid-heading { gap: 8px; }
   .manual-hole-row { gap: 8px; }
   .course-save { width: fit-content; justify-self: end; }
 }

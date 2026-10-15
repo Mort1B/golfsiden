@@ -2157,11 +2157,12 @@ is manual tournament-admin entry. The admin chooses or names one tee and must
 provide its category, course rating, slope, plus every ordered hole's par and
 complete unique stroke-index permutation. Hole distance in yards is optional.
 
-Known P3 mobile usability limit: below 700px, the manual hole grid hides its
-visible column headings and row-label text. Accessible input names remain, but
-sighted users lack persistent Par/Slagindeks/Avstand labels. The
-[screenshots and source evidence](validation/course-write-session-2026-10-15/README.md#separate-p3-mobile-manual-hole-labels)
-record a separate follow-up; A1r changes no frontend implementation.
+The manual hole grid shows Hull, Par, Slagindeks and Avstand (yards) headings on
+mobile and desktop. The headings align with the inputs, and distance units wrap
+at narrow widths. Each input retains its field-and-hole screen-reader label.
+Fixed/variable hole counts, entered values, validation, optional distance and
+explicit save behavior are unchanged. See the
+[mobile-label acceptance](validation/manual-hole-labels-2026-10-15/README.md).
 
 The backend persistence boundary for that flow is implemented. Both manual and
 provider-tagged commands pass through the same pure validation and caller-owned
