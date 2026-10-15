@@ -108,6 +108,7 @@ async fn individual_net_dnf_finality_captain_corrections_and_all_rounds(pool: Pg
         golfer(&settled, f.players[2])["points"],
         json!({"state":"settled","total":1})
     );
+    assert_scoped_parity(&pool, &f, r, f.base.session).await;
 }
 #[sqlx::test(migrations = "../migrations")]
 async fn future_rounds_prelock_privacy_no_false_rank_and_no_participation(pool: PgPool) {
@@ -215,6 +216,7 @@ async fn hidden_final_full_json_invariant_and_release(pool: PgPool) {
         golfer(&admin, f.players[0])["points"],
         json!({"state":"settled","total":21})
     );
+    assert_scoped_parity(&pool, &f, r, f.member_session).await;
     hide(&pool, &f, false).await;
     assert_eq!(
         golfer(&scores(&pool, &f, r, f.member_session).await, f.players[0])["points"],
@@ -224,12 +226,20 @@ async fn hidden_final_full_json_invariant_and_release(pool: PgPool) {
 #[sqlx::test(migrations = "../migrations")]
 async fn scoped_not_found_rolls_back_lazy_closure_and_member_api_contract(pool: PgPool) {
     let f = fixture(&pool).await;
+    let other_tournament = Uuid::new_v4();
+    let foreign_round = Uuid::new_v4();
+    sqlx::query("INSERT INTO tournaments(id,name,start_date,end_date,number_of_rounds,counted_rounds) VALUES($1,'Other trip','2026-10-01','2026-10-03',1,1)").bind(other_tournament).execute(&pool).await.unwrap();
+    sqlx::query("INSERT INTO rounds(id,tournament_id,round_number,name,round_date,course_name,tee_name,scoring_format) VALUES($1,$2,1,'Other round','2026-10-01','','','individual_stroke_play')").bind(foreign_round).bind(other_tournament).execute(&pool).await.unwrap();
     let r = f.rounds[0];
     close(&pool, &f, r).await;
     let state = AppState::new(pool.clone());
     let mut events = state.live_events.subscribe();
     let app = api::router(state);
     for path in [
+        format!(
+            "/api/tournaments/{}/fantasy/rounds/{foreign_round}/results",
+            f.base.tournament
+        ),
         format!(
             "/api/tournaments/{}/fantasy/rounds/{}/results",
             f.base.tournament,

@@ -54,6 +54,8 @@ The separate [A1t Fantasy measurement](../fantasy-measurement-2026-10-15/README.
 now records local SQL/fact-loading, lock and refresh completion/cancellation
 costs. It changes no runtime code and establishes no new security/correctness
 severity or production-capacity claim.
+The [A1u fact-loading optimization](../fantasy-fact-scope-2026-10-15/README.md) follows
+that measurement while retaining the result-read authority/lifecycle boundary.
 The source inventory itself claims no runtime reproduction. The
 assessment below describes the originally reviewed revision.
 

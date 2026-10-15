@@ -2950,13 +2950,17 @@ loaded JavaScript chunk. Player-specific match history still fetches full round
 listings before filtering; API and live-refresh behavior are unchanged.
 
 The [Fantasy result/refresh measurement](validation/fantasy-measurement-2026-10-15/README.md)
-uses real local PostgreSQL/API/Chrome fixtures. A scoped round result still loads
-all non-draft rounds' canonical sporting facts; its constant statement count
-does not imply constant cost. Save refresh counts distinguish completed reads
+uses real local PostgreSQL/API/Chrome fixtures. That baseline loaded every
+non-draft round's canonical facts for a scoped result despite a constant statement
+count. The [scoped-fact change](validation/fantasy-fact-scope-2026-10-15/README.md)
+now loads canonical facts only for the requested round while preserving full
+inventories, authorization, all-round locks, lazy finalization and session checks.
+Overall and breakdown reads retain all rounds' facts. Save refresh counts in the
+baseline distinguish completed reads
 from cancelled requests during overlapping acknowledgment/SSE invalidation.
 First-read lock/carry-forward materialization is separate from warm timings.
-Application behavior is unchanged, and these debug/local measurements establish
-no production service level or capacity.
+Scoring, JSON contracts, selection writes and refresh behavior are unchanged;
+these debug/local measurements establish no production service level or capacity.
 
 The [match-list startup investigation](performance/startup/README.md) traces
 initial stream opening, overlapping reads and reconnects. The subsequent

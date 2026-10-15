@@ -148,6 +148,7 @@ async fn match_results_override_dnf_ignore_notes_and_double_negative_captain(poo
     let v = scores(&pool, &f, r, f.base.session).await;
     assert_eq!(golfer(&v, f.players[0])["match_outcome"], "loss");
     assert_eq!(manager(&v, f.base.admin)["points"]["total"], 5);
+    assert_scoped_parity(&pool, &f, r, f.base.session).await;
 }
 #[sqlx::test(migrations = "../migrations")]
 async fn hidden_match_outcomes_confirmations_and_corrections_do_not_change_member_json(
@@ -226,6 +227,7 @@ async fn hidden_match_outcomes_confirmations_and_corrections_do_not_change_membe
     .await;
     assert_eq!(before, scores(&pool, &f, r, f.member_session).await);
     assert_ne!(before, scores(&pool, &f, r, f.base.session).await);
+    assert_scoped_parity(&pool, &f, r, f.member_session).await;
 }
 #[sqlx::test(migrations = "../migrations")]
 async fn completed_draw_awards_one_each_without_hole_bonuses(pool: PgPool) {

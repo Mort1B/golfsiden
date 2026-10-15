@@ -61,6 +61,7 @@ pub(super) async fn load(
     tx: &mut Transaction<'_, Postgres>,
     t: Uuid,
     caller: Uuid,
+    fact_round: Option<Uuid>,
 ) -> Result<Loaded, Error> {
     let version: i16 =
         sqlx::query_scalar("SELECT rules_version FROM fantasy_games WHERE tournament_id=$1")
@@ -83,7 +84,12 @@ pub(super) async fn load(
             )
         })
         .collect();
-    let targets:Vec<(Uuid,String,Uuid)>=sqlx::query_as("SELECT h.round_id,'player'::text,h.player_id FROM round_handicap_snapshots h JOIN rounds r ON r.id=h.round_id WHERE r.tournament_id=$1 AND r.status<>'draft' AND r.scoring_format::text IN ('individual_stroke_play','individual_stableford','singles_match_play') UNION ALL SELECT teams.round_id,'team'::text,teams.id FROM teams JOIN rounds r ON r.id=teams.round_id WHERE r.tournament_id=$1 AND r.status<>'draft' AND r.scoring_format::text IN ('team_scramble','two_player_foursomes','four_ball_stroke_play') ORDER BY 1,2,3").bind(t).fetch_all(&mut **tx).await?;
+    let mut targets:Vec<(Uuid,String,Uuid)>=sqlx::query_as("SELECT h.round_id,'player'::text,h.player_id FROM round_handicap_snapshots h JOIN rounds r ON r.id=h.round_id WHERE r.tournament_id=$1 AND r.status<>'draft' AND r.scoring_format::text IN ('individual_stroke_play','individual_stableford','singles_match_play') UNION ALL SELECT teams.round_id,'team'::text,teams.id FROM teams JOIN rounds r ON r.id=teams.round_id WHERE r.tournament_id=$1 AND r.status<>'draft' AND r.scoring_format::text IN ('team_scramble','two_player_foursomes','four_ball_stroke_play') ORDER BY 1,2,3").bind(t).fetch_all(&mut **tx).await?;
+    // Inventories and lifecycle remain tournament-wide. Only canonical sporting
+    // facts (including their hashing/decoding) follow the projection's scope.
+    if let Some(round) = fact_round {
+        targets.retain(|(id, _, _)| *id == round);
+    }
     let visibility: BTreeMap<_, _> = rounds
         .iter()
         .map(|r| {

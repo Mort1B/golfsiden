@@ -1,0 +1,8 @@
+{
+  "baseline_commit": "e3ee9663c0e21178aa982d6682dbec7c23aa5de6",
+  "profile": "debug",
+  "baseline_build_exit": 0,
+  "baseline_binary_sha256": "35849f9fc2f5735505ef49378822dba1eaba8b9ded5c1205c6690d915283e8c9",
+  "candidate_build_exit": 0,
+  "candidate_binary_sha256": "7f2a0995a3b22ff7ace730b3004380ccb8fd74b5b6f138764b89c89ec4d47742"
+}

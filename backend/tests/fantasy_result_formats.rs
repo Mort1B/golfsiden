@@ -94,6 +94,7 @@ async fn stableford_native_ranking_uncapped_penalties_and_pickup(pool: PgPool) {
     );
     assert_eq!(golfer(&value, f.players[2])["placement_points"], 6);
     assert_eq!(golfer(&value, f.players[2])["points"]["total"], 1);
+    assert_scoped_parity(&pool, &f, r, f.base.session).await;
 }
 #[sqlx::test(migrations = "../migrations")]
 async fn fourball_pickups_pending_partner_and_noncounting_ace(pool: PgPool) {
@@ -160,6 +161,7 @@ async fn fourball_pickups_pending_partner_and_noncounting_ace(pool: PgPool) {
         golfer(&value, f.players[0])["points"],
         golfer(&value, f.players[1])["points"]
     );
+    assert_scoped_parity(&pool, &f, r, f.base.session).await;
 }
 #[sqlx::test(migrations = "../migrations")]
 async fn fourball_sporting_confirmation_does_not_resolve_missing_partner(pool: PgPool) {
@@ -229,5 +231,6 @@ async fn scramble_and_foursomes_use_distinct_frozen_team_handicaps(pool: PgPool)
             golfer(&value, f.players[0])["points"],
             golfer(&value, f.players[1])["points"]
         );
+        assert_scoped_parity(&pool, &f, r, f.base.session).await;
     }
 }

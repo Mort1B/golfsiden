@@ -44,6 +44,54 @@ pub async fn scores(pool: &PgPool, f: &Fantasy, r: Uuid, session: Uuid) -> Value
     )
     .unwrap()
 }
+// Full result/breakdown paths retain tournament-wide fact loading. Their
+// selected-round values must match the scoped loader exactly, including hidden
+// fields, source provenance, contributions and revision-bearing summaries.
+pub async fn assert_scoped_parity(pool: &PgPool, f: &Fantasy, r: Uuid, session: Uuid) {
+    let scoped = results::round_results(pool, session, f.base.tournament, r)
+        .await
+        .unwrap();
+    let overall = results::overall(pool, session, f.base.tournament)
+        .await
+        .unwrap();
+    assert_eq!(scoped.rules_version, overall.rules_version);
+    assert_eq!(
+        serde_json::to_value(&scoped.round).unwrap(),
+        serde_json::to_value(overall.rounds.iter().find(|s| s.round_id == r).unwrap()).unwrap()
+    );
+    for golfer in &scoped.golfers {
+        let breakdown =
+            results::golfer_breakdown(pool, session, f.base.tournament, golfer.player_id)
+                .await
+                .unwrap();
+        assert_eq!(scoped.rules_version, breakdown.rules_version);
+        let expected = breakdown
+            .rounds
+            .iter()
+            .find(|s| s.round.round_id == r)
+            .unwrap();
+        assert_eq!(
+            serde_json::to_value(golfer).unwrap(),
+            serde_json::to_value(&expected.result).unwrap()
+        );
+    }
+    for manager in &scoped.managers {
+        let breakdown =
+            results::manager_breakdown(pool, session, f.base.tournament, manager.user_id)
+                .await
+                .unwrap();
+        assert_eq!(scoped.rules_version, breakdown.rules_version);
+        let expected = breakdown
+            .rounds
+            .iter()
+            .find(|s| s.round.round_id == r)
+            .unwrap();
+        assert_eq!(
+            serde_json::to_value(manager).unwrap(),
+            serde_json::to_value(&expected.result).unwrap()
+        );
+    }
+}
 pub fn golfer(value: &Value, id: Uuid) -> &Value {
     value["golfers"]
         .as_array()

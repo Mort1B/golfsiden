@@ -49,7 +49,11 @@ async fn read<T>(
     let caller = authorize(&mut tx, session, t, false).await?;
     enabled(&mut tx, t).await?;
     let finalized = lifecycle::finalize(&mut tx, t).await?;
-    let data = load::load(&mut tx, t, caller).await?;
+    let fact_round = match target {
+        Target::Round(id) => Some(id),
+        _ => None,
+    };
+    let data = load::load(&mut tx, t, caller, fact_round).await?;
     let exists = match target {
         Target::All => true,
         Target::Round(id) => data.rounds.iter().any(|r| r.id == id),

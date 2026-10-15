@@ -168,6 +168,9 @@ async fn changing_partners_carry_forward_all_rounds_and_historical_withdrawal(po
         .find(|g| g["id"] == p[1].to_string())
         .unwrap();
     assert_eq!(player["points"]["total"], 17);
+    for round in [r, second] {
+        assert_scoped_parity(&pool, &f, round, f.base.session).await;
+    }
     // Existing sporting withdrawal requires historical participating rounds locked.
     for round in [r, second] {
         historical_status(&pool, round, p[1], "locked").await;

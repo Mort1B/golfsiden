@@ -2598,15 +2598,16 @@ FANTASY-3 canonical JSON keys and ordering, verified against a frozen query fixt
 so existing disposition fingerprints remain valid. No award ledger, cache or
 background worker is introduced.
 
-Round-result reads use the same transaction and full fact loader, then project
-only the requested round. Overall and golfer/manager breakdown reads still
-project the complete tournament. Both paths share round revision hashing and
-the internal finalization flag used for post-commit invalidation. This avoids
-unneeded projection, overall ranking and hashing without changing SQL, locking
-or authorization. Loader validation still applies to every loaded round;
-domain-only projection errors in unrelated rounds do not block a valid scoped
-round response. Exact serialized parity and separate finalization-flag tests
-protect the shared response contract.
+Round-result reads use the same transaction and inventory loader, but canonical
+facts and projection follow only the requested round. Overall and golfer/manager
+breakdown reads retain all canonical facts and project the complete tournament.
+Both paths share round revision hashing and the internal finalization flag used
+for post-commit invalidation. The scoped path avoids unrelated canonical fact
+transport/hashing/deserialization, projection and overall ranking without
+changing canonical SQL, locking or authorization. Canonical validation follows
+the selected owners; full inventories and all-round lifecycle checks remain.
+Exact serialized projection parity, full-path row comparisons and separate
+finalization-flag tests protect the shared response contract.
 
 All tournament golfers, including historical withdrawn or unselected golfers,
 and all scheduled rounds belong to the projection inventory. The participation
@@ -2910,13 +2911,18 @@ scores must yield identical allowed JSON, including rank/count/finality/revision
 metadata. Never expose a hidden final through Fantasy while merely hiding its
 hole breakdown. Existing anonymous results links do not gain Fantasy data.
 
-The round-results repository currently scopes projection/response hashing to its
-target, but retains tournament-wide round locks, lazy deadline finalization and
-canonical sporting-fact loading/hashing/deserialization. This preserves the same
-transaction and lifecycle boundary as overall/breakdown reads; a valid GET can
-materialize other due rounds before commit and publish invalidation afterward.
-The [local measurement](validation/fantasy-measurement-2026-10-15/README.md)
-separates that first materialization from steady SQL/HTTP and save-refresh work.
+The round-results repository scopes projection/response hashing and canonical
+sporting-fact loading/hashing/deserialization to its target. It filters the
+already tournament-bound, ordered owner inventory before the unchanged canonical
+bulk query. Rules, rounds, golfers, managers, selections, dispositions and owner
+identifiers retain tournament scope; overall and breakdown reads retain all
+canonical owners. Preauthorization, repeatable read, stable all-round locks,
+enabled-game lock, all due-window finalization/carry-forward, target validation,
+visibility, final session recheck and commit remain unchanged. A valid GET can
+materialize other due rounds and publish invalidation afterward. The
+[baseline measurement](validation/fantasy-measurement-2026-10-15/README.md) and
+[scoped-fact comparison](validation/fantasy-fact-scope-2026-10-15/README.md)
+separate first materialization from steady SQL/HTTP cost.
 
 Committed lineup/configuration changes publish structural invalidation. Golf
 score, correction, match and visibility signals invalidate the Fantasy family in

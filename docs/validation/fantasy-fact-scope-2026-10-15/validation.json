@@ -1,0 +1,53 @@
+{
+  "focused": {
+    "exit": 0,
+    "seconds": 44.68,
+    "passed": 22,
+    "failed": 0,
+    "ignored": 0,
+    "failed_tests": []
+  },
+  "format": {
+    "exit": 0,
+    "seconds": 1.42,
+    "failed_tests": []
+  },
+  "rust": {
+    "exit": 0,
+    "seconds": 32.13,
+    "passed": 264,
+    "failed": 0,
+    "ignored": 1,
+    "failed_tests": []
+  },
+  "clippy": {
+    "exit": 0,
+    "seconds": 14.72,
+    "failed_tests": []
+  },
+  "postgres": {
+    "exit": 0,
+    "seconds": 822.65,
+    "passed": 953,
+    "failed": 0,
+    "ignored": 5,
+    "failed_tests": []
+  },
+  "migrate": {
+    "exit": 0,
+    "seconds": 0.67,
+    "failed_tests": []
+  },
+  "seed": {
+    "exit": 0,
+    "seconds": 0.57,
+    "failed_tests": []
+  },
+  "build": {
+    "exit": 0,
+    "seconds": 0.16,
+    "failed_tests": []
+  },
+  "migrations": 39,
+  "owned_container_removed": true
+}

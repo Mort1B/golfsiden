@@ -5,39 +5,32 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. The [A1t measurement report](validation/fantasy-measurement-2026-10-15/README.md)
-records local evidence and limits; production behavior is unchanged.
+None. The [A1u comparison](validation/fantasy-fact-scope-2026-10-15/README.md)
+records the scoped fact-loading change, same-fixture parity and local benefit.
 
 ## Next candidate — requires approval
 
-### A1u — narrow sporting fact loading for a scoped Fantasy round result
+### A1v — make the legacy-team ordering test portable across native collations
 
-Unrated optimization opportunity, not a new security/correctness finding.
-A1t measured four/twenty canonical owner rows for the same first-round response;
-bulk SQL accounts for 83–95% of tracked SQL time in its local one/five-round
-populated fixtures. This supports investigating this source of avoidable work,
-not a production speedup estimate or a fix for the all-draft save-refresh cost.
+This selects the retained P3 test-only portability limitation documented in the
+[readiness report](validation/readiness-session-2026-10-14/README.md#existing-collation-dependent-test-limit).
+It is not a production ordering or security defect.
 
-- Goal: avoid loading/hashing/deserializing other rounds' canonical sporting
-  facts when producing one round result, with identical authorized JSON.
-- Scope: the Fantasy result loader's target scope, focused result regressions,
-  diagnostic comparison and affected docs. Preserve canonical fact SQL/content,
-  overall and breakdown behavior, API/DTOs, schema/indexes, frontend queries/SSE,
-  batch saves, dependencies and hosting.
-- Behavior/invariants: keep preauthorization, repeatable-read transaction,
-  stable all-round locks, enabled-game lock, all due-window finalization and
-  carry-forward, target validation, visibility, final session checks, commit and
-  postcommit notifications. Scope only sporting facts for round projection;
-  retain the inventories/selections needed for identical results and privacy.
-- Validation: before/after comparable one/five-round probes with fully consumed
-  body parity, scoped bulk owner counts, SQL and complete HTTP costs, observer
-  controls and first-finalization evidence. Exercise hidden results, all formats,
-  carry-forward, overall/breakdown parity, invalid targets and lock/session
-  rollback cases. Run affected Rust/PostgreSQL ladders and independent read-only
-  review. Reject the change if correctness or measured benefit is unsupported.
-- Stop: publish only this bounded result-loading improvement and evidence, or
-  record that no change is justified. Do not tune locks, merge invalidation
-  waves, cache server projections or start another queued item.
+- Goal: test the existing native `ORDER BY name,id` contract without assuming
+  uppercase-first libc collation.
+- Scope: the one legacy individual-group case in
+  `backend/tests/pairing_team_sessions/contracts.rs`, narrowly needed test support
+  and evidence/docs. No production SQL, collation, API, UI, schema or dependency
+  change; no Fantasy or driver optimization.
+- Behavior/invariants: preserve distinct legacy/team sorting, stable ID ties,
+  identities, membership and schedule assertions. Use fixture-specific native
+  ordering expectations rather than removing the case-variant coverage.
+- Validation: reproduce the old expectation's difference on Alpine/musl and
+  Debian/glibc PostgreSQL, then pass the corrected focused case on both. Run
+  applicable Rust/PostgreSQL gates and independent read-only test/scope review;
+  record exact environments and any remaining limits.
+- Stop: publish only the test-only portability repair and evidence. Do not
+  change application ordering or begin another queued item.
 
 ## Later queue
 
@@ -57,8 +50,8 @@ hierarchy rollback/control coverage. All three selected P2 write gaps now have
 linked acceptance; the original assessment itself reproduced no runtime race.
 A1r browser checks separately identified the P3 mobile manual-hole labeling
 issue; A1s now closes it with visible headings and frontend/browser acceptance.
-The next candidate above has measured local cost evidence and no new severity
-rating; it has not been implemented.
+Fantasy A1u now has scoped-fact performance/parity acceptance without a new
+severity rating. The selected test-portability candidate has not begun.
 Retired granular team writes receive no reachable-route finding. Provisional
 user-only preflight/provider-work observations remain separate and unrated.
 
@@ -73,12 +66,6 @@ evidence. No speculative optimization or load claim is authorized.
   0.8.6 suppresses only the legacy error variant. Repair only in a separately
   bounded driver step; no hosted outage or new security regression was observed.
   See the [baseline comparison and limits](validation/rustls-update-2026-10-15/README.md#existing-p3-verify-ca-contextual-hostname-compatibility).
-
-- P3 test-only collation portability: the unchanged A1d legacy-name ordering case
-  assumes uppercase-first native collation. Debian/glibc and the repository's
-  Alpine/musl PostgreSQL images disagree while production SQL retains native
-  ordering. Adjust the test's contract in a separately bounded step; see
-  [captured failure and comparison](validation/readiness-session-2026-10-14/README.md#existing-collation-dependent-test-limit).
 
 - Retained leaderboard browser-test maintenance: update obsolete score-status
   assertions at `frontend/e2e/leaderboardLive.browser.ts:71,103` in a separate

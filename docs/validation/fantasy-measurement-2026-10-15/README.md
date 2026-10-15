@@ -1,5 +1,10 @@
 # Fantasy result loading and refresh measurement — A1t
 
+Follow-up: [A1u](../fantasy-fact-scope-2026-10-15/README.md) scopes canonical facts
+for round results with a same-fixture before/after comparison. The measurements
+below remain the unmodified A1t baseline; its proposed candidate is implemented
+only by that follow-up.
+
 Measured application revision: `b6a81a34c6278e2c7c062a3a5bc436fae130519c`.
 Production source, API contracts, migrations, indexes, dependencies and refresh
 behavior are unchanged. This is a local performance investigation, with no new

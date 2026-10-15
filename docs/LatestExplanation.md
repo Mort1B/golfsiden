@@ -1,40 +1,41 @@
-# Latest iteration — Fantasy result and refresh measurements
+# Latest iteration — scoped Fantasy sporting fact loading
 
-A1t measures the existing application without changing production code. Two
-disposable tournaments contain one/five rounds, eight golfers, four scramble
-teams per round, 18 holes and two managers. Real Chrome, the unchanged API and
-PostgreSQL exercise editable saves first, then populated settled-result reads.
+A1u narrows canonical sporting-fact loading to the requested round for a Fantasy
+round result. It filters the existing ordered tournament owner identifiers before
+the unchanged canonical bulk query. Overall and golfer/manager breakdowns still
+load every round. Full inventories, preauthorization, repeatable read, all-round
+locks, game locking, every due-window finalization/carry-forward, target validation,
+visibility, final session recheck, commit and notification behavior are preserved.
+Only two production files change; API/JSON, schema, dependencies and frontend
+refresh/write behavior remain unchanged.
 
-A scoped first-round result uses 25 tracked statements at both sizes, but its
-canonical bulk query returns four/twenty owners from all non-draft rounds. Mean
-bulk SQL time rises from 2.72 to 10.08ms, accounting for 83–95% of tracked SQL
-execution. Warm complete HTTP medians with tracking off are 21.28/44.98ms.
-SQL server time, application/network time and observer controls remain separate;
-no production speedup, capacity or projection-only interpretation is claimed.
+Pinned baseline and candidate debug builds run on identical restored one/five-round
+fixtures: eight golfers, four scramble teams per round, 18 holes and two managers.
+The five-round scoped HTTP median with SQL tracking off falls from 45.03 to 22.45ms;
+bulk SQL averages 10.59 to 2.72ms and canonical owner rows fall 20 to 4. Both builds
+retain 25 statements and five round locks per read; full result/breakdown controls
+retain 20 owners. The one-round control has no consistent timing benefit. These
+are local debug/container measurements, not a production speedup/capacity claim.
 
-The first populated GET materializes one/five Fantasy windows and two/ten locked
-selections, including eight carried lineups in the five-round fixture. It is
-excluded from steady timing. All subsequent result bodies and materialization
-counts remain identical. Six controlled probes directly observe lock waiting;
-their HTTP times include diagnostic control overhead, not only the injected wait.
+All scoped, overall and golfer/manager breakdown JSON remains equal across builds.
+First reads still materialize all one/five windows, two/ten selections and zero/eight
+carries from the same restored initial state, independently of steady timing.
+Existing hidden-result, canonical-fingerprint, invalid-target, sibling-lock and
+carry-forward cases remain. New assertions compare selected rows against full-load
+paths in all six formats, and a new API expiry case waits on canonical facts before
+requiring 401 and complete lazy-finalization rollback. Foreign-round 404s also
+preserve rollback/no-notification behavior.
 
-Every fully observed save completes seven/eleven GETs and cancels four/eight
-more, consistent with overlapping acknowledgment/SSE invalidation. All measured
-saves create exactly one accepted receipt; full observers also prove one PUT.
-Both three-second idle windows start no API request. Save timings end at the
-rendered authoritative lineup, and counts extend through enabled editing, a
-post-ready one-second tail and a quiet barrier. That refined boundary is recorded
-as a design deviation, rather than presented as immediate acknowledgment timing.
+Validation passes: 22 focused PostgreSQL tests, 264 Rust tests, 953 PostgreSQL-feature
+workspace/all-target tests, formatting, strict Clippy, 39 migrations, seed and builds.
+Five PostgreSQL-feature manual probes remain explicitly ignored; the standalone
+before/after probe runs separately. Real Chrome at 320/1280 shows two manager/eight
+golfer rows, no overflow or unexpected errors, equal results and anonymous denial.
+Independent review and exact evidence/limits are in the
+[comparison report](validation/fantasy-fact-scope-2026-10-15/README.md). Source
+regression checks precede measurement; frontend unit/lint checks are not repeated
+because frontend source/contracts are unchanged. Owned fixtures and credentials
+are removed.
 
-The unchanged API build, 39 migrations, frontend production build, diagnostic
-assertions, browser/privacy gates and owned cleanup pass. Source regression
-ladders are unchanged and were not rerun for this probe/documentation-only step.
-Independent review and static checks are recorded in the
-[measurement report](validation/fantasy-measurement-2026-10-15/README.md), alongside
-raw sanitized samples, reproducible probes, pilot repairs and exact limitations.
-
-The plan proposes one separately approved candidate: scope canonical sporting
-fact loading for a round result while retaining authorization, all-round locks,
-lazy finalization, visibility and session/commit boundaries. It does not address
-the all-draft save workload, which has no canonical sporting owners. No runtime
-optimization, refresh redesign, schema, dependency or hosted work began here.
+The next candidate is a separate test-only repair for the retained native-collation
+ordering assumption. No adjacent runtime optimization or hosting work begins here.

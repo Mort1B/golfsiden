@@ -1,0 +1,204 @@
+[
+  {
+    "rounds": 1,
+    "variants": {
+      "baseline": {
+        "http": {
+          "none": {
+            "n": 20,
+            "median_ms": 21.752708999999868,
+            "p95_nearest_rank_ms": 28.776551999999356
+          },
+          "top": {
+            "n": 20,
+            "median_ms": 22.065157,
+            "p95_nearest_rank_ms": 29.664961999999832
+          }
+        },
+        "statement_calls_per_read": 25.0,
+        "sql_mean_ms_per_read": 3.4207653000000002,
+        "bulk_sql_mean_ms_per_read": 2.9699476999999996,
+        "bulk_owner_rows_per_read": 4.0,
+        "round_lock_rows_per_read": 1.0,
+        "shared_blocks_read": 0,
+        "all_body_parity_assertions_passed": true
+      },
+      "candidate": {
+        "http": {
+          "none": {
+            "n": 20,
+            "median_ms": 22.15849150000031,
+            "p95_nearest_rank_ms": 25.682026000000405
+          },
+          "top": {
+            "n": 20,
+            "median_ms": 20.66737899999862,
+            "p95_nearest_rank_ms": 23.927911999999196
+          }
+        },
+        "statement_calls_per_read": 25.0,
+        "sql_mean_ms_per_read": 2.8842412,
+        "bulk_sql_mean_ms_per_read": 2.5521576,
+        "bulk_owner_rows_per_read": 4.0,
+        "round_lock_rows_per_read": 1.0,
+        "shared_blocks_read": 0,
+        "all_body_parity_assertions_passed": true
+      }
+    },
+    "first_reads": [
+      {
+        "variant": "baseline",
+        "ms": 54.01135099999965,
+        "bytes": 26208,
+        "before": {
+          "locked_windows": 0,
+          "locked_selections": 0,
+          "carried_lineups": 0
+        },
+        "after": {
+          "locked_windows": 1,
+          "locked_selections": 2,
+          "carried_lineups": 0
+        },
+        "body_equal": true
+      },
+      {
+        "variant": "candidate",
+        "ms": 53.39814600000136,
+        "bytes": 26208,
+        "before": {
+          "locked_windows": 0,
+          "locked_selections": 0,
+          "carried_lineups": 0
+        },
+        "after": {
+          "locked_windows": 1,
+          "locked_selections": 2,
+          "carried_lineups": 0
+        },
+        "body_equal": true
+      }
+    ],
+    "browser": {
+      "rounds": 1,
+      "widths": [
+        {
+          "width": 320,
+          "manager_rows": 2,
+          "golfer_rows": 8,
+          "overflow": false
+        },
+        {
+          "width": 1280,
+          "manager_rows": 2,
+          "golfer_rows": 8,
+          "overflow": false
+        }
+      ],
+      "anonymous_denied": true,
+      "errors": [],
+      "failures": []
+    }
+  },
+  {
+    "rounds": 5,
+    "variants": {
+      "baseline": {
+        "http": {
+          "none": {
+            "n": 20,
+            "median_ms": 45.026029499997094,
+            "p95_nearest_rank_ms": 48.751314999994065
+          },
+          "top": {
+            "n": 20,
+            "median_ms": 43.52452500000072,
+            "p95_nearest_rank_ms": 45.78481300000567
+          }
+        },
+        "statement_calls_per_read": 25.0,
+        "sql_mean_ms_per_read": 11.042209249999999,
+        "bulk_sql_mean_ms_per_read": 10.590065249999999,
+        "bulk_owner_rows_per_read": 20.0,
+        "round_lock_rows_per_read": 5.0,
+        "shared_blocks_read": 0,
+        "all_body_parity_assertions_passed": true
+      },
+      "candidate": {
+        "http": {
+          "none": {
+            "n": 20,
+            "median_ms": 22.449452000000747,
+            "p95_nearest_rank_ms": 26.316311000002315
+          },
+          "top": {
+            "n": 20,
+            "median_ms": 20.613643999997294,
+            "p95_nearest_rank_ms": 29.711020999995526
+          }
+        },
+        "statement_calls_per_read": 25.0,
+        "sql_mean_ms_per_read": 3.2288235999999997,
+        "bulk_sql_mean_ms_per_read": 2.7233849,
+        "bulk_owner_rows_per_read": 4.0,
+        "round_lock_rows_per_read": 5.0,
+        "shared_blocks_read": 0,
+        "all_body_parity_assertions_passed": true
+      }
+    },
+    "first_reads": [
+      {
+        "variant": "baseline",
+        "ms": 106.1697290000011,
+        "bytes": 26208,
+        "before": {
+          "locked_windows": 0,
+          "locked_selections": 0,
+          "carried_lineups": 0
+        },
+        "after": {
+          "locked_windows": 5,
+          "locked_selections": 10,
+          "carried_lineups": 8
+        },
+        "body_equal": true
+      },
+      {
+        "variant": "candidate",
+        "ms": 75.03832899999543,
+        "bytes": 26208,
+        "before": {
+          "locked_windows": 0,
+          "locked_selections": 0,
+          "carried_lineups": 0
+        },
+        "after": {
+          "locked_windows": 5,
+          "locked_selections": 10,
+          "carried_lineups": 8
+        },
+        "body_equal": true
+      }
+    ],
+    "browser": {
+      "rounds": 5,
+      "widths": [
+        {
+          "width": 320,
+          "manager_rows": 2,
+          "golfer_rows": 8,
+          "overflow": false
+        },
+        {
+          "width": 1280,
+          "manager_rows": 2,
+          "golfer_rows": 8,
+          "overflow": false
+        }
+      ],
+      "anonymous_denied": true,
+      "errors": [],
+      "failures": []
+    }
+  }
+]
