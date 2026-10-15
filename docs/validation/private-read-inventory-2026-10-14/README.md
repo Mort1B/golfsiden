@@ -17,8 +17,10 @@ closes the last P2 route with reproduced expiry/revocation/credential-loss evide
 [A1n course-read acceptance](../course-read-session-2026-10-15/README.md) closes
 the three remaining P3 routes with actual GET session regressions and conditional
 provider-helper coverage. Zero P2 or P3 routes remain unresolved in this inventory
-after those linked repairs. Other original-review findings and unassessed legacy
-writes remain separate. The classifications, manifest
+after those linked repairs. Other original-review findings remain separate. The
+later source-only [legacy-write inventory](../legacy-write-inventory-2026-10-15/README.md)
+identifies three P2 write-expiry gaps; those repairs are separate from this GET
+inventory. The classifications, manifest
 and source anchors below preserve the original A1f assessment revision.
 
 Reviewed source revision: `21917b6931c4f94dfacdbb36ded7f390f6108834`.

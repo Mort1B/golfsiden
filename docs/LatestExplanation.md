@@ -1,50 +1,41 @@
-# Latest iteration — session-bound course reads
+# Latest iteration — legacy write authority assessment
 
-A1n repairs the final three P3 routes in the private-read inventory: course
-catalog, registered presets and provider-course detail GETs. They retain the
-actual session and exact tournament-admin membership, with final database
-wall-clock expiry checks. Every selected-route status is private/no-store.
-The bundled catalog, presets, provider normalization and response contracts are
-unchanged. No schema, frontend, course-configuration write or provider settings
-changed.
+A1o inventories retained team/round write authority at source revision
+`5b79760247b221232fc64653a061be363de17866`. This step changes documentation only.
+The [report and caller manifest](validation/legacy-write-inventory-2026-10-15/README.md)
+cover six reachable round mutations, three retired team paths, ten retained
+non-HTTP helpers and three provisional preflights.
 
-Catalog query validation and local search run inside the shared course-read
-authority transaction. Presets use the same owner around their existing ordered
-SQL/assembly. Empty results still require authority. Direct/nested serialization
-conflicts discard the local attempt and retry once, then return generic `503`.
-The historical internal user-only preset helper retains its contract and shares
-the same projection, including for schema-20 upgrade fixtures.
+Three source-supported P2 findings remain: direct round creation, aggregate
+pairing replacement and course configuration check the actual session and exact
+admin membership at transaction entry, but lack a final wall-clock expiry check
+after dependent work. For example, a session can be valid at its locked query,
+expire while the membership query waits, then proceed to the INSERT without
+another expiry check. No new runtime race was reproduced in this assessment.
 
-Provider detail commits session/admin preflight before readiness/cache/network
-work, then separately reauthorizes the same session/tournament before exposing
-success or error. No database lock spans external I/O. The one-shot fetch future
-sits outside both local retry loops, so a conflict never repeats fetching, quota
-or cache work. A legitimately admitted fetch may warm the bounded global cache
-or consume quota even if postflight denies its response.
+Session/user/membership locks serialize later revocation, credential and role
+changes; natural expiry needs no row update. Database guards continue to enforce
+draft state, roster scope, parent configuration and immutable course revisions.
+Open, complete and lock
+already recheck the session after all inner work through their A2 wrappers. Even
+those final checks do not freeze time during COMMIT or network delivery.
 
-Before repair, controlled late revocation, credential loss and expiry still
-returned catalog/presets `200` or provider `409` incomplete. All now return `401`.
-Preset-loading expiry also returned `200`; populated and empty cases now return `401`.
-Existing preset membership conflicts returned `500`; the new full local retry
-reauthorizes and returns `403` after demotion, or `503` after repeated conflicts.
-Seven original regression tests failed as expected. The final focused run passes
-eight real-GET cases with expanded snapshot/no-write assertions, five conditional-
-provider cases and six existing course contract tests. Backend formatting, 264
-unit tests and strict Clippy pass.
+The granular team-write routes are retired; their six retained helpers have no
+backend source or test callers. They receive no HTTP vulnerability rating.
+Pairing/configuration preflights use only the extracted user ID, but their final
+write transactions independently require the actual session. Conditional
+provider work before that final check is recorded as a limitation, without
+claiming a successful provider request from the currently unusable catalog.
 
-The catalog still has no usable provider entry. Remote/cache success is covered
-only through the same API orchestration helper with local doubles, not a live
-successful provider GET. The tests hold real loopback HTTP while authority writers
-finish, verify both success/error suppression after loss, and prove two local
-postflight attempts execute fetching only once. No external provider was called.
+Source/caller reconciliation, manifest counts, local links, source anchors and
+diff checks are the applicable validation. Existing tests were inspected, not
+rerun. No build, database, migration, provider, browser or hosted action was
+needed; prior acceptance runs remain historical evidence. Independent read-only
+review confirmed the classifications, severity and bounded next candidate with
+no actionable findings. Static route/manifest, source-anchor, link, scope and
+diff checks pass.
 
-The full PostgreSQL ladder passes 946 tests, zero failures, with five existing
-manual/exclusive probes ignored. Migrate and seed pass with all 39 migrations.
-The final focused run separately validates the expanded assertions added during
-that full run. All owned PostgreSQL fixtures were removed.
-The [A1n report](validation/course-read-session-2026-10-15/README.md)
-records the boundaries, baseline evidence, commands and limits. This closes only
-the inventoried GET family, not unassessed legacy writes or hosted security
-acceptance. Final independent evidence/plan review found no issues. The [plan](PLANS.md)
-closes A1n and proposes a documentation-only legacy-write authority inventory;
-no adjacent assessment or implementation began.
+The [plan](PLANS.md) proposes W1 only as the next bounded repair: reproduce late
+creation expiry, then add a final check with complete rollback and no event.
+Pairing/course repairs, helper cleanup, provider changes and performance work
+remain separate. No implementation began in this assessment.

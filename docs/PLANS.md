@@ -5,39 +5,43 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A1n acceptance is in the
-[course-read report](validation/course-read-session-2026-10-15/README.md).
+None. A1o assessment and validation are in the
+[legacy-write report](validation/legacy-write-inventory-2026-10-15/README.md).
 
 ## Next candidate — requires approval
 
-### A1o — assessment only: legacy team/round write-session inventory
+### A1p — P2 direct round-creation final session expiry
 
-The private-read inventory assessed GETs, not legacy writes. Selecting this
-candidate authorizes a documentation-only source assessment, not remediation.
-No severity is assigned before evidence establishes reachability and impact.
+The [legacy-write inventory W1](validation/legacy-write-inventory-2026-10-15/README.md#w1--direct-round-creation-incomplete-p2)
+supports this candidate. It is not implemented or started by the assessment.
 
-- Goal: identify which retained team/round mutation entry points are reachable,
-  where session/admin authority is retained, and whether a final wall-clock
-  session check covers their dependent work before mutation/commit.
-- Scope: legacy granular team create/assign/remove and retained round mutation
-  routes, their preflight/repository/database guard ownership, existing tests
-  and a bounded route/caller manifest. Exclude the already assessed score,
-  Fantasy, invitation and profile families, frontend behavior, runtime fixes,
-  dependency/schema changes, performance work and hosted administration.
-- Behavior: pin the source revision and trace HTTP methods through their actual
-  callers. Separate reachable routes, retired/unreachable functions and trusted
-  internal helpers. Classify authority as bound/incomplete/unresolved, rating
-  concrete findings by severity and evidence strength. Do not infer an exploit
-  from an unused helper or equate a final check with freezing time through
-  commit/network delivery. Preserve all existing runtime behavior.
-- Validation: reconcile route and repository references, source anchors, current
-  contracts and existing test coverage; check documentation links/diff and obtain
-  independent read-only review. No database/provider/browser/hosted access is
-  needed; record that no new runtime race was reproduced.
-- Invariants: no data, source, contract, scoring, handicap, locking or session
-  behavior changes; report only supported findings and explicit uncertainty.
-- Stop: publish the inventory and one evidence-based bounded next candidate.
-  Do not implement a fix or begin deferred driver/test/UI/optimization work.
+- Goal: reject direct round creation when its initially authorized session expires
+  during membership or later INSERT work before the final commit call.
+- Scope: only `POST /api/tournaments/{tournament_id}/rounds`,
+  `rounds::create_authorized`, focused PostgreSQL/API regression support and
+  affected documentation. Exclude pairing/course writers, preflight redesign,
+  retained helper cleanup, UI, dependencies/schema, provider and hosted work.
+- Behavior: retain existing session/user and exact-admin membership locks, then
+  recheck the same session with database wall-clock time after INSERT/RETURNING
+  and immediately before commit. Expiry returns the existing unauthenticated
+  error, rolls back the new round and conditional child rows, and emits no event.
+  Preserve CSRF, preflight/body/semantic validation order, parent/domain guards,
+  successful response and one-event behavior. Add no mutation retry; the check
+  does not freeze time inside COMMIT/deferred constraints or network delivery.
+- Validation: first reproduce membership-wait and late INSERT expiry against the
+  current implementation using deterministic PostgreSQL/API gates. Assert 401,
+  unchanged persisted state and no event, plus valid-session controls creating
+  one round/event. Exercise pending child-row rollback where applicable. Run
+  focused authorization regressions, backend formatting/tests/strict Clippy,
+  the full PostgreSQL-feature/migrate/seed ladder, independent read-only
+  authorization review and documentation/diff checks. The caller inventory finds
+  no production frontend consumer of this direct POST; UI creation uses excluded
+  aggregate APIs. No frontend/browser ladder is selected for this API-only step.
+- Invariants: preserve round ownership/configuration, parent lifecycle, roster,
+  historical handicaps, locked-round protections and atomic child effects.
+- Stop: publish this single validated repair and a concise next candidate; do
+  not begin W2/W3, provider-preflight, helper, driver, test-maintenance or
+  performance work.
 
 ## Later queue
 
@@ -47,10 +51,13 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-The selected private-read findings now have linked acceptance. The next candidate
-is only a legacy team/round write-session source inventory; those writes were
-not covered by the private-read inventory. No remediation is selected by that
-assessment plan.
+The selected private-read findings have linked acceptance. The separate
+[legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md)
+identifies three source-supported P2 expiry gaps. W1 is the sole next candidate
+above. W2 (pairing replacement) and W3 (course configuration) need subsequent
+separate bounded repairs; no runtime race was reproduced by the assessment.
+Retired granular team writes receive no reachable-route finding. Provisional
+user-only preflight/provider-work observations remain separate and unrated.
 
 Only after the selected review follow-ups, consider measurement-only steps for
 remaining Fantasy invalidation/fact-loading cost and empty-queue polling. No

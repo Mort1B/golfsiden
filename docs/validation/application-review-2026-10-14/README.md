@@ -37,8 +37,12 @@ and credential-loss evidence. The
 three P3 routes with actual GET regressions and conditional provider-helper
 coverage. No P2/P3 read route remains unresolved in that inventory after the
 linked repairs. Other findings keep their separately linked acceptance, while
-legacy-write inventory remains separate and unassessed. The assessment
-below describes the originally reviewed revision.
+the source-only [legacy-write inventory](../legacy-write-inventory-2026-10-15/README.md)
+now identifies three P2 final-expiry gaps in direct round creation, pairing
+replacement and course configuration. Open/complete/lock retain A2's final check;
+granular team writes are retired. That inventory proposes a separate repair and
+does not claim new runtime reproduction. The assessment below describes the
+originally reviewed revision.
 
 The [Rustls dependency repair](../rustls-update-2026-10-15/README.md) follows A4,
 using fresh advisory evidence and preserving the SQLx cancellation override.

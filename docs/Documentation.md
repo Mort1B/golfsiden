@@ -774,6 +774,16 @@ the action again. The server does not automatically retry lifecycle mutations.
 Readiness, locked-round protections and singles-match completion rules remain
 unchanged. This does not freeze time during COMMIT.
 
+Direct round creation, pairing replacement and course configuration have a
+different current limit: their final write transactions check the actual session
+and exact admin membership initially, but do not recheck natural expiry after
+subsequent waits, writes or response assembly. Retained locks serialize later
+revocation and membership changes; they do not stop the clock. Draft, roster and
+course invariants still apply. The source-only
+[legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md)
+rates these three gaps P2 and proposes direct round creation as the first
+separate repair. It did not reproduce a new runtime race or change behavior.
+
 ## Live scorecards
 
 The numeric endpoints below serve individual stroke play, scramble and foursomes.

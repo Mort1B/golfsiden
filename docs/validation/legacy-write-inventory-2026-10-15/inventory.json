@@ -1,0 +1,605 @@
+{
+  "reviewed_revision": "5b79760247b221232fc64653a061be363de17866",
+  "date": "2026-10-15",
+  "evidence": "source inspection only; no requests, runtime race reproduction or test execution",
+  "scope": "Six explicit mutation method/path pairs registered by api/rounds plus retired granular team writes. Excludes GET/generated methods, score/confirmation, Fantasy, awards, format settings, invitation/profile and tournament aggregate/lifecycle writers.",
+  "classification": "Bound requires same-session wall-clock recheck after dependent transactional work immediately before commit; does not cover time inside COMMIT/deferred constraints or delivery.",
+  "counts": {
+    "reachable_mutations": 6,
+    "bound": 3,
+    "incomplete": 3,
+    "unresolved": 0,
+    "P2_routes": 3,
+    "retired_paths": 3,
+    "retained_non_http_write_helpers": 10,
+    "preflights": 3
+  },
+  "shared_authority": {
+    "mutation_session": {
+      "file": "backend/src/api/auth.rs",
+      "line": 74
+    },
+    "active_session": {
+      "file": "backend/src/repositories/auth.rs",
+      "line": 102
+    },
+    "exact_admin": {
+      "file": "backend/src/repositories/tournament_authorization.rs",
+      "line": 120
+    },
+    "stored_round_parent": {
+      "file": "backend/src/repositories/tournament_authorization.rs",
+      "line": 151
+    },
+    "stored_team_parent": {
+      "file": "backend/src/repositories/tournament_authorization.rs",
+      "line": 166
+    }
+  },
+  "routes": [
+    {
+      "id": "W1",
+      "method": "POST",
+      "path": "/api/tournaments/{tournament_id}/rounds",
+      "route": {
+        "file": "backend/src/api/rounds/mod.rs",
+        "line": 46
+      },
+      "handler": {
+        "file": "backend/src/api/rounds/mod.rs",
+        "line": 143
+      },
+      "caller": {
+        "file": "backend/src/api/rounds/mod.rs",
+        "line": 162
+      },
+      "repository": "rounds::create_authorized",
+      "entry": {
+        "file": "backend/src/repositories/rounds.rs",
+        "line": 136
+      },
+      "guard": "require_tournament_admin",
+      "initial_guard": {
+        "file": "backend/src/repositories/rounds.rs",
+        "line": 142
+      },
+      "dependent_work": "Membership wait after session query; INSERT/RETURNING and immediate insert triggers",
+      "final_session_check": null,
+      "commit": {
+        "file": "backend/src/repositories/rounds.rs",
+        "line": 169
+      },
+      "authority": "incomplete",
+      "severity": "P2",
+      "event": {
+        "file": "backend/src/api/rounds/mod.rs",
+        "line": 188
+      }
+    },
+    {
+      "id": "W2",
+      "method": "PUT",
+      "path": "/api/rounds/{round_id}/pairings",
+      "route": {
+        "file": "backend/src/api/rounds/mod.rs",
+        "line": 56
+      },
+      "handler": {
+        "file": "backend/src/api/rounds/pairings.rs",
+        "line": 89
+      },
+      "caller": {
+        "file": "backend/src/api/rounds/pairings.rs",
+        "line": 115
+      },
+      "repository": "round_pairings::replace -> replace::execute",
+      "entry": {
+        "file": "backend/src/repositories/round_pairings/mod.rs",
+        "line": 86
+      },
+      "delegate": {
+        "file": "backend/src/repositories/round_pairings/mod.rs",
+        "line": 93
+      },
+      "initial_guard": {
+        "file": "backend/src/repositories/round_pairings/replace/mod.rs",
+        "line": 24
+      },
+      "guard": "require_round_admin",
+      "dependent_work": "Membership wait after session query; validation, group/member replacement, timestamp and full response loading",
+      "final_session_check": null,
+      "commit": {
+        "file": "backend/src/repositories/round_pairings/replace/mod.rs",
+        "line": 47
+      },
+      "authority": "incomplete",
+      "severity": "P2",
+      "event": {
+        "file": "backend/src/api/rounds/pairings.rs",
+        "line": 123
+      }
+    },
+    {
+      "id": "W3",
+      "method": "PUT",
+      "path": "/api/rounds/{round_id}/course-configuration",
+      "route": {
+        "file": "backend/src/api/rounds/mod.rs",
+        "line": 63
+      },
+      "handler": {
+        "file": "backend/src/api/rounds/configuration.rs",
+        "line": 90
+      },
+      "caller": {
+        "file": "backend/src/api/rounds/configuration.rs",
+        "line": 141
+      },
+      "repository": "round_configuration::configure",
+      "entry": {
+        "file": "backend/src/repositories/round_configuration.rs",
+        "line": 76
+      },
+      "initial_guard": {
+        "file": "backend/src/repositories/round_configuration.rs",
+        "line": 84
+      },
+      "guard": "require_round_admin",
+      "dependent_work": "Membership wait after session query; load/check round, insert immutable course/tee/holes, update attachment",
+      "final_session_check": null,
+      "commit": {
+        "file": "backend/src/repositories/round_configuration.rs",
+        "line": 123
+      },
+      "authority": "incomplete",
+      "severity": "P2",
+      "event": {
+        "file": "backend/src/api/rounds/configuration.rs",
+        "line": 149
+      }
+    },
+    {
+      "id": "L1",
+      "method": "POST",
+      "path": "/api/rounds/{round_id}/open",
+      "route": {
+        "file": "backend/src/api/rounds/mod.rs",
+        "line": 73
+      },
+      "handler": {
+        "file": "backend/src/api/rounds/lifecycle.rs",
+        "line": 38
+      },
+      "caller": {
+        "file": "backend/src/api/rounds/lifecycle.rs",
+        "line": 44
+      },
+      "repository": "round_lifecycle::open_authorized",
+      "entry": {
+        "file": "backend/src/repositories/round_lifecycle/mod.rs",
+        "line": 77
+      },
+      "initial_guard": {
+        "file": "backend/src/repositories/round_lifecycle/mod.rs",
+        "line": 83
+      },
+      "guard": "require_round_admin",
+      "dependent_work": "All opening work and snapshot assembly",
+      "final_session_check": {
+        "file": "backend/src/repositories/round_lifecycle/mod.rs",
+        "line": 85
+      },
+      "commit": {
+        "file": "backend/src/repositories/round_lifecycle/mod.rs",
+        "line": 88
+      },
+      "authority": "bound",
+      "severity": null,
+      "event": {
+        "file": "backend/src/api/rounds/lifecycle.rs",
+        "line": 47
+      }
+    },
+    {
+      "id": "L2",
+      "method": "POST",
+      "path": "/api/rounds/{round_id}/complete",
+      "route": {
+        "file": "backend/src/api/rounds/mod.rs",
+        "line": 81
+      },
+      "handler": {
+        "file": "backend/src/api/rounds/completion.rs",
+        "line": 41
+      },
+      "caller": {
+        "file": "backend/src/api/rounds/completion.rs",
+        "line": 46
+      },
+      "repository": "round_completion::complete_authorized -> transition_authorized",
+      "entry": {
+        "file": "backend/src/repositories/round_completion.rs",
+        "line": 192
+      },
+      "delegate": {
+        "file": "backend/src/repositories/round_completion.rs",
+        "line": 197
+      },
+      "initial_guard": {
+        "file": "backend/src/repositories/round_completion.rs",
+        "line": 226
+      },
+      "guard": "require_round_admin",
+      "dependent_work": "Common transition including the singles-match inner branch",
+      "final_session_check": {
+        "file": "backend/src/repositories/round_completion.rs",
+        "line": 228
+      },
+      "commit": {
+        "file": "backend/src/repositories/round_completion.rs",
+        "line": 231
+      },
+      "authority": "bound",
+      "severity": null,
+      "event": {
+        "file": "backend/src/api/rounds/completion.rs",
+        "line": 54
+      }
+    },
+    {
+      "id": "L3",
+      "method": "POST",
+      "path": "/api/rounds/{round_id}/lock",
+      "route": {
+        "file": "backend/src/api/rounds/mod.rs",
+        "line": 85
+      },
+      "handler": {
+        "file": "backend/src/api/rounds/completion.rs",
+        "line": 57
+      },
+      "caller": {
+        "file": "backend/src/api/rounds/completion.rs",
+        "line": 62
+      },
+      "repository": "round_completion::lock_authorized -> transition_authorized",
+      "entry": {
+        "file": "backend/src/repositories/round_completion.rs",
+        "line": 200
+      },
+      "delegate": {
+        "file": "backend/src/repositories/round_completion.rs",
+        "line": 205
+      },
+      "initial_guard": {
+        "file": "backend/src/repositories/round_completion.rs",
+        "line": 226
+      },
+      "guard": "require_round_admin",
+      "dependent_work": "Common transition including the singles-match inner branch",
+      "final_session_check": {
+        "file": "backend/src/repositories/round_completion.rs",
+        "line": 228
+      },
+      "commit": {
+        "file": "backend/src/repositories/round_completion.rs",
+        "line": 231
+      },
+      "authority": "bound",
+      "severity": null,
+      "event": {
+        "file": "backend/src/api/rounds/completion.rs",
+        "line": 70
+      }
+    }
+  ],
+  "retired_paths": [
+    {
+      "method": "POST",
+      "path": "/api/rounds/{round_id}/teams",
+      "expected_status_in_test_source": 405,
+      "disposition": "retired; no registered mutation handler",
+      "route_owner": {
+        "file": "backend/src/api/teams.rs",
+        "line": 22
+      },
+      "test_source": {
+        "file": "backend/tests/round_pairings.rs",
+        "line": 452
+      },
+      "test_run_this_step": false,
+      "severity": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/teams/{team_id}/members",
+      "expected_status_in_test_source": 404,
+      "disposition": "retired; no registered mutation handler",
+      "route_owner": {
+        "file": "backend/src/api/teams.rs",
+        "line": 22
+      },
+      "test_source": {
+        "file": "backend/tests/round_pairings.rs",
+        "line": 452
+      },
+      "test_run_this_step": false,
+      "severity": null
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/teams/{team_id}/members/{player_id}",
+      "expected_status_in_test_source": 404,
+      "disposition": "retired; no registered mutation handler",
+      "route_owner": {
+        "file": "backend/src/api/teams.rs",
+        "line": 22
+      },
+      "test_source": {
+        "file": "backend/tests/round_pairings.rs",
+        "line": 452
+      },
+      "test_run_this_step": false,
+      "severity": null
+    }
+  ],
+  "retained_non_http_write_helpers": [
+    {
+      "function": "teams::create",
+      "entry": {
+        "file": "backend/src/repositories/teams.rs",
+        "line": 86
+      },
+      "production_callers": [],
+      "test_callers": [],
+      "disposition": "retained/unreferenced",
+      "authority": "caller-owned authority; no identity argument",
+      "initial_guard": null,
+      "commit": null,
+      "severity": null
+    },
+    {
+      "function": "teams::create_authorized",
+      "entry": {
+        "file": "backend/src/repositories/teams.rs",
+        "line": 102
+      },
+      "production_callers": [],
+      "test_callers": [],
+      "disposition": "retained/unreferenced",
+      "authority": "initial actual-session/stored-parent/exact-admin guard; final expiry check absent",
+      "initial_guard": {
+        "file": "backend/src/repositories/teams.rs",
+        "line": 111
+      },
+      "commit": {
+        "file": "backend/src/repositories/teams.rs",
+        "line": 125
+      },
+      "severity": null
+    },
+    {
+      "function": "teams::assign_player",
+      "entry": {
+        "file": "backend/src/repositories/teams.rs",
+        "line": 132
+      },
+      "production_callers": [],
+      "test_callers": [],
+      "disposition": "retained/unreferenced",
+      "authority": "caller-owned authority; no identity argument",
+      "initial_guard": null,
+      "commit": null,
+      "severity": null
+    },
+    {
+      "function": "teams::assign_player_authorized",
+      "entry": {
+        "file": "backend/src/repositories/teams.rs",
+        "line": 144
+      },
+      "production_callers": [],
+      "test_callers": [],
+      "disposition": "retained/unreferenced",
+      "authority": "initial actual-session/stored-parent/exact-admin guard; final expiry check absent",
+      "initial_guard": {
+        "file": "backend/src/repositories/teams.rs",
+        "line": 152
+      },
+      "commit": {
+        "file": "backend/src/repositories/teams.rs",
+        "line": 172
+      },
+      "severity": null
+    },
+    {
+      "function": "teams::remove_player",
+      "entry": {
+        "file": "backend/src/repositories/teams.rs",
+        "line": 176
+      },
+      "production_callers": [],
+      "test_callers": [],
+      "disposition": "retained/unreferenced",
+      "authority": "caller-owned authority; no identity argument",
+      "initial_guard": null,
+      "commit": null,
+      "severity": null
+    },
+    {
+      "function": "teams::remove_player_authorized",
+      "entry": {
+        "file": "backend/src/repositories/teams.rs",
+        "line": 192
+      },
+      "production_callers": [],
+      "test_callers": [],
+      "disposition": "retained/unreferenced",
+      "authority": "initial actual-session/stored-parent/exact-admin guard; final expiry check absent",
+      "initial_guard": {
+        "file": "backend/src/repositories/teams.rs",
+        "line": 199
+      },
+      "commit": {
+        "file": "backend/src/repositories/teams.rs",
+        "line": 207
+      },
+      "severity": null
+    },
+    {
+      "function": "rounds::create",
+      "entry": {
+        "file": "backend/src/repositories/rounds.rs",
+        "line": 115
+      },
+      "production_callers": [],
+      "test_callers": [],
+      "disposition": "retained/unreferenced",
+      "authority": "caller-owned; no identity argument; pool insert then separate get",
+      "severity": null
+    },
+    {
+      "function": "round_lifecycle::open",
+      "entry": {
+        "file": "backend/src/repositories/round_lifecycle/mod.rs",
+        "line": 70
+      },
+      "production_callers": [],
+      "test_caller_example": {
+        "file": "backend/tests/round_lifecycle.rs",
+        "line": 179
+      },
+      "disposition": "trusted test/fixture caller only",
+      "authority": "caller-owned; no identity argument; HTTP uses authorized wrapper",
+      "severity": null
+    },
+    {
+      "function": "round_completion::complete",
+      "entry": {
+        "file": "backend/src/repositories/round_completion.rs",
+        "line": 184
+      },
+      "production_callers": [],
+      "test_caller_example": {
+        "file": "backend/tests/round_completion.rs",
+        "line": 146
+      },
+      "disposition": "trusted test/fixture caller only",
+      "authority": "caller-owned; no identity argument; HTTP uses authorized wrapper",
+      "severity": null
+    },
+    {
+      "function": "round_completion::lock",
+      "entry": {
+        "file": "backend/src/repositories/round_completion.rs",
+        "line": 188
+      },
+      "production_callers": [],
+      "test_caller_example": {
+        "file": "backend/tests/round_completion.rs",
+        "line": 163
+      },
+      "disposition": "trusted test/fixture caller only",
+      "authority": "caller-owned; no identity argument; HTTP uses authorized wrapper",
+      "severity": null
+    }
+  ],
+  "preflights": [
+    {
+      "function": "rounds::preflight_create",
+      "entry": {
+        "file": "backend/src/repositories/rounds.rs",
+        "line": 103
+      },
+      "caller": {
+        "file": "backend/src/api/rounds/mod.rs",
+        "line": 149
+      },
+      "identity": "actual session UUID",
+      "transaction": "repeatable-read; commits before body/semantic work",
+      "ownership": "provisional; create_authorized reacquires authority"
+    },
+    {
+      "function": "round_pairings::preflight_admin",
+      "entry": {
+        "file": "backend/src/repositories/round_pairings/mod.rs",
+        "line": 61
+      },
+      "caller": {
+        "file": "backend/src/api/rounds/pairings.rs",
+        "line": 97
+      },
+      "identity": "extracted user UUID only",
+      "transaction": "repeatable-read admin/draft read; commits before validation and final write",
+      "ownership": "provisional; replace checks actual session UUID"
+    },
+    {
+      "function": "round_configuration::preflight",
+      "entry": {
+        "file": "backend/src/repositories/round_configuration.rs",
+        "line": 51
+      },
+      "caller": {
+        "file": "backend/src/api/rounds/configuration.rs",
+        "line": 98
+      },
+      "identity": "extracted user UUID only",
+      "transaction": "repeatable-read admin/draft read; commits before validation/conditional provider work",
+      "ownership": "provisional; configure checks actual session UUID"
+    }
+  ],
+  "inner_transaction_helpers": [
+    {
+      "function": "course_revisions::insert_in_transaction",
+      "entry": {
+        "file": "backend/src/repositories/course_revisions.rs",
+        "line": 48
+      },
+      "production_callers": [
+        {
+          "file": "backend/src/repositories/round_configuration.rs",
+          "line": 104
+        }
+      ],
+      "ownership": "caller-owned transaction/authority; no internal commit"
+    },
+    {
+      "function": "match_play::completion::transition",
+      "entry": {
+        "file": "backend/src/repositories/match_play/completion.rs",
+        "line": 68
+      },
+      "production_callers": [
+        {
+          "file": "backend/src/repositories/round_completion.rs",
+          "line": 248
+        }
+      ],
+      "ownership": "caller-owned transaction/authority; outer authorized wrapper final check covers return"
+    }
+  ],
+  "caller_search": "Qualified function names and repository imports/aliases searched in backend/src and backend/tests. Examples for test-only lifecycle helpers are not an exhaustive fixture-call list.",
+  "runtime_validation": {
+    "executed": false,
+    "reason": "Approved documentation-only assessment; application/test/schema source unchanged."
+  },
+  "frontend_caller_boundary": {
+    "direct_round_creation_post_callers": [],
+    "round_list_get": {
+      "file": "frontend/src/api/tournaments.ts",
+      "line": 56
+    },
+    "excluded_aggregate_creation_apis": [
+      {
+        "file": "frontend/src/api/tournamentCreation.ts",
+        "line": 13
+      },
+      {
+        "file": "frontend/src/api/onboarding.ts",
+        "line": 125
+      }
+    ],
+    "evidence": "Production frontend/src API and call-site search; UI creation uses separate aggregate APIs. No frontend behavior assessment or runtime browser check.",
+    "next_step_validation": "A1p direct-POST repair has no frontend consumer; backend/API/PostgreSQL gates apply, without a new frontend/browser ladder."
+  }
+}
