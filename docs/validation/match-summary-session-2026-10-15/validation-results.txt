@@ -1,0 +1,29 @@
+A1k local validation — 2026-10-15
+PostgreSQL 17.10 Alpine/musl; en_US.utf8; disposable local database
+
+cargo fmt --all -- --check: exit 0
+cargo test --workspace --all-targets: exit 0; 261 passed, 1 existing ignored
+cargo clippy --workspace --all-targets --all-features -- -D warnings: exit 0
+cargo build -p golf-api --bins: exit 0
+cargo test --workspace --all-targets --features database-tests -- --test-threads=2: exit 0; 900 passed, 4 existing ignored; 763 seconds
+cargo run -p golf-api --bin migrate: exit 0; 39/39 migrations current
+cargo run -p golf-api --bin seed: exit 0; seeded eight players and five rounds
+
+Database-feature totals include ordinary tests; do not add these totals.
+Existing ignored tests:
+test repositories::fantasy::results::tests::projection_benchmark ... ignored, manual projection-only timing; run release with --ignored --nocapture
+test hundred_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required
+test twelve_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required
+test twenty_four_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required
+
+Unchanged vendored SQLx warnings: deprecated try_next; unused Flush variant and struct.
+
+Frontend npm run test: exit 0; 147 files, 1133 tests passed
+Frontend npm run typecheck: exit 0
+Frontend npm run lint: exit 0
+Frontend npm run build: exit 0
+Chrome browser-probe.mjs: exit 0; six view/width cases, three logout cases
+Independent read-only design and source/test review: no actionable findings
+Final formatting and diff whitespace checks: exit 0
+Changed production source counts (excluding blank/comments): API185, reads287, completion125; all below400
+No source, schema or dependency changes after completed ladders.

@@ -25,8 +25,10 @@ more P2 routes with late confirmation-loading expiry evidence. The
 [Stableford read repair](../stableford-read-session-2026-10-14/README.md) closes
 two further P2 routes with the same late-loading reproduction. The
 [match card read repair](../match-card-session-2026-10-15/README.md) closes two
-more with final note-loading expiry evidence. Four P2 routes and three P3 course
-routes remain; those remaining inventory findings are
+more with final note-loading expiry evidence. The
+[match completion/table repair](../match-summary-session-2026-10-15/README.md)
+closes two more with final match-loading expiry evidence. Two P2 routes and three
+P3 course routes remain; those remaining inventory findings are
 source-supported, not new race reproductions. Remaining repairs and legacy-write
 inventory stay queued. The assessment below describes the originally reviewed revision.
 

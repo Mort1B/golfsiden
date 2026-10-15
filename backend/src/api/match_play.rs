@@ -148,7 +148,7 @@ async fn completion(
     match_play::completion::get(&state.pool, auth.principal.session_id, round)
         .await
         .map(Json)
-        .map_err(map_error)
+        .map_err(map_read_error)
 }
 async fn table(
     State(state): State<Arc<AppState>>,
@@ -158,7 +158,7 @@ async fn table(
     match_play::reads::table(&state.pool, auth.principal.session_id, tournament)
         .await
         .map(Json)
-        .map_err(map_error)
+        .map_err(map_read_error)
 }
 fn map_read_error(error: Error) -> ApiError {
     match error {

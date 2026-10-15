@@ -1,0 +1,19 @@
+running 1 test
+/api/rounds/00000000-0000-0000-0000-000000000005/match-play/completion: status=200 OK, code=null
+/api/tournaments/00000000-0000-0000-0000-000000000002/match-table: status=200 OK, code=null
+
+thread 'match_summary_read_sessions::expiry::expiry_during_final_match_loading_denies_both_reads' (653948) panicked at backend/tests/match_summary_read_sessions/expiry.rs:75:9:
+assertion `left == right` failed
+  left: 200
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test match_summary_read_sessions::expiry::expiry_during_final_match_loading_denies_both_reads ... FAILED
+
+failures:
+
+failures:
+    match_summary_read_sessions::expiry::expiry_during_final_match_loading_denies_both_reads
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1 filtered out; finished in 16.62s
+
+error: test failed, to rerun pass `--test match_summary_read_sessions`

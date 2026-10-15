@@ -1,0 +1,20 @@
+running 17 tests
+test match_summary_read_sessions::authorization::credential_replacement_before_authority_denies_both_reads ... ok
+test match_summary_read_sessions::authorization::authorized_reads_serialize_before_later_revocation_and_credential_changes ... ok
+test match_summary_read_sessions::authorization::membership_removal_retries_with_fresh_authority_on_both_reads ... ok
+test match_summary_read_sessions::authorization::revocation_before_transactional_authorization_denies_both_reads ... ok
+test match_summary_read_sessions::contracts::cancellation_releases_session_authority_on_both_reads ... ok
+test match_summary_read_sessions::contracts::completion_final_loader_keeps_context_and_progress_in_one_snapshot ... ok
+test match_summary_read_sessions::contracts::empty_draft_completion_and_empty_table_keep_typed_envelopes ... ok
+test match_summary_read_sessions::contracts::payloads_keep_confirmed_units_ties_unranked_order_and_concurrent_read_purity ... ok
+test match_summary_read_sessions::contracts::roles_hidden_awards_and_exact_membership_errors_are_preserved ... ok
+test match_summary_read_sessions::contracts::table_final_loader_keeps_participants_and_awards_in_one_snapshot ... ok
+test match_summary_read_sessions::contracts::wrong_completion_format_stays_not_found_before_membership ... ok
+test match_summary_read_sessions::expiry::empty_results_still_recheck_final_loader_expiry ... ok
+test match_summary_read_sessions::expiry::expiry_during_final_match_loading_denies_both_reads ... ok
+test match_summary_read_sessions::retry::both_reads_stop_after_one_serialization_retry_with_private_503 ... ok
+test match_summary_read_sessions::retry::membership_demotion_retries_authority_and_changed_hidden_final_context ... ok
+test match_summary_read_sessions::retry::unrelated_database_failures_are_not_retried_on_either_selected_read ... ok
+test match_summary_read_sessions::expiry::expiry_during_membership_wait_denies_both_match_reads ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 36.90s

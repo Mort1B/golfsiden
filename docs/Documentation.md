@@ -551,9 +551,11 @@ closes three of those incomplete boundaries with runtime evidence. The
 closes two more, followed by the two
 [Stableford card GETs](validation/stableford-read-session-2026-10-14/README.md).
 The two [match card GETs](validation/match-card-session-2026-10-15/README.md)
-are also repaired. Four P2 routes and three P3 course routes remain: match
-completion/table and invitations still lack a final expiry check. Final-visibility
-and course reads still use extracted user identity.
+are also repaired, followed by the two
+[match completion/table GETs](validation/match-summary-session-2026-10-15/README.md).
+Two P2 routes and three P3 course routes remain: invitation metadata still lacks
+a final expiry check; final-visibility and course reads still use extracted user
+identity.
 The source inventory itself
 executes no routes. In particular, Fantasy selection/results GETs may finalize due windows;
 they are not side-effect-free inspection tools. The report owns exact routes,
@@ -997,6 +999,20 @@ forbidden, and locked scoring remains exact-admin only. Lookup order and hidden
 front-nine redaction remain unchanged. Commands, listing, completion and match
 table receive no new retry. The final check does not freeze expiry through commit
 or network delivery. See the [acceptance report](validation/match-card-session-2026-10-15/README.md).
+
+Match completion and the tournament match-points table GETs also keep authority
+and all facts in a repeatable-read transaction, recheck wall-clock session validity
+after their full result projection and return private 401 after expiry. This
+includes empty match sets and tables. One fresh whole attempt after `40001`
+reloads stored context, exact membership/role, visibility and progress/awards; an
+exhausted conflict returns generic private 503. Other errors, resource lookup
+order and all-status `private, no-store` remain. Empty completion is not ready;
+players without confirmed visible awards remain unranked, and an empty table
+stays empty. Hidden completion metadata remains null and hidden-final awards stay
+excluded for non-admins. Exact half-point units, shared places, match ordering and
+open/completed/locked readiness retain their existing meanings. Transitions and
+commands receive no new retry or sporting behavior. See the
+[acceptance report](validation/match-summary-session-2026-10-15/README.md).
 
 Accepted reports form one contiguous ledger. A lead greater than the remaining
 holes ends the match; an equal result after hole 18 is a draw. Early unplayed holes

@@ -16,6 +16,16 @@ pub struct Progress {
     pub confirmed: Option<bool>,
 }
 pub async fn get(pool: &PgPool, session: Uuid, round: Uuid) -> Result<Completion, Error> {
+    match get_once(pool, session, round).await {
+        Err(Error::Database(sqlx::Error::Database(error)))
+            if error.code().as_deref() == Some("40001") =>
+        {
+            get_once(pool, session, round).await
+        }
+        result => result,
+    }
+}
+async fn get_once(pool: &PgPool, session: Uuid, round: Uuid) -> Result<Completion, Error> {
     let mut tx = pool.begin().await?;
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
         .execute(&mut *tx)
@@ -42,15 +52,17 @@ pub async fn get(pool: &PgPool, session: Uuid, round: Uuid) -> Result<Completion
             confirmed: (!hidden).then_some(confirmed),
         })
         .collect();
-    tx.commit().await?;
-    Ok(Completion {
+    let completion = Completion {
         format: ScoringFormat::SinglesMatchPlay,
         round_id: round,
         status: c.status,
         matches,
         ready_to_complete: (!hidden).then_some(ready && c.status == RoundStatus::Open),
         ready_to_lock: (!hidden).then_some(ready && c.status == RoundStatus::Completed),
-    })
+    };
+    live(&mut tx, session).await?;
+    tx.commit().await?;
+    Ok(completion)
 }
 // Called after the established exact-admin authorization and parent-round lock.
 pub async fn transition(

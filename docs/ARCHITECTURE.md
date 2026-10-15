@@ -517,9 +517,10 @@ and reapplies runtime grants before the API is started.
   [A1i acceptance](validation/stableford-read-session-2026-10-14/README.md).
   Both match card GETs now perform it too; see
   [A1j acceptance](validation/match-card-session-2026-10-15/README.md).
-  Match completion/table and invitation metadata still retain authority
-  locks but omit that final check. Final-visibility and
-  course GETs retain user-only authorization boundaries. Awards, player-account
+  Match completion/table now do too; see
+  [A1k acceptance](validation/match-summary-session-2026-10-15/README.md).
+  Invitation metadata still retains authority locks but omits that final check.
+  Final-visibility and course GETs retain user-only authorization boundaries. Awards, player-account
   metadata, result-share status, Fantasy reads and match listing already perform
   final session checks. Bound
   families have different isolation/retry owners; Fantasy selection/results GETs
@@ -2047,10 +2048,23 @@ permitted card. A final `live` check uses database wall-clock time after notes a
 projection, before commit. Only SQLSTATE `40001` restarts that entire read once;
 all context, authority, facts and derived state are discarded. An exhausted
 conflict remains the existing repository database error, translated to generic
-private 503 by the two card GET handlers only. Other mappings and shared helpers
+private 503 by their GET handlers. Other mappings and shared helpers
 retain their contracts. Listing, completion, table and commands keep separate
 transaction/retry owners. This adds one session query per ordinary success; it
 claims no measured speedup and does not freeze time through commit or delivery.
+
+Match completion and tournament table GETs independently own complete
+repeatable-read attempts with the same one-fresh-attempt `40001` limit and GET
+error mapper. Completion preserves stored round/format lookup before member
+authorization; table preserves tournament-exists lookup first. Active session/user
+and exact membership locks remain held through progress or participant/award
+loading and full result projection. Both perform a final `live` check before
+commit, including empty results. Each retry reloads all context, role, visibility
+and facts. Completion keeps hidden progress/readiness null; the table omits
+hidden-final awards for non-admins, preserving unranked participants and exact
+half-point ranks. Readiness flags, lifecycle transitions, shared helpers and
+sporting rules remain separate. Ordinary success adds one session query per GET;
+no measured speedup or expiry freeze through delivery is claimed.
 
 Match listing now creates one request-local authority context inside the existing
 repeatable-read transaction. It locks the active session/user and tournament

@@ -258,6 +258,16 @@ pub struct Table {
     pub entries: Vec<TableEntry>,
 }
 pub async fn table(pool: &PgPool, session: Uuid, tournament: Uuid) -> Result<Table, Error> {
+    match table_once(pool, session, tournament).await {
+        Err(Error::Database(sqlx::Error::Database(error)))
+            if error.code().as_deref() == Some("40001") =>
+        {
+            table_once(pool, session, tournament).await
+        }
+        result => result,
+    }
+}
+async fn table_once(pool: &PgPool, session: Uuid, tournament: Uuid) -> Result<Table, Error> {
     let mut tx = pool.begin().await?;
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
         .execute(&mut *tx)
@@ -274,6 +284,7 @@ pub async fn table(pool: &PgPool, session: Uuid, tournament: Uuid) -> Result<Tab
     let participants=sqlx::query_as::<_,Participant>("SELECT tp.player_id,p.display_name FROM tournament_players tp JOIN players p ON p.id=tp.player_id WHERE tp.tournament_id=$1 ORDER BY tp.player_id").bind(tournament).fetch_all(&mut *tx).await?;
     let awards=sqlx::query_as::<_,AwardFact>("SELECT m.first_player_id,m.second_player_id,m.first_half_points,m.second_half_points FROM singles_matches m JOIN rounds r ON r.id=m.round_id JOIN tournaments t ON t.id=r.tournament_id WHERE m.tournament_id=$1 AND m.confirmed AND m.terminal AND ($2 OR NOT(t.final_round_back_nine_hidden AND r.round_number=t.number_of_rounds)) ORDER BY r.round_number,m.id").bind(tournament).bind(role==TournamentRole::Admin).fetch_all(&mut *tx).await?;
     let entries = assemble(participants, awards).map_err(Error::Invalid)?;
+    live(&mut tx, session).await?;
     tx.commit().await?;
     Ok(Table {
         tournament_id: tournament,
