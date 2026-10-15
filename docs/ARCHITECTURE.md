@@ -47,10 +47,18 @@ Course-provider HTTPS uses Reqwest's normal WebPKI roots, certificate/hostname
 checks, existing connection/request timeouts and no redirects. The SQLx client
 inherits its mode from `DATABASE_URL`: `verify-full` checks both chain and host,
 `verify-ca` checks the chain, and `require`/`prefer` retain their existing
-non-verifying semantics. SQLx 0.8.6 also rejects contextual hostname mismatches
-in `verify-ca` on both the original and updated lockfiles; this additional hostname check is an existing
-compatibility gap recorded separately, not changed here. No certificate bypass, system root installation or
-new deployment default is part of the dependency update. Public ingress TLS
+non-verifying semantics. The local SQLx core 0.8.6 override handles both legacy
+and contextual hostname mismatch in the chain-only verifier. All other errors,
+TLS signature delegation and the ordinary `verify-full` verifier are unchanged.
+This depends on pinned Rustls validating chain/usage/time/signatures before
+hostname; future TLS changes require the retained certificate matrix. The exact
+published core snapshot differs only in that error pattern, with provenance in
+`vendor/sqlx-core/PATCH.md`. Its version/dependencies/features are unchanged;
+all SQLx consumers resolve this one core. Both core and PostgreSQL overrides
+must be included in local/production builds. No system root installation or
+new deployment default is added. The
+[A1w acceptance](validation/sqlx-verify-ca-2026-10-15/README.md) retains the
+before/after trust-chain controls. Public ingress TLS
 remains Caddy-owned; local acceptance is in the
 [Rustls report](validation/rustls-update-2026-10-15/README.md).
 

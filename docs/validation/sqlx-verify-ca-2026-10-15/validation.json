@@ -1,0 +1,70 @@
+{
+  "checks": {
+    "cancellation": {
+      "exit": 0,
+      "seconds": 26.04,
+      "passed": 5,
+      "failed": 0,
+      "ignored": 0,
+      "failed_tests": [],
+      "accepted": true
+    },
+    "format": {
+      "exit": 0,
+      "seconds": 0.97,
+      "failed_tests": [],
+      "accepted": true
+    },
+    "rust": {
+      "exit": 0,
+      "seconds": 30.0,
+      "passed": 264,
+      "failed": 0,
+      "ignored": 1,
+      "failed_tests": [],
+      "accepted": true
+    },
+    "clippy": {
+      "exit": 0,
+      "seconds": 27.25,
+      "failed_tests": [],
+      "accepted": true
+    },
+    "postgres": {
+      "exit": 0,
+      "seconds": 861.27,
+      "passed": 953,
+      "failed": 0,
+      "ignored": 5,
+      "failed_tests": [],
+      "accepted": true
+    },
+    "migrate": {
+      "exit": 0,
+      "seconds": 0.97,
+      "failed_tests": [],
+      "accepted": true
+    },
+    "seed": {
+      "exit": 0,
+      "seconds": 0.57,
+      "failed_tests": [],
+      "accepted": true
+    },
+    "release": {
+      "exit": 0,
+      "seconds": 50.39,
+      "failed_tests": [],
+      "accepted": true
+    }
+  },
+  "fixture": {
+    "fixture": "ladder",
+    "image": "docker.io/library/postgres:17-alpine",
+    "removed": true,
+    "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+  },
+  "migrations": 39,
+  "temporary_credentials_removed": true
+}

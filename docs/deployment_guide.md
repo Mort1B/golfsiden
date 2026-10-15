@@ -27,6 +27,7 @@ Do not skip intermediate migrations when upgrading an older installation.
 | Offline return to the last opened scorecard | Updated frontend against the schema-33 API; no further migration or configuration |
 | Recent score-read, session, pairing/start and navigation repairs | Deploy the current API/frontend builds; retain the vendored SQLx patch |
 | Rustls client TLS advisory repair | Rebuild/redeploy the API from the current lockfile; retain the vendored SQLx patch; no new migration |
+| SQLx verify-ca contextual-hostname compatibility | Rebuild the API with both vendored SQLx directories; no TLS-mode, schema or frontend change |
 | Patched Vitest 4 test tooling | Use the current frontend manifest/lock in CI/future builder installs; normal npm 10 remains supported; no application asset/schema/API/environment change |
 | Compatible development-dependency patches | Use the current frontend lockfile in CI/future builder installs; no new schema/API/environment setting; local built assets are byte-identical |
 | Bounded password-work admission | Rebuild/redeploy the API; eight admitted operations/four worker slots per process; no new schema, frontend or environment setting |
@@ -65,6 +66,17 @@ for this change. Rolling back to an older binary also restores the known
 transaction-initialization defect. Remove the override only after adopting an
 upstream release with the fix and passing the retained cancellation regressions;
 see `vendor/sqlx-postgres/PATCH.md`.
+
+Also retain `vendor/sqlx-core`, copied by the production Dockerfile. Its narrow
+SQLx 0.8.6 compatibility patch lets intentionally selected `verify-ca` accept
+trusted certificates through an alias for both legacy/contextual name errors;
+`verify-full` still requires hostname verification and both modes retain chain,
+validity and signature checks. Rebuild the API from the full checkout/lockfile;
+no migration, frontend or environment change is required. Rolling back restores
+the prior alias rejection. Provenance/removal criteria are in
+`vendor/sqlx-core/PATCH.md`; local acceptance and limits are in the
+[A1w report](validation/sqlx-verify-ca-2026-10-15/README.md). This does not select
+or change the operator's TLS mode or verify hosted TLS.
 
 The client TLS lockfile uses Rustls `0.23.46` and WebPKI `0.103.14`; the existing
 `cargo build --locked --release -p golf-api --bins` image step incorporates them.

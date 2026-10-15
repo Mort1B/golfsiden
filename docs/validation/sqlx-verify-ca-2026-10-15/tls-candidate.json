@@ -1,0 +1,331 @@
+{
+  "phase": "candidate",
+  "cases": [
+    {
+      "fixture": "valid",
+      "mode": "verify-ca",
+      "host": "localhost",
+      "root": "ca",
+      "expected": "ok",
+      "encrypted": true,
+      "observed": "ok",
+      "protocol": "TLSv1.3",
+      "query": 42,
+      "accepted": true
+    },
+    {
+      "fixture": "valid",
+      "mode": "verify-full",
+      "host": "localhost",
+      "root": "ca",
+      "expected": "ok",
+      "encrypted": true,
+      "observed": "ok",
+      "protocol": "TLSv1.3",
+      "query": 42,
+      "accepted": true
+    },
+    {
+      "fixture": "valid",
+      "mode": "verify-ca",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "ok",
+      "encrypted": true,
+      "observed": "ok",
+      "protocol": "TLSv1.3",
+      "query": 42,
+      "accepted": true
+    },
+    {
+      "fixture": "valid",
+      "mode": "verify-full",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "hostname_context",
+      "observed": "hostname_context",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "valid",
+      "mode": "verify-ca",
+      "host": "127.0.0.1",
+      "root": "wrong-ca",
+      "expected": "unknown_issuer",
+      "observed": "unknown_issuer",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "valid",
+      "mode": "verify-full",
+      "host": "127.0.0.1",
+      "root": "wrong-ca",
+      "expected": "unknown_issuer",
+      "observed": "unknown_issuer",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "valid",
+      "mode": "require",
+      "host": "localhost",
+      "root": "wrong-ca",
+      "expected": "ok",
+      "encrypted": true,
+      "observed": "ok",
+      "protocol": "TLSv1.3",
+      "query": 42,
+      "accepted": true
+    },
+    {
+      "fixture": "valid",
+      "mode": "prefer",
+      "host": "localhost",
+      "root": "wrong-ca",
+      "expected": "ok",
+      "encrypted": true,
+      "observed": "ok",
+      "protocol": "TLSv1.3",
+      "query": 42,
+      "accepted": true
+    },
+    {
+      "fixture": "expired",
+      "mode": "verify-ca",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "expired",
+      "observed": "expired",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "expired",
+      "mode": "verify-full",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "expired",
+      "observed": "expired",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "future",
+      "mode": "verify-ca",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "not_yet_valid",
+      "observed": "not_yet_valid",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "future",
+      "mode": "verify-full",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "not_yet_valid",
+      "observed": "not_yet_valid",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "signature",
+      "mode": "verify-ca",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "bad_signature",
+      "observed": "bad_signature",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "signature",
+      "mode": "verify-full",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "bad_signature",
+      "observed": "bad_signature",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "purpose",
+      "mode": "verify-ca",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "invalid_purpose",
+      "observed": "invalid_purpose",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "purpose",
+      "mode": "verify-full",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "invalid_purpose",
+      "observed": "invalid_purpose",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "missing",
+      "mode": "verify-ca",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "unknown_issuer",
+      "observed": "unknown_issuer",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "missing",
+      "mode": "verify-full",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "unknown_issuer",
+      "observed": "unknown_issuer",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "complete",
+      "mode": "verify-ca",
+      "host": "localhost",
+      "root": "ca",
+      "expected": "ok",
+      "encrypted": true,
+      "observed": "ok",
+      "protocol": "TLSv1.3",
+      "query": 42,
+      "accepted": true
+    },
+    {
+      "fixture": "complete",
+      "mode": "verify-full",
+      "host": "localhost",
+      "root": "ca",
+      "expected": "ok",
+      "encrypted": true,
+      "observed": "ok",
+      "protocol": "TLSv1.3",
+      "query": 42,
+      "accepted": true
+    },
+    {
+      "fixture": "complete",
+      "mode": "verify-ca",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "ok",
+      "encrypted": true,
+      "observed": "ok",
+      "protocol": "TLSv1.3",
+      "query": 42,
+      "accepted": true
+    },
+    {
+      "fixture": "complete",
+      "mode": "verify-full",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "hostname_context",
+      "observed": "hostname_context",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "plaintext",
+      "mode": "verify-ca",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "no_tls",
+      "observed": "no_tls",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "plaintext",
+      "mode": "verify-full",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "no_tls",
+      "observed": "no_tls",
+      "rejected": true,
+      "accepted": true
+    },
+    {
+      "fixture": "plaintext",
+      "mode": "require",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "expected": "no_tls",
+      "observed": "no_tls",
+      "rejected": true,
+      "accepted": true
+    }
+  ],
+  "fixtures": [
+    {
+      "fixture": "valid",
+      "image": "docker.io/library/postgres:17-alpine",
+      "removed": true,
+      "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+    },
+    {
+      "fixture": "expired",
+      "image": "docker.io/library/postgres:17-alpine",
+      "removed": true,
+      "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+    },
+    {
+      "fixture": "future",
+      "image": "docker.io/library/postgres:17-alpine",
+      "removed": true,
+      "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+    },
+    {
+      "fixture": "signature",
+      "image": "docker.io/library/postgres:17-alpine",
+      "removed": true,
+      "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+    },
+    {
+      "fixture": "purpose",
+      "image": "docker.io/library/postgres:17-alpine",
+      "removed": true,
+      "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+    },
+    {
+      "fixture": "missing",
+      "image": "docker.io/library/postgres:17-alpine",
+      "removed": true,
+      "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+    },
+    {
+      "fixture": "complete",
+      "image": "docker.io/library/postgres:17-alpine",
+      "removed": true,
+      "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+    },
+    {
+      "fixture": "plaintext",
+      "image": "docker.io/library/postgres:17-alpine",
+      "removed": true,
+      "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+      "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+    }
+  ],
+  "accepted": true,
+  "temporary_pki_removed": true
+}

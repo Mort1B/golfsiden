@@ -100,6 +100,11 @@ Clippy passed; these setup failures were not application regressions.
 
 ### Existing P3: verify-ca contextual hostname compatibility
 
+Follow-up: the separately approved [A1w core compatibility repair](../sqlx-verify-ca-2026-10-15/README.md)
+reproduces the contextual rejection and changes only the chain-only hostname
+exception, with before/after invalid-certificate controls. The original A4
+snapshot and acceptance below remain historical.
+
 The initial probe expected `verify-ca` to accept a trusted certificate whose
 DNS name differed from the connection IP. Both the original lockfile in an
 isolated temporary copy and the new lockfile instead reject it with

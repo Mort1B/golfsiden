@@ -1,0 +1,27 @@
+{
+  "cases_per_phase": 25,
+  "all_case_keys_unique_and_equal": true,
+  "only_observed_changes": [
+    {
+      "fixture": "valid",
+      "mode": "verify-ca",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "before": "hostname_context",
+      "after": "ok"
+    },
+    {
+      "fixture": "complete",
+      "mode": "verify-ca",
+      "host": "127.0.0.1",
+      "root": "ca",
+      "before": "hostname_context",
+      "after": "ok"
+    }
+  ],
+  "all_synthetic_encrypted_sql_controls_pass": true,
+  "all_16_tls_containers_removed": true,
+  "both_temporary_pki_directories_removed": true,
+  "core_only_extra_file": "PATCH.md",
+  "application_sources_frontend_migrations_unchanged": true
+}

@@ -99,13 +99,11 @@ async fn database(certs: &Path) {
         TlsRejection::UnknownIssuer,
     )
     .await;
-    // Both the original and updated lockfiles return NotValidForNameContext;
-    // SQLx 0.8.6 only suppresses the older NotValidForName variant. Preserve
-    // this stricter existing behavior; changing the driver is a separate step.
-    database_rejected(
+    // The local SQLx core compatibility patch preserves chain-only verification
+    // for both legacy and contextual hostname-mismatch errors.
+    database_success(
         database_options("127.0.0.1", 55450, PgSslMode::VerifyCa, Some(&ca)),
-        "database verify-ca preserves existing hostname rejection",
-        TlsRejection::WrongHost,
+        "database verify-ca trusted alias",
     )
     .await;
     database_success(

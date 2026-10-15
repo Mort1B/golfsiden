@@ -627,7 +627,7 @@ historical three-finding snapshot; A7b addresses those remaining entries.
 
 The current lockfile uses Rustls `0.23.46` and WebPKI `0.103.14` through the
 existing Reqwest/SQLx paths. Rebuild from the committed lockfile and full checkout,
-including the SQLx cancellation override. The
+including the SQLx core compatibility and PostgreSQL cancellation overrides. The
 [local acceptance report](validation/rustls-update-2026-10-15/README.md) records
 advisory comparison, provider HTTPS and PostgreSQL TLS-mode checks. This update
 requires no schema or frontend contract change.
@@ -635,9 +635,13 @@ requires no schema or frontend contract change.
 Provider HTTPS retains normal certificate and hostname validation. Database
 identity validation remains selected by `DATABASE_URL`'s `sslmode`; `verify-full`
 validates chain and hostname, `verify-ca` validates the chain, while `require`
-and the default `prefer` do not verify the certificate in this driver. Both
-original and updated lockfiles also reject a contextual hostname mismatch in
-`verify-ca`; this existing SQLx compatibility issue is recorded separately.
+and the default `prefer` do not verify the certificate in this driver. The local
+core patch accepts a trusted, otherwise-valid certificate through another alias
+in `verify-ca`, including Rustls's contextual hostname error. Unknown issuers,
+invalid signatures/chains, expired/future certificates and invalid usage remain
+rejected. `verify-full` still requires a matching hostname. The
+[A1w acceptance](validation/sqlx-verify-ca-2026-10-15/README.md) records the exact
+local certificate controls and limits.
 Compose networking and mode selection are unchanged. This local update does
 not establish the operator's public TLS or hosted database configuration.
 

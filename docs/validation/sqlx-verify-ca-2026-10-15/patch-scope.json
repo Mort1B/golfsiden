@@ -1,0 +1,62 @@
+{
+  "baseline_revision": "437d6a4ad08fb5bf3a9fd7fa19430a451c86c7ba",
+  "crate_sha256": "ee6798b1838b6a0f69c007c133b8df5866302197e404e8b6ee8ed3e3a5e68dc6",
+  "core_changed_files": [
+    "src/net/tls/tls_rustls.rs"
+  ],
+  "core_extra_file": "PATCH.md",
+  "lock_only_change": "sqlx-core registry source/checksum replaced by local path",
+  "all_package_versions_and_dependencies_preserved": true,
+  "features_preserved": {
+    "rustls": [
+      "ring",
+      "std",
+      "tls12"
+    ],
+    "rustls-webpki": [
+      "alloc",
+      "ring",
+      "std"
+    ],
+    "sqlx-core": [
+      "_rt-tokio",
+      "_tls-rustls",
+      "_tls-rustls-ring-webpki",
+      "any",
+      "chrono",
+      "crc",
+      "default",
+      "json",
+      "migrate",
+      "offline",
+      "rustls",
+      "serde",
+      "serde_json",
+      "sha2",
+      "tokio",
+      "tokio-stream",
+      "uuid",
+      "webpki-roots"
+    ],
+    "sqlx-postgres": [
+      "any",
+      "chrono",
+      "json",
+      "migrate",
+      "offline",
+      "uuid"
+    ]
+  },
+  "postgres_override_byte_identical": true,
+  "single_resolved_core": true,
+  "core_consumers": [
+    "sqlx",
+    "sqlx-macros",
+    "sqlx-macros-core",
+    "sqlx-mysql",
+    "sqlx-postgres",
+    "sqlx-sqlite"
+  ],
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "openssl": "OpenSSL 3.5.9 29 Sep 2026 (Library: OpenSSL 3.5.9 29 Sep 2026)"
+}

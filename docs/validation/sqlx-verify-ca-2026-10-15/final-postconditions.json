@@ -1,0 +1,18 @@
+{
+  "all_eight_ladder_stages_exit_zero": true,
+  "cancellation_passed": 5,
+  "rust_passed": 264,
+  "postgres_passed": 953,
+  "migrations": 39,
+  "postgres_ignored_tests": [
+    "test repositories::fantasy::results::tests::projection_benchmark ... ignored, manual projection-only timing; run release with --ignored --nocapture",
+    "test hundred_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required",
+    "test twelve_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required",
+    "test twenty_four_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required",
+    "test team_loading::measurement::counts_and_complete_local_read_cost ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required"
+  ],
+  "postgres_vendor_files_preserved": 115,
+  "both_25_case_tls_matrices_and_cleanup_verified": true,
+  "ladder_container_and_credentials_removed": true,
+  "application_sources_frontend_migrations_unchanged": true
+}

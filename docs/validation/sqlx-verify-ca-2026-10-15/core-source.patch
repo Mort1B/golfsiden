@@ -1,0 +1,13 @@
+--- crates.io/src/net/tls/tls_rustls.rs
++++ vendor/sqlx-core/src/net/tls/tls_rustls.rs
+@@ -306,7 +306,9 @@
+             ocsp_response,
+             now,
+         ) {
+-            Err(TlsError::InvalidCertificate(CertificateError::NotValidForName)) => {
++            Err(TlsError::InvalidCertificate(
++                CertificateError::NotValidForName | CertificateError::NotValidForNameContext { .. },
++            )) => {
+                 Ok(ServerCertVerified::assertion())
+             }
+             res => res,
