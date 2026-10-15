@@ -1,0 +1,320 @@
+{
+  "backend": {
+    "fmt": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit": 0,
+      "seconds": 0.8
+    },
+    "unit": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--workspace",
+        "--all-targets"
+      ],
+      "exit": 0,
+      "seconds": 30.4,
+      "passed": 264,
+      "failed": 0,
+      "ignored": 1
+    },
+    "clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0,
+      "seconds": 19.86
+    }
+  },
+  "postgres_acceptance": {
+    "phase": "current",
+    "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "measurement": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "team_loading",
+        "counts_and_complete_local_read_cost",
+        "--",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "seconds": 17.73,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    "contracts": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "team_loading",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "seconds": 21.01,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 1
+    },
+    "session-regressions": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "pairing_team_sessions",
+        "--",
+        "--test-threads=2"
+      ],
+      "exit": 0,
+      "seconds": 53.14,
+      "passed": 14,
+      "failed": 0,
+      "ignored": 0
+    },
+    "database-suite": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--workspace",
+        "--all-targets",
+        "--features",
+        "database-tests",
+        "--",
+        "--test-threads=2"
+      ],
+      "exit": 0,
+      "seconds": 776.36,
+      "passed": 933,
+      "failed": 0,
+      "ignored": 5
+    },
+    "migrate": {
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--bin",
+        "migrate"
+      ],
+      "exit": 0,
+      "seconds": 7.98
+    },
+    "seed": {
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--bin",
+        "seed"
+      ],
+      "exit": 0,
+      "seconds": 1.12
+    },
+    "migrations_current": "39",
+    "owned_container_removed": true
+  },
+  "original_loader_capture_before_implementation": {
+    "phase": "baseline",
+    "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "measurement": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "team_loading",
+        "counts_and_complete_local_read_cost",
+        "--",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "exit": 101,
+      "seconds": 6.13,
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0,
+      "expected_original_budget_failure": true
+    },
+    "contracts": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "team_loading",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "seconds": 0.82,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 1
+    },
+    "owned_container_removed": true
+  },
+  "serial_attempt_and_source_provenance": {
+    "baseline_revision": "ecc494f98f40f3947a1b3cd91371a511bf53ff23",
+    "baseline_teams_sha256": "a4222156b29565138eb28e78adbd1b4eee3cc0f535e8ad3dd4dbfd207da7f0ae",
+    "current_teams_sha256": "466d7fd76e0098137b2591566681a22089567b2d7769b6aa656060547ef66dc0",
+    "probe_sha256": {
+      "backend/tests/team_loading.rs": "cf9a2ebc2993b957fb9b88185834290cb6283dbf8815127c8996bdaaa055db7d",
+      "backend/tests/team_loading/contracts.rs": "ef265ec705fa5abcae235a4b469d6d0e6aca7df890fc452783744b0d3d350c1d",
+      "backend/tests/team_loading/measurement.rs": "f9bca4382a95472cd961bbb9c34655ee471120f7e394f869233f84f8452717ce",
+      "backend/tests/team_loading/support.rs": "267338de091c700f4462fe21a4c623b332689f0d73a4740f6e3de624451db41a"
+    },
+    "baseline": {
+      "exit": 0,
+      "results": {
+        "phase": "baseline",
+        "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+        "database_collation": "en_US.utf8",
+        "measurement": {
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "-p",
+            "golf-api",
+            "--features",
+            "database-tests",
+            "--test",
+            "team_loading",
+            "counts_and_complete_local_read_cost",
+            "--",
+            "--ignored",
+            "--test-threads=1"
+          ],
+          "exit": 101,
+          "seconds": 36.75,
+          "passed": 0,
+          "failed": 1,
+          "ignored": 0,
+          "expected_original_budget_failure": true
+        },
+        "owned_container_removed": true
+      }
+    },
+    "current": {
+      "exit": 1,
+      "results": {
+        "phase": "current",
+        "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+        "database_collation": "en_US.utf8",
+        "measurement": {
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "-p",
+            "golf-api",
+            "--features",
+            "database-tests",
+            "--test",
+            "team_loading",
+            "counts_and_complete_local_read_cost",
+            "--",
+            "--ignored",
+            "--test-threads=1"
+          ],
+          "exit": 101,
+          "seconds": 5.33,
+          "passed": 0,
+          "failed": 1,
+          "ignored": 0
+        },
+        "owned_container_removed": true
+      }
+    },
+    "temporary_baseline_sources_removed": true
+  },
+  "final_serial_current_rebuilt": {
+    "phase": "current",
+    "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "database_collation": "en_US.utf8",
+    "measurement": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "team_loading",
+        "counts_and_complete_local_read_cost",
+        "--",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "seconds": 29.03,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    "owned_container_removed": true
+  },
+  "package_cache_reset": {
+    "command": [
+      "cargo",
+      "clean",
+      "-p",
+      "golf-api"
+    ],
+    "exit": 0,
+    "reason": "Shared target reused original-loader binary; discard that current timing and recompile the repaired source."
+  },
+  "final_comparison_verified": true,
+  "wrappers_and_all_mutations_byte_identical": true,
+  "production_nonblank_noncomment_lines": 196
+}

@@ -537,8 +537,15 @@ session. All four tournament membership roles can read; a global administrator h
 Round creation and the other mutation/read families retain their existing
 behavior. Pairing reads retain active/inactive entrants, distinct team/flight
 identities, schedules, timestamps and legacy individual groups. Team JSON remains
-flat with members; its ordering and member-query loop are unchanged. Pairing PUT
-and its preflight/error contracts remain separate from the GET read boundary.
+flat with members, including empty teams, optional schedules and timestamps.
+Team order remains native SQL name/UUID order; members retain position with
+nulls last, native display-name order and player-UUID tie-breaks. Team loading
+uses one data SELECT for no teams and two for any populated list, with all
+selected teams' members fetched together. Authority and transaction queries are
+additional and unchanged; the final session check still runs on an empty list.
+The [A8 acceptance report](validation/team-loading-2026-10-15/README.md) records
+query counts and the limits of local timing evidence. Pairing PUT and its
+preflight/error contracts remain separate from the GET read boundary.
 The repair adds no mutation retry or frontend state change.
 
 Private GETs retain different session boundaries. The selected leaderboard,

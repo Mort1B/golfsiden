@@ -1,33 +1,47 @@
-# Latest iteration — patched Vitest 4 family
+# Latest iteration — bounded team-member loading
 
-A7b completes the remaining development-dependency repair. The only manifest
-change is Vitest `^3.2.4` to `^4.1.11`; the lock selects matching 4.1.11 packages
-and their required development dependencies. Tinypool and vite-node are removed.
-Every application runtime entry, Vite 7.3.6 and the earlier A7 patches remain
-identical. No application, test, script or tool-configuration edits were needed.
+A8 replaces the shared team-list loader's per-team query loop with one query for
+all selected teams' members. Empty lists retain one data SELECT; populated lists
+use two regardless of team count. For example, 100 teams previously required
+101 data SELECTs and now require two. Authorization and transaction work remain
+additional and unchanged.
 
-Fresh full and production-only npm audits both report zero findings. The prior
-three development package entries (two critical labels and one moderate) are
-absent. This closes the audited Vitest family, not an assertion that every image,
-Rust dependency or hosted application is vulnerability-free. No exploit was
-replayed or production workload measured.
+The team query keeps native name/UUID order. One bound UUID array limits member
+loading to those selected teams, with the original position/null/name/player-ID
+ordering inside each team. Lookup-only grouping keeps that SQL ordering and
+includes teams with no members. No new API fields, schema, indexes or frontend
+behavior are introduced.
 
-The normal npm 10 resolver crashed during isolated proposal generation. A
-verified temporary npm 11 CLI generated the lockfile with peer checks intact;
-project/global npm stayed at 10.9.7. Standard npm 10 then passed clean `npm ci`,
-installed-tree validation and all frontend checks. No force/legacy-peer flag,
-transitive override or global toolchain change was used.
+Both repository wrappers and all team mutations are byte-identical to baseline.
+The protected read still owns repeatable read, session/user and membership
+locks, one complete serialization retry and the final wall-clock session check,
+even when the result is empty. The internal wrapper retains its existing
+isolation. HTTP cache/error behavior and live events are unchanged.
 
-The clean Vitest 3 baseline and Vitest 4 run both pass exactly the same 1,133 test
-identities across 147 files. A focused set of 176 existing tests covers module
-mocks, fake timers, jsdom, request timeouts, identity ordering and live ownership.
-Strict typecheck, ESLint and production build pass. All 65 local production
-output files are byte-identical after clean before/after installs. No test was
-weakened, renamed, deleted or ignored.
+The original loader fails the new query-budget test for 12 and 100 teams on all
+three actual read paths: internal repository, protected repository and Axum
+HTTP handler. The repaired loader passes 0/1/12/100-team budgets. Complete
+response hashes match across revisions and every response matches the original
+SQL oracle. Focused PostgreSQL/API coverage also retains empty teams, nullable
+schedules, null/duplicate member positions, native SQL collation, player UUID
+ties, sibling rounds and foreign-tournament denials. All 14 existing session
+regressions pass. Backend formatting, 264 unit tests and strict Clippy pass.
 
-Independent manifest/lock/evidence review found no issues and independently
-confirmed test identity and build-hash parity. Final documentation and bounded-
-plan review also found no issues. Browser/backend/PostgreSQL ladders and image/hosted acceptance are outside
-the affected boundary and were not rerun. The [Vitest report](validation/vitest-major-2026-10-15/README.md)
-records commands, resolver provenance, audit snapshots and limits. The next
-candidate in [the plan](PLANS.md) is P3 team-membership query batching.
+The full PostgreSQL ladder passes 933 tests, with five manual/exclusive probes
+ignored; the new exclusive measurement was run explicitly. Migration and seed
+checks pass against PostgreSQL 17.10 with all 39 migrations. The final serial
+local HTTP median for 100 teams falls from 31.35 to 12.74 ms. Empty and single-
+team HTTP medians are slower; this warm synthetic debug-build probe establishes
+neither an overall product speedup nor hosted/frontend latency. It includes
+application handling and JSON collection, excluding TCP, TLS, proxy and browser
+work.
+
+Independent design/source review found no production issue. Review caught and
+closed a stale-output issue in the rerun harness. A serial comparison also
+caught reused baseline build artifacts; those current results were discarded,
+the package was rebuilt and the repaired query-budget probe passed again.
+The [A8 report](validation/team-loading-2026-10-15/README.md) retains commands,
+source/probe hashes, exact response parity, final samples, failed-attempt context
+and cleanup evidence. Final independent review recalculated the retained results
+and found no issues. The next candidate in [the plan](PLANS.md) is the remaining
+P3 course-read authority boundary; no queued implementation began.

@@ -1,0 +1,196 @@
+{
+  "postgres": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "settings": [
+    {
+      "name": "jit",
+      "setting": "on"
+    },
+    {
+      "name": "pg_stat_statements.track",
+      "setting": "top"
+    },
+    {
+      "name": "pg_stat_statements.track_planning",
+      "setting": "off"
+    },
+    {
+      "name": "shared_buffers",
+      "setting": "16384"
+    },
+    {
+      "name": "work_mem",
+      "setting": "4096"
+    }
+  ],
+  "complete_payload_hashes_identical": true,
+  "rows": [
+    {
+      "teams": 0,
+      "mode": "internal",
+      "repeats": 30,
+      "data_selects_before": 1,
+      "data_selects_after": 1,
+      "authority_selects": 0,
+      "recorded_transaction_statements": 2,
+      "payload_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "median_ms_before": 0.44157599999999997,
+      "median_ms_after": 0.431095,
+      "p95_ms_before": 0.6894060000000001,
+      "p95_ms_after": 0.5923649999999999
+    },
+    {
+      "teams": 0,
+      "mode": "session",
+      "repeats": 30,
+      "data_selects_before": 1,
+      "data_selects_after": 1,
+      "authority_selects": 4,
+      "recorded_transaction_statements": 2,
+      "payload_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "median_ms_before": 0.9290335000000001,
+      "median_ms_after": 1.0225644999999999,
+      "p95_ms_before": 1.3187039999999999,
+      "p95_ms_after": 1.241289
+    },
+    {
+      "teams": 0,
+      "mode": "http",
+      "repeats": 30,
+      "data_selects_before": 1,
+      "data_selects_after": 1,
+      "authority_selects": 5,
+      "recorded_transaction_statements": 2,
+      "payload_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "median_ms_before": 1.271064,
+      "median_ms_after": 1.4439805,
+      "p95_ms_before": 2.107898,
+      "p95_ms_after": 1.949784
+    },
+    {
+      "teams": 1,
+      "mode": "internal",
+      "repeats": 30,
+      "data_selects_before": 2,
+      "data_selects_after": 2,
+      "authority_selects": 0,
+      "recorded_transaction_statements": 2,
+      "payload_sha256": "000c263d9456b4cf2ce79f56a203c0186e1da5a4b5435301a47de6f6a74a6127",
+      "median_ms_before": 0.7662169999999999,
+      "median_ms_after": 0.866137,
+      "p95_ms_before": 1.120529,
+      "p95_ms_after": 1.5229620000000001
+    },
+    {
+      "teams": 1,
+      "mode": "session",
+      "repeats": 30,
+      "data_selects_before": 2,
+      "data_selects_after": 2,
+      "authority_selects": 4,
+      "recorded_transaction_statements": 2,
+      "payload_sha256": "000c263d9456b4cf2ce79f56a203c0186e1da5a4b5435301a47de6f6a74a6127",
+      "median_ms_before": 1.289552,
+      "median_ms_after": 1.8008665000000001,
+      "p95_ms_before": 1.736191,
+      "p95_ms_after": 2.596448
+    },
+    {
+      "teams": 1,
+      "mode": "http",
+      "repeats": 30,
+      "data_selects_before": 2,
+      "data_selects_after": 2,
+      "authority_selects": 5,
+      "recorded_transaction_statements": 2,
+      "payload_sha256": "000c263d9456b4cf2ce79f56a203c0186e1da5a4b5435301a47de6f6a74a6127",
+      "median_ms_before": 1.683957,
+      "median_ms_after": 2.2758475000000002,
+      "p95_ms_before": 2.750158,
+      "p95_ms_after": 3.25866
+    },
+    {
+      "teams": 12,
+      "mode": "internal",
+      "repeats": 30,
+      "data_selects_before": 13,
+      "data_selects_after": 2,
+      "authority_selects": 0,
+      "recorded_transaction_statements": 2,
+      "payload_sha256": "7c5a7ac6513f5054743e6ca5fabd640e9252924692745400b79fb35fa2ac34f5",
+      "median_ms_before": 4.0164745,
+      "median_ms_after": 1.5438375,
+      "p95_ms_before": 4.442601,
+      "p95_ms_after": 2.049254
+    },
+    {
+      "teams": 12,
+      "mode": "session",
+      "repeats": 30,
+      "data_selects_before": 13,
+      "data_selects_after": 2,
+      "authority_selects": 4,
+      "recorded_transaction_statements": 2,
+      "payload_sha256": "7c5a7ac6513f5054743e6ca5fabd640e9252924692745400b79fb35fa2ac34f5",
+      "median_ms_before": 4.502286,
+      "median_ms_after": 2.2355905,
+      "p95_ms_before": 5.7334830000000006,
+      "p95_ms_after": 2.837533
+    },
+    {
+      "teams": 12,
+      "mode": "http",
+      "repeats": 30,
+      "data_selects_before": 13,
+      "data_selects_after": 2,
+      "authority_selects": 5,
+      "recorded_transaction_statements": 2,
+      "payload_sha256": "7c5a7ac6513f5054743e6ca5fabd640e9252924692745400b79fb35fa2ac34f5",
+      "median_ms_before": 5.7761855,
+      "median_ms_after": 3.4328814999999997,
+      "p95_ms_before": 6.738173,
+      "p95_ms_after": 4.337828999999999
+    },
+    {
+      "teams": 100,
+      "mode": "internal",
+      "repeats": 30,
+      "data_selects_before": 101,
+      "data_selects_after": 2,
+      "authority_selects": 0,
+      "recorded_transaction_statements": 2,
+      "payload_sha256": "3233961f41e5c6fffb65e5c64f20a7e9d18ccc7b258f9bc8990e96faed13d099",
+      "median_ms_before": 21.754825,
+      "median_ms_after": 6.596459,
+      "p95_ms_before": 25.385517999999998,
+      "p95_ms_after": 7.3457
+    },
+    {
+      "teams": 100,
+      "mode": "session",
+      "repeats": 30,
+      "data_selects_before": 101,
+      "data_selects_after": 2,
+      "authority_selects": 4,
+      "recorded_transaction_statements": 2,
+      "payload_sha256": "3233961f41e5c6fffb65e5c64f20a7e9d18ccc7b258f9bc8990e96faed13d099",
+      "median_ms_before": 25.355514,
+      "median_ms_after": 7.3936174999999995,
+      "p95_ms_before": 32.894328,
+      "p95_ms_after": 8.32273
+    },
+    {
+      "teams": 100,
+      "mode": "http",
+      "repeats": 30,
+      "data_selects_before": 101,
+      "data_selects_after": 2,
+      "authority_selects": 5,
+      "recorded_transaction_statements": 2,
+      "payload_sha256": "3233961f41e5c6fffb65e5c64f20a7e9d18ccc7b258f9bc8990e96faed13d099",
+      "median_ms_before": 31.350989500000004,
+      "median_ms_after": 12.739853,
+      "p95_ms_before": 34.7151,
+      "p95_ms_after": 13.462675
+    }
+  ]
+}

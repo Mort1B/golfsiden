@@ -5,47 +5,40 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A7b acceptance is in the
-[Vitest major report](validation/vitest-major-2026-10-15/README.md).
+None. A8 acceptance is in the
+[team-loading report](validation/team-loading-2026-10-15/README.md).
 
 ## Next candidate — requires approval
 
-### A8 — P3: batch team-member loading without changing read authority
+### A1n — P3: bind the three course GETs to complete read authority
 
-Evidence: [original review A8](validation/application-review-2026-10-14/README.md#a8--p3-team-member-queries-grow-with-team-count).
-The current shared team-list helper reads teams once, then fetches members once
-per team. This is source-confirmed 1+N data SELECTs; frontend latency impact
-remains unmeasured.
+Evidence: the remaining [course-read source inventory](validation/private-read-inventory-2026-10-14/README.md#courses).
+These expose global bundled/registered course facts; successful provider impact
+is conditional. No private-score disclosure or reachable provider-quota abuse
+was established by that assessment.
 
-- Goal: bound team/member data loading to one SELECT for an empty team list and
-  two SELECTs for populated lists, independent of team count, while preserving
-  complete response and authorization behavior.
-- Scope: the shared team-list repository helper and focused PostgreSQL/API tests,
-  a disposable local query-count/cost comparison and docs. Exclude team/round
-  mutations, schema/index changes, API/DTO/frontend changes, pagination, course
-  reads, generic repository refactors and hosted performance work.
-- Behavior: retain the existing ordered team query; load all selected team IDs'
-  members in one parameter-bound query and group them without changing team or
-  member order, empty-team inclusion or fields. Preserve native SQL collation,
-  `display_order NULLS LAST`, display-name and player-UUID tie-breaks, and team
-  name/UUID ordering. Keep the same shared transaction/snapshot, session retry,
-  round membership authorization and final active-session gate even for empty
-  results. Preserve ordinary internal-list behavior and private/no-store HTTP
-  mapping. Do not parallelize SQL on the transaction or weaken locking/fences.
-- Validation: baseline regression proves per-team query growth; repaired counts
-  prove one/two data SELECTs for 0/1/12/100 synthetic teams, separately identifying
-  authorization/transaction queries. Compare complete payloads, empty teams,
-  null/duplicate member positions, name/UUID ties and round/tournament isolation.
-  Exercise revocation/expiry/cancellation and concurrent membership changes using
-  the existing pairing/team session suite. Run the complete backend/PostgreSQL
-  ladders, migrate/seed and independent read-only review. Measure local complete
-  handler/read cost before/after under matching data/session conditions; record
-  limits without claiming frontend or hosted speedup from query counts alone.
-- Invariants: tournament players remain independent of teams; team/round scope,
-  one-team-per-round constraints, preserved handicap/score rules and read authority
-  stay unchanged. No data write, SSE event, payload or cache-policy change.
-- Stop: publish only bounded team-member batching and evidence. Begin no course-
-  read, driver, collation/test-maintenance, UI or other performance work.
+- Goal: retain the actual session and exact tournament-admin authority through
+  each selected course response, with a final wall-clock check before success.
+- Scope: only course catalog, registered presets and provider-course detail GETs,
+  their narrow repository/authority helpers, focused tests and docs. Exclude
+  course writes, other route families, frontend/DTO/schema changes, catalog or
+  provider credential changes, hosted/provider administration and performance work.
+- Behavior: derive authority from the locked session and stored membership,
+  preserve payloads, ordering and provider availability/error contracts, and use
+  private/no-store responses on all selected-route statuses. Keep local dependent
+  reads/assembly in their owning transaction and recheck expiry even for empty
+  results. Do not hold database locks across external I/O; separately authorize
+  returned provider facts. Do not replay remote fetching or cache writes as a
+  database-read retry. Any retry must discard the failed local snapshot's facts.
+- Validation: begin with failing revocation/credential/expiry regressions for the
+  three actual GET paths; cover exact-admin membership changes, populated/empty
+  payload parity, private errors and conditional provider/cache behavior using
+  local doubles. Run affected backend/PostgreSQL ladders, migrate/seed and
+  independent review. No external provider or hosted acceptance claim.
+- Invariants: preserve tournament membership isolation, course fact ownership,
+  all handicap/score rules and existing write boundaries.
+- Stop: publish only this course-read boundary and evidence; begin no adjacent
+  write-expiry inventory, driver/test maintenance or other optimization.
 
 ## Later queue
 
@@ -55,16 +48,13 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P3 / A1 course reads:** bind the three lower-impact course GETs in a
-   separately selected step; provider-success impact remains conditional in the
-   [source inventory](validation/private-read-inventory-2026-10-14/README.md#courses).
+The remaining P3 course GETs are the next candidate above. Keep legacy team/
+round write-expiry inventory separate; the private-read inventory never assessed
+those writes. Selecting that read boundary does not authorize adjacent work.
 
-Keep legacy team/round write-expiry inventory separate; the private-read inventory
-never assessed those writes. Selecting team-member batching does not authorize the later queue.
-
-Only after these, consider measurement-only steps for remaining Fantasy
-invalidation/fact-loading cost and empty-queue polling. No speculative optimization
-or load claim is authorized.
+Only after the selected review follow-ups, consider measurement-only steps for
+remaining Fantasy invalidation/fact-loading cost and empty-queue polling. No
+speculative optimization or load claim is authorized.
 
 ### Previously deferred work
 

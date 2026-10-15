@@ -265,6 +265,12 @@ force-update or treat the scanner's critical label as production remote executio
 
 ### A8 — P3: team member queries grow with team count
 
+Follow-up: [A8 batching acceptance](../team-loading-2026-10-15/README.md) replaces
+the shared per-team loop with one parameter-bound member query. Empty lists
+retain one data SELECT; populated lists use two, with payload and read-authority
+parity. The original finding below remains the review's historical evidence;
+the follow-up distinguishes local measured cost from frontend/hosted latency.
+
 `backend/src/repositories/teams.rs:46-51` loads teams once and fetches members
 sequentially for every team. The authenticated route remains exposed at
 `api/teams.rs:20-28`. Member-loading work is **1+N SELECTs**, in addition to

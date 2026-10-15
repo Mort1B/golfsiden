@@ -569,9 +569,18 @@ See the [checksum acceptance report](validation/restore-checksum-2026-10-15/READ
   contracts. Pairing PUT/preflight and its error owner remain independent, and
   existing combined GET/PUT private cache middleware is retained. Team GET adds
   shared `private, no-store` middleware on all statuses. Pairing payload loading,
-  the distinct name/member ordering of the two endpoints, schedule/identity data
-  and the existing team member-query loop are unchanged. A8 still owns any team
-  batching; session binding adds two authority queries without a speedup claim.
+  the distinct name/member ordering of the two endpoints and schedule/identity
+  data are preserved. The shared team-list helper retains its ordered teams
+  SELECT and batches members for precisely those team UUIDs through one bound
+  UUID-array query in the same transaction. SQL orders members by team UUID,
+  `display_order NULLS LAST`, native display-name collation and player UUID;
+  lookup-only grouping emits teams in their original SQL order, retaining empty
+  teams. Empty lists use one data SELECT; populated lists use two regardless of
+  team count. Session/user, stored-parent membership, final expiry and retry
+  boundaries are unchanged, including for empty lists. The ordinary internal
+  wrapper retains its original transaction isolation; protected reads retain
+  repeatable read. The [local A8 evidence](validation/team-loading-2026-10-15/README.md)
+  separates data-query reduction from authority queries and measured local cost.
 - Pairing/completion readiness GETs use explicit `*_for_session` repository
   entries and the same `session_read.rs` transaction owner. Pairing's final
   session check follows both base validation and additional singles-assignment

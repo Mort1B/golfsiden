@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use chrono::NaiveTime;
 use sqlx::{PgPool, Postgres, Transaction};
 use thiserror::Error;
@@ -47,13 +49,38 @@ async fn list_in_transaction(
 ) -> Result<Vec<TeamWithMembers>, sqlx::Error> {
     let teams = sqlx::query_as::<_, Team>("SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id")
         .bind(round_id).fetch_all(&mut **transaction).await?;
-    let mut result = Vec::with_capacity(teams.len());
-    for team in teams {
-        let members = sqlx::query_as::<_, TeamMember>("SELECT tm.player_id, p.display_name, tm.display_order FROM team_memberships tm JOIN players p ON p.id = tm.player_id WHERE tm.team_id = $1 ORDER BY tm.display_order NULLS LAST, p.display_name, tm.player_id")
-            .bind(team.id).fetch_all(&mut **transaction).await?;
-        result.push(TeamWithMembers { team, members });
+    if teams.is_empty() {
+        return Ok(Vec::new());
     }
-    Ok(result)
+    let team_ids: Vec<_> = teams.iter().map(|team| team.id).collect();
+    let rows = sqlx::query_as::<_, ListedMember>("SELECT tm.team_id, tm.player_id, p.display_name, tm.display_order FROM team_memberships tm JOIN players p ON p.id = tm.player_id WHERE tm.team_id = ANY($1) ORDER BY tm.team_id, tm.display_order NULLS LAST, p.display_name, tm.player_id")
+        .bind(&team_ids).fetch_all(&mut **transaction).await?;
+    let mut members_by_team: HashMap<Uuid, Vec<TeamMember>> = HashMap::new();
+    for row in rows {
+        members_by_team
+            .entry(row.team_id)
+            .or_default()
+            .push(TeamMember {
+                player_id: row.player_id,
+                display_name: row.display_name,
+                display_order: row.display_order,
+            });
+    }
+    Ok(teams
+        .into_iter()
+        .map(|team| TeamWithMembers {
+            members: members_by_team.remove(&team.id).unwrap_or_default(),
+            team,
+        })
+        .collect())
+}
+
+#[derive(sqlx::FromRow)]
+struct ListedMember {
+    team_id: Uuid,
+    player_id: Uuid,
+    display_name: String,
+    display_order: Option<i16>,
 }
 
 pub async fn create(

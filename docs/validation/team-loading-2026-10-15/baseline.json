@@ -1,0 +1,1013 @@
+{
+  "postgres": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "regressions": [
+    "12 teams / internal: 30 team + 360 member calls over 30 reads",
+    "12 teams / session: 30 team + 360 member calls over 30 reads",
+    "12 teams / http: 30 team + 360 member calls over 30 reads",
+    "100 teams / internal: 30 team + 3000 member calls over 30 reads",
+    "100 teams / session: 30 team + 3000 member calls over 30 reads",
+    "100 teams / http: 30 team + 3000 member calls over 30 reads"
+  ],
+  "samples": [
+    {
+      "authority_calls": 0,
+      "bounded": true,
+      "member_calls": 0,
+      "mode": "internal",
+      "payload_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "queries": [
+        {
+          "calls": 30,
+          "execution_ms": 0.005089,
+          "query": "BEGIN",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.004616,
+          "query": "COMMIT",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.19166199999999997,
+          "query": "SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id",
+          "rows": 0
+        }
+      ],
+      "repeats": 30,
+      "team_calls": 30,
+      "teams": 0,
+      "transaction_calls": 60,
+      "warm_ms": [
+        0.410391,
+        0.447005,
+        0.419452,
+        0.38026,
+        0.386674,
+        0.351513,
+        0.366799,
+        0.36713700000000005,
+        0.350506,
+        0.366507,
+        0.753551,
+        0.6894060000000001,
+        0.463273,
+        0.447871,
+        0.433843,
+        0.44616,
+        0.437521,
+        0.451498,
+        0.444496,
+        0.437421,
+        0.6034569999999999,
+        0.432607,
+        0.44771099999999997,
+        0.448233,
+        0.451171,
+        0.439744,
+        0.450737,
+        0.44282499999999997,
+        0.448474,
+        0.440327
+      ]
+    },
+    {
+      "authority_calls": 120,
+      "bounded": true,
+      "member_calls": 0,
+      "mode": "session",
+      "payload_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "queries": [
+        {
+          "calls": 30,
+          "execution_ms": 0.004321000000000001,
+          "query": "BEGIN",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.006135999999999999,
+          "query": "COMMIT",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.20728700000000003,
+          "query": "SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.289845,
+          "query": "SELECT role FROM tournament_memberships\n         WHERE tournament_id = $1 AND user_id = $2\n         FOR SHARE",
+          "rows": 30
+        },
+        {
+          "calls": 60,
+          "execution_ms": 1.088076,
+          "query": "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,\n                u.player_id, s.expires_at\n         FROM user_sessions s\n         JOIN users u ON u.id = s.user_id\n         WHERE s.id = $1 AND s.revoked_at IS NULL AND s.expires_at > clock_timestamp()\n           AND s.credential_generation = u.credential_generation\n         FOR SHARE OF s, u",
+          "rows": 60
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.255281,
+          "query": "SELECT tournament_id FROM rounds WHERE id = $1",
+          "rows": 30
+        }
+      ],
+      "repeats": 30,
+      "team_calls": 30,
+      "teams": 0,
+      "transaction_calls": 60,
+      "warm_ms": [
+        1.04409,
+        1.0891819999999999,
+        1.100185,
+        1.716712,
+        1.3187039999999999,
+        0.931203,
+        0.891828,
+        0.9296960000000001,
+        0.892511,
+        0.905579,
+        0.883058,
+        0.885286,
+        0.877244,
+        0.865896,
+        0.836015,
+        0.8354210000000001,
+        0.847171,
+        0.852414,
+        0.85214,
+        0.949441,
+        0.871453,
+        0.862513,
+        0.928371,
+        1.187142,
+        1.029286,
+        1.02558,
+        1.030104,
+        1.018689,
+        1.0159539999999998,
+        1.008311
+      ]
+    },
+    {
+      "authority_calls": 150,
+      "bounded": true,
+      "member_calls": 0,
+      "mode": "http",
+      "payload_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "queries": [
+        {
+          "calls": 30,
+          "execution_ms": 0.006576,
+          "query": "BEGIN",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.0068210000000000015,
+          "query": "COMMIT",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.22433099999999997,
+          "query": "SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.294332,
+          "query": "SELECT role FROM tournament_memberships\n         WHERE tournament_id = $1 AND user_id = $2\n         FOR SHARE",
+          "rows": 30
+        },
+        {
+          "calls": 60,
+          "execution_ms": 1.0396870000000002,
+          "query": "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,\n                u.player_id, s.expires_at\n         FROM user_sessions s\n         JOIN users u ON u.id = s.user_id\n         WHERE s.id = $1 AND s.revoked_at IS NULL AND s.expires_at > clock_timestamp()\n           AND s.credential_generation = u.credential_generation\n         FOR SHARE OF s, u",
+          "rows": 60
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.4895239999999999,
+          "query": "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,\n                u.player_id, s.expires_at\n         FROM user_sessions s\n         JOIN users u ON u.id = s.user_id\n         WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.expires_at > clock_timestamp()\n           AND s.credential_generation = u.credential_generation",
+          "rows": 30
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.256514,
+          "query": "SELECT tournament_id FROM rounds WHERE id = $1",
+          "rows": 30
+        }
+      ],
+      "repeats": 30,
+      "team_calls": 30,
+      "teams": 0,
+      "transaction_calls": 60,
+      "warm_ms": [
+        2.283007,
+        1.951641,
+        1.495052,
+        1.329485,
+        1.243327,
+        1.232004,
+        1.220297,
+        1.26567,
+        1.228485,
+        1.2280419999999999,
+        1.3147689999999999,
+        1.3401859999999999,
+        1.303648,
+        1.250665,
+        1.232375,
+        1.238241,
+        1.26044,
+        1.229293,
+        1.227975,
+        1.251144,
+        1.248201,
+        1.232618,
+        1.301532,
+        1.276458,
+        1.37789,
+        1.816509,
+        2.107898,
+        1.674754,
+        1.509444,
+        1.4912370000000001
+      ]
+    },
+    {
+      "authority_calls": 0,
+      "bounded": true,
+      "member_calls": 30,
+      "mode": "internal",
+      "payload_sha256": "000c263d9456b4cf2ce79f56a203c0186e1da5a4b5435301a47de6f6a74a6127",
+      "queries": [
+        {
+          "calls": 30,
+          "execution_ms": 0.004661,
+          "query": "BEGIN",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.006999999999999998,
+          "query": "COMMIT",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.320824,
+          "query": "SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id",
+          "rows": 30
+        },
+        {
+          "calls": 30,
+          "execution_ms": 1.796213,
+          "query": "SELECT tm.player_id, p.display_name, tm.display_order FROM team_memberships tm JOIN players p ON p.id = tm.player_id WHERE tm.team_id = $1 ORDER BY tm.display_order NULLS LAST, p.display_name, tm.player_id",
+          "rows": 240
+        }
+      ],
+      "repeats": 30,
+      "team_calls": 30,
+      "teams": 1,
+      "transaction_calls": 60,
+      "warm_ms": [
+        0.7197870000000001,
+        0.796594,
+        0.813171,
+        0.80826,
+        0.813099,
+        0.844021,
+        0.80493,
+        0.770774,
+        0.8305950000000001,
+        0.7101390000000001,
+        0.7037420000000001,
+        0.791613,
+        0.7163309999999999,
+        0.745785,
+        0.710007,
+        0.713625,
+        0.716251,
+        0.69787,
+        1.120529,
+        0.71107,
+        0.872613,
+        0.890768,
+        0.725514,
+        0.712933,
+        0.8686670000000001,
+        1.228266,
+        0.813395,
+        0.76166,
+        0.736023,
+        0.7289450000000001
+      ]
+    },
+    {
+      "authority_calls": 120,
+      "bounded": true,
+      "member_calls": 30,
+      "mode": "session",
+      "payload_sha256": "000c263d9456b4cf2ce79f56a203c0186e1da5a4b5435301a47de6f6a74a6127",
+      "queries": [
+        {
+          "calls": 30,
+          "execution_ms": 0.005188,
+          "query": "BEGIN",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.008229999999999998,
+          "query": "COMMIT",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.196856,
+          "query": "SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id",
+          "rows": 30
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.28250400000000003,
+          "query": "SELECT role FROM tournament_memberships\n         WHERE tournament_id = $1 AND user_id = $2\n         FOR SHARE",
+          "rows": 30
+        },
+        {
+          "calls": 60,
+          "execution_ms": 1.1131879999999998,
+          "query": "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,\n                u.player_id, s.expires_at\n         FROM user_sessions s\n         JOIN users u ON u.id = s.user_id\n         WHERE s.id = $1 AND s.revoked_at IS NULL AND s.expires_at > clock_timestamp()\n           AND s.credential_generation = u.credential_generation\n         FOR SHARE OF s, u",
+          "rows": 60
+        },
+        {
+          "calls": 30,
+          "execution_ms": 1.6927790000000005,
+          "query": "SELECT tm.player_id, p.display_name, tm.display_order FROM team_memberships tm JOIN players p ON p.id = tm.player_id WHERE tm.team_id = $1 ORDER BY tm.display_order NULLS LAST, p.display_name, tm.player_id",
+          "rows": 240
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.28202499999999997,
+          "query": "SELECT tournament_id FROM rounds WHERE id = $1",
+          "rows": 30
+        }
+      ],
+      "repeats": 30,
+      "team_calls": 30,
+      "teams": 1,
+      "transaction_calls": 60,
+      "warm_ms": [
+        1.310379,
+        1.484198,
+        1.385172,
+        1.2962150000000001,
+        1.736191,
+        1.186543,
+        1.150941,
+        1.165329,
+        1.13772,
+        1.1439679999999999,
+        1.1427779999999998,
+        1.106648,
+        1.150273,
+        1.088912,
+        1.1833010000000002,
+        1.102444,
+        1.089274,
+        1.1031369999999998,
+        1.294911,
+        2.398804,
+        1.5820319999999999,
+        1.366007,
+        1.424916,
+        1.28775,
+        1.641642,
+        1.62837,
+        1.519258,
+        1.291354,
+        1.555327,
+        1.2508890000000001
+      ]
+    },
+    {
+      "authority_calls": 150,
+      "bounded": true,
+      "member_calls": 30,
+      "mode": "http",
+      "payload_sha256": "000c263d9456b4cf2ce79f56a203c0186e1da5a4b5435301a47de6f6a74a6127",
+      "queries": [
+        {
+          "calls": 30,
+          "execution_ms": 0.006976,
+          "query": "BEGIN",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.016324,
+          "query": "COMMIT",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.22987500000000002,
+          "query": "SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id",
+          "rows": 30
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.31005499999999997,
+          "query": "SELECT role FROM tournament_memberships\n         WHERE tournament_id = $1 AND user_id = $2\n         FOR SHARE",
+          "rows": 30
+        },
+        {
+          "calls": 60,
+          "execution_ms": 1.08722,
+          "query": "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,\n                u.player_id, s.expires_at\n         FROM user_sessions s\n         JOIN users u ON u.id = s.user_id\n         WHERE s.id = $1 AND s.revoked_at IS NULL AND s.expires_at > clock_timestamp()\n           AND s.credential_generation = u.credential_generation\n         FOR SHARE OF s, u",
+          "rows": 60
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.5374210000000001,
+          "query": "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,\n                u.player_id, s.expires_at\n         FROM user_sessions s\n         JOIN users u ON u.id = s.user_id\n         WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.expires_at > clock_timestamp()\n           AND s.credential_generation = u.credential_generation",
+          "rows": 30
+        },
+        {
+          "calls": 30,
+          "execution_ms": 1.7590130000000002,
+          "query": "SELECT tm.player_id, p.display_name, tm.display_order FROM team_memberships tm JOIN players p ON p.id = tm.player_id WHERE tm.team_id = $1 ORDER BY tm.display_order NULLS LAST, p.display_name, tm.player_id",
+          "rows": 240
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.26771,
+          "query": "SELECT tournament_id FROM rounds WHERE id = $1",
+          "rows": 30
+        }
+      ],
+      "repeats": 30,
+      "team_calls": 30,
+      "teams": 1,
+      "transaction_calls": 60,
+      "warm_ms": [
+        1.8531419999999998,
+        1.9847229999999998,
+        2.17412,
+        2.750158,
+        3.095195,
+        1.847828,
+        1.667198,
+        1.6359700000000001,
+        1.6102720000000001,
+        1.6146859999999998,
+        1.598924,
+        1.675681,
+        1.674877,
+        1.572596,
+        1.5502479999999998,
+        1.5836489999999999,
+        1.583524,
+        1.6068689999999999,
+        1.58311,
+        1.553942,
+        1.6317199999999998,
+        1.692233,
+        2.4308419999999997,
+        2.086541,
+        2.740261,
+        2.1555910000000003,
+        1.853166,
+        1.843342,
+        1.824085,
+        1.925052
+      ]
+    },
+    {
+      "authority_calls": 0,
+      "bounded": false,
+      "member_calls": 360,
+      "mode": "internal",
+      "payload_sha256": "7c5a7ac6513f5054743e6ca5fabd640e9252924692745400b79fb35fa2ac34f5",
+      "queries": [
+        {
+          "calls": 30,
+          "execution_ms": 0.004397000000000001,
+          "query": "BEGIN",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.010229999999999998,
+          "query": "COMMIT",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.46043200000000006,
+          "query": "SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id",
+          "rows": 360
+        },
+        {
+          "calls": 360,
+          "execution_ms": 15.524852999999998,
+          "query": "SELECT tm.player_id, p.display_name, tm.display_order FROM team_memberships tm JOIN players p ON p.id = tm.player_id WHERE tm.team_id = $1 ORDER BY tm.display_order NULLS LAST, p.display_name, tm.player_id",
+          "rows": 2160
+        }
+      ],
+      "repeats": 30,
+      "team_calls": 30,
+      "teams": 12,
+      "transaction_calls": 60,
+      "warm_ms": [
+        3.547813,
+        4.117722,
+        4.240415,
+        3.963749,
+        4.0964089999999995,
+        3.887265,
+        3.866946,
+        3.993925,
+        3.847675,
+        3.573701,
+        3.779687,
+        3.3344859999999996,
+        3.9528749999999997,
+        4.290341,
+        4.333686,
+        3.745624,
+        3.890399,
+        3.749721,
+        4.118496,
+        4.442601,
+        4.16886,
+        3.477277,
+        3.9228240000000003,
+        4.331893,
+        4.2363360000000005,
+        4.283012,
+        4.553121,
+        4.151137,
+        4.070285,
+        4.039024
+      ]
+    },
+    {
+      "authority_calls": 120,
+      "bounded": false,
+      "member_calls": 360,
+      "mode": "session",
+      "payload_sha256": "7c5a7ac6513f5054743e6ca5fabd640e9252924692745400b79fb35fa2ac34f5",
+      "queries": [
+        {
+          "calls": 30,
+          "execution_ms": 0.007277999999999999,
+          "query": "BEGIN",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.012617999999999997,
+          "query": "COMMIT",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.562954,
+          "query": "SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id",
+          "rows": 360
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.383357,
+          "query": "SELECT role FROM tournament_memberships\n         WHERE tournament_id = $1 AND user_id = $2\n         FOR SHARE",
+          "rows": 30
+        },
+        {
+          "calls": 60,
+          "execution_ms": 1.4282100000000004,
+          "query": "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,\n                u.player_id, s.expires_at\n         FROM user_sessions s\n         JOIN users u ON u.id = s.user_id\n         WHERE s.id = $1 AND s.revoked_at IS NULL AND s.expires_at > clock_timestamp()\n           AND s.credential_generation = u.credential_generation\n         FOR SHARE OF s, u",
+          "rows": 60
+        },
+        {
+          "calls": 360,
+          "execution_ms": 17.513545000000004,
+          "query": "SELECT tm.player_id, p.display_name, tm.display_order FROM team_memberships tm JOIN players p ON p.id = tm.player_id WHERE tm.team_id = $1 ORDER BY tm.display_order NULLS LAST, p.display_name, tm.player_id",
+          "rows": 2160
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.378485,
+          "query": "SELECT tournament_id FROM rounds WHERE id = $1",
+          "rows": 30
+        }
+      ],
+      "repeats": 30,
+      "team_calls": 30,
+      "teams": 12,
+      "transaction_calls": 60,
+      "warm_ms": [
+        4.235817,
+        4.164328,
+        4.444134,
+        5.4302719999999995,
+        4.054456,
+        4.9496970000000005,
+        5.315107,
+        4.423582,
+        3.915241,
+        3.963009,
+        3.9627339999999998,
+        4.3941170000000005,
+        4.5604379999999995,
+        5.923997,
+        4.6327,
+        4.1514940000000005,
+        4.860937,
+        4.978565,
+        5.427259,
+        5.472396,
+        5.7334830000000006,
+        5.102786,
+        4.408729,
+        5.279926,
+        4.982529,
+        3.9650939999999997,
+        5.014916,
+        3.827015,
+        3.5162180000000003,
+        4.276707999999999
+      ]
+    },
+    {
+      "authority_calls": 150,
+      "bounded": false,
+      "member_calls": 360,
+      "mode": "http",
+      "payload_sha256": "7c5a7ac6513f5054743e6ca5fabd640e9252924692745400b79fb35fa2ac34f5",
+      "queries": [
+        {
+          "calls": 30,
+          "execution_ms": 0.020075000000000003,
+          "query": "BEGIN",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.014235,
+          "query": "COMMIT",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.5806759999999999,
+          "query": "SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id",
+          "rows": 360
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.384011,
+          "query": "SELECT role FROM tournament_memberships\n         WHERE tournament_id = $1 AND user_id = $2\n         FOR SHARE",
+          "rows": 30
+        },
+        {
+          "calls": 60,
+          "execution_ms": 1.416011,
+          "query": "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,\n                u.player_id, s.expires_at\n         FROM user_sessions s\n         JOIN users u ON u.id = s.user_id\n         WHERE s.id = $1 AND s.revoked_at IS NULL AND s.expires_at > clock_timestamp()\n           AND s.credential_generation = u.credential_generation\n         FOR SHARE OF s, u",
+          "rows": 60
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.6826300000000001,
+          "query": "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,\n                u.player_id, s.expires_at\n         FROM user_sessions s\n         JOIN users u ON u.id = s.user_id\n         WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.expires_at > clock_timestamp()\n           AND s.credential_generation = u.credential_generation",
+          "rows": 30
+        },
+        {
+          "calls": 360,
+          "execution_ms": 16.464387000000006,
+          "query": "SELECT tm.player_id, p.display_name, tm.display_order FROM team_memberships tm JOIN players p ON p.id = tm.player_id WHERE tm.team_id = $1 ORDER BY tm.display_order NULLS LAST, p.display_name, tm.player_id",
+          "rows": 2160
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.3924230000000001,
+          "query": "SELECT tournament_id FROM rounds WHERE id = $1",
+          "rows": 30
+        }
+      ],
+      "repeats": 30,
+      "team_calls": 30,
+      "teams": 12,
+      "transaction_calls": 60,
+      "warm_ms": [
+        5.94947,
+        5.6944539999999995,
+        6.761752,
+        6.417651,
+        6.0881870000000005,
+        6.3338,
+        6.178257,
+        5.473642,
+        5.860698999999999,
+        6.2557,
+        6.686501,
+        6.738173,
+        5.7241159999999995,
+        6.000645,
+        5.39523,
+        4.968384,
+        6.090019000000001,
+        5.384031,
+        5.1786460000000005,
+        6.137358,
+        5.424390000000001,
+        5.236178,
+        5.63267,
+        5.828255,
+        5.238119999999999,
+        6.114501,
+        4.466519000000001,
+        4.127783,
+        4.686636999999999,
+        4.1992899999999995
+      ]
+    },
+    {
+      "authority_calls": 0,
+      "bounded": false,
+      "member_calls": 3000,
+      "mode": "internal",
+      "payload_sha256": "3233961f41e5c6fffb65e5c64f20a7e9d18ccc7b258f9bc8990e96faed13d099",
+      "queries": [
+        {
+          "calls": 30,
+          "execution_ms": 0.012704,
+          "query": "BEGIN",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.029839,
+          "query": "COMMIT",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 3.3302859999999996,
+          "query": "SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id",
+          "rows": 3000
+        },
+        {
+          "calls": 3000,
+          "execution_ms": 132.33131200000003,
+          "query": "SELECT tm.player_id, p.display_name, tm.display_order FROM team_memberships tm JOIN players p ON p.id = tm.player_id WHERE tm.team_id = $1 ORDER BY tm.display_order NULLS LAST, p.display_name, tm.player_id",
+          "rows": 18000
+        }
+      ],
+      "repeats": 30,
+      "team_calls": 30,
+      "teams": 100,
+      "transaction_calls": 60,
+      "warm_ms": [
+        21.297941,
+        21.744299,
+        21.765351,
+        20.425720000000002,
+        20.058557,
+        20.625137000000002,
+        20.459146,
+        19.427806,
+        19.910702999999998,
+        19.376231,
+        21.819617,
+        21.537770000000002,
+        23.865259,
+        36.955269,
+        24.155269,
+        24.401042,
+        24.400914,
+        24.00351,
+        23.382614999999998,
+        24.062009,
+        23.419002000000003,
+        25.385517999999998,
+        22.290956,
+        21.821174,
+        20.256338,
+        19.247701,
+        20.333845,
+        20.873659,
+        21.331409999999998,
+        22.639775
+      ]
+    },
+    {
+      "authority_calls": 120,
+      "bounded": false,
+      "member_calls": 3000,
+      "mode": "session",
+      "payload_sha256": "3233961f41e5c6fffb65e5c64f20a7e9d18ccc7b258f9bc8990e96faed13d099",
+      "queries": [
+        {
+          "calls": 30,
+          "execution_ms": 0.013873000000000005,
+          "query": "BEGIN",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.034199999999999994,
+          "query": "COMMIT",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 3.7444070000000003,
+          "query": "SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id",
+          "rows": 3000
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.42700199999999994,
+          "query": "SELECT role FROM tournament_memberships\n         WHERE tournament_id = $1 AND user_id = $2\n         FOR SHARE",
+          "rows": 30
+        },
+        {
+          "calls": 60,
+          "execution_ms": 1.9964899999999999,
+          "query": "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,\n                u.player_id, s.expires_at\n         FROM user_sessions s\n         JOIN users u ON u.id = s.user_id\n         WHERE s.id = $1 AND s.revoked_at IS NULL AND s.expires_at > clock_timestamp()\n           AND s.credential_generation = u.credential_generation\n         FOR SHARE OF s, u",
+          "rows": 60
+        },
+        {
+          "calls": 3000,
+          "execution_ms": 140.59038599999994,
+          "query": "SELECT tm.player_id, p.display_name, tm.display_order FROM team_memberships tm JOIN players p ON p.id = tm.player_id WHERE tm.team_id = $1 ORDER BY tm.display_order NULLS LAST, p.display_name, tm.player_id",
+          "rows": 18000
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.426261,
+          "query": "SELECT tournament_id FROM rounds WHERE id = $1",
+          "rows": 30
+        }
+      ],
+      "repeats": 30,
+      "team_calls": 30,
+      "teams": 100,
+      "transaction_calls": 60,
+      "warm_ms": [
+        21.143758,
+        20.540702,
+        27.935295999999997,
+        32.894328,
+        24.554887,
+        25.083161,
+        23.844193999999998,
+        25.470765999999998,
+        23.674026,
+        22.333253,
+        27.102715999999997,
+        24.646241999999997,
+        24.635879,
+        25.224667999999998,
+        24.208090000000002,
+        25.757572,
+        31.290394,
+        30.452798,
+        28.646577,
+        33.502188000000004,
+        29.920368999999997,
+        24.304637,
+        30.356517,
+        26.051033,
+        27.556760999999998,
+        25.240261999999998,
+        26.507831999999997,
+        29.073339,
+        22.669650999999998,
+        24.201336
+      ]
+    },
+    {
+      "authority_calls": 150,
+      "bounded": false,
+      "member_calls": 3000,
+      "mode": "http",
+      "payload_sha256": "3233961f41e5c6fffb65e5c64f20a7e9d18ccc7b258f9bc8990e96faed13d099",
+      "queries": [
+        {
+          "calls": 30,
+          "execution_ms": 0.016443999999999997,
+          "query": "BEGIN",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.03357,
+          "query": "COMMIT",
+          "rows": 0
+        },
+        {
+          "calls": 30,
+          "execution_ms": 3.5167859999999997,
+          "query": "SELECT id, round_id, tournament_id, name, starting_hole, tee_time, created_at, updated_at FROM teams WHERE round_id = $1 ORDER BY name, id",
+          "rows": 3000
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.41650999999999994,
+          "query": "SELECT role FROM tournament_memberships\n         WHERE tournament_id = $1 AND user_id = $2\n         FOR SHARE",
+          "rows": 30
+        },
+        {
+          "calls": 60,
+          "execution_ms": 1.7569460000000003,
+          "query": "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,\n                u.player_id, s.expires_at\n         FROM user_sessions s\n         JOIN users u ON u.id = s.user_id\n         WHERE s.id = $1 AND s.revoked_at IS NULL AND s.expires_at > clock_timestamp()\n           AND s.credential_generation = u.credential_generation\n         FOR SHARE OF s, u",
+          "rows": 60
+        },
+        {
+          "calls": 30,
+          "execution_ms": 1.04573,
+          "query": "SELECT s.id AS session_id, u.id AS user_id, u.username, u.display_name, u.role,\n                u.player_id, s.expires_at\n         FROM user_sessions s\n         JOIN users u ON u.id = s.user_id\n         WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.expires_at > clock_timestamp()\n           AND s.credential_generation = u.credential_generation",
+          "rows": 30
+        },
+        {
+          "calls": 3000,
+          "execution_ms": 135.84050299999987,
+          "query": "SELECT tm.player_id, p.display_name, tm.display_order FROM team_memberships tm JOIN players p ON p.id = tm.player_id WHERE tm.team_id = $1 ORDER BY tm.display_order NULLS LAST, p.display_name, tm.player_id",
+          "rows": 18000
+        },
+        {
+          "calls": 30,
+          "execution_ms": 0.36804100000000006,
+          "query": "SELECT tournament_id FROM rounds WHERE id = $1",
+          "rows": 30
+        }
+      ],
+      "repeats": 30,
+      "team_calls": 30,
+      "teams": 100,
+      "transaction_calls": 60,
+      "warm_ms": [
+        31.245894,
+        34.7151,
+        32.753356,
+        33.881224,
+        29.97892,
+        29.613702,
+        27.555837,
+        26.917101,
+        33.133294,
+        32.504611000000004,
+        31.350253000000002,
+        31.351726000000003,
+        30.84502,
+        37.850449000000005,
+        33.458869,
+        30.748313,
+        32.366231,
+        29.858076,
+        30.726922000000002,
+        31.240429,
+        31.145834,
+        29.353435,
+        28.930778,
+        29.919352,
+        31.600201000000002,
+        32.820226,
+        33.194493,
+        32.816558,
+        33.45636,
+        31.897403999999998
+      ]
+    }
+  ],
+  "settings": [
+    {
+      "name": "jit",
+      "setting": "on"
+    },
+    {
+      "name": "pg_stat_statements.track",
+      "setting": "top"
+    },
+    {
+      "name": "pg_stat_statements.track_planning",
+      "setting": "off"
+    },
+    {
+      "name": "shared_buffers",
+      "setting": "16384"
+    },
+    {
+      "name": "work_mem",
+      "setting": "4096"
+    }
+  ]
+}
