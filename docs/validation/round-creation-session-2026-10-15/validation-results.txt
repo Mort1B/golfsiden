@@ -1,0 +1,119 @@
+A1p validation evidence
+Base revision: e676e55992144ec1accd48e5ca1955d57f302687
+PostgreSQL: 17.10, isolated loopback-only rootless Podman fixture
+
+cargo test --locked --workspace --all-targets
+Exit status: 0
+Totals: passed=264, failed=0, ignored=1
+
+cargo test --locked --workspace --all-targets --features database-tests -- --test-threads=2
+Exit status: 0
+Totals: passed=948, failed=0, ignored=5
+Per-target results:
+unittests src/lib.rs: test result: ok. 270 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 33.48s
+unittests src/main.rs: test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+unittests src/bin/migrate.rs: test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+unittests src/bin/password-recovery.rs: test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+unittests src/bin/seed.rs: test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+tests/auth.rs: test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.94s
+tests/course_presets.rs: test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.22s
+tests/course_provider.rs: test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.65s
+tests/course_read_sessions.rs: test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 40.79s
+tests/course_revisions.rs: test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.82s
+tests/database_rules.rs: test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.45s
+tests/embargo_read_projections.rs: test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.74s
+tests/fantasy_formats.rs: test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.15s
+tests/fantasy_membership.rs: test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.70s
+tests/fantasy_races.rs: test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.22s
+tests/fantasy_recovery.rs: test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.67s
+tests/fantasy_result_contract.rs: test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.73s
+tests/fantasy_result_formats.rs: test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.20s
+tests/fantasy_result_matches.rs: test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.73s
+tests/fantasy_result_teams.rs: test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.30s
+tests/fantasy_results.rs: test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.41s
+tests/fantasy_results_support.rs: test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+tests/fantasy_runtime.rs: test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.99s
+tests/fantasy_scoring.rs: test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.96s
+tests/fantasy_selections.rs: test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.31s
+tests/fantasy_sources.rs: test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.82s
+tests/final_round_visibility.rs: test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.05s
+tests/final_visibility_read_sessions.rs: test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 19.93s
+tests/four_ball.rs: test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 15.71s
+tests/four_ball_read_sessions.rs: test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 45.10s
+tests/foursomes_migration.rs: test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s
+tests/invitation_concurrency.rs: test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.82s
+tests/invitation_read_sessions.rs: test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 29.25s
+tests/invitation_redemption_guards.rs: test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.39s
+tests/invitation_redemption_migration.rs: test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+tests/invitation_states.rs: test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.20s
+tests/invitations.rs: test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.89s
+tests/leaderboard_sessions.rs: test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 25.66s
+tests/leaderboards.rs: test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 14.24s
+tests/legacy_routes_retired.rs: test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.02s
+tests/lifecycle_expiry.rs: test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 68.80s
+tests/match_authorization_measurement.rs: test result: ok. 0 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.00s
+tests/match_card_read_sessions.rs: test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 42.79s
+tests/match_summary_read_sessions.rs: test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 43.22s
+tests/numeric_read_sessions.rs: test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 58.37s
+tests/onboarding.rs: test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.73s
+tests/pairing_team_sessions.rs: test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 41.51s
+tests/password_recovery.rs: test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 19.49s
+tests/player_claims.rs: test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.56s
+tests/player_claims_lifecycle.rs: test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.40s
+tests/private_scorecard_live_reads.rs: test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.08s
+tests/private_workspace_reads.rs: test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.54s
+tests/profile.rs: test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.43s
+tests/profile_concurrency.rs: test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.21s
+tests/readiness_sessions.rs: test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 52.20s
+tests/release_readiness.rs: test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.93s
+tests/result_sharing.rs: test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 26.81s
+tests/roster_round_sessions.rs: test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 51.11s
+tests/round_awards.rs: test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.30s
+tests/round_completion.rs: test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.29s
+tests/round_completion_concurrency.rs: test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.37s
+tests/round_completion_migration.rs: test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+tests/round_configuration.rs: test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.06s
+tests/round_creation_authorization.rs: test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 14.52s
+tests/round_flights_migration.rs: test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.61s
+tests/round_lifecycle.rs: test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.97s
+tests/round_pairings.rs: test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.59s
+tests/score_authorization.rs: test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.23s
+tests/scorecards.rs: test result: ok. 37 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 41.69s
+tests/seed.rs: test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.17s
+tests/singles_match.rs: test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 54.17s
+tests/stableford.rs: test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 22.62s
+tests/stableford_read_sessions.rs: test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 65.61s
+tests/team_loading.rs: test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 2.36s
+tests/tournament_archive.rs: test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 15.23s
+tests/tournament_authorization.rs: test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.42s
+tests/tournament_completion.rs: test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 21.29s
+tests/tournament_counted_rounds.rs: test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.97s
+tests/tournament_creation.rs: test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.26s
+tests/tournament_details.rs: test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.95s
+tests/tournament_details_contention.rs: test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.02s
+tests/tournament_handicap_corrections.rs: test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 18.75s
+tests/tournament_invitation_migration.rs: test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+tests/tournament_mandatory_round.rs: test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.05s
+tests/tournament_membership_migration.rs: test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+tests/tournament_read_sessions.rs: test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 58.24s
+tests/tournament_scope_isolation.rs: test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.45s
+tests/tournament_start.rs: test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.24s
+tests/tournament_start_migration.rs: test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.41s
+tests/transaction_cancellation.rs: test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.88s
+tests/username_migration.rs: test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.97s
+unittests examples/tls_compatibility.rs: test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+Existing ignored probes:
+test repositories::fantasy::results::tests::projection_benchmark ... ignored, manual projection-only timing; run release with --ignored --nocapture
+test hundred_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required
+test twelve_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required
+test twenty_four_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required
+test team_loading::measurement::counts_and_complete_local_read_cost ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required
+
+cargo fmt --all -- --check: exit status 0
+cargo clippy --locked --workspace --all-targets --all-features -- -D warnings: exit status 0
+Clippy retains three existing vendored sqlx-postgres warnings.
+Initial restricted backend run: eight existing local-listener binds denied (PermissionDenied); the complete socket-enabled rerun above passed.
+
+cargo run --locked -p golf-api --bin migrate: exit status 0; Database migrations are current.
+cargo run --locked -p golf-api --bin seed: exit status 0; eight players and five rounds seeded.
+Migration check after seed: count=39, max(version)=39.

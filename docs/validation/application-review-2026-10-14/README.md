@@ -40,9 +40,12 @@ linked repairs. Other findings keep their separately linked acceptance, while
 the source-only [legacy-write inventory](../legacy-write-inventory-2026-10-15/README.md)
 now identifies three P2 final-expiry gaps in direct round creation, pairing
 replacement and course configuration. Open/complete/lock retain A2's final check;
-granular team writes are retired. That inventory proposes a separate repair and
-does not claim new runtime reproduction. The assessment below describes the
-originally reviewed revision.
+granular team writes are retired. The subsequent
+[round-creation repair](../round-creation-session-2026-10-15/README.md) closes W1
+with reproduced membership-wait/late-insert expiry and rollback/control coverage.
+Pairing replacement and course configuration remain separate P2 repairs. The
+source inventory itself claims no runtime reproduction. The assessment below
+describes the originally reviewed revision.
 
 The [Rustls dependency repair](../rustls-update-2026-10-15/README.md) follows A4,
 using fresh advisory evidence and preserving the SQLx cancellation override.

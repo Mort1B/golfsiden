@@ -1,0 +1,29 @@
+running 2 tests
+test expiry::expiry_after_round_and_child_insert_rolls_back_creation ... FAILED
+test expiry::expiry_during_final_membership_wait_rolls_back_creation ... FAILED
+
+failures:
+
+---- expiry::expiry_after_round_and_child_insert_rolls_back_creation stdout ----
+
+thread 'expiry::expiry_after_round_and_child_insert_rolls_back_creation' (933373) panicked at backend/tests/round_creation_authorization/expiry.rs:181:9:
+assertion `left == right` failed: expiry=true, late=true
+  left: 201
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- expiry::expiry_during_final_membership_wait_rolls_back_creation stdout ----
+
+thread 'expiry::expiry_during_final_membership_wait_rolls_back_creation' (933374) panicked at backend/tests/round_creation_authorization/expiry.rs:181:9:
+assertion `left == right` failed: expiry=true, late=false
+  left: 201
+ right: 401
+
+
+failures:
+    expiry::expiry_after_round_and_child_insert_rolls_back_creation
+    expiry::expiry_during_final_membership_wait_rolls_back_creation
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 4 filtered out; finished in 6.16s
+
+error: test failed, to rerun pass `-p golf-api --test round_creation_authorization`

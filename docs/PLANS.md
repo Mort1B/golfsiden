@@ -5,43 +5,43 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A1o assessment and validation are in the
-[legacy-write report](validation/legacy-write-inventory-2026-10-15/README.md).
+None. A1p acceptance is in the
+[round-creation report](validation/round-creation-session-2026-10-15/README.md).
 
 ## Next candidate — requires approval
 
-### A1p — P2 direct round-creation final session expiry
+### A1q — P2 pairing-replacement final session expiry
 
-The [legacy-write inventory W1](validation/legacy-write-inventory-2026-10-15/README.md#w1--direct-round-creation-incomplete-p2)
-supports this candidate. It is not implemented or started by the assessment.
+The [legacy-write inventory W2](validation/legacy-write-inventory-2026-10-15/README.md#w2--aggregate-pairing-replacement-incomplete-p2)
+supports this separate candidate. It is not started by A1p.
 
-- Goal: reject direct round creation when its initially authorized session expires
-  during membership or later INSERT work before the final commit call.
-- Scope: only `POST /api/tournaments/{tournament_id}/rounds`,
-  `rounds::create_authorized`, focused PostgreSQL/API regression support and
-  affected documentation. Exclude pairing/course writers, preflight redesign,
-  retained helper cleanup, UI, dependencies/schema, provider and hosted work.
-- Behavior: retain existing session/user and exact-admin membership locks, then
-  recheck the same session with database wall-clock time after INSERT/RETURNING
-  and immediately before commit. Expiry returns the existing unauthenticated
-  error, rolls back the new round and conditional child rows, and emits no event.
-  Preserve CSRF, preflight/body/semantic validation order, parent/domain guards,
-  successful response and one-event behavior. Add no mutation retry; the check
-  does not freeze time inside COMMIT/deferred constraints or network delivery.
-- Validation: first reproduce membership-wait and late INSERT expiry against the
-  current implementation using deterministic PostgreSQL/API gates. Assert 401,
-  unchanged persisted state and no event, plus valid-session controls creating
-  one round/event. Exercise pending child-row rollback where applicable. Run
-  focused authorization regressions, backend formatting/tests/strict Clippy,
-  the full PostgreSQL-feature/migrate/seed ladder, independent read-only
-  authorization review and documentation/diff checks. The caller inventory finds
-  no production frontend consumer of this direct POST; UI creation uses excluded
-  aggregate APIs. No frontend/browser ladder is selected for this API-only step.
-- Invariants: preserve round ownership/configuration, parent lifecycle, roster,
-  historical handicaps, locked-round protections and atomic child effects.
+- Goal: reject aggregate pairing replacement if its initially authorized session
+  expires during membership or dependent validation/write/response-loading work.
+- Scope: only `PUT /api/rounds/{round_id}/pairings`, its final replacement
+  transaction, focused PostgreSQL/API regression support and affected docs.
+  Exclude course attachment, preflight redesign, retained team helpers, frontend
+  implementation, scoring, schema/dependencies, provider and hosted work.
+- Behavior: preserve stored-round, session/user and exact-admin membership locks;
+  recheck the same session with database wall-clock time after the updated
+  response model is loaded and immediately before commit. Expiry uses the
+  existing private/no-store 401, rolls back groups/memberships/timestamps and
+  emits no event. Preserve CSRF, draft/version checks, validation order, roster
+  identity/schedule/order rules, successful response and one post-commit event.
+  Add no mutation retry. COMMIT/deferred-constraint/delivery time remains outside
+  the final-check guarantee.
+- Validation: first reproduce expiry during a final-transaction membership wait
+  and after pending roster writes or late response loading, with observable
+  deterministic PostgreSQL/API gates. Assert 401, full stored-state rollback and
+  no event, plus valid controls preserving one replacement/event. Run focused
+  pairing/authorization regressions, backend formatting/tests/strict Clippy,
+  full PostgreSQL-feature/migrate/seed validation and independent read-only
+  authorization review. Validate the existing pairing editor at mobile and
+  desktop widths, including loading/error, empty/populated and long-content
+  states; keep its current mutation/error behavior. Check docs and scoped diff.
+- Invariants: preserve one team per player/round, stored-parent authority, draft
+  pairing protection, durable historical score-owner references and atomicity.
 - Stop: publish this single validated repair and a concise next candidate; do
-  not begin W2/W3, provider-preflight, helper, driver, test-maintenance or
-  performance work.
+  not begin W3, preflight/provider, helper, driver or optimization work.
 
 ## Later queue
 
@@ -53,9 +53,11 @@ Select one bounded step at a time; none is implemented by this plan.
 
 The selected private-read findings have linked acceptance. The separate
 [legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md)
-identifies three source-supported P2 expiry gaps. W1 is the sole next candidate
-above. W2 (pairing replacement) and W3 (course configuration) need subsequent
-separate bounded repairs; no runtime race was reproduced by the assessment.
+preserves the original three source-supported P2 expiry gaps. The linked
+round-creation repair closes W1 with reproduced expiry and rollback evidence.
+W2 (pairing replacement) is the sole next candidate above; W3 (course
+configuration) requires a later separate step. The original assessment itself
+reproduced no runtime race.
 Retired granular team writes receive no reachable-route finding. Provisional
 user-only preflight/provider-work observations remain separate and unrated.
 

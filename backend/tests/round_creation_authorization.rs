@@ -1,5 +1,8 @@
 #![cfg(feature = "database-tests")]
 
+#[path = "round_creation_authorization/expiry.rs"]
+mod expiry;
+
 use std::{
     convert::Infallible,
     sync::{

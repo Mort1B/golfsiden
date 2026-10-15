@@ -1,5 +1,11 @@
 # A1o — legacy team/round write authority inventory
 
+Follow-up: [A1p round-creation repair](../round-creation-session-2026-10-15/README.md)
+repairs W1 with reproduced membership-wait and late-insert expiry, full rollback
+and valid-session controls. W2 and W3 remain separate P2 repairs. Classifications,
+counts, source anchors and the manifest below preserve the original A1o source
+snapshot; the assessment itself did not reproduce a runtime race.
+
 Reviewed source revision: `5b79760247b221232fc64653a061be363de17866`.
 Date: 2026-10-15. This is a documentation-only source assessment. No application,
 test, schema or dependency source changed, no request was sent and no new runtime

@@ -6,6 +6,7 @@ use uuid::Uuid;
 use crate::{
     domain::models::{Round, ScoringFormat},
     repositories::{
+        auth,
         session_read::{self, SessionReadError},
         tournament_authorization::{self, AuthorizationError},
     },
@@ -166,6 +167,9 @@ pub async fn create_authorized(
     .bind(input.scoring_format)
     .fetch_one(&mut *transaction)
     .await?;
+    auth::lock_active_session(&mut transaction, session_id)
+        .await?
+        .ok_or(AuthorizationError::Unauthenticated)?;
     transaction.commit().await?;
     Ok(round)
 }

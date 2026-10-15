@@ -1,41 +1,40 @@
-# Latest iteration — legacy write authority assessment
+# Latest iteration — round-creation session expiry
 
-A1o inventories retained team/round write authority at source revision
-`5b79760247b221232fc64653a061be363de17866`. This step changes documentation only.
-The [report and caller manifest](validation/legacy-write-inventory-2026-10-15/README.md)
-cover six reachable round mutations, three retired team paths, ten retained
-non-HTTP helpers and three provisional preflights.
+A1p repairs direct `POST /api/tournaments/{tournament_id}/rounds`, W1 in the
+[legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md).
+After INSERT/RETURNING and immediate triggers, the repository rechecks the same
+session with database wall-clock time immediately before commit. It retains the
+existing session/user and exact-admin membership locks and error mapping.
 
-Three source-supported P2 findings remain: direct round creation, aggregate
-pairing replacement and course configuration check the actual session and exact
-admin membership at transaction entry, but lack a final wall-clock expiry check
-after dependent work. For example, a session can be valid at its locked query,
-expire while the membership query waits, then proceed to the INSERT without
-another expiry check. No new runtime race was reproduced in this assessment.
+An initially active session could previously expire during the membership wait
+or insert work, then still create a round. Both new controlled API tests
+reproduced `201` instead of `401` against unchanged production code. They now
+return `401 unauthenticated` / `no-store`, roll back the complete round and
+conditional Fantasy window, preserve parent/game/overall-guard facts and publish
+no event. The late test verifies those pending round/child rows inside its
+isolated AFTER INSERT trigger before waiting.
 
-Session/user/membership locks serialize later revocation, credential and role
-changes; natural expiry needs no row update. Database guards continue to enforce
-draft state, roster scope, parent configuration and immutable course revisions.
-Open, complete and lock
-already recheck the session after all inner work through their A2 wrappers. Even
-those final checks do not freeze time during COMMIT or network delivery.
+Fresh valid-session controls traverse the same gates, create exactly one draft
+round and child, return `201` and publish one matching event. All six focused
+round-creation tests pass, including the four retained admission/preflight/
+authorization/commit cases. No mutation retry is added, and the final check does
+not freeze time inside COMMIT, deferred constraints or network delivery.
 
-The granular team-write routes are retired; their six retained helpers have no
-backend source or test callers. They receive no HTTP vulnerability rating.
-Pairing/configuration preflights use only the extracted user ID, but their final
-write transactions independently require the actual session. Conditional
-provider work before that final check is recorded as a limitation, without
-claiming a successful provider request from the currently unusable catalog.
+Backend formatting, 264 all-target tests and strict Clippy pass. Eight existing
+provider-unit tests first hit the sandbox's loopback-bind restriction; the full
+rerun with socket permission passed without an external provider call.
+Independent read-only authorization/test review found no actionable findings.
+The full PostgreSQL-feature ladder passes 948 tests with zero failures and five
+existing manual probes ignored, including a repeat of all six round-creation
+cases. Migrate and seed pass with all 39 migrations. The owned local PostgreSQL
+container and private environment files were removed. Independent documentation/
+next-plan review and source-size, link, anchor and diff checks also pass. The
+[acceptance report](validation/round-creation-session-2026-10-15/README.md)
+records baseline failures, focused/full results, commands and limits.
 
-Source/caller reconciliation, manifest counts, local links, source anchors and
-diff checks are the applicable validation. Existing tests were inspected, not
-rerun. No build, database, migration, provider, browser or hosted action was
-needed; prior acceptance runs remain historical evidence. Independent read-only
-review confirmed the classifications, severity and bounded next candidate with
-no actionable findings. Static route/manifest, source-anchor, link, scope and
-diff checks pass.
-
-The [plan](PLANS.md) proposes W1 only as the next bounded repair: reproduce late
-creation expiry, then add a final check with complete rollback and no event.
-Pairing/course repairs, helper cleanup, provider changes and performance work
-remain separate. No implementation began in this assessment.
+No production UI consumer calls this direct POST; creation screens use excluded
+aggregate APIs. No frontend, schema, provider or dependency change is included.
+Pairing replacement and course configuration remain separate P2 repairs, as do
+provisional preflight observations and retained helper cleanup. No adjacent
+implementation began. The [plan](PLANS.md) closes A1p and proposes pairing
+replacement alone as the next bounded repair.

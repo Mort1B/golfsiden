@@ -1,0 +1,9 @@
+running 6 tests
+test authentication_and_csrf_precede_every_body_error ... ok
+test create_rechecks_session_and_membership_after_successful_preflight ... ok
+test exact_admin_create_commits_once_then_publishes_one_matching_event ... ok
+test exact_admin_preflight_precedes_transport_schema_and_semantic_validation ... ok
+test expiry::expiry_after_round_and_child_insert_rolls_back_creation ... ok
+test expiry::expiry_during_final_membership_wait_rolls_back_creation ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.99s

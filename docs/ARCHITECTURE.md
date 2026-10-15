@@ -202,16 +202,25 @@ See the [checksum acceptance report](validation/restore-checksum-2026-10-15/READ
   the first-opening tournament handicap lock marker. Rejected requests publish
   no SSE; successful commits retain one round invalidation. No mutation retry is
   added, and the final check does not freeze time during COMMIT.
-- Direct round creation, aggregate pairing replacement and course attachment
-  retain the actual session/user and exact-admin membership locks in their write
-  transactions, but currently have no final wall-clock expiry check after their
-  dependent SQL/assembly. Revocation and membership writers serialize on those
+- Authorized direct round creation retains its session/user and exact-admin
+  membership locks, then rechecks the same active session after INSERT/RETURNING
+  and immediate triggers, immediately before commit. Natural expiry during
+  membership or insert waits returns unauthenticated and rolls back the round
+  and any conditional Fantasy window, without notification. Valid creation
+  retains its 201 response and one post-commit round event. No mutation retry is
+  added, and time during COMMIT/deferred constraints is outside the check. See
+  [round-creation acceptance](validation/round-creation-session-2026-10-15/README.md).
+- Aggregate pairing replacement and course attachment retain the actual
+  session/user and exact-admin membership locks in their write transactions,
+  but currently have no final wall-clock expiry check after dependent
+  SQL/assembly. Revocation and membership writers serialize on those
   locks; natural expiry remains unchecked after the initial session query.
   Draft/roster/course database guards enforce domain facts, not this missing
   session boundary. Granular team writes are retired and their retained helpers
   have no callers. See the source-only
   [legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md)
-  for the three P2 findings, exact route/caller scope and separate repair plan.
+  for the original three P2 findings, W1's linked repair, exact route/caller scope
+  and the two remaining separate repairs.
 - Tournament start is a separate exact-admin lifecycle boundary. Its transaction
   locks the stored round set deterministically before reauthorizing the session
   and exact tournament membership, locking the tournament, and share-locking
