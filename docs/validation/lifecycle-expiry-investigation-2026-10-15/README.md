@@ -13,6 +13,11 @@ slots for confirmed launch blockers. The remaining path prioritizes deployable
 images, production integration, essential user flows and recovery. Optional work
 is deferred; no deployment is performed by this step.
 
+Follow-up: [DEPLOY-2](../production-images-2026-10-15/README.md) now closes the
+current-source image-build/packaging gate on rootless Podman, with exact native
+Docker access limits. Production integration and recovery remain open. The
+inventory below retains this investigation's earlier snapshot.
+
 ## Retained failure and fresh evidence
 
 Baseline: `351f63667bee48aeb8abdb9b970b5975863f94e0`. The preceding

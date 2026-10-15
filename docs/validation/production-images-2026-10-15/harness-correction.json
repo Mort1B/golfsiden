@@ -1,0 +1,9 @@
+{
+  "initial_failure": "probe required exit 1 for the missing shell variable guard",
+  "actual_guard_exit": 2,
+  "rejection_reason_still_required": true,
+  "helper_renamed_to_avoid_stdlib_inspect_shadowing": true,
+  "owned_shadow_bytecode_removed": true,
+  "application_image_change": false,
+  "build_diagnostic_key_renamed_values_unchanged": true
+}

@@ -1,42 +1,42 @@
-# Latest iteration — bounded diagnosis and Sunday deployment path
+# Latest iteration — production images and deployment contract
 
-A1z investigated the retained default-concurrency failure in the unchanged
-match-lifecycle late-expiry case. Two default lifecycle-module runs pass all six
-cases, the exact match case passes alone, and the two-thread module control
-passes all six. No panic, early-response error, gate timeout or rollback failure
-was observed. Source fingerprints and exact counts/target execution match; the
-owned PostgreSQL and private temporary files are removed.
+DEPLOY-2 builds all three unchanged production Dockerfiles from immutable source
+b73d13e and one tracked-only context. PostgreSQL, API and web images succeed on
+rootless Podman/amd64. The API compiles on the actual Rust 1.88 image toolchain;
+frontend builds use Node 22.23.2/npm 10.9.8. No source, compiler, dependency,
+Dockerfile, Compose or schema repair was needed.
 
-Independent source review found no actionable match-specific defect. The test's
-late trigger follows real snapshot/status work, rejected expiry must roll back
-all preserved state without SSE, and valid controls traverse the same gate and
-commit exactly one event. The original full-run receipt retained no panic/action
-or timing details. Its cause remains unknown, and the unchanged helper supplies
-no new gate/deadline timestamps. These successes bound non-reproduction; they do
-not turn the earlier failed full default ladder into a pass. No speculative fix,
-artificial delay, timeout increase, retry or ignored test was introduced.
+Eleven offline checks of the real Compose file verify production settings,
+private database/API exposure, owner/runtime configuration and all ten required
+variable failures. Twenty-three real-image preflights pass with network disabled,
+read-only filesystems and no image volumes. API UID10001, required binaries and
+dynamic libraries, no seed/source, 65 built web assets and actual startup guards
+are checked. Caddy config adaptation preserves the proxy identity headers and
+negative flush interval; it does not establish live HTTP or SSE behavior.
 
-The user confirmed one host with the supplied Docker Compose setup and asked for
-production-ish use by Sunday 18 October within 5–8 iterations. The queue now has
-a six-iteration target including this one, with two contingency slots for
-confirmed launch blockers. Next are current production image/configuration
-acceptance, integrated Caddy/production-mode/runtime-role rehearsal, critical
-two-account user flows, actual current-schema recovery, then freeze and a clear
-readiness verdict. New features, speculative optimization and broad polish are
-deferred. Test-maintenance work will not automatically consume further iterations
-without actionable evidence or a required validation blocker.
+The preflight harness needed one correction: its initial name shadowed Python's
+standard inspect module, and its missing-variable shell assertion expected exit
+1 while the shell returned 2. The renamed helper requires a nonzero 1/2 exit plus
+the exact denial reason. The complete corrected probe sequence and final receipt
+identity/source/cleanup audit pass. No image or product defect was inferred.
 
-The deployment review established evidence gaps, not new P0–P2 product defects:
-current Docker image builds (including the image's Rust 1.88 versus recent host
-Rust 1.99 acceptance), production proxy/runtime-grant integration and current
-application restore still need direct acceptance. Actual host/DNS/TLS, secrets,
-storage, off-host backups and playing-phone checks remain operator-owned.
+This workspace cannot access its local Docker API socket; noninteractive sudo
+requires a password. No socket, group or daemon change was made. Podman image
+acceptance and offline Docker Compose validation remain distinct from native
+Docker Engine execution. Recorded cached base IDs were used, not claims about
+latest registry tags or image security. Actual database initialization/grants,
+production API startup, HTTPS/browser cookies and live SSE remain next-step gates.
 
-No existing application/test, schema, dependency or deployment source changed,
-so unaffected full Rust/frontend/browser ladders were not repeated. Fresh
-focused PostgreSQL checks, receipt postconditions, Python syntax and docs/diff
-checks pass. Earlier full two-thread 953-test database acceptance remains
-separately linked evidence. The
-[report](validation/lifecycle-expiry-investigation-2026-10-15/README.md) records
-commands, reviews, limits and launch priorities; the
-[plan](PLANS.md) defines the bounded next production-image step.
+All 23 final owned probe containers and private contexts/logs/configuration are
+removed. Three uniquely tagged images with exact IDs and source/context labels
+remain for the next isolated rehearsal. Production build/runtime inputs still
+match the tested candidate. Unaffected full Rust, PostgreSQL, frontend-test and
+browser ladders were not repeated; actual release image builds and their scoped
+preflights were run. The [report](validation/production-images-2026-10-15/README.md)
+retains versions, IDs, receipts, harness correction, review and limits.
+
+Two of the six planned Sunday iterations are complete, with no contingency used.
+DEPLOY-3 is bounded to isolated production integration and real proxy/database
+acceptance; no hosted deployment or new feature is authorized. The operator's
+install/upgrade choice, actual host architecture/Docker access, DNS/TLS, off-host
+backups and playing-phone checks remain explicit prerequisites.

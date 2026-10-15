@@ -5,49 +5,50 @@
 
 ## Active step
 
-None. [A1z](validation/lifecycle-expiry-investigation-2026-10-15/README.md) records
-bounded non-reproduction of the retained lifecycle failure and the Sunday
-readiness inventory. No repair was justified and no runtime/test source changed.
-The historical full default-concurrency failure remains an explicit limitation.
+None. [DEPLOY-2](validation/production-images-2026-10-15/README.md) records three
+successful actual Dockerfile builds, 11 Compose and 23 packaged-artifact/guard
+probes on rootless Podman/amd64. Production source/configuration is unchanged.
+Native Docker socket access is denied; no host privileges or daemons were changed.
 
 ## Next candidate — requires approval
 
-### DEPLOY-2 — production image and deployment contract baseline
+### DEPLOY-3 — isolated production integration rehearsal
 
-Sunday 18 October 2026 targets one host using the supplied Docker Compose setup,
-as confirmed by the user. This is iteration 2 of a six-iteration target, with
-iterations 7–8 reserved for confirmed launch blockers.
+Sunday 18 October targets the confirmed single-host Docker Compose model. This
+is iteration 3 of six; iterations 7–8 remain contingency for confirmed blockers.
 
-- Goal: establish that current production artifacts can build and identify exact
-  installation/upgrade prerequisites before the integrated rehearsal.
-- Scope: the three production Dockerfiles, build contexts/lockfiles, Compose and
-  runtime configuration validation, plus narrowly necessary build compatibility
-  repairs and operator/evidence docs. No features, broad dependency/toolchain
-  upgrades, schema changes or hosted administration.
-- Behavior/invariants: one immutable source candidate and matching API/web builds;
-  retain both SQLx vendor patches, the production seed exclusion, private database,
-  separate owner/runtime authority, exact schema gate, secure cookies and trusted
-  proxy handling. Never weaken guards to make an image start.
-- Validation: build all three supplied production Dockerfiles with locked package
-  inputs; verify build context, installed binaries, Compose configuration and
-  migration/runtime-role requirements. Distinguish actual image acceptance from
-  host Rust/Node builds. Record exact tooling/network blockers; repair only a
-  demonstrated in-scope build defect and run every affected ladder/review.
-- Stop: publish reproducible image/configuration evidence and the concrete next
-  rehearsal step. Do not deploy to the user's host or start the next iteration.
+- Goal: verify the built matching artifacts together under production settings,
+  including real database authority and browser/proxy behavior.
+- Scope: one owned isolated Compose project, private synthetic configuration,
+  database/network/volumes and temporary browser trust/profile, with narrowly
+  necessary integration repairs and evidence/docs. Reuse DEPLOY-2 image IDs while
+  build inputs remain unchanged. No hosted deployment, feature or schema work.
+- Behavior/invariants: owner-only migration, real restricted runtime grants,
+  exact schema 39 compatibility, no production seed, secure cookies, trusted
+  proxy headers, private PostgreSQL and preserved session/scoring rules. Bind
+  rehearsal web ports only to loopback. Never weaken production guards.
+- Validation: initialize/migrate/grant and start the actual production API/web;
+  verify health/readiness, runtime authority and schema failure controls,
+  organizer/player login with secure cookies and actual SSE through Caddy.
+  Exercise mobile/desktop browser states appropriate to this integration scope.
+  Use native Docker when available; an owned temporary rootless Podman API socket
+  may support Compose-compatible rehearsal, with exact engine/compatibility limits
+  recorded. Do not alter host socket permissions, groups or daemons to proceed.
+- Stop: publish integrated evidence or exact tooling blockers, remove only owned
+  rehearsal services/data/trust/credentials, and define the critical-flow step.
+  Do not start that next iteration or administer the user's host.
 
 ## Sunday readiness path
 
-Iteration 1 is complete. Work one bounded step per iteration; each next candidate
+Iterations 1–2 are complete. Work one bounded step per iteration; each next candidate
 is defined before implementation. The six-iteration target is:
 
 | Iteration | Required outcome |
 | --- | --- |
-| 2 | Current production images and deployment contract, above |
 | 3 | Local production rehearsal: matching API/web, real schema 39/grants, production startup, health/readiness, secure-cookie browser access and SSE through Caddy |
 | 4 | Critical organizer/player acceptance with distinct accounts: login/invitation, roster/round setup, score save/recovery, gross/net, lock/correction, final visibility and required Fantasy flow, at mobile/desktop widths |
 | 5 | Actual current-application backup/checksum/restore into a fresh isolated project, state parity, real grants, readiness/login and restart/reconnect; short operating handoff |
-| 6 | Release freeze: affected final gates, immutable tested candidate, READY / READY WITH KNOWN LIMITATIONS / NOT READY verdict, concise operator launch/rollback checklist |
+| 6 | Release freeze: affected final gates and current dependency/image advisory triage, immutable tested candidate, READY / READY WITH KNOWN LIMITATIONS / NOT READY verdict, concise operator launch/rollback checklist |
 
 Iterations 7–8 are contingency for confirmed correctness, security, essential-flow
 or recovery blockers. The target does not turn an unresolved serious defect into
@@ -82,8 +83,12 @@ acceptance is not public Docker Engine/DNS/ACME acceptance.
   links the selected finding repairs. The separate
   [legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md)
   retains W1/W2/W3 acceptance. The
-  [A1z inventory](validation/lifecycle-expiry-investigation-2026-10-15/README.md)
-  owns current deployment evidence gaps; it establishes no new P0–P2 product bug.
+  [DEPLOY-2 report](validation/production-images-2026-10-15/README.md)
+  separates current image acceptance from open integration/recovery and native
+  Docker/hosted acceptance. No new P0–P2 product bug is established.
+- [A1z](validation/lifecycle-expiry-investigation-2026-10-15/README.md) retains the
+  unexplained full-default lifecycle test failure and passing focused controls.
+  Revisit only with actionable evidence or a required release-validation blocker.
 - Empty-queue polling remains unmeasured. A1t did not select Fantasy refresh
   deduplication. Neither is a prerequisite for Sunday's release without new
   measured user impact.

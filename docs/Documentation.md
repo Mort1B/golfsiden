@@ -692,6 +692,14 @@ pool. Caddy overwrites the internal client-IP and proxy-secret headers; the API
 trusts the client address only when that secret matches, so public forwarding
 headers cannot choose a rate-limit identity.
 
+The current production Dockerfiles have
+[direct image/contract acceptance](validation/production-images-2026-10-15/README.md)
+on rootless Podman/amd64: all three builds, the API's actual Rust 1.88 toolchain,
+65 packaged web assets, 11 offline Compose cases and 23 artifact/startup-guard
+probes pass. Seed remains excluded from the API runtime. No application or
+deployment configuration changed. This does not establish native Docker Engine,
+database-backed startup, live HTTPS cookies or SSE; integrated rehearsal is next.
+
 The deployment runbook uses explicit migration and permission actions, never a
 production seed. Its backup script creates an atomic custom-format PostgreSQL
 dump and relocatable SHA-256 sidecar. Restore requires explicit confirmation

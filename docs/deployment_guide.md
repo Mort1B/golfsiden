@@ -18,7 +18,14 @@ the completed lifecycle investigation, with two contingency slots for evidenced
 launch blockers. The [current inventory](validation/lifecycle-expiry-investigation-2026-10-15/README.md#sunday-priorities-and-remaining-gates)
 prioritizes current production image builds, real production-mode proxy/runtime
 grants, essential organizer/player workflows and a current-schema restore.
-These gates remain unverified; this target is not deployment sign-off.
+The [DEPLOY-2 image/contract acceptance](validation/production-images-2026-10-15/README.md)
+builds all three actual Dockerfiles on rootless Podman/amd64 and passes 11
+Compose plus 23 packaged-artifact/guard probes. The API builds on Rust 1.88;
+the frontend builds on Node 22/npm 10. No source/toolchain repair was needed.
+The current local Docker socket denies access, and noninteractive sudo is
+unavailable. These results do not establish native Docker Engine runtime.
+Production-mode database/proxy/browser and current-schema recovery acceptance
+remain open; this target is not deployment sign-off.
 
 Prepare the operator prerequisites early: new installation versus upgrade,
 domain/DNS and ports, private runtime secrets, persistent storage and an off-host
@@ -978,6 +985,7 @@ gg26.no runs that release. Hosting and deployment remain operator-managed.
 
 | Evidence | What it establishes |
 | --- | --- |
+| [Current production images and contract](validation/production-images-2026-10-15/README.md) | Exact current-source Dockerfile builds, packaged artifacts/guards and offline Compose config on rootless Podman/amd64; no live database/proxy or native Docker Engine acceptance |
 | [Local proxy and friends-deployment checks](validation/friends-2026-09-23/README.md) | Production frontend, restricted database role and local HTTPS/SSE checks; no public DNS/ACME acceptance |
 | [Recovery rehearsal](validation/recovery-2026-09-23/README.md) | Images at that revision, 47-table restore with exact parity and browser checks on rootless Podman; not a schema-33 restore drill |
 | [Functional readiness](validation/test-ready-2026-09-29/README.md) | Real organizer/player workflows and exact score/result persistence after local database/API/frontend restarts |

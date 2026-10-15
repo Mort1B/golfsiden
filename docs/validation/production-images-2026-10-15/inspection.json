@@ -1,0 +1,135 @@
+{
+  "phase": "baseline",
+  "context_sha256": "a32af6b17ec12f63abd5570d582c1ca49711a14a601de640aff0e1a8363ecea3",
+  "checks": [
+    {
+      "case": "api-user-binaries-libraries-no-seed-no-source",
+      "exit_code": 0,
+      "passed": true
+    },
+    {
+      "case": "api-insecure-cookie-denied",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "api-startup-migration-denied",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "api-invalid-proxy-secret-denied",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "api-missing-runtime-user-denied",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "api-zero-port-denied",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "recovery-command-executes-and-requires-action",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "migrate-command-executes-and-requires-database",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "postgres-valid-wrapper-version",
+      "exit_code": 0,
+      "passed": true
+    },
+    {
+      "case": "postgres-same-user-denied",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "postgres-same-password-denied",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "postgres-placeholder-denied",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "postgres-short-password-denied",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "postgres-missing-password-denied",
+      "exit_code": 2,
+      "passed": true
+    },
+    {
+      "case": "web-built-assets-no-source-or-node-modules",
+      "exit_code": 0,
+      "passed": true
+    },
+    {
+      "case": "caddy-real-config-adapts",
+      "exit_code": 0,
+      "passed": true
+    },
+    {
+      "case": "web-invalid-hostname-denied",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "web-invalid-secret-denied",
+      "exit_code": 1,
+      "passed": true
+    },
+    {
+      "case": "web-missing-secret-denied",
+      "exit_code": 2,
+      "passed": true
+    },
+    {
+      "case": "actual-rust-builder-version",
+      "exit_code": 0,
+      "passed": true
+    },
+    {
+      "case": "actual-node-builder-version",
+      "exit_code": 0,
+      "passed": true
+    },
+    {
+      "case": "actual-npm-builder-version",
+      "exit_code": 0,
+      "passed": true
+    },
+    {
+      "case": "actual-caddy-runtime-version",
+      "exit_code": 0,
+      "passed": true
+    }
+  ],
+  "network": "none",
+  "published_ports": false,
+  "image_volumes": "ignore",
+  "database_initialized": false,
+  "proxy_server_started": false,
+  "postgres_version": "postgres (PostgreSQL) 17.10",
+  "web_asset_count": 65,
+  "caddy_proxy_headers_and_unbuffered_config_verified": true,
+  "rust_builder_version": "rustc 1.88.0 (6b00bc388 2025-06-23)",
+  "node_builder_version": "v22.23.2",
+  "npm_builder_version": "10.9.8",
+  "caddy_version": "v2.10.2 h1:g/gTYjGMD0dec+UgMw8SnfmJ3I9+M2TdvoRL/Ovu6U8=",
+  "owned_probe_containers_removed": 23,
+  "private_env_files_removed": true
+}

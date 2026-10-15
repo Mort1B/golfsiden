@@ -1,0 +1,53 @@
+{
+  "compose_sha256": "1a2f0f8891bcf5796e9271384df181dd9b3edf30e60cb5fc4b5d5f697af8bf1c",
+  "checks": [
+    {
+      "case": "positive-production-graph",
+      "passed": true
+    },
+    {
+      "case": "missing-APP_DATABASE_PASSWORD",
+      "passed": true
+    },
+    {
+      "case": "missing-APP_DATABASE_URL",
+      "passed": true
+    },
+    {
+      "case": "missing-APP_DATABASE_USER",
+      "passed": true
+    },
+    {
+      "case": "missing-MIGRATION_DATABASE_URL",
+      "passed": true
+    },
+    {
+      "case": "missing-POSTGRES_DB",
+      "passed": true
+    },
+    {
+      "case": "missing-POSTGRES_OWNER_PASSWORD",
+      "passed": true
+    },
+    {
+      "case": "missing-POSTGRES_OWNER_USER",
+      "passed": true
+    },
+    {
+      "case": "missing-PROXY_SHARED_SECRET",
+      "passed": true
+    },
+    {
+      "case": "missing-RESET_PASSWORD_ORIGIN",
+      "passed": true
+    },
+    {
+      "case": "missing-SITE_ADDRESS",
+      "passed": true
+    }
+  ],
+  "services_started": false,
+  "rendered_secrets_published": false,
+  "private_env_removed": true,
+  "compose_version": "5.6.0"
+}

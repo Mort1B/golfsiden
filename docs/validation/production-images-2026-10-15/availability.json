@@ -1,0 +1,12 @@
+{
+  "docker_compose_cli_version": "5.6.0",
+  "docker_local_engine_available": false,
+  "docker_engine_version": null,
+  "docker_daemon_socket_present": true,
+  "docker_engine_blocker": "Permission denied accessing the local Docker API socket",
+  "podman_version": "podman version 5.8.7",
+  "rootless_podman_architecture": "amd64",
+  "rootless_podman": true,
+  "cached_base_images_with_pull_never": true,
+  "public_host_visited": false
+}
