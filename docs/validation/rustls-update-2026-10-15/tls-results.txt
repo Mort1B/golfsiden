@@ -1,0 +1,19 @@
+Local TLS harness: exit0
+PASS database verify-full trusted hostname: encrypted SQL query
+PASS database verify-full wrong hostname: TLS rejection
+PASS database verify-full unknown issuer: TLS rejection
+PASS database verify-ca preserves existing hostname rejection: TLS rejection
+PASS database verify-ca trusted matching hostname: encrypted SQL query
+PASS database verify-ca unknown issuer: TLS rejection
+PASS database require keeps encryption-only semantics: encrypted SQL query
+PASS database prefer negotiates available TLS: encrypted SQL query
+PASS database require rejects plaintext-only server: TLS rejection
+PASS database verify-full rejects plaintext-only server: TLS rejection
+PASS actual provider rejects local untrusted certificate
+PASS Reqwest/Rustls explicit test root accepts local HTTPS and JSON
+PASS Reqwest/Rustls trusted issuer rejects wrong hostname
+PASS local HTTPS received only the explicit-root transport request; no Authorization header
+CLEANUP local TLS container removed; temporary PKI removed
+
+Public provider: exit0
+PASS actual provider official HTTPS reaches authentication rejection

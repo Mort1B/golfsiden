@@ -37,6 +37,12 @@ in A1f; the course findings remain source-supported without new race reproductio
 Other P2 findings below and legacy-write inventory stay queued. The assessment
 below describes the originally reviewed revision.
 
+The [Rustls dependency repair](../rustls-update-2026-10-15/README.md) follows A4,
+using fresh advisory evidence and preserving the SQLx cancellation override.
+The historical dependency audit below remains pinned to the original review;
+current versions, feature conditions and remaining audit entries belong to that
+follow-up report.
+
 This is a documentation-only assessment of current application source, database
 contracts, browser state, production configuration and dependency advisories.
 No application, dependency, migration or hosted configuration was changed.

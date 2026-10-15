@@ -1,55 +1,53 @@
-# Latest iteration — final-visibility metadata session authority
+# Latest iteration — Rustls client dependency repair
 
-A1m repairs the final-round-visibility metadata GET. Real controlled PostgreSQL
-waits reproduced the original endpoint returning 200 after natural session
-expiry, revocation and credential replacement. The repaired GET returns private
-401 when authority is lost before transactional authorization or while an
-otherwise valid request waits for membership.
+A4 updates the two necessary lockfile entries: Rustls 0.23.43 to 0.23.46 and
+WebPKI 0.103.13 to 0.103.14, the minimum compatible verifier required by that
+Rustls release. Cargo manifests, features, application source and every vendored
+SQLx file remain unchanged. The transaction-cancellation override is retained.
+The production locked release build passed.
 
-The API passes session identity to a dedicated repository entry. Each
-repeatable-read attempt loads stored tournament metadata before authorization,
-derives the user from shared active-session/user locks, retains exact-admin
-membership and makes a final database wall-clock session check before commit.
-The lookup/error order and three-field response, including the full timestamp
-version, remain unchanged. The final check covers earlier waits; it does not
-freeze time through commit, serialization or delivery.
+Fresh RustSec evidence found three additional Rustls entries beyond the
+originally reviewed handshake defect, so 0.23.45 alone was insufficient for the
+current audit. The same freshly fetched database reports four Rustls entries
+before the update and zero after. This is dependency/advisory evidence, not four
+reproduced application exploits: Brotli and hybrid/PQ support are disabled, and
+no custom session-store debug logging was found. No hostile-record exploit was
+replayed. The full audit still exits1 for the same three Quinn and one RSA
+lockfile entries, plus a yanked ChaCha20 warning. None has a normal dependency
+path under native defaults or all application features/all target platforms.
 
-One complete fresh attempt is allowed after a `40001` snapshot conflict. A
-second conflict returns generic private 503; unrelated database failures stay
-single-attempt generic 500. Real conflict tests change visibility while a read
-waits: the retry returns the new flag and version, or denies a newly demoted or
-removed admin. Discarded authority and metadata never survive the retry.
+The actual provider constructor reached its official HTTPS endpoint's expected
+401/403 rejection using an invalid synthetic key. Local transport checks proved
+trusted encrypted SQL, strict `verify-full` hostname/issuer rejection, required
+TLS refusal against a plaintext-only server and unchanged `require`/`prefer`
+semantics. Those two modes do not verify identity in this driver. The actual
+provider rejects a private untrusted certificate before sending an HTTP request
+or bearer header. Separate explicit-test-root Reqwest checks prove local HTTPS
+JSON acceptance and hostname rejection without changing production trust.
 
-All GET statuses now use `private, no-store`, including extraction failures.
-PATCH retains its independent versioned write owner, CSRF requirements,
-database guards, stale errors and post-commit notifications. Its existing cache
-contract is covered explicitly: private success, `no-store` on unauthenticated
-rejection, and headerless stale conflict. Existing internal user-only reads
-retain their helper contract.
+Testing also discovered an existing P3 SQLx compatibility issue: `verify-ca`
+rejects a contextual hostname mismatch even with a trusted certificate. An
+isolated original-lockfile probe fails the same way; SQLx core handles only the
+legacy hostname-error variant. The final probe preserves that rejection and
+checks matching-name success. Repair belongs to a separately approved driver
+step; no new verification bypass or SQLx source change was introduced.
 
-Fourteen new PostgreSQL/API cases and four existing visibility cases pass.
-They cover both natural-expiry waits, revocation/credential serialization, exact
-roles and other-tournament admin isolation, errors/cache/lookup order, full JSON
-parity, fresh bounded retries, concurrent reads, cancellation and read-only
-business state/SSE behavior. Independent read-only review found no remaining
-issues. Workspace tests passed with 261 tests and one existing ignored benchmark;
-strict Clippy and API binaries passed. All 1,133 frontend tests, typecheck, lint
-and build passed. The full PostgreSQL suite passed 928 tests with four existing
-ignored diagnostic/benchmark cases; migrate/seed passed with all 39 migrations
-current. Database-feature totals include ordinary tests and are not additive.
+Workspace tests passed with 261 tests and one existing ignored benchmark, and
+final all-target/all-feature strict Clippy passed. The complete PostgreSQL suite
+passed 928 tests with four existing ignored diagnostic/benchmark cases. All five
+SQLx cancellation regressions passed; migrate/seed left all 39 migrations current.
+Database-feature counts include ordinary tests and are not additive. The probe is opt-in rather than an ignored test. Its
+plaintext prerequisite is preflighted, temporary PKI is deleted, and only its
+recorded container ID is removed. A forced port conflict verified failed-startup
+cleanup while leaving the unrelated database running. Independent read-only
+lock/source/probe/documentation review has no remaining actionable issues.
 
-Chrome passed at 320, 390 and 1280 px with actual typed metadata and full version
-strings, hidden/released controls, held loading, 500/503 read retry, denied/missing
-states and logout. Selected screenshots were visually inspected. There were no
-visibility writes during observations, page errors or unexpected network failures.
-Error/denial UI states use explicit injections; real PostgreSQL races prove the
-authority behavior separately. A singleton metadata response has no empty-list
-state. Physical-device, native-zoom, load and hosted acceptance remain separate.
+Frontend/browser checks were not rerun: frontend source, API contracts and UI
+state are unchanged. TLS behavior is exercised directly. No public-host, image,
+paid-provider data, capacity or deployment acceptance is claimed. The API must be
+rebuilt from the committed lockfile; no new migration or environment setting is
+needed. The next candidate is the bounded restore-checksum repair in
+[the plan](PLANS.md).
 
-This GET adds two session queries per ordinary success; no speedup is claimed.
-The historical A1f private-read inventory now has zero remaining P2 routes and
-three P3 course GETs. Other review findings remain open. The next candidate is
-a compatible Rustls update in [the plan](PLANS.md).
-
-Detailed evidence, exact validation and limits are in the
-[final-visibility report](validation/final-visibility-session-2026-10-15/README.md).
+Exact versions, advisory links, verification limits and results are in the
+[Rustls report](validation/rustls-update-2026-10-15/README.md).

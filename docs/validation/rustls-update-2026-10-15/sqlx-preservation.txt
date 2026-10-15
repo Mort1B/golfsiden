@@ -1,0 +1,7 @@
+Whole vendor/sqlx-postgres directory SHA-256 (sorted relative paths and bytes):
+Before: 8f40f8b75a5f1e8db33140b55ad4ef92cc045af66f2190d5365835b6553d487f
+After:  8f40f8b75a5f1e8db33140b55ad4ef92cc045af66f2190d5365835b6553d487f
+Equal: true
+Cargo.toml/backend Cargo.toml and workspace [patch.crates-io] unchanged.
+No vendor, SQLx API, transaction owner or transaction-cancellation patch edits.
+Retained regression: backend/tests/transaction_cancellation.rs (five cases).

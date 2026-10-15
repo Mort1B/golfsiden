@@ -5,37 +5,39 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A1m acceptance is in the [final-visibility metadata report](validation/final-visibility-session-2026-10-15/README.md).
+None. A4 acceptance is in the [Rustls update report](validation/rustls-update-2026-10-15/README.md).
 
 ## Next candidate — requires approval
 
-### A4 — P2: update the reachable Rustls dependency
+### A5 — P2: require a checksum bound to the restore archive
 
-Evidence: [original review A4](validation/application-review-2026-10-14/README.md#a4--p2-reachable-rust-tls-advisory).
-The current lockfile still selects `rustls 0.23.43`; revalidate the advisory and
-compatible patched release before changing dependencies.
+Evidence: [original review A5](validation/application-review-2026-10-14/README.md#a5--p2-checksum-requirement-is-optional-in-the-restore-script).
+The current script verifies a sidecar only when present, using its embedded
+filenames rather than independently binding the digest to the selected archive.
 
-- Goal: resolve the reachable Rustls advisory with the smallest compatible
-  dependency update while preserving client TLS behavior.
-- Scope: the locked Rustls dependency and unavoidable compatible transitive
-  changes; manifest constraints only if required by the resolver; focused TLS
-  evidence, tests and docs. Exclude unrelated dependency upgrades, course-read
-  binding, application behavior, migrations, deployment and hosted infrastructure.
-- Behavior: preserve certificate/hostname verification, supported provider HTTPS
-  and PostgreSQL TLS configuration. Retain the vendored SQLx transaction-start
-  cancellation patch and its workspace override. No TLS bypass, weakened checks,
-  broad dependency refresh or new provider behavior.
-- Validation: fresh authoritative advisory/version evidence, before/after audit
-  and normal/all-feature dependency reachability; inspect the exact lock diff.
-  Exercise provider-client TLS and supported database TLS locally, including
-  rejected invalid/untrusted identities; run SQLx cancellation regressions and
-  the complete affected backend/PostgreSQL ladders plus independent read-only
-  review. Record any network/environment blocker precisely.
-- Invariants: preserve root sporting/handicap/locked-round rules, session and
-  membership authority, fail-closed TLS and cancellation-safe transaction state.
-- Stop: publish only the compatible update and evidence. If a broader upgrade
-  or behavior change is necessary, document it for a separate approved step;
-  begin no later queued work.
+- Goal: refuse restoration unless the required sidecar validates the exact
+  selected nonempty archive before any Docker/restore action.
+- Scope: `scripts/restore-production.sh`, its focused local fake-Docker harness,
+  evidence and current restore/operator docs. Adjust backup compatibility only
+  if necessary to preserve its existing one-archive SHA-256 sidecar contract.
+  Exclude hosted restore, production data, unrelated deployment changes and
+  other findings.
+- Behavior: require a readable, valid checksum sidecar; bind its single checksum
+  record to the requested archive and verify that archive's bytes. Reject absent,
+  malformed, mismatched, foreign-file or extra-record sidecars before Docker is
+  invoked. Preserve valid generated sidecars, quoted paths, explicit confirmation,
+  nonempty input, pristine-target guard, transactional restore and permissions
+  recovery. A checksum remains transfer-integrity evidence, not authenticity.
+- Validation: controlled fake-Docker cases for valid, missing, malformed,
+  tampered, foreign-file and extra-record inputs, including spaced paths;
+  confirmation, empty input and nonempty-target guards; exact restore flags,
+  service-stop ordering and permission recovery. Run shell syntax checks and
+  independent read-only review; use only synthetic files/local harnesses.
+- Invariants: preserve root sporting/handicap/locked-round rules by performing no
+  application mutation; retain empty-target and single-transaction recovery
+  protections. No actual hosted restore or server administration.
+- Stop: publish only checksum binding, tests/evidence and docs. Begin no queued
+  password/dependency/performance/driver work.
 
 ## Later queue
 
@@ -45,27 +47,31 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-1. **P2 / A5:** require and bind the restore checksum before invoking restore;
-   preserve empty-target and single-transaction protections.
-2. **P2 / A6:** cap password-work admission while retaining four active Argon2
+1. **P2 / A6:** cap password-work admission while retaining four active Argon2
    workers and cancellation-safe capacity release. Capacity impact is unmeasured.
-3. **P2 / A7:** upgrade affected development tools in compatible, validated
+2. **P2 / A7:** upgrade affected development tools in compatible, validated
    dependency steps. Scanner critical labels do not establish production RCE.
-4. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
+3. **P3 / A8:** batch team memberships, preserving ordering and authority; measure
    query count and end-to-end cost. No current frontend latency impact is proven.
 
-5. **P3 / A1 course reads:** bind the three lower-impact course GETs in a
+4. **P3 / A1 course reads:** bind the three lower-impact course GETs in a
    separately selected step; provider-success impact remains conditional in the
    [source inventory](validation/private-read-inventory-2026-10-14/README.md#courses).
 
 Keep legacy team/round write-expiry inventory separate; the private-read inventory
-never assessed those writes. Selecting the Rustls candidate does not complete it or authorize the later queue.
+never assessed those writes. Selecting the checksum candidate does not complete it or authorize the later queue.
 
 Only after these, consider measurement-only steps for remaining Fantasy
 invalidation/fact-loading cost and empty-queue polling. No speculative optimization
 or load claim is authorized.
 
 ### Previously deferred work
+
+- P3 SQLx `verify-ca` compatibility: both original and updated TLS dependencies
+  reject a trusted certificate's contextual hostname mismatch because SQLx core
+  0.8.6 suppresses only the legacy error variant. Repair only in a separately
+  bounded driver step; no hosted outage or new security regression was observed.
+  See the [baseline comparison and limits](validation/rustls-update-2026-10-15/README.md#existing-p3-verify-ca-contextual-hostname-compatibility).
 
 - P3 test-only collation portability: the unchanged A1d legacy-name ordering case
   assumes uppercase-first native collation. Debian/glibc and the repository's

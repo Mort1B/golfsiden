@@ -26,6 +26,7 @@ Do not skip intermediate migrations when upgrading an older installation.
 | Draft tournament name, description and date editing | Schema 33, refreshed runtime grants and matching API/frontend |
 | Offline return to the last opened scorecard | Updated frontend against the schema-33 API; no further migration or configuration |
 | Recent score-read, session, pairing/start and navigation repairs | Deploy the current API/frontend builds; retain the vendored SQLx patch |
+| Rustls client TLS advisory repair | Rebuild/redeploy the API from the current lockfile; retain the vendored SQLx patch; no new migration |
 
 Fantasy includes four picks and a double-points captain, automatic eligible
 carry-forward, and round/overall manager and golfer leaderboards. Non-match
@@ -60,6 +61,15 @@ for this change. Rolling back to an older binary also restores the known
 transaction-initialization defect. Remove the override only after adopting an
 upstream release with the fix and passing the retained cancellation regressions;
 see `vendor/sqlx-postgres/PATCH.md`.
+
+The client TLS lockfile uses Rustls `0.23.46` and WebPKI `0.103.14`; the existing
+`cargo build --locked --release -p golf-api --bins` image step incorporates them.
+This dependency-only runtime change needs a rebuilt API image. It adds no schema,
+frontend protocol or environment setting. Provider HTTPS validation and the
+operator-selected PostgreSQL `sslmode` keep their existing semantics; local
+provider/database TLS evidence is in the
+[acceptance report](validation/rustls-update-2026-10-15/README.md).
+This report does not verify the public deployment or change Caddy TLS.
 
 Caddy obtains and renews public certificates automatically. `SITE_ADDRESS` must
 be a hostname only: no scheme, path, query, fragment, or port. The web container

@@ -1,0 +1,32 @@
+{
+  "only_two_package_versions_and_checksums_changed": true,
+  "packages": [
+    {
+      "package": "rustls",
+      "before": "0.23.43",
+      "after": "0.23.46",
+      "changes": [
+        "checksum",
+        "version"
+      ],
+      "rust_version": "1.71"
+    },
+    {
+      "package": "rustls-webpki",
+      "before": "0.103.13",
+      "after": "0.103.14",
+      "changes": [
+        "checksum",
+        "version"
+      ],
+      "rust_version": "1.71"
+    }
+  ],
+  "rustls_features_normal_and_all_application_features": [
+    "ring",
+    "std",
+    "tls12"
+  ],
+  "rustls_webpki_minimum_required_by_0_23_46": "0.103.14",
+  "manifests_and_vendor_unchanged": true
+}

@@ -588,6 +588,24 @@ issuing/rotation still reveal a new secret only through their existing mutation
 responses. The final check covers preceding waits, not expiry through commit or
 delivery. See the [acceptance report](validation/invitation-read-session-2026-10-15/README.md).
 
+## Client TLS dependency maintenance
+
+The current lockfile uses Rustls `0.23.46` and WebPKI `0.103.14` through the
+existing Reqwest/SQLx paths. Rebuild from the committed lockfile and full checkout,
+including the SQLx cancellation override. The
+[local acceptance report](validation/rustls-update-2026-10-15/README.md) records
+advisory comparison, provider HTTPS and PostgreSQL TLS-mode checks. This update
+requires no schema or frontend contract change.
+
+Provider HTTPS retains normal certificate and hostname validation. Database
+identity validation remains selected by `DATABASE_URL`'s `sslmode`; `verify-full`
+validates chain and hostname, `verify-ca` validates the chain, while `require`
+and the default `prefer` do not verify the certificate in this driver. Both
+original and updated lockfiles also reject a contextual hostname mismatch in
+`verify-ca`; this existing SQLx compatibility issue is recorded separately.
+Compose networking and mode selection are unchanged. This local update does
+not establish the operator's public TLS or hosted database configuration.
+
 ## Production and operator behavior
 
 Interrupted SQLx transaction initialization queues rollback before the connection

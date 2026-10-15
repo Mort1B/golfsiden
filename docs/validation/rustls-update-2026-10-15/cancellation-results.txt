@@ -1,0 +1,10 @@
+     Running tests/transaction_cancellation.rs (target/debug/deps/transaction_cancellation-5ef756bdf2fff1ec)
+
+running 5 tests
+test cancelled_savepoint_preserves_outer_transaction ... ok
+test cancelled_request_work_rolls_back_writes_settings_and_locks ... ok
+test failed_and_successful_begins_preserve_modes_and_reuse ... ok
+test ordinary_begin_cancellation_returns_clean_connection ... ok
+test successful_pool_reuse_adds_no_rollback_queries ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s

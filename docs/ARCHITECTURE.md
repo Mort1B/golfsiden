@@ -10,6 +10,24 @@
 
 Backend request handling is split into `api`, `repositories`, and `domain`. Handlers own HTTP validation and response mapping, repositories own SQL and transaction mechanics, and pure handicap/scoring/lifecycle behavior stays in `domain`. Authentication and score authorization are isolated modules rather than handler-local policy.
 
+## Client TLS dependencies
+
+The lockfile selects Rustls `0.23.46` and its minimum compatible WebPKI
+`0.103.14`. Reqwest and SQLx share this Rustls version with `ring`, `std` and
+`tls12`; Brotli certificate compression and a hybrid post-quantum provider are
+not enabled. The workspace feature configuration is unchanged.
+
+Course-provider HTTPS uses Reqwest's normal WebPKI roots, certificate/hostname
+checks, existing connection/request timeouts and no redirects. The SQLx client
+inherits its mode from `DATABASE_URL`: `verify-full` checks both chain and host,
+`verify-ca` checks the chain, and `require`/`prefer` retain their existing
+non-verifying semantics. SQLx 0.8.6 also rejects contextual hostname mismatches
+in `verify-ca` on both the original and updated lockfiles; this additional hostname check is an existing
+compatibility gap recorded separately, not changed here. No certificate bypass, system root installation or
+new deployment default is part of the dependency update. Public ingress TLS
+remains Caddy-owned; local acceptance is in the
+[Rustls report](validation/rustls-update-2026-10-15/README.md).
+
 ## Transaction initialization and cancellation
 
 Cargo pins the SQLx 0.8.6 PostgreSQL driver through the local

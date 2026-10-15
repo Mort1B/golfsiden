@@ -1,0 +1,6 @@
+{
+  "occupied_tls_port_forces_startup_failure": true,
+  "owned_container_removed": true,
+  "temporary_pki_removed": true,
+  "unrelated_main_postgres_untouched": true
+}

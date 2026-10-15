@@ -1,0 +1,36 @@
+A4 local acceptance — 2026-10-15
+Baseline: ac987dedae3f5fb1ab6973775d2ecda2572f68b1
+Rustls0.23.43→0.23.46; WebPKI0.103.13→0.103.14; no other runtime dependency/source/feature change
+
+cargo audit --json (before): exit1; four Rustls matches and four optional-package entries
+cargo audit --no-fetch --json (after): exit1; zero Rustls matches, four unchanged optional-package entries
+RustSec snapshot: edb58f5974b83eb8302332821cb6d389777aa351;1329 advisories
+cargo tree --locked --edges normal -i rustls: retained before/after
+cargo tree --locked --all-features --edges normal -i rustls: retained before/after
+quinn-proto/rsa/chacha20 normal paths: absent with native defaults and all application features/all target platforms
+
+cargo fmt --all -- --check: exit0
+cargo test --workspace --all-targets: exit0;261 passed,1 existing ignored
+cargo clippy --workspace --all-targets --all-features -- -D warnings: exit0
+cargo clippy --locked --workspace --all-targets --all-features -- -D warnings (final probe): exit0
+cargo build -p golf-api --bins: exit0
+cargo build --locked --release -p golf-api --bins: exit0;1m07s; host toolchain, no image/deployment claim
+cargo build -p golf-api --example tls_compatibility (final): exit0
+python3 docs/validation/rustls-update-2026-10-15/tls_harness.py: exit0;14 assertions plus cleanup
+Controlled occupied-port fixture startup: expected failure, owned container/PKI removed, unrelated main PostgreSQL retained
+Actual provider public-provider mode: exit0; expected401/403 mapping, invalid synthetic key only
+Original/new verify-ca comparison: same contextual-hostname rejection; existingP3 compatibility gap
+
+cargo test --workspace --all-targets --features database-tests -- --test-threads=2: exit0;928 passed,4 existing ignored;840 seconds
+Five unchanged transaction_cancellation PostgreSQL tests passed in that suite
+cargo run -p golf-api --bin migrate: exit0;39/39 current
+cargo run -p golf-api --bin seed: exit0;eight players/five rounds
+PostgreSQL17.10 Alpine/musl;en_US.utf8; disposable local data only
+Database-feature totals include ordinary tests; do not add counts
+Existing ignored: projection_benchmark,hundred_matches,twelve_matches,twenty_four_matches
+Unchanged vendored warnings: deprecated try_next;unused Flush variant/struct
+
+Read-only lock/source/probe/docs review: no remaining actionable issues
+No production trust changes, system root installation, real API key or hosted action
+Frontend/browser: not rerun; no frontend source, HTTP contract or UI state change
+Cleanup: owned local database/TLS fixtures and temporary baseline copy removed after evidence capture

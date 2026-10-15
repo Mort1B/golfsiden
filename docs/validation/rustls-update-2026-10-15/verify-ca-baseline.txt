@@ -1,0 +1,16 @@
+Original production baseline: ac987dedae3f5fb1ab6973775d2ecda2572f68b1
+Isolated temporary source/manifest copy; original Cargo.lock; no active workspace lockfile rollback.
+Original versions: rustls0.23.43; rustls-webpki0.103.13; sqlx-core0.8.6.
+
+Original and updated (rustls0.23.46/webpki0.103.14) probes both observed:
+PASS verify-full trusted localhost certificate: encrypted SQL query
+PASS verify-full wrong hostname: certificate rejection
+PASS verify-full unknown issuer: certificate rejection
+FAIL the initial assumption that verify-ca accepts a trusted localhost certificate when connecting by127.0.0.1.
+Observed failure: SQLx Io InvalidData wrapping InvalidCertificate(NotValidForNameContext).
+The certificate SAN contains DNS:localhost only.
+
+sqlx-core0.8.6 src/net/tls/tls_rustls.rs309 only suppresses CertificateError::NotValidForName.
+It does not suppress NotValidForNameContext. This is an existing P3 compatibility gap;
+it was not introduced or repaired by this bounded dependency update.
+Final probe preserves that rejection and separately proves a matching verify-ca hostname succeeds.

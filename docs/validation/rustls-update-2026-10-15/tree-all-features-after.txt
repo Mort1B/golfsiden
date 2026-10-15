@@ -1,0 +1,19 @@
+rustls v0.23.46
+├── hyper-rustls v0.27.9
+│   └── reqwest v0.12.28
+│       └── golf-api v0.1.0 (/home/morten/Prog/guttasgolfside/golfsiden/backend)
+├── reqwest v0.12.28 (*)
+├── sqlx-core v0.8.6
+│   ├── sqlx v0.8.6
+│   │   └── golf-api v0.1.0 (/home/morten/Prog/guttasgolfside/golfsiden/backend)
+│   ├── sqlx-macros v0.8.6 (proc-macro)
+│   │   └── sqlx v0.8.6 (*)
+│   ├── sqlx-macros-core v0.8.6
+│   │   └── sqlx-macros v0.8.6 (proc-macro) (*)
+│   ├── sqlx-postgres v0.8.6 (/home/morten/Prog/guttasgolfside/golfsiden/vendor/sqlx-postgres)
+│   │   └── sqlx v0.8.6 (*)
+│   └── sqlx-postgres v0.8.6 (/home/morten/Prog/guttasgolfside/golfsiden/vendor/sqlx-postgres)
+│       └── sqlx-macros-core v0.8.6 (*)
+└── tokio-rustls v0.26.4
+    ├── hyper-rustls v0.27.9 (*)
+    └── reqwest v0.12.28 (*)

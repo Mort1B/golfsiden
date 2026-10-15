@@ -1,0 +1,48 @@
+{
+  "database": {
+    "advisory-count": 1329,
+    "last-commit": null,
+    "last-updated": null
+  },
+  "audit_exit": 1,
+  "vulnerabilities": [
+    {
+      "package": "quinn-proto",
+      "version": "0.11.17",
+      "advisory": "RUSTSEC-2026-0338",
+      "patched": [
+        ">=0.11.18"
+      ]
+    },
+    {
+      "package": "quinn-proto",
+      "version": "0.11.17",
+      "advisory": "RUSTSEC-2026-0340",
+      "patched": [
+        ">=0.11.18"
+      ]
+    },
+    {
+      "package": "quinn-proto",
+      "version": "0.11.17",
+      "advisory": "RUSTSEC-2026-0343",
+      "patched": [
+        ">=0.11.18"
+      ]
+    },
+    {
+      "package": "rsa",
+      "version": "0.9.10",
+      "advisory": "RUSTSEC-2023-0071",
+      "patched": []
+    }
+  ],
+  "warnings": {
+    "yanked": [
+      {
+        "package": "chacha20",
+        "version": "0.10.1"
+      }
+    ]
+  }
+}

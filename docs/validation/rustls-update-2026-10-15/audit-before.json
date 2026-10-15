@@ -1,0 +1,80 @@
+{
+  "database": {
+    "advisory-count": 1329,
+    "last-commit": "edb58f5974b83eb8302332821cb6d389777aa351",
+    "last-updated": "2026-10-14T22:18:32+02:00"
+  },
+  "audit_exit": 1,
+  "vulnerabilities": [
+    {
+      "package": "quinn-proto",
+      "version": "0.11.17",
+      "advisory": "RUSTSEC-2026-0338",
+      "patched": [
+        ">=0.11.18"
+      ]
+    },
+    {
+      "package": "quinn-proto",
+      "version": "0.11.17",
+      "advisory": "RUSTSEC-2026-0340",
+      "patched": [
+        ">=0.11.18"
+      ]
+    },
+    {
+      "package": "quinn-proto",
+      "version": "0.11.17",
+      "advisory": "RUSTSEC-2026-0343",
+      "patched": [
+        ">=0.11.18"
+      ]
+    },
+    {
+      "package": "rsa",
+      "version": "0.9.10",
+      "advisory": "RUSTSEC-2023-0071",
+      "patched": []
+    },
+    {
+      "package": "rustls",
+      "version": "0.23.43",
+      "advisory": "RUSTSEC-2026-0285",
+      "patched": [
+        ">=0.23.45"
+      ]
+    },
+    {
+      "package": "rustls",
+      "version": "0.23.43",
+      "advisory": "RUSTSEC-2026-0346",
+      "patched": [
+        ">=0.23.46"
+      ]
+    },
+    {
+      "package": "rustls",
+      "version": "0.23.43",
+      "advisory": "RUSTSEC-2026-0348",
+      "patched": [
+        ">=0.23.46"
+      ]
+    },
+    {
+      "package": "rustls",
+      "version": "0.23.43",
+      "advisory": "RUSTSEC-2026-0349",
+      "patched": [
+        ">=0.23.46"
+      ]
+    }
+  ],
+  "warnings": {
+    "yanked": [
+      {
+        "package": "chacha20",
+        "version": "0.10.1"
+      }
+    ]
+  }
+}
