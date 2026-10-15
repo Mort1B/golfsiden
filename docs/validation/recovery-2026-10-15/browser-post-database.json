@@ -1,0 +1,15 @@
+{
+  "browser": "155.0.8059.79",
+  "checks": {
+    "restored_distinct_ui_logins_gross_net73_locked_denial_fantasy88_94_carry_receipt_and_exact_replay": true,
+    "fresh_restored_logins_and_authoritative_reads_after_database_restart": true,
+    "no_unexpected_console_network_or_http_body_failures": true
+  },
+  "images": {
+    "postgres": "localhost/golfsiden-postgres:deploy2-b73d13e7f3aa-a32af6b17ec1",
+    "api": "localhost/golfsiden-api:deploy2-b73d13e7f3aa-a32af6b17ec1",
+    "web": "localhost/golfsiden-web:deploy3-22e90af40a9b-0e116c053148"
+  },
+  "certificate_exception": "localhost disposable contexts only",
+  "native_stream": "not exercised in this fresh-login mode"
+}

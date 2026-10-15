@@ -1,0 +1,12 @@
+{
+  "checks": {
+    "complete_real_script_recovery_and_owned_restart_sequence": true,
+    "all_61_public_tables_sequences_and_nonempty_sporting_fantasy_auth_facts_match": true,
+    "distinct_restored_ui_logins_73_88_94_replay_and_actual_live_reopen_receipts": true,
+    "four_original_candidate_image_ids_retained_exactly": true,
+    "both_attempts_owned_resources_archives_roots_sockets_aliases_removed": true,
+    "production_inputs_scripts_and_historical_critical_flow_evidence_unchanged": true,
+    "changed_harness_and_shell_syntax_and_whitespace": true
+  },
+  "sequence_sha256": "a04d6dcddb38690f00705be62ddb5dc04ff3b62e0e3d9dd944ca3dea14850f6c"
+}

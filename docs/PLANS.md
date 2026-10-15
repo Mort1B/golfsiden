@@ -5,42 +5,41 @@
 
 ## Active step
 
-None. DEPLOY-4 acceptance is recorded in the
-[critical-flow report](validation/critical-flows-2026-10-15/README.md).
+None. Current-application recovery acceptance is recorded in the
+[DEPLOY-5 report](validation/recovery-2026-10-15/README.md).
 
 ## Next candidate — requires implementation approval
 
-### DEPLOY-5 — current-application recovery rehearsal
+### DEPLOY-6 — release freeze and operator handoff
 
-- Goal: prove that the current schema-39 application can recover its acknowledged
-  state using the supplied single-host backup/restore procedure.
-- Scope: synthetic source data on the tested production images, actual backup
-  script and checksum sidecar, restoration into a fresh isolated project/volume,
-  owner/runtime grants, state parity and a short operating handoff. Reuse
-  unchanged build, integration and critical-flow evidence. Repair only confirmed
-  recovery or essential-flow blockers; no feature or schema redesign.
-- Behavior/invariants: never target an operator database or reuse a populated
-  restore destination. Preserve exact score revisions, confirmations, lifecycle,
-  historical handicaps, Fantasy receipts and private session/membership facts.
-  Restored runtime remains restricted; unsent browser drafts are outside server
-  backups. Never expose archive content, credentials or capability/session data.
-- Validation: actual production backup/checksum/restore commands, a fresh target
-  volume, representative complete state parity, real runtime grants, schema and
-  readiness, existing-account UI login/read, owned service restart/reconnect and
-  exact owned cleanup. Run the affected full ladder for any necessary repair;
-  keep native Docker, public host and off-host limits explicit.
-- Stop: publish recovery evidence or exact blockers, clean owned fixtures and
-  define DEPLOY-6 freeze/advisory/launch handoff. Do not start final sign-off or
-  administer the operator's host in this iteration.
+- Goal: provide an evidence-backed release verdict and concrete launch/rollback
+  checklist for Sunday's one-host Compose target.
+- Scope: freeze source and exact tested artifacts, triage current dependency/
+  image advisories and review the remaining essential launch/recovery gates.
+  Reuse unchanged accepted builds, integration, critical flows and recovery.
+  Repair only confirmed P0–P2 or unusable required-flow blockers; no features,
+  broad polish, speculative optimization or automatic reopening of P3 limits.
+- Behavior/invariants: keep schema-39 matching builds, private proxy logs,
+  restricted runtime grants, session/membership fencing, exact write replay,
+  score/handicap/lifecycle and final-round privacy contracts. Preserve immutable
+  artifact identities; any necessary repair invalidates its affected evidence.
+- Validation: current primary advisory evidence and compiled/runtime reachability,
+  exact source/artifact comparison, all affected gates for a selected blocking
+  repair, scoped read-only review and documentation/link/cleanup/publication
+  checks. Distinguish local engine/browser acceptance from unperformed operator
+  host, physical-phone and off-host checks; never claim them complete by deferral.
+- Stop: publish READY / READY WITH KNOWN LIMITATIONS / NOT READY with severity-
+  rated remaining issues, immutable candidate details and concise operator
+  launch/rollback actions. Clean owned fixtures, publish and stop. No deployed
+  host administration, deployment or irreversible release action is authorized.
 
 ## Sunday readiness path
 
-Iterations 1–4 are complete. Work one bounded step per iteration; each next candidate
+Iterations 1–5 are complete. Work one bounded step per iteration; each next candidate
 is defined before implementation. The six-iteration target is:
 
 | Iteration | Required outcome |
 | --- | --- |
-| 5 | Actual current-application backup/checksum/restore into a fresh isolated project, state parity, real grants, readiness/login and restart/reconnect; short operating handoff |
 | 6 | Release freeze: affected final gates and current dependency/image advisory triage, immutable tested candidate, READY / READY WITH KNOWN LIMITATIONS / NOT READY verdict, concise operator launch/rollback checklist |
 
 Iterations 7–8 are contingency for confirmed correctness, security, essential-flow
@@ -82,8 +81,11 @@ acceptance is not public Docker Engine/DNS/ACME acceptance.
   integrated acceptance and the repaired P2 proxy-secret logging leak. The
   [DEPLOY-4 report](validation/critical-flows-2026-10-15/README.md) records the
   complete critical-flow sequence and P3 acknowledged Fantasy entry/read-retry
-  limitation. Recovery, native Docker and hosted/final release acceptance remain
-  open. No further Fantasy diagnosis is selected without new serious or unusable
+  limitation. The [DEPLOY-5 report](validation/recovery-2026-10-15/README.md)
+  records actual current-script/schema-39 restore, full table/sequence parity,
+  restored logins/replay and restart/reconnect. Native Docker, public host,
+  physical phones, off-host recovery and final release acceptance remain open.
+  No further Fantasy diagnosis is selected without new serious or unusable
   required-flow evidence.
 - [A1z](validation/lifecycle-expiry-investigation-2026-10-15/README.md) retains the
   unexplained full-default lifecycle test failure and passing focused controls.

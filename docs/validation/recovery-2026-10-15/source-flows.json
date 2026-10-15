@@ -1,0 +1,59 @@
+{
+  "phases": [
+    {
+      "phase": "setup",
+      "exit_code": 0
+    },
+    {
+      "phase": "fantasy",
+      "exit_code": 0
+    },
+    {
+      "phase": "entry",
+      "exit_code": 0
+    },
+    {
+      "phase": "numeric",
+      "exit_code": 0
+    },
+    {
+      "phase": "final",
+      "exit_code": 0
+    }
+  ],
+  "browser": "155.0.8059.79",
+  "checks": {
+    "organizer_wizard_two_rounds_and_distinct_player_invitation_ui": true,
+    "organizer_adds_four_player_roster_in_ui_no_team_requirement": true,
+    "two_round_manual_courses_and_four_player_flights_saved_in_ui": true,
+    "anonymous_outsider_and_player_admin_actions_denied": true,
+    "player_management_route_denies_admin_controls_in_browser": true,
+    "setup_no_unexpected_console_network_or_http_body_failures": true,
+    "fantasy_rules2_two_round_presets_exact_lost_response_replay_same_receipt": true,
+    "member_acknowledged_entry_read_retry_restores_editing": true,
+    "two_manager_draft_privacy_including_organizer_and_member_round2_unsaved": true,
+    "fantasy_loading_read_failure_and_explicit_read_retry_recover_boards": true,
+    "fantasy_no_unexpected_console_network_or_http_body_failures": true,
+    "fresh_entry_acknowledged_read_failure_recovers_without_second_entry_write": true,
+    "prepared_player_claim_first_fantasy_entry_and_selection_ui_one_entry_write": true,
+    "entry_no_unexpected_console_network_or_http_body_failures": true,
+    "organizer_starts_tournament_and_opens_prepared_round_in_ui": true,
+    "player_score_lost_response_retries_exact_request_and_acknowledgement": true,
+    "offline_durable_edit_conflicts_without_overwrite_and_explicit_server_choice": true,
+    "confirmed_par_cards_complete_and_fantasy_settles_exact_10_and_50": true,
+    "player_gross_and_net_result_views_use_authoritative_preserved_cards": true,
+    "completed_round_correction_reconfirms_then_locked_writes_deny_and_gross_net_preserved": true,
+    "corrected_fantasy_round_settles_exact_38_and_44": true,
+    "numeric_no_unexpected_console_network_or_http_body_failures": true,
+    "final_open_materializes_member_carry_forward_and_rejects_new_selection": true,
+    "player_final_privacy_withholds_numeric_and_fantasy_releases_and_rehides_on_return": true,
+    "two_round_fantasy_boards_settle_exact_88_and_94_with_captain_and_carry_forward": true,
+    "outsider_fantasy_denied_and_logout_clears_private_boards": true,
+    "final_no_unexpected_console_network_or_http_body_failures": true
+  },
+  "images": {
+    "postgres": "localhost/golfsiden-postgres:deploy2-b73d13e7f3aa-a32af6b17ec1",
+    "api": "localhost/golfsiden-api:deploy2-b73d13e7f3aa-a32af6b17ec1",
+    "web": "localhost/golfsiden-web:deploy3-22e90af40a9b-0e116c053148"
+  }
+}

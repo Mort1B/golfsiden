@@ -1,72 +1,74 @@
-# Latest iteration — critical production journeys
+# Latest iteration — current-application recovery
 
-DEPLOY-4 completes iteration four of the six-step Sunday readiness path. One
-fresh five-phase sequence passes 32 named checks, including 27 real-browser
-checks, on the unchanged production API/PostgreSQL and repaired DEPLOY-3 web
-images. No application, schema, dependency or deployment configuration changed.
-The [report](validation/critical-flows-2026-10-15/README.md) retains findings by
-severity, exact artifacts, receipts, screenshots and limits.
+DEPLOY-5 completes iteration five of the six-step Sunday readiness path. The
+unchanged production backup/restore scripts recover schema 39 into an independent
+empty Compose project, with exact equality for all 61 public tables (563
+synthetic rows) and sequence metadata plus actual last_value/is_called before
+API startup or login. The [report](validation/recovery-2026-10-15/README.md)
+retains the actual sequence, findings by severity, browser evidence and cleanup.
+No production source, script, schema, dependency or configuration changed.
 
-Separate organizer, invited player, claimed golfer and outsider accounts exercise
-actual UI login/registration, two-round setup, roster, manual courses, flights,
-permissions, scoring and Fantasy. The monitor checks relevant failed-response
-bodies and distinguishes controlled failures, cancelled reads and specifically
-acknowledged no-content writes. Mobile 320/390 and desktop 1280 widths cover
-loading, error, empty, populated, long-name, conflict and hidden/released states.
+The source repeats the five critical-flow phases with 27 browser checks, yielding
+acknowledged scores, confirmations, historical handicap snapshots, invitations,
+claims, accounts/sessions/memberships and submitted/carried Fantasy receipts.
+Its outputs stay private so historical DEPLOY-4 evidence remains unchanged.
+Source API/web stop before fingerprinting and the actual custom-format backup.
+The archive and canonical basename checksum move together into a private target
+directory containing spaces. Target PostgreSQL starts with fresh roles/volume
+and zero public relations/routines/types; migrations never run before restore.
 
-A real player score commits but loses its response; exact replay returns the
-same acknowledgement. Offline local 5 meets newer server 7, presents a conflict
-and retains 7 after explicit server choice. Gross/net views use preserved cards.
-The organizer corrects a Completed card from 72 to 73, clearing confirmation and
-blocking locking until reconfirmed. Locked ordinary writes reject for both
-organizer and player. Correction while already locked is not claimed.
+The real restore script rejects missing confirmation, changed archive bytes and
+a populated target. A truncated archive has a readable complete TOC, fails the
+actual restore and leaves zero public objects. A separate verbose control
+creates tables and processes data before failing under the same transaction
+flags, proving late rollback; its owned probe database is dropped. The intact
+archive restores successfully and the actual permissions service recovers
+restricted runtime authority. TCP identity/schema reads pass; CREATE TABLE and
+migration-history UPDATE reject with SQLSTATE 42501. Sorted canonical row-JSON
+SHA-256 and sequence state match exactly before application reads can create
+sessions or materialize state.
 
-Fantasy rules 2 saves both round presets in order. A lost second response pauses
-the batch, then exact immutable replay returns the original revision-1 receipt.
-Other managers' drafts remain private, including from the organizer. Final-round
-opening materializes the member's carry-forward; late selection changes reject.
-All-par cards yield golfer 10 / manager 50. Correcting the organizer's card yields
-38 for captain-organizer and 44 for captain-member. Final par cards add 50 each,
-producing exact settled two-round totals 88/94 and eight contribution rows.
-Numeric and Fantasy final-round privacy withholds hidden facts and responds to
-organizer release/re-hide through the actual browser's native live refresh.
+Restored organizer/member UI login, gross/net 73, locked-write denial, released
+final-round visibility, Fantasy totals 88/94, carry-forward and an exact retained
+submission/receipt replay pass. Four browser checks include mobile/desktop
+results and an actual native EventSource reopen in the same authenticated
+context across API/web restart, followed by fresh authoritative reads. The
+explicit transport stream runs on the profile page; unchanged cached DOM is
+not used as reconnect evidence. Three separate post-database checks repeat fresh
+logins and authoritative reads after PostgreSQL outage/restart. During that
+outage health remains 200, readiness becomes 503, then returns to 200.
 
-One P3 usability limitation remains: joining Fantasy can acknowledge the write
-while read reconciliation fails, leaving editing disabled until **Oppdater
-Fantasy**. The tested fresh claimed golfer uses that read retry, submits exactly
-one entry write and saves its selection. This working recovery does not justify
-an unproven runtime refactor before Sunday.
+The first attempt passed data restore and initial restored logins/results, then
+its five-second quiet-stream wait expired with zero opens and no recorded
+network/console error. The corrected control allows 30 seconds initially and
+requires an actual later reopen. Review also isolated byte-corruption testing,
+added the late-work witness, separated stream descriptions by browser mode and
+initialized each current-run sequence to complete:false. The corrected complete
+run repeats from fresh projects; partial earlier receipts remain explicitly
+separate. No application defect or runtime cause is inferred from these harness
+findings, rated P3 validation issues.
 
-Separately, local Chrome reports an aborted-request event after actual response
-204 on entry/logout. Passive native-fetch controls of entry reproduce it without
-a tournament stream and with both original/default proxy flush settings. The cause
-is unproven; the report does not label this an application or Caddy defect. The
-monitor requires exact declared POST paths and actual 204 responses, with entry
-and logout counts separated. The exploratory Caddy setting was restored; no
-runtime repair was selected.
+Production scripts have no fixture override or explicit project argument, so
+script-only rendered configuration is checked against the exact private socket,
+project, database destinations, loopback ports and image IDs. Unique temporary
+aliases resolve their normal image names without changing shared tags. Each
+project has its own API process/root, credentials, volumes and networks. Both
+attempts remove exactly three containers, three volumes and two networks per
+project, stop their private APIs and remove archives, raw fingerprints, secrets,
+diagnostics, CA/socket trees and aliases. Four original image IDs remain exact.
+Complete logs omit generated database passwords and proxy secrets. Seven
+independent postconditions pass, including historical evidence preservation and
+unchanged production inputs. Read-only review has no outstanding findings.
 
-Early attempts exposed harness selector, async-state, wire-field and monitoring
-assumptions. Read-only review improved fault-window boundaries, exact actor/row
-assertions, member-card denial, no-store checks and fixture ownership. A later
-run correctly failed the monitor because organizer entry lacked its declaration.
-After that repair, the complete sequence reran from empty state. Partial earlier
-attempts remain explicitly separate and are not counted as acceptance.
+Docker Compose CLI 5.6.0 uses rootless Podman 5.8.7/amd64 and disposable Chrome
+155.0.8059.79 localhost certificate exceptions. Native Docker access remains
+denied. This local moved-pair exercise does not establish public DNS/ACME,
+certificate trust/renewal, standard ports, physical playing phones, capacity or
+off-host disaster recovery. Existing P3 Fantasy entry/read-retry and lifecycle
+validation limitations remain explicit. Unchanged full Rust/frontend unit,
+type, lint, Clippy/database-domain and checksum-contract ladders retain their
+specific prior evidence; the current affected recovery ladder ran in full.
 
-Fresh schema 39 uses owner migrations and actual restricted runtime grants.
-Final readiness, restricted schema reads, no restarts and absence of generated
-database passwords/proxy secret in complete service logs pass. Every owned
-fixture's three containers, three volumes, two networks and private credentials/
-diagnostics/CA/socket tree were removed; browsers close and four exact prior
-image IDs remain. Postconditions audit current source equality, receipts,
-retained images, harness syntax and cleanup. Unchanged full Rust/frontend unit,
-type, lint, Clippy and database-domain ladders were reused because no runtime
-source changed.
-
-Docker Compose CLI 5.6.0 used rootless Podman 5.8.7/amd64 through a private API;
-native Docker access remains denied. Local disposable Caddy certificate
-exceptions do not prove public trust. Actual host architecture, DNS/ACME,
-standard ports, physical playing phones, capacity and off-host recovery remain
-operator/release gates. The prior full-default lifecycle-test limitation remains
-explicit. DEPLOY-5 is next: actual current-application backup/checksum/restore,
-state parity, real grants, readiness/login and restart/reconnect. DEPLOY-6 owns
-the final freeze/advisory/verdict/launch handoff. Neither begins in this step.
+DEPLOY-6 is next: freeze the tested candidate, triage current dependency/image
+advisories, issue a bounded release verdict and provide the short operator
+launch/rollback checklist. No hosted action or final sign-off starts here.

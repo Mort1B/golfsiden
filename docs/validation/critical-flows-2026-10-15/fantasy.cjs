@@ -1,4 +1,4 @@
-const { assert, call, expect, shot } = require('./support.cjs');
+const { assert, call, expect, shot, fs, path } = require('./support.cjs');
 
 module.exports = async function fantasy(f) {
   const page = f.organizer, member = f.member, base = `/api/tournaments/${f.tid}/fantasy`;
@@ -40,6 +40,7 @@ module.exports = async function fantasy(f) {
   await page.getByRole('button', { name: 'Avklar samme innsending', exact: true }).click();
   await expect(page.getByText('Handlingen er bekreftet. Visningen er oppdatert.')).toBeVisible();
   assert.equal(requests.length, 3); assert.deepEqual(requests[2], requests[1]); assert.deepEqual(receipts[2], receipts[1]);
+  if (process.env.GOLF_RETAIN_FANTASY_REPLAY === '1') fs.writeFileSync(path.join(f.state.directory, 'recovery-lineup-replay.json'), JSON.stringify({ request: requests[1], receipt: receipts[1] }), { mode: 0o600 });
   await page.unroute('**/fantasy/rounds/*/lineup');
   f.allowLost.delete(lineupPath);
   for (const round of f.rounds) {

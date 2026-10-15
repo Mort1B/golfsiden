@@ -1,0 +1,13 @@
+{
+  "private_roots": [
+    "/tmp/golf-deploy3-recovery-source-zpuxrzws",
+    "/tmp/golf-deploy3-recovery-target-hzpoaro3"
+  ],
+  "owned_aliases": [
+    "localhost/golfsiden-postgres:deploy5-42dceef032",
+    "localhost/golfsiden-api:deploy5-42dceef032",
+    "localhost/golfsiden-web:deploy5-42dceef032"
+  ],
+  "owned_aliases_removed": true,
+  "private_roots_removed": true
+}

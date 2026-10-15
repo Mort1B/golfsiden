@@ -93,7 +93,7 @@ class Rehearsal:
             time.sleep(.5)
         raise RuntimeError('HTTP status wait failed: ' + path)
 
-    def setup(self):
+    def setup(self, migrate=True):
         builds = json.loads((HERE.parent / 'production-images-2026-10-15/baseline-builds.json').read_text())
         web_report = HERE / 'web-build.json'
         web_build = json.loads(web_report.read_text()) if web_report.exists() else None
@@ -155,6 +155,10 @@ class Rehearsal:
         self.receipt('exact_images_unchanged_inputs_private_configuration')
         self.compose('up', '-d', '--no-build', '--pull', 'never', '--wait', '--wait-timeout', '90', 'postgres')
         self.receipt('compose_postgres_fresh_cluster_healthy')
+        if not migrate:
+            assert self.sql("SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public';") == '0'
+            self.receipt('restore_target_started_without_migrations')
+            return
         self.compose('--profile', 'tools', 'run', '--rm', '-T', '--no-deps', 'migrate')
         self.compose('--profile', 'tools', 'run', '--rm', '-T', '--no-deps', 'permissions')
         assert self.sql('SELECT count(*),max(version),bool_and(success) FROM _sqlx_migrations;') == '39|39|t'

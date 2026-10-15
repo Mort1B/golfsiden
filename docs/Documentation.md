@@ -721,7 +721,18 @@ action while read reconciliation fails; **Oppdater Fantasy** restores editing
 without another entry write. This P3 usability limitation remains explicit.
 Local Chrome's aborted-request event after response `204` is separately recorded
 and does not establish a runtime defect. No application source changed in this
-step. Current-schema restore and final release acceptance remain open.
+step.
+
+The [DEPLOY-5 recovery rehearsal](validation/recovery-2026-10-15/README.md)
+uses the unchanged production scripts and images to recover schema 39 into a
+separate empty project. All 61 public tables (563 synthetic rows) and sequence
+metadata/actual state match before API startup or login. Actual confirmation,
+corruption, late transactional rollback and nonempty-target controls pass, as do
+restricted runtime authority, restored organizer/member login, gross/net 73,
+Fantasy 88/94, carry-forward and exact saved-receipt replay. A native same-origin
+stream reopens across API/web restart; fresh authoritative reads pass afterward
+and after database outage/reconnect. No production source changed. Final release
+acceptance, native Docker/public-host checks and off-host recovery remain open.
 
 The deployment runbook uses explicit migration and permission actions, never a
 production seed. Its backup script creates an atomic custom-format PostgreSQL

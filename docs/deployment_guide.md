@@ -48,8 +48,16 @@ acknowledged but the view could not refresh, use **Oppdater Fantasy**. This
 performs a read retry; the tested fresh entry submits exactly one entry write.
 Do not treat that notice as an instruction to repeat the mutation.
 
-Four of six iterations are complete. Current-schema backup/restore and final
-freeze/advisory/launch handoff remain open; this is not deployment sign-off.
+[DEPLOY-5 recovery acceptance](validation/recovery-2026-10-15/README.md) runs the
+actual current backup/restore scripts into an independent empty project with no
+migration before restore. All 61 public tables (563 synthetic rows) and actual
+sequence state match before API startup/login. Real grants, restored distinct
+account logins, score/Fantasy facts, exact replay, API/web native-stream reopen
+and database outage/reconnect pass. Both owned projects, private archives and
+temporary aliases are removed. No production source/script change was needed.
+
+Five of six iterations are complete. Final freeze/advisory/launch handoff remains
+open; this is not deployment sign-off or an off-host recovery exercise.
 Local Caddy certificate exceptions prove encrypted proxy
 behavior, not public trust. The high-port rehearsal checks redirect scheme/host/
 path only; verify following HTTP→HTTPS on actual host ports 80/443. Native Docker
@@ -886,8 +894,12 @@ authenticity or protect against concurrent file replacement.
 After verification, restore retains the pristine-target guard, one transaction
 with `--exit-on-error`, service-stop ordering and runtime-grant recovery. The
 [local checksum report](validation/restore-checksum-2026-10-15/README.md) includes
-disposable PostgreSQL late-failure rollback evidence; it is not a hosted recovery
-rehearsal.
+disposable PostgreSQL late-failure rollback evidence. The
+[current-application rehearsal](validation/recovery-2026-10-15/README.md) also
+executes this actual procedure with schema 39, full table/sequence parity,
+restored logins and restart/reconnect on isolated rootless Podman projects.
+Its moved archive pair stays local; operator-owned off-host transfer/restore and
+native Docker/public-host acceptance remain separate.
 
 For a replacement host with fresh Docker storage, use the release images matching
 that backup's schema and configure the owner/runtime roles in the private runtime

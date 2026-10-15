@@ -1,0 +1,57 @@
+{
+  "engine": "rootless Podman 5.8.7 via private Docker-compatible API",
+  "compose_cli": "5.6.0",
+  "native_docker_engine_acceptance": false,
+  "source_candidate": "b73d13e7f3aa8ee3508e306fdbb0b20584595937",
+  "context_sha256": "a32af6b17ec12f63abd5570d582c1ca49711a14a601de640aff0e1a8363ecea3",
+  "web_build": {
+    "base_commit": "22e90af40a9ba2e04d1a0ff2c02fbe26aaf634d1",
+    "overlays": {
+      "deploy/Caddyfile": "d3ccbbf1007c0d431b5ed119131f11c623dc168652710dcdef2e0d4ef7c4305e"
+    },
+    "context_sha256": "0e116c0531485bf26b3f1e4a3b8a20da0863fdca401746e26b7c4d87cf245634",
+    "tag": "localhost/golfsiden-web:deploy3-22e90af40a9b-0e116c053148",
+    "image": {
+      "Id": "badbe24d6c7b796cb174a733e9124a792fbb666319fcbc9ee046637a2d6741e6",
+      "Created": "2026-10-15T18:20:56.283730932Z",
+      "Architecture": "amd64",
+      "RepoDigests": [
+        "localhost/golfsiden-web@sha256:1acb9403b470a32071ca48ac8f25ae4641dbd6e11747edbc172871497f731f52"
+      ]
+    },
+    "actual_dockerfile": "frontend/Dockerfile.production",
+    "pull": "never",
+    "elapsed_seconds": 1.51,
+    "exit_code": 0,
+    "context_from_git_archive_plus_only_caddyfile_overlay": true,
+    "temporary_context_removed": true
+  },
+  "images": {
+    "postgres": "localhost/golfsiden-postgres:deploy2-b73d13e7f3aa-a32af6b17ec1",
+    "api": "localhost/golfsiden-api:deploy2-b73d13e7f3aa-a32af6b17ec1",
+    "web": "localhost/golfsiden-web:deploy3-22e90af40a9b-0e116c053148"
+  },
+  "checks": {
+    "exact_images_unchanged_inputs_private_configuration": true,
+    "compose_postgres_fresh_cluster_healthy": true,
+    "restore_target_started_without_migrations": true,
+    "script_only_compose_config_bound_to_owned_project_and_exact_images": true,
+    "independent_fresh_target_volume_credentials_and_zero_public_objects": true,
+    "archive_pair_relocated_and_sha256_verified": true,
+    "actual_restore_requires_explicit_confirmation": true,
+    "actual_restore_rejects_tampered_pair_without_public_objects": true,
+    "actual_current_archive_failure_rolls_back_to_zero_public_objects": true,
+    "restored_actual_runtime_identity_schema39_and_ddl_history_denials": true,
+    "all_public_table_counts_row_sha256_and_sequences_match_before_login": true,
+    "actual_repeat_restore_rejects_populated_target_preserving_exact_state": true,
+    "production_api_web_healthy_https_through_caddy": true
+  },
+  "owned_containers_networks_volumes_removed": true,
+  "owned_resource_counts_before_removal": {
+    "containers": 3,
+    "volumes": 3,
+    "networks": 2
+  },
+  "private_configuration_diagnostics_ca_profile_removed": true,
+  "three_deploy2_images_and_repaired_web_retained": true
+}
