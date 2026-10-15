@@ -2051,8 +2051,13 @@ For a future catalog entry verified as usable, the backend retrieves detail
 through the [official GolfCourseAPI contract](https://api.golfcourseapi.com/docs/api/)
 at
 `GET /api/tournaments/{tournament_id}/course-provider/courses/{provider_course_id}`.
-The backend checks the exact tournament-admin membership and catalog readiness,
-then commits before consulting its cache or provider. Unknown IDs return `404`;
+The backend commits a full active-session/exact-admin preflight before course
+readiness, cache or provider work. It separately reauthorizes that same session
+and tournament before exposing either the result or its error, with no database
+locks held across provider I/O. Local authority retries never repeat the provider
+fetch or cache work. A request admitted before authority loss may still consume
+quota or warm the global bounded cache; its response is denied after authority
+loss. Unknown IDs return `404`;
 known incomplete IDs return `409`, both before provider I/O. Provider IDs use
 the official opaque, case-insensitive eight-character alphabet.
 
@@ -2076,6 +2081,20 @@ private/non-cacheable; unavailable, busy, timeout, exhausted, malformed,
 upstream-failure, incomplete-catalog, and missing-course states use the standard
 error envelope. The provider's live `{ "course": ... }` envelope is decoded,
 and empty tees or missing/duplicate stroke indexes fail closed.
+
+All three course GETs retain the actual session and exact tournament-admin
+membership, with final database wall-clock expiry checks. Catalog search and
+registered preset SQL/assembly stay within their local read transaction, including
+empty results. Revocation/credential changes that precede their authority locks
+deny the read; later changes serialize behind a local authorized read. Expiry
+during membership or preset-loading waits returns `401`; a snapshot conflict
+retries the complete local read once, then returns generic `503`. All selected
+route statuses use `private, no-store`, including authentication and typed-path
+rejections. Global administrators have no cross-tournament bypass. The
+[A1n report](validation/course-read-session-2026-10-15/README.md) distinguishes
+actual GET regressions from conditional provider-helper coverage: the unchanged
+catalog still has no usable entry. No external provider was contacted for that
+acceptance, and course-configuration writes retain their existing owner.
 
 Saved user-supplied presets are available without a provider key. In tournament
 administration, open **Baner**, choose **Endre** or **Konfigurer** for a draft

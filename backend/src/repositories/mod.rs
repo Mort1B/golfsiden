@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod course_presets;
+pub(crate) mod course_reads;
 pub mod course_revisions;
 pub mod invitations;
 pub mod leaderboards;

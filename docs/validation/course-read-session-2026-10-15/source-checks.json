@@ -1,0 +1,31 @@
+{
+  "baseline_revision": "1ea62d678b92e91b534226e82f34718a2fc0dd72",
+  "source_sha256": {
+    "backend/src/api/course_catalog.rs": "bad3ac17ac2ca4a7007f376ee6c06ab6b2219ec59a85699a77a362a76e6ed29a",
+    "backend/src/api/course_provider.rs": "4ae7c5c6a973767d1cd6ecdb392980669b0a6f83280cef32b15cbf2a2b8b17ad",
+    "backend/src/repositories/course_presets.rs": "4d1940006368d6a7fe86217c1a9a8d228bf7abb0f050787c9558007e71d02c26",
+    "backend/src/repositories/course_reads.rs": "0875dfaa4b628a36670d59e8a71d11fb3a5c41d8d0cefa1efbb1a50a4689cfc8",
+    "backend/src/repositories/mod.rs": "90f7d974a29de99481c077de2725959aef4990a19f37341e96a7e0b23f190307"
+  },
+  "unchanged_provider_fetch": true,
+  "unchanged_preset_sql_projection": true,
+  "unchanged_round_configuration_mutation_caller": true,
+  "production_file_limit": {
+    "backend/src/api/course_catalog.rs": 98,
+    "backend/src/api/course_provider.rs": 170,
+    "backend/src/repositories/course_presets.rs": 125,
+    "backend/src/repositories/course_reads.rs": 42,
+    "backend/src/repositories/mod.rs": 31
+  },
+  "unchanged_preset_dto_and_row_fields": true,
+  "final_test_sha256": {
+    "backend/tests/course_read_sessions.rs": "34db11c5fe2a660fe5aecee3b526125657a4da4f9370ffb57e12240f8292965c",
+    "backend/tests/course_read_sessions/authorization.rs": "929633a1ed378ec3f0191bda0c005387b071cdd26eb0a139db80a5bb8352d6bd",
+    "backend/tests/course_read_sessions/contracts.rs": "20bf3e77118ac527b7db13a6398efc628a340595448bd594aa77088bbb072e4f",
+    "backend/tests/course_read_sessions/expiry.rs": "e4982b4025640416553517e10af69f5a4054a94b2fcb8dd800913b4d635b956b",
+    "backend/tests/course_read_sessions/retry.rs": "68d8ddbe67f27443b2a37dc0ef7dd4733764ff7bfdeff43c5ce19c3a03fc1b0c",
+    "backend/tests/course_read_sessions/support.rs": "5b5e401513e2b6be6a21aa4ac94a34c58ca7e42da182bbcdda7a98806a7991d7",
+    "backend/src/api/course_provider/session_tests.rs": "2c5c67f390c02d233d57ee3c0922e6a7dc81b6abdc6697adff8c5b1930f512ed",
+    "backend/src/api/course_provider/session_tests/support.rs": "d33ce4561595c9ab97c3993bafaadedc18ee0c36334712180a25a166adba6ae5"
+  }
+}

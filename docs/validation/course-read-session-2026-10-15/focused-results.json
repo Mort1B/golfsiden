@@ -1,0 +1,68 @@
+{
+  "phase": "current",
+  "focused_only": true,
+  "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "course-sessions": {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "golf-api",
+      "--features",
+      "database-tests",
+      "--test",
+      "course_read_sessions",
+      "--",
+      "--test-threads=2"
+    ],
+    "exit": 0,
+    "seconds": 28.14,
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  "conditional-provider": {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "golf-api",
+      "--lib",
+      "--features",
+      "database-tests",
+      "api::course_provider::session_tests::",
+      "--",
+      "--test-threads=2"
+    ],
+    "exit": 0,
+    "seconds": 9.44,
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  "existing-course-contracts": {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "golf-api",
+      "--features",
+      "database-tests",
+      "--test",
+      "course_provider",
+      "--test",
+      "course_presets",
+      "--",
+      "--test-threads=2"
+    ],
+    "exit": 0,
+    "seconds": 2.12,
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0
+  },
+  "owned_container_removed": true
+}

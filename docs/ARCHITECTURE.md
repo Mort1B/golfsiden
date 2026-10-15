@@ -610,7 +610,8 @@ See the [checksum acceptance report](validation/restore-checksum-2026-10-15/READ
   [A1l acceptance](validation/invitation-read-session-2026-10-15/README.md).
   Final-visibility metadata now does too; see
   [A1m acceptance](validation/final-visibility-session-2026-10-15/README.md).
-  The three course GETs retain user-only authorization boundaries. Awards,
+  The three course GETs now use the course-specific session boundary below; see
+  [A1n acceptance](validation/course-read-session-2026-10-15/README.md). Awards,
   player-account metadata, result-share status, Fantasy reads and match listing already perform
   final session checks. Bound
   families have different isolation/retry owners; Fantasy selection/results GETs
@@ -618,12 +619,28 @@ See the [checksum acceptance report](validation/restore-checksum-2026-10-15/READ
   retry cannot be applied without preserving that transaction/side-effect boundary.
   This is source assessment, not a runtime-wide acceptance or a change to those
   implementations; remaining repairs require their own bounded steps.
+- `repositories/course_reads.rs` owns exact-admin course-read authority using
+  `session_read`: derive the user from the locked active session, preserve the
+  tournament-existence 404 before exact-admin 403, and hold session/user and
+  membership share locks until the final wall-clock session check and commit.
+  Its synchronous projection helper permits complete local read retries without
+  putting provider/cache futures inside a database transaction. Catalog query
+  validation/search runs inside that boundary after authorization. Preset HTTP
+  reads use the same authority owner around their unchanged ordered SQL and
+  assembly, including empty results. Direct/nested `40001` discards the local
+  attempt and retries once, then yields generic private 503. All statuses on the
+  three selected course GETs, including extractor failures, are `private, no-store`.
 - Course discovery is a bundled JSON catalog, not provider free-text search or a
-  persistence model. Its tournament-scoped GET handler requires exact admin
-  membership, searches names and internal aliases locally, preserves file order,
-  and reports nullable verified provider IDs plus explicit readiness. Missing or
-  incomplete entries cannot cross the detail boundary. Future usable detail
-  reads commit authorization before cache/network work; the adapter owns the
+  persistence model. Its tournament-scoped GET searches names and internal
+  aliases locally, preserves file order, and reports nullable verified provider
+  IDs plus explicit readiness. Missing or incomplete entries cannot cross the
+  detail boundary. Provider GET commits a full session/admin preflight before
+  readiness/cache/network work, then separately reauthorizes the same session
+  and tournament before exposing either returned facts or errors. No authority
+  locks span external I/O. The API's one-shot fetch future is outside both local
+  retry boundaries; retries never repeat fetching, quota or cache work. A fetch
+  already admitted by preflight may consume quota/warm the bounded global cache
+  even if postflight denies its response. The unchanged adapter owns the
   sensitive Bearer credential, time/concurrency/body bounds, finite TTL cache,
   and per-process UTC quota. It decodes the provider's wrapped detail shape into
   stable local DTOs, derives ordered hole numbers, and never invents a tee ID.
@@ -639,8 +656,10 @@ See the [checksum acceptance report](validation/restore-checksum-2026-10-15/READ
   are append-only. Pre-migration rows keep null revision metadata instead of
   receiving invented provenance.
 - Schema 21 adds an explicit `course_presets` registry over finalized manual
-  revisions for administrator-supplied layouts. Its exact-admin read holds the
-  tournament membership lock through assembly in a repeatable-read transaction;
+  revisions for administrator-supplied layouts. Its HTTP session/admin read holds
+  authority through assembly and final expiry checking in a repeatable-read
+  transaction. The historical/internal user-only preset helper remains separate
+  and shares the same data projection, including for schema-20 upgrade fixtures;
   ordinary private round revisions are never discovered as presets. The picker
   sends inspected facts through the existing validated manual save boundary,
   creating an independent revision rather than attaching the registry's IDs.

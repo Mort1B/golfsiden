@@ -12,10 +12,13 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
-    api::{auth::AuthenticatedSession, authorization::map_authorization_error},
+    api::{
+        auth::AuthenticatedSession,
+        private_read::{map_error as map_read_error, response as private_response},
+    },
     course_catalog::{self, CourseCatalogItem},
     error::ApiError,
-    repositories::{course_presets, tournament_authorization},
+    repositories::{course_presets, course_reads},
 };
 
 pub fn routes() -> Router<Arc<AppState>> {
@@ -25,6 +28,7 @@ pub fn routes() -> Router<Arc<AppState>> {
             "/api/tournaments/{tournament_id}/course-presets",
             get(presets),
         )
+        .layer(axum::middleware::map_response(private_response))
 }
 
 async fn presets(
@@ -32,10 +36,13 @@ async fn presets(
     Path(tournament_id): Path<Uuid>,
     authenticated: AuthenticatedSession,
 ) -> Result<impl IntoResponse, CatalogApiError> {
-    let courses =
-        course_presets::list_for_admin(&state.pool, authenticated.principal.user_id, tournament_id)
-            .await
-            .map_err(map_authorization_error)?;
+    let courses = course_presets::list_for_session(
+        &state.pool,
+        authenticated.principal.session_id,
+        tournament_id,
+    )
+    .await
+    .map_err(map_read_error)?;
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(courses)))
 }
 
@@ -56,22 +63,26 @@ async fn list(
     authenticated: AuthenticatedSession,
     input: Result<Query<CatalogQuery>, QueryRejection>,
 ) -> Result<impl IntoResponse, CatalogApiError> {
-    tournament_authorization::require_tournament_admin_read(
+    let courses = course_reads::local_for_session(
         &state.pool,
-        authenticated.principal.user_id,
+        authenticated.principal.session_id,
         tournament_id,
+        || -> Result<_, CatalogApiError> {
+            let Query(input) = input.as_ref().map_err(|_| {
+                ApiError::BadRequest("query must contain only an optional text q".to_owned())
+            })?;
+            Ok(
+                course_catalog::search(input.q.as_deref()).map_err(|error| match error {
+                    course_catalog::CourseCatalogError::InvalidQuery => {
+                        ApiError::BadRequest(error.to_string())
+                    }
+                    course_catalog::CourseCatalogError::InvalidCatalog => ApiError::Internal,
+                })?,
+            )
+        },
     )
     .await
-    .map_err(map_authorization_error)?;
-    let Query(input) = input.map_err(|_| {
-        CatalogApiError(ApiError::BadRequest(
-            "query must contain only an optional text q".to_owned(),
-        ))
-    })?;
-    let courses = course_catalog::search(input.q.as_deref()).map_err(|error| match error {
-        course_catalog::CourseCatalogError::InvalidQuery => ApiError::BadRequest(error.to_string()),
-        course_catalog::CourseCatalogError::InvalidCatalog => ApiError::Internal,
-    })?;
+    .map_err(map_read_error)??;
     Ok((
         [(CACHE_CONTROL, "private, no-store")],
         Json(CatalogResponse { courses }),

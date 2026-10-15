@@ -32,9 +32,12 @@ closes two more with final match-loading expiry evidence. The
 one more with final metadata/count-loading expiry evidence. The
 [final-visibility metadata repair](../final-visibility-session-2026-10-15/README.md)
 closes the last P2 route in that inventory with reproduced expiry, revocation
-and credential-loss evidence. Zero P2 routes and three P3 course routes remain
-in A1f; the course findings remain source-supported without new race reproduction.
-Other P2 findings below and legacy-write inventory stay queued. The assessment
+and credential-loss evidence. The
+[course-read repair](../course-read-session-2026-10-15/README.md) closes A1f's
+three P3 routes with actual GET regressions and conditional provider-helper
+coverage. No P2/P3 read route remains unresolved in that inventory after the
+linked repairs. Other findings keep their separately linked acceptance, while
+legacy-write inventory remains separate and unassessed. The assessment
 below describes the originally reviewed revision.
 
 The [Rustls dependency repair](../rustls-update-2026-10-15/README.md) follows A4,

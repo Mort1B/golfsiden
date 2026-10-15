@@ -1,0 +1,35 @@
+{
+  "phase": "baseline",
+  "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "course-sessions": {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "golf-api",
+      "--features",
+      "database-tests",
+      "--test",
+      "course_read_sessions",
+      "--",
+      "--test-threads=2"
+    ],
+    "exit": 101,
+    "seconds": 25.9,
+    "passed": 1,
+    "failed": 7,
+    "ignored": 0,
+    "failed_tests": [
+      "course_read_sessions::authorization::membership_demotion_retries_exact_admin_and_cancellation_releases_session",
+      "course_read_sessions::authorization::credential_replacement_after_extraction_denies_all_three_gets",
+      "course_read_sessions::contracts::exact_payloads_roles_query_errors_and_private_extractor_responses",
+      "course_read_sessions::authorization::revocation_after_extraction_before_authority_denies_all_three_gets",
+      "course_read_sessions::expiry::preset_final_loading_expiry_denies_populated_and_empty_results",
+      "course_read_sessions::retry::serialization_failure_retries_once_then_private_503",
+      "course_read_sessions::expiry::expiry_during_membership_wait_denies_all_three_gets"
+    ],
+    "expected_original_regressions": true
+  },
+  "owned_container_removed": true
+}

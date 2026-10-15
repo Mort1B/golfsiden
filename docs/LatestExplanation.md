@@ -1,47 +1,50 @@
-# Latest iteration — bounded team-member loading
+# Latest iteration — session-bound course reads
 
-A8 replaces the shared team-list loader's per-team query loop with one query for
-all selected teams' members. Empty lists retain one data SELECT; populated lists
-use two regardless of team count. For example, 100 teams previously required
-101 data SELECTs and now require two. Authorization and transaction work remain
-additional and unchanged.
+A1n repairs the final three P3 routes in the private-read inventory: course
+catalog, registered presets and provider-course detail GETs. They retain the
+actual session and exact tournament-admin membership, with final database
+wall-clock expiry checks. Every selected-route status is private/no-store.
+The bundled catalog, presets, provider normalization and response contracts are
+unchanged. No schema, frontend, course-configuration write or provider settings
+changed.
 
-The team query keeps native name/UUID order. One bound UUID array limits member
-loading to those selected teams, with the original position/null/name/player-ID
-ordering inside each team. Lookup-only grouping keeps that SQL ordering and
-includes teams with no members. No new API fields, schema, indexes or frontend
-behavior are introduced.
+Catalog query validation and local search run inside the shared course-read
+authority transaction. Presets use the same owner around their existing ordered
+SQL/assembly. Empty results still require authority. Direct/nested serialization
+conflicts discard the local attempt and retry once, then return generic `503`.
+The historical internal user-only preset helper retains its contract and shares
+the same projection, including for schema-20 upgrade fixtures.
 
-Both repository wrappers and all team mutations are byte-identical to baseline.
-The protected read still owns repeatable read, session/user and membership
-locks, one complete serialization retry and the final wall-clock session check,
-even when the result is empty. The internal wrapper retains its existing
-isolation. HTTP cache/error behavior and live events are unchanged.
+Provider detail commits session/admin preflight before readiness/cache/network
+work, then separately reauthorizes the same session/tournament before exposing
+success or error. No database lock spans external I/O. The one-shot fetch future
+sits outside both local retry loops, so a conflict never repeats fetching, quota
+or cache work. A legitimately admitted fetch may warm the bounded global cache
+or consume quota even if postflight denies its response.
 
-The original loader fails the new query-budget test for 12 and 100 teams on all
-three actual read paths: internal repository, protected repository and Axum
-HTTP handler. The repaired loader passes 0/1/12/100-team budgets. Complete
-response hashes match across revisions and every response matches the original
-SQL oracle. Focused PostgreSQL/API coverage also retains empty teams, nullable
-schedules, null/duplicate member positions, native SQL collation, player UUID
-ties, sibling rounds and foreign-tournament denials. All 14 existing session
-regressions pass. Backend formatting, 264 unit tests and strict Clippy pass.
+Before repair, controlled late revocation, credential loss and expiry still
+returned catalog/presets `200` or provider `409` incomplete. All now return `401`.
+Preset-loading expiry also returned `200`; populated and empty cases now return `401`.
+Existing preset membership conflicts returned `500`; the new full local retry
+reauthorizes and returns `403` after demotion, or `503` after repeated conflicts.
+Seven original regression tests failed as expected. The final focused run passes
+eight real-GET cases with expanded snapshot/no-write assertions, five conditional-
+provider cases and six existing course contract tests. Backend formatting, 264
+unit tests and strict Clippy pass.
 
-The full PostgreSQL ladder passes 933 tests, with five manual/exclusive probes
-ignored; the new exclusive measurement was run explicitly. Migration and seed
-checks pass against PostgreSQL 17.10 with all 39 migrations. The final serial
-local HTTP median for 100 teams falls from 31.35 to 12.74 ms. Empty and single-
-team HTTP medians are slower; this warm synthetic debug-build probe establishes
-neither an overall product speedup nor hosted/frontend latency. It includes
-application handling and JSON collection, excluding TCP, TLS, proxy and browser
-work.
+The catalog still has no usable provider entry. Remote/cache success is covered
+only through the same API orchestration helper with local doubles, not a live
+successful provider GET. The tests hold real loopback HTTP while authority writers
+finish, verify both success/error suppression after loss, and prove two local
+postflight attempts execute fetching only once. No external provider was called.
 
-Independent design/source review found no production issue. Review caught and
-closed a stale-output issue in the rerun harness. A serial comparison also
-caught reused baseline build artifacts; those current results were discarded,
-the package was rebuilt and the repaired query-budget probe passed again.
-The [A8 report](validation/team-loading-2026-10-15/README.md) retains commands,
-source/probe hashes, exact response parity, final samples, failed-attempt context
-and cleanup evidence. Final independent review recalculated the retained results
-and found no issues. The next candidate in [the plan](PLANS.md) is the remaining
-P3 course-read authority boundary; no queued implementation began.
+The full PostgreSQL ladder passes 946 tests, zero failures, with five existing
+manual/exclusive probes ignored. Migrate and seed pass with all 39 migrations.
+The final focused run separately validates the expanded assertions added during
+that full run. All owned PostgreSQL fixtures were removed.
+The [A1n report](validation/course-read-session-2026-10-15/README.md)
+records the boundaries, baseline evidence, commands and limits. This closes only
+the inventoried GET family, not unassessed legacy writes or hosted security
+acceptance. Final independent evidence/plan review found no issues. The [plan](PLANS.md)
+closes A1n and proposes a documentation-only legacy-write authority inventory;
+no adjacent assessment or implementation began.

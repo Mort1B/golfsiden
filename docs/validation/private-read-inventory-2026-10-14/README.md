@@ -14,8 +14,11 @@ closes the other two match GETs with final match-loading expiry evidence.
 closes its GET with final metadata/count-loading expiry evidence.
 [A1m final-visibility metadata acceptance](../final-visibility-session-2026-10-15/README.md)
 closes the last P2 route with reproduced expiry/revocation/credential-loss evidence.
-Zero P2 routes and three P3 course routes remain in this inventory. Other P2
-findings in the original review remain separate. The classifications, manifest
+[A1n course-read acceptance](../course-read-session-2026-10-15/README.md) closes
+the three remaining P3 routes with actual GET session regressions and conditional
+provider-helper coverage. Zero P2 or P3 routes remain unresolved in this inventory
+after those linked repairs. Other original-review findings and unassessed legacy
+writes remain separate. The classifications, manifest
 and source anchors below preserve the original A1f assessment revision.
 
 Reviewed source revision: `21917b6931c4f94dfacdbb36ded7f390f6108834`.
@@ -219,6 +222,14 @@ R2 is the remaining user-only metadata boundary; no changed visibility mutation
 or hidden-score disclosure was demonstrated. Cache policy is S.
 
 ### Courses
+
+Follow-up: [A1n](../course-read-session-2026-10-15/README.md) binds all three GETs
+to active-session/exact-admin authority. Catalog/preset local assembly has a final
+session check; provider GET uses separate preflight/postflight transactions with
+one fetch/cache future between them, including reauthorization before errors.
+All selected statuses are private/no-store. The original source-only facts below
+remain pinned to the assessed revision; usable-provider success is still absent
+from the unchanged bundled catalog and is covered only through the API helper.
 
 - [Catalog](../../../backend/src/api/course_catalog.rs#L53) calls the
   [user-only admin helper](../../../backend/src/repositories/tournament_authorization.rs#L35)

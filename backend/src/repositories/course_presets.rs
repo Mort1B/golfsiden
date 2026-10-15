@@ -1,8 +1,12 @@
 use serde::Serialize;
-use sqlx::PgPool;
+use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
 use super::tournament_authorization::{self, AuthorizationError};
+use super::{
+    course_reads,
+    session_read::{self, SessionReadError},
+};
 
 #[derive(Clone, Copy, Serialize, sqlx::Type)]
 #[serde(rename_all = "lowercase")]
@@ -66,6 +70,28 @@ pub async fn list_for_admin(
         tournament_id,
     )
     .await?;
+    let presets = list_in_transaction(&mut tx).await?;
+    tx.commit().await?;
+    Ok(presets)
+}
+
+pub async fn list_for_session(
+    pool: &PgPool,
+    session: Uuid,
+    tournament: Uuid,
+) -> Result<Vec<CoursePreset>, SessionReadError> {
+    session_read::retry(|| async {
+        let mut tx = course_reads::begin_admin(pool, session, tournament).await?;
+        let presets = list_in_transaction(&mut tx).await?;
+        session_read::finish(tx, session).await?;
+        Ok(presets)
+    })
+    .await
+}
+
+async fn list_in_transaction(
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<Vec<CoursePreset>, sqlx::Error> {
     let rows = sqlx::query_as::<_, Row>(
         "SELECT c.id, c.name AS course_name, c.location, t.category, t.name AS tee_name,
          t.course_rating::float8 AS course_rating, t.slope_rating, h.hole_number AS number,
@@ -74,7 +100,7 @@ pub async fn list_for_admin(
          JOIN tees t ON t.course_id=c.id JOIN holes h ON h.tee_id=t.id
          WHERE c.source='manual' ORDER BY p.display_order, c.id, h.hole_number",
     )
-    .fetch_all(&mut *tx)
+    .fetch_all(&mut **tx)
     .await?;
     let mut presets: Vec<CoursePreset> = Vec::new();
     for row in rows {
@@ -101,6 +127,5 @@ pub async fn list_for_admin(
             });
         }
     }
-    tx.commit().await?;
     Ok(presets)
 }

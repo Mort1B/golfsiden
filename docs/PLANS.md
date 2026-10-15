@@ -5,40 +5,39 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A8 acceptance is in the
-[team-loading report](validation/team-loading-2026-10-15/README.md).
+None. A1n acceptance is in the
+[course-read report](validation/course-read-session-2026-10-15/README.md).
 
 ## Next candidate — requires approval
 
-### A1n — P3: bind the three course GETs to complete read authority
+### A1o — assessment only: legacy team/round write-session inventory
 
-Evidence: the remaining [course-read source inventory](validation/private-read-inventory-2026-10-14/README.md#courses).
-These expose global bundled/registered course facts; successful provider impact
-is conditional. No private-score disclosure or reachable provider-quota abuse
-was established by that assessment.
+The private-read inventory assessed GETs, not legacy writes. Selecting this
+candidate authorizes a documentation-only source assessment, not remediation.
+No severity is assigned before evidence establishes reachability and impact.
 
-- Goal: retain the actual session and exact tournament-admin authority through
-  each selected course response, with a final wall-clock check before success.
-- Scope: only course catalog, registered presets and provider-course detail GETs,
-  their narrow repository/authority helpers, focused tests and docs. Exclude
-  course writes, other route families, frontend/DTO/schema changes, catalog or
-  provider credential changes, hosted/provider administration and performance work.
-- Behavior: derive authority from the locked session and stored membership,
-  preserve payloads, ordering and provider availability/error contracts, and use
-  private/no-store responses on all selected-route statuses. Keep local dependent
-  reads/assembly in their owning transaction and recheck expiry even for empty
-  results. Do not hold database locks across external I/O; separately authorize
-  returned provider facts. Do not replay remote fetching or cache writes as a
-  database-read retry. Any retry must discard the failed local snapshot's facts.
-- Validation: begin with failing revocation/credential/expiry regressions for the
-  three actual GET paths; cover exact-admin membership changes, populated/empty
-  payload parity, private errors and conditional provider/cache behavior using
-  local doubles. Run affected backend/PostgreSQL ladders, migrate/seed and
-  independent review. No external provider or hosted acceptance claim.
-- Invariants: preserve tournament membership isolation, course fact ownership,
-  all handicap/score rules and existing write boundaries.
-- Stop: publish only this course-read boundary and evidence; begin no adjacent
-  write-expiry inventory, driver/test maintenance or other optimization.
+- Goal: identify which retained team/round mutation entry points are reachable,
+  where session/admin authority is retained, and whether a final wall-clock
+  session check covers their dependent work before mutation/commit.
+- Scope: legacy granular team create/assign/remove and retained round mutation
+  routes, their preflight/repository/database guard ownership, existing tests
+  and a bounded route/caller manifest. Exclude the already assessed score,
+  Fantasy, invitation and profile families, frontend behavior, runtime fixes,
+  dependency/schema changes, performance work and hosted administration.
+- Behavior: pin the source revision and trace HTTP methods through their actual
+  callers. Separate reachable routes, retired/unreachable functions and trusted
+  internal helpers. Classify authority as bound/incomplete/unresolved, rating
+  concrete findings by severity and evidence strength. Do not infer an exploit
+  from an unused helper or equate a final check with freezing time through
+  commit/network delivery. Preserve all existing runtime behavior.
+- Validation: reconcile route and repository references, source anchors, current
+  contracts and existing test coverage; check documentation links/diff and obtain
+  independent read-only review. No database/provider/browser/hosted access is
+  needed; record that no new runtime race was reproduced.
+- Invariants: no data, source, contract, scoring, handicap, locking or session
+  behavior changes; report only supported findings and explicit uncertainty.
+- Stop: publish the inventory and one evidence-based bounded next candidate.
+  Do not implement a fix or begin deferred driver/test/UI/optimization work.
 
 ## Later queue
 
@@ -48,9 +47,10 @@ All findings and individual acceptance criteria are in the
 [review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
 Select one bounded step at a time; none is implemented by this plan.
 
-The remaining P3 course GETs are the next candidate above. Keep legacy team/
-round write-expiry inventory separate; the private-read inventory never assessed
-those writes. Selecting that read boundary does not authorize adjacent work.
+The selected private-read findings now have linked acceptance. The next candidate
+is only a legacy team/round write-session source inventory; those writes were
+not covered by the private-read inventory. No remediation is selected by that
+assessment plan.
 
 Only after the selected review follow-ups, consider measurement-only steps for
 remaining Fantasy invalidation/fact-loading cost and empty-queue polling. No

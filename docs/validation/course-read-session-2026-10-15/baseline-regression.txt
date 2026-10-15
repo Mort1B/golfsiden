@@ -1,0 +1,84 @@
+running 8 tests
+test course_read_sessions::authorization::membership_demotion_retries_exact_admin_and_cancellation_releases_session ... FAILED
+test course_read_sessions::authorization::credential_replacement_after_extraction_denies_all_three_gets ... FAILED
+test course_read_sessions::contracts::exact_payloads_roles_query_errors_and_private_extractor_responses ... FAILED
+test course_read_sessions::authorization::revocation_after_extraction_before_authority_denies_all_three_gets ... FAILED
+test course_read_sessions::expiry::preset_final_loading_expiry_denies_populated_and_empty_results ... FAILED
+test course_read_sessions::retry::serialization_failure_retries_once_then_private_503 ... FAILED
+test course_read_sessions::retry::unrelated_database_failure_is_not_retried ... ok
+test course_read_sessions::expiry::expiry_during_membership_wait_denies_all_three_gets ... FAILED
+
+failures:
+
+---- course_read_sessions::authorization::membership_demotion_retries_exact_admin_and_cancellation_releases_session stdout ----
+
+thread 'course_read_sessions::authorization::membership_demotion_retries_exact_admin_and_cancellation_releases_session' (896397) panicked at backend/tests/course_read_sessions/authorization.rs:95:9:
+assertion `left == right` failed
+  left: 500
+ right: 403
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- course_read_sessions::authorization::credential_replacement_after_extraction_denies_all_three_gets stdout ----
+/api/tournaments/00000000-0000-0000-0000-000000002001/course-catalog: 200 OK, code=null
+/api/tournaments/00000000-0000-0000-0000-000000002001/course-presets: 200 OK, code=null
+/api/tournaments/00000000-0000-0000-0000-000000002001/course-provider/courses/dcm3cn0g: 409 Conflict, code="course_catalog_incomplete"
+
+thread 'course_read_sessions::authorization::credential_replacement_after_extraction_denies_all_three_gets' (896396) panicked at backend/tests/course_read_sessions/authorization.rs:56:9:
+assertion `left == right` failed
+  left: 200
+ right: 401
+
+---- course_read_sessions::contracts::exact_payloads_roles_query_errors_and_private_extractor_responses stdout ----
+
+thread 'course_read_sessions::contracts::exact_payloads_roles_query_errors_and_private_extractor_responses' (896413) panicked at backend/tests/course_read_sessions/contracts.rs:32:9:
+assertion `left == right` failed
+  left: "no-store"
+ right: "private, no-store"
+
+---- course_read_sessions::authorization::revocation_after_extraction_before_authority_denies_all_three_gets stdout ----
+/api/tournaments/00000000-0000-0000-0000-000000002001/course-catalog: 200 OK, code=null
+/api/tournaments/00000000-0000-0000-0000-000000002001/course-presets: 200 OK, code=null
+/api/tournaments/00000000-0000-0000-0000-000000002001/course-provider/courses/dcm3cn0g: 409 Conflict, code="course_catalog_incomplete"
+
+thread 'course_read_sessions::authorization::revocation_after_extraction_before_authority_denies_all_three_gets' (896411) panicked at backend/tests/course_read_sessions/authorization.rs:56:9:
+assertion `left == right` failed
+  left: 200
+ right: 401
+
+---- course_read_sessions::expiry::preset_final_loading_expiry_denies_populated_and_empty_results stdout ----
+
+thread 'course_read_sessions::expiry::preset_final_loading_expiry_denies_populated_and_empty_results' (896428) panicked at backend/tests/course_read_sessions/expiry.rs:75:9:
+assertion `left == right` failed
+  left: 200
+ right: 401
+
+---- course_read_sessions::retry::serialization_failure_retries_once_then_private_503 stdout ----
+
+thread 'course_read_sessions::retry::serialization_failure_retries_once_then_private_503' (896450) panicked at backend/tests/course_read_sessions/retry.rs:21:9:
+assertion `left == right` failed
+  left: 500
+ right: 503
+
+---- course_read_sessions::expiry::expiry_during_membership_wait_denies_all_three_gets stdout ----
+/api/tournaments/00000000-0000-0000-0000-000000002001/course-catalog: 200 OK, code=null
+/api/tournaments/00000000-0000-0000-0000-000000002001/course-presets: 200 OK, code=null
+/api/tournaments/00000000-0000-0000-0000-000000002001/course-provider/courses/dcm3cn0g: 409 Conflict, code="course_catalog_incomplete"
+
+thread 'course_read_sessions::expiry::expiry_during_membership_wait_denies_all_three_gets' (896424) panicked at backend/tests/course_read_sessions/expiry.rs:35:9:
+assertion `left == right` failed
+  left: 200
+ right: 401
+
+
+failures:
+    course_read_sessions::authorization::credential_replacement_after_extraction_denies_all_three_gets
+    course_read_sessions::authorization::membership_demotion_retries_exact_admin_and_cancellation_releases_session
+    course_read_sessions::authorization::revocation_after_extraction_before_authority_denies_all_three_gets
+    course_read_sessions::contracts::exact_payloads_roles_query_errors_and_private_extractor_responses
+    course_read_sessions::expiry::expiry_during_membership_wait_denies_all_three_gets
+    course_read_sessions::expiry::preset_final_loading_expiry_denies_populated_and_empty_results
+    course_read_sessions::retry::serialization_failure_retries_once_then_private_503
+
+test result: FAILED. 1 passed; 7 failed; 0 ignored; 0 measured; 0 filtered out; finished in 25.73s
+
+error: test failed, to rerun pass `-p golf-api --test course_read_sessions`

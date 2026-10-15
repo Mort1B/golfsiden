@@ -1,3 +1,4 @@
+use std::future::Future;
 use std::sync::Arc;
 
 use axum::{
@@ -12,17 +13,20 @@ use uuid::Uuid;
 
 use crate::{
     AppState,
-    api::{auth::AuthenticatedSession, authorization::map_authorization_error},
+    api::{
+        auth::AuthenticatedSession,
+        private_read::{map_error as map_read_error, response as private_response},
+    },
     course_catalog::{CourseCatalogError, ProviderCourseReadiness, provider_course_readiness},
     course_provider::{CourseDetail, CourseProviderError, normalize_course_id},
     error::ApiError,
-    repositories::tournament_authorization,
+    repositories::course_reads,
 };
 
 pub fn routes() -> Router<Arc<AppState>> {
     Router::new().route(
         "/api/tournaments/{tournament_id}/course-provider/courses/{provider_course_id}",
-        get(course),
+        get(course).layer(axum::middleware::map_response(private_response)),
     )
 }
 
@@ -31,8 +35,13 @@ async fn course(
     Path((tournament_id, provider_course_id)): Path<(Uuid, String)>,
     authenticated: AuthenticatedSession,
 ) -> Result<impl IntoResponse, CourseProviderApiError> {
-    authorize(&state, &authenticated, tournament_id).await?;
-    let course = fetch_course(&state, &provider_course_id).await?;
+    let course = authorized_course(
+        &state.pool,
+        authenticated.principal.session_id,
+        tournament_id,
+        || fetch_course(&state, &provider_course_id),
+    )
+    .await?;
     Ok(([(CACHE_CONTROL, "private, no-store")], Json(course)))
 }
 
@@ -56,19 +65,26 @@ pub(crate) async fn fetch_course(
         .map_err(CourseProviderApiError::Provider)
 }
 
-async fn authorize(
-    state: &AppState,
-    authenticated: &AuthenticatedSession,
+async fn authorized_course<F, Fut>(
+    pool: &sqlx::PgPool,
+    session: Uuid,
     tournament_id: Uuid,
-) -> Result<(), CourseProviderApiError> {
-    tournament_authorization::require_tournament_admin_read(
-        &state.pool,
-        authenticated.principal.user_id,
-        tournament_id,
-    )
-    .await
-    .map_err(map_authorization_error)?;
-    Ok(())
+    fetch: F,
+) -> Result<CourseDetail, CourseProviderApiError>
+where
+    F: FnOnce() -> Fut,
+    Fut: Future<Output = Result<CourseDetail, CourseProviderApiError>>,
+{
+    course_reads::local_for_session(pool, session, tournament_id, || ())
+        .await
+        .map_err(map_read_error)?;
+    let result = fetch().await;
+    // No authority locks span provider/cache work. Reauthorize before exposing
+    // either its facts or its errors, without replaying that work on retry.
+    course_reads::local_for_session(pool, session, tournament_id, || ())
+        .await
+        .map_err(map_read_error)?;
+    result
 }
 
 pub(crate) enum CourseProviderApiError {
@@ -163,3 +179,6 @@ impl IntoResponse for CourseProviderApiError {
         response
     }
 }
+
+#[cfg(all(test, feature = "database-tests"))]
+mod session_tests;
