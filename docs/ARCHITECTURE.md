@@ -2910,6 +2910,14 @@ scores must yield identical allowed JSON, including rank/count/finality/revision
 metadata. Never expose a hidden final through Fantasy while merely hiding its
 hole breakdown. Existing anonymous results links do not gain Fantasy data.
 
+The round-results repository currently scopes projection/response hashing to its
+target, but retains tournament-wide round locks, lazy deadline finalization and
+canonical sporting-fact loading/hashing/deserialization. This preserves the same
+transaction and lifecycle boundary as overall/breakdown reads; a valid GET can
+materialize other due rounds before commit and publish invalidation afterward.
+The [local measurement](validation/fantasy-measurement-2026-10-15/README.md)
+separates that first materialization from steady SQL/HTTP and save-refresh work.
+
 Committed lineup/configuration changes publish structural invalidation. Golf
 score, correction, match and visibility signals invalidate the Fantasy family in
 `api/liveInvalidation.ts`. Visibility/open/disconnection synchronously erase its

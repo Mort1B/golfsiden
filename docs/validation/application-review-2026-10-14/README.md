@@ -50,6 +50,10 @@ with reproduced membership/late-hierarchy expiry and complete rollback/control
 coverage. All three selected P2 write gaps now have linked acceptance. Its
 browser checks separately identify a P3 mobile manual-hole labeling issue,
 subsequently repaired by [A1s](../manual-hole-labels-2026-10-15/README.md).
+The separate [A1t Fantasy measurement](../fantasy-measurement-2026-10-15/README.md)
+now records local SQL/fact-loading, lock and refresh completion/cancellation
+costs. It changes no runtime code and establishes no new security/correctness
+severity or production-capacity claim.
 The source inventory itself claims no runtime reproduction. The
 assessment below describes the originally reviewed revision.
 

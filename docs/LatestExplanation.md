@@ -1,40 +1,40 @@
-# Latest iteration — visible mobile manual-hole labels
+# Latest iteration — Fantasy result and refresh measurements
 
-A1s closes the P3 presentation issue found during A1r browser acceptance. The
-manual hole grid now shows Hull, Par, Slagindeks and Avstand (yards) headings
-at mobile widths. The existing desktop heading rule becomes the base rule with
-mobile row spacing; the desktop breakpoint retains its previous spacing and
-appearance. Only two CSS rules changed. Component markup, accessible field/hole
-names, parsing, validation, state, optional distances and save behavior remain
-unchanged.
+A1t measures the existing application without changing production code. Two
+disposable tournaments contain one/five rounds, eight golfers, four scramble
+teams per round, 18 holes and two managers. Real Chrome, the unchanged API and
+PostgreSQL exercise editable saves first, then populated settled-result reads.
 
-Real Chrome checks pass at 320, 390 and 1280px. Rendered heading lines remain
-inside their columns and viewport, with clean distance-unit wrapping and
-separation from the first row. Header/input edges align; directly measured
-first-row inputs remain at least 44px. Empty, filled and validation-error rows
-are readable, first-invalid focus and Tab order are preserved, and a nine-to-18
-resize retains existing values while new rows remain empty.
+A scoped first-round result uses 25 tracked statements at both sizes, but its
+canonical bulk query returns four/twenty owners from all non-draft rounds. Mean
+bulk SQL time rises from 2.72 to 10.08ms, accounting for 83–95% of tracked SQL
+execution. Warm complete HTTP medians with tracking off are 21.28/44.98ms.
+SQL server time, application/network time and observer controls remain separate;
+no production speedup, capacity or projection-only interpretation is claimed.
 
-Each width makes two real private-200 saves, one variable layout and one fixed
-18-hole Stableford form. Receipts, collapse/focus and GET/reload verify returned
-names/counts; exact stored hole facts are not separately queried. Clearly
-injected denial/read-error/empty/long-preset states preserve existing behavior,
-including mounted-form retention and no automatic PUT retry. Real logout and
-the unchanged unusable-catalog fallback are covered without a remote provider
-request.
+The first populated GET materializes one/five Fantasy windows and two/ten locked
+selections, including eight carried lineups in the five-round fixture. It is
+excluded from steady timing. All subsequent result bodies and materialization
+counts remain identical. Six controlled probes directly observe lock waiting;
+their HTTP times include diagnostic control overhead, not only the injected wait.
 
-All 1,133 frontend tests across 147 files, typecheck, lint and production build
-pass. The unchanged API build and disposable PostgreSQL migration/seed checks
-pass with all 39 migrations, eight players and five rounds. Initial fixture
-connection and probe selector/capture issues were resolved before the final
-complete browser run. No backend or SQLx regression ladder was rerun for this
-CSS-only change. Owned services, container and private environment files were
-removed. Independent source/browser and documentation/next-plan reviews found
-no actionable findings. Final local links/source anchors, file-size/scope and
-diff/EOF whitespace checks pass. The
-[acceptance report](validation/manual-hole-labels-2026-10-15/README.md) retains
-commands, screenshots and precise validation limits.
+Every fully observed save completes seven/eleven GETs and cancels four/eight
+more, consistent with overlapping acknowledgment/SSE invalidation. All measured
+saves create exactly one accepted receipt; full observers also prove one PUT.
+Both three-second idle windows start no API request. Save timings end at the
+rendered authoritative lineup, and counts extend through enabled editing, a
+post-ready one-second tail and a quiet barrier. That refined boundary is recorded
+as a design deviation, rather than presented as immediate acknowledgment timing.
 
-A separate measurement-only Fantasy result/refresh candidate is proposed next.
-No performance investigation, runtime optimization, provider, dependency,
-schema or hosted work began in A1s.
+The unchanged API build, 39 migrations, frontend production build, diagnostic
+assertions, browser/privacy gates and owned cleanup pass. Source regression
+ladders are unchanged and were not rerun for this probe/documentation-only step.
+Independent review and static checks are recorded in the
+[measurement report](validation/fantasy-measurement-2026-10-15/README.md), alongside
+raw sanitized samples, reproducible probes, pilot repairs and exact limitations.
+
+The plan proposes one separately approved candidate: scope canonical sporting
+fact loading for a round result while retaining authorization, all-round locks,
+lazy finalization, visibility and session/commit boundaries. It does not address
+the all-draft save workload, which has no canonical sporting owners. No runtime
+optimization, refresh redesign, schema, dependency or hosted work began here.

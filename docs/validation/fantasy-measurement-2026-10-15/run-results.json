@@ -1,0 +1,22 @@
+{
+  "checks": {
+    "build": {
+      "exit": 0,
+      "seconds": 0.11
+    },
+    "migrate": {
+      "exit": 0,
+      "seconds": 0.36
+    },
+    "frontend-build": {
+      "exit": 0,
+      "seconds": 14.2
+    },
+    "measurement": {
+      "exit": 0
+    }
+  },
+  "owned_containers_removed": true,
+  "owned_processes_stopped": true,
+  "cleanup_errors": []
+}

@@ -2949,6 +2949,15 @@ records the subsequent startup-byte and cold/warm timing changes across every
 loaded JavaScript chunk. Player-specific match history still fetches full round
 listings before filtering; API and live-refresh behavior are unchanged.
 
+The [Fantasy result/refresh measurement](validation/fantasy-measurement-2026-10-15/README.md)
+uses real local PostgreSQL/API/Chrome fixtures. A scoped round result still loads
+all non-draft rounds' canonical sporting facts; its constant statement count
+does not imply constant cost. Save refresh counts distinguish completed reads
+from cancelled requests during overlapping acknowledgment/SSE invalidation.
+First-read lock/carry-forward materialization is separate from warm timings.
+Application behavior is unchanged, and these debug/local measurements establish
+no production service level or capacity.
+
 The [match-list startup investigation](performance/startup/README.md) traces
 initial stream opening, overlapping reads and reconnects. The subsequent
 [cancellation comparison](performance/cancellation/README.md) records the repair:

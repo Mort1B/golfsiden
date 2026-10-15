@@ -1,0 +1,548 @@
+[
+  {
+    "rounds": 1,
+    "http_reads": {
+      "none": {
+        "n": 20,
+        "median_ms": 21.28403299999627,
+        "p95_nearest_rank_ms": 27.386477000000014,
+        "min_ms": 19.56810000000405,
+        "max_ms": 37.68276099999639
+      },
+      "top": {
+        "n": 20,
+        "median_ms": 22.435171499997523,
+        "p95_nearest_rank_ms": 27.263457000000926,
+        "min_ms": 19.881044000001566,
+        "max_ms": 36.03569399999833
+      }
+    },
+    "steady_sql": {
+      "calls_per_read": 25.0,
+      "sql_mean_ms_per_read": 3.2717765,
+      "bulk_fact_mean_ms_per_read": 2.7159796,
+      "bulk_fact_share_of_sql_percent": 83.01238180541978,
+      "bulk_fact_owner_rows_per_read": 4.0,
+      "round_lock_rows_per_read": 1.0,
+      "round_lock_mean_ms_per_read": 0.0387262,
+      "shared_blocks_read": 0,
+      "shared_blocks_hit": 3780
+    },
+    "first_observed_settled_read": {
+      "ms": 49.6401690000057,
+      "bytes": 26208,
+      "materialization_before": {
+        "windows": 1,
+        "locked_windows": 0,
+        "selections": 2,
+        "locked_selections": 0,
+        "carried_lineups": 0
+      },
+      "materialization_after": {
+        "windows": 1,
+        "locked_windows": 1,
+        "selections": 2,
+        "locked_selections": 2,
+        "carried_lineups": 0
+      }
+    },
+    "save_receipt_latency": {
+      "full": {
+        "n": 5,
+        "median_ms": 123.9784980000004,
+        "p95_nearest_rank_ms": 168.3698540000005,
+        "min_ms": 112.33994499999972,
+        "max_ms": 168.3698540000005
+      },
+      "minimal": {
+        "n": 5,
+        "median_ms": 132.16381600000022,
+        "p95_nearest_rank_ms": 148.21090099999856,
+        "min_ms": 121.76565700000356,
+        "max_ms": 148.21090099999856
+      }
+    },
+    "observed_save_windows": [
+      {
+        "revision": 2,
+        "completed_gets": 7,
+        "completed_fantasy_gets": 4,
+        "cancelled_gets": 4,
+        "conflict_responses": 0,
+        "pending_at_tail_cutoff": 0,
+        "sql_exec_ms_entire_window": 55.614351
+      },
+      {
+        "revision": 4,
+        "completed_gets": 7,
+        "completed_fantasy_gets": 4,
+        "cancelled_gets": 4,
+        "conflict_responses": 0,
+        "pending_at_tail_cutoff": 0,
+        "sql_exec_ms_entire_window": 129.521397
+      },
+      {
+        "revision": 6,
+        "completed_gets": 7,
+        "completed_fantasy_gets": 4,
+        "cancelled_gets": 4,
+        "conflict_responses": 0,
+        "pending_at_tail_cutoff": 0,
+        "sql_exec_ms_entire_window": 73.488229
+      },
+      {
+        "revision": 8,
+        "completed_gets": 7,
+        "completed_fantasy_gets": 4,
+        "cancelled_gets": 4,
+        "conflict_responses": 0,
+        "pending_at_tail_cutoff": 0,
+        "sql_exec_ms_entire_window": 72.23823
+      },
+      {
+        "revision": 10,
+        "completed_gets": 7,
+        "completed_fantasy_gets": 4,
+        "cancelled_gets": 4,
+        "conflict_responses": 0,
+        "pending_at_tail_cutoff": 0,
+        "sql_exec_ms_entire_window": 55.693611999999995
+      }
+    ],
+    "observed_save_routes": [
+      {
+        "method": "GET",
+        "path": "/api/me/tournaments",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy",
+        "state": "cancelled",
+        "status": 200,
+        "count": 4
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy",
+        "state": "cancelled",
+        "status": null,
+        "count": 1
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/results",
+        "state": "cancelled",
+        "status": null,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/results",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round1",
+        "state": "cancelled",
+        "status": null,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round1",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round1/results",
+        "state": "cancelled",
+        "status": 200,
+        "count": 1
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round1/results",
+        "state": "cancelled",
+        "status": null,
+        "count": 4
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round1/results",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/players",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/rounds",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "PUT",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round1/lineup",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      }
+    ],
+    "idle": {
+      "duration_ms": 3000,
+      "open_sse": 1,
+      "requests": []
+    },
+    "lock_controls": [
+      {
+        "blocked_observed": true,
+        "hold_after_observation_ms": 200,
+        "http_ms": 432.85507900000084
+      },
+      {
+        "blocked_observed": true,
+        "hold_after_observation_ms": 200,
+        "http_ms": 442.2756109999973
+      },
+      {
+        "blocked_observed": true,
+        "hold_after_observation_ms": 200,
+        "http_ms": 433.9578780000011
+      }
+    ],
+    "parity": {
+      "all_bodies_equal": true,
+      "cache_control_no_store": true,
+      "settled_golfers": 8,
+      "settled_managers": 2,
+      "holes_each": 18
+    },
+    "gates": {
+      "anonymous_denied": true,
+      "nonmember_denied": true,
+      "prelock_other_picks_absent": true
+    }
+  },
+  {
+    "rounds": 5,
+    "http_reads": {
+      "none": {
+        "n": 20,
+        "median_ms": 44.97718349999195,
+        "p95_nearest_rank_ms": 57.7099629999866,
+        "min_ms": 43.369200999994064,
+        "max_ms": 64.54194399999687
+      },
+      "top": {
+        "n": 20,
+        "median_ms": 45.55778750000172,
+        "p95_nearest_rank_ms": 49.71480899999733,
+        "min_ms": 44.03522200000589,
+        "max_ms": 51.80346599999757
+      }
+    },
+    "steady_sql": {
+      "calls_per_read": 25.0,
+      "sql_mean_ms_per_read": 10.65931385,
+      "bulk_fact_mean_ms_per_read": 10.0813531,
+      "bulk_fact_share_of_sql_percent": 94.57788035765549,
+      "bulk_fact_owner_rows_per_read": 20.0,
+      "round_lock_rows_per_read": 5.0,
+      "round_lock_mean_ms_per_read": 0.0449755,
+      "shared_blocks_read": 0,
+      "shared_blocks_hit": 16600
+    },
+    "first_observed_settled_read": {
+      "ms": 88.27448100000038,
+      "bytes": 26208,
+      "materialization_before": {
+        "windows": 5,
+        "locked_windows": 0,
+        "selections": 2,
+        "locked_selections": 0,
+        "carried_lineups": 0
+      },
+      "materialization_after": {
+        "windows": 5,
+        "locked_windows": 5,
+        "selections": 10,
+        "locked_selections": 10,
+        "carried_lineups": 8
+      }
+    },
+    "save_receipt_latency": {
+      "full": {
+        "n": 5,
+        "median_ms": 151.92651900000055,
+        "p95_nearest_rank_ms": 165.5958249999967,
+        "min_ms": 139.7459600000002,
+        "max_ms": 165.5958249999967
+      },
+      "minimal": {
+        "n": 5,
+        "median_ms": 165.69526799999585,
+        "p95_nearest_rank_ms": 172.17393099999754,
+        "min_ms": 130.60491300000285,
+        "max_ms": 172.17393099999754
+      }
+    },
+    "observed_save_windows": [
+      {
+        "revision": 2,
+        "completed_gets": 11,
+        "completed_fantasy_gets": 8,
+        "cancelled_gets": 8,
+        "conflict_responses": 0,
+        "pending_at_tail_cutoff": 0,
+        "sql_exec_ms_entire_window": 196.342479
+      },
+      {
+        "revision": 4,
+        "completed_gets": 11,
+        "completed_fantasy_gets": 8,
+        "cancelled_gets": 8,
+        "conflict_responses": 0,
+        "pending_at_tail_cutoff": 0,
+        "sql_exec_ms_entire_window": 170.15592300000003
+      },
+      {
+        "revision": 6,
+        "completed_gets": 11,
+        "completed_fantasy_gets": 8,
+        "cancelled_gets": 8,
+        "conflict_responses": 0,
+        "pending_at_tail_cutoff": 0,
+        "sql_exec_ms_entire_window": 173.52809299999998
+      },
+      {
+        "revision": 8,
+        "completed_gets": 11,
+        "completed_fantasy_gets": 8,
+        "cancelled_gets": 8,
+        "conflict_responses": 0,
+        "pending_at_tail_cutoff": 0,
+        "sql_exec_ms_entire_window": 190.320292
+      },
+      {
+        "revision": 10,
+        "completed_gets": 11,
+        "completed_fantasy_gets": 8,
+        "cancelled_gets": 8,
+        "conflict_responses": 0,
+        "pending_at_tail_cutoff": 0,
+        "sql_exec_ms_entire_window": 127.23136399999999
+      }
+    ],
+    "observed_save_routes": [
+      {
+        "method": "GET",
+        "path": "/api/me/tournaments",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy",
+        "state": "cancelled",
+        "status": 200,
+        "count": 4
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy",
+        "state": "cancelled",
+        "status": null,
+        "count": 1
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/results",
+        "state": "cancelled",
+        "status": null,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/results",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round1",
+        "state": "cancelled",
+        "status": 200,
+        "count": 1
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round1",
+        "state": "cancelled",
+        "status": null,
+        "count": 4
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round1",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round1/results",
+        "state": "cancelled",
+        "status": null,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round1/results",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round2",
+        "state": "cancelled",
+        "status": null,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round2",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round3",
+        "state": "cancelled",
+        "status": null,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round3",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round4",
+        "state": "cancelled",
+        "status": null,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round4",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round5",
+        "state": "cancelled",
+        "status": null,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round5",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/players",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "GET",
+        "path": "/api/tournaments/:tournament/rounds",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      },
+      {
+        "method": "PUT",
+        "path": "/api/tournaments/:tournament/fantasy/rounds/:round1/lineup",
+        "state": "completed",
+        "status": 200,
+        "count": 5
+      }
+    ],
+    "idle": {
+      "duration_ms": 3000,
+      "open_sse": 1,
+      "requests": []
+    },
+    "lock_controls": [
+      {
+        "blocked_observed": true,
+        "hold_after_observation_ms": 200,
+        "http_ms": 524.5013099999924
+      },
+      {
+        "blocked_observed": true,
+        "hold_after_observation_ms": 200,
+        "http_ms": 540.4919510000036
+      },
+      {
+        "blocked_observed": true,
+        "hold_after_observation_ms": 200,
+        "http_ms": 452.06724699999904
+      }
+    ],
+    "parity": {
+      "all_bodies_equal": true,
+      "cache_control_no_store": true,
+      "settled_golfers": 8,
+      "settled_managers": 2,
+      "holes_each": 18
+    },
+    "gates": {
+      "anonymous_denied": true,
+      "nonmember_denied": true,
+      "prelock_other_picks_absent": true
+    }
+  }
+]

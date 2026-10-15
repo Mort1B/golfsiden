@@ -5,46 +5,39 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A1s mobile manual-hole labels are complete; current behavior, screenshots
-and validation limits are in the
-[acceptance report](validation/manual-hole-labels-2026-10-15/README.md).
+None. The [A1t measurement report](validation/fantasy-measurement-2026-10-15/README.md)
+records local evidence and limits; production behavior is unchanged.
 
 ## Next candidate — requires approval
 
-### A1t — measure Fantasy result reads and refresh fan-out
+### A1u — narrow sporting fact loading for a scoped Fantasy round result
 
-This is an unrated performance investigation from the
-[original review](validation/application-review-2026-10-14/README.md#performance-conclusions-and-remaining-measurements),
-not a confirmed new defect or runtime-optimization approval. It is not started
-by A1s.
+Unrated optimization opportunity, not a new security/correctness finding.
+A1t measured four/twenty canonical owner rows for the same first-round response;
+bulk SQL accounts for 83–95% of tracked SQL time in its local one/five-round
+populated fixtures. This supports investigating this source of avoidable work,
+not a production speedup estimate or a fix for the all-draft save-refresh cost.
 
-- Goal: establish completed request counts and local SQL/fact-loading/lock cost
-  for a round-scoped Fantasy results read and one acknowledged selection save
-  followed by its existing SSE/read reconciliation.
-- Scope: only existing Fantasy result loading and refresh/invalidation paths,
-  disposable one/five-round fixtures, diagnostic probes/evidence and docs.
-  Production application, API, schema/index, dependency and hosted changes are
-  excluded, as are batch actions and empty offline-queue polling.
-- Behavior: observe current behavior without changing request ownership,
-  authorization, locks, finalization side effects, expiry, privacy, freshness,
-  session fencing or immutable write/recovery semantics. Record normalized
-  query fingerprints/counts and durations without parameters, personal data,
-  credentials or sensitive payloads. Add no mutation retry or runtime tuning.
-- Validation: predeclare fixture size, warm/cold states, sample count and metric
-  scopes before measurement. Measure idle, explicit scoped read and one save/SSE
-  reconciliation using real browser/API/PostgreSQL fixtures; separate completed
-  requests from cancellations and browser/API/SQL cost from projection-only
-  timings. Check observer overhead, unchanged visible results, acknowledged
-  write count and auth/privacy gates. Run applicable checks for diagnostic
-  support, independent read-only review and documentation/scope validation.
-  Report local-only limits without a production-capacity claim.
-- Invariants: preserve exact sporting/Fantasy separation, rules versions,
-  selection deadlines, authorization, session isolation, read consistency and
-  acknowledged-write/read-recovery boundaries.
-- Stop: publish a reproducible measurement report and at most one separately
-  bounded optimization candidate supported by the measured bottleneck; if
-  evidence is insufficient, state that no optimization is justified. Do not
-  optimize runtime code or begin queued work.
+- Goal: avoid loading/hashing/deserializing other rounds' canonical sporting
+  facts when producing one round result, with identical authorized JSON.
+- Scope: the Fantasy result loader's target scope, focused result regressions,
+  diagnostic comparison and affected docs. Preserve canonical fact SQL/content,
+  overall and breakdown behavior, API/DTOs, schema/indexes, frontend queries/SSE,
+  batch saves, dependencies and hosting.
+- Behavior/invariants: keep preauthorization, repeatable-read transaction,
+  stable all-round locks, enabled-game lock, all due-window finalization and
+  carry-forward, target validation, visibility, final session checks, commit and
+  postcommit notifications. Scope only sporting facts for round projection;
+  retain the inventories/selections needed for identical results and privacy.
+- Validation: before/after comparable one/five-round probes with fully consumed
+  body parity, scoped bulk owner counts, SQL and complete HTTP costs, observer
+  controls and first-finalization evidence. Exercise hidden results, all formats,
+  carry-forward, overall/breakdown parity, invalid targets and lock/session
+  rollback cases. Run affected Rust/PostgreSQL ladders and independent read-only
+  review. Reject the change if correctness or measured benefit is unsupported.
+- Stop: publish only this bounded result-loading improvement and evidence, or
+  record that no change is justified. Do not tune locks, merge invalidation
+  waves, cache server projections or start another queued item.
 
 ## Later queue
 
@@ -64,13 +57,14 @@ hierarchy rollback/control coverage. All three selected P2 write gaps now have
 linked acceptance; the original assessment itself reproduced no runtime race.
 A1r browser checks separately identified the P3 mobile manual-hole labeling
 issue; A1s now closes it with visible headings and frontend/browser acceptance.
-The next candidate above is measurement-only and has no confirmed new rating.
+The next candidate above has measured local cost evidence and no new severity
+rating; it has not been implemented.
 Retired granular team writes receive no reachable-route finding. Provisional
 user-only preflight/provider-work observations remain separate and unrated.
 
-Only after the selected review follow-ups, consider measurement-only steps for
-remaining Fantasy invalidation/fact-loading cost and empty-queue polling. No
-speculative optimization or load claim is authorized.
+Empty-queue polling remains a separate unmeasured candidate. Fantasy refresh
+deduplication is not selected by A1t's overlapping completion/cancellation
+evidence. No speculative optimization or load claim is authorized.
 
 ### Previously deferred work
 
