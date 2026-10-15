@@ -1,0 +1,24 @@
+A5 acceptance — 2026-10-15
+Baseline production source: 694f7360f51b41cbbeed3d07fd9ee841bdfa5cb7
+
+Original-source isolated fake-Docker probe: expected exit1;five required-contract failures;all five reached simulated restore
+python3 docs/validation/restore-checksum-2026-10-15/restore_probe.py: exit0;41 passed,0 failed,0 skipped
+python3 docs/validation/restore-checksum-2026-10-15/postgres_probe.py: exit0
+Actual PostgreSQL17.10 Alpine: unchanged backup format, relocated spaced pair,3001rows/data-digest parity, populated-target refusal
+Late complete-TOC truncation with valid checksum: wrapper exit1;zero public objects after rollback;no permission action
+Verbose separate control: table/data work observed before same late failure;zero public objects
+Service-stop and runtime-permission commands are shimmed;invocation/order only, not actual grant recovery
+
+sh -n scripts/restore-production.sh: exit0
+sh -n scripts/backup-production.sh: exit0
+bash --posix -n scripts/restore-production.sh: exit0
+bash --posix -n scripts/backup-production.sh: exit0
+Alpine /bin/ash -n via stdin-only, network-disabled disposable container: exit0 for each script
+ShellCheck and standalone dash: unavailable/not run
+
+Backup script bytes unchanged
+Everything from the restore's existing pristine-schema guard through stop/pg_restore/permissions/success is byte-identical to baseline
+Independent read-only source/harness review: no actionable findings
+Rust/frontend/browser ladders: not rerun;no affected source/schema/API/UI changes
+No real Docker/database in fake probe;actual PG probe owns a unique no-port synthetic container
+Owned PostgreSQL container, archives and temporary comparison copies removed;no hosted action

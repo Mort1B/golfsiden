@@ -13,8 +13,16 @@ fi
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 environment_file=$1
 input_file=$2
-input_directory=$(dirname -- "$input_file")
-input_basename=$(basename -- "$input_file")
+# Preserve path bytes, including trailing newlines; command substitution would
+# strip them and could verify a different archive with a similar name.
+case $input_file in
+    */*)
+        input_directory=${input_file%/*}
+        input_basename=${input_file##*/}
+        [ -n "$input_directory" ] || input_directory=/
+        ;;
+    *) input_directory=.; input_basename=$input_file ;;
+esac
 
 compose() {
     docker compose \
@@ -23,12 +31,34 @@ compose() {
         "$@"
 }
 
-test -s "$input_file"
-if [ -f "$input_file.sha256" ]; then
-    (
-        cd "$input_directory"
-        sha256sum --check "$input_basename.sha256"
-    )
+if [ ! -f "$input_file" ] || [ ! -r "$input_file" ] || [ ! -s "$input_file" ]; then
+    echo "restore requires a nonempty readable archive file" >&2
+    exit 1
+fi
+if [ ! -f "$input_file.sha256" ] || [ ! -r "$input_file.sha256" ] || [ ! -s "$input_file.sha256" ]; then
+    echo "restore requires a nonempty readable checksum sidecar" >&2
+    exit 1
+fi
+if [ "$input_basename" = "-" ]; then
+    echo "restore archive basename cannot be the standard-input sentinel" >&2
+    exit 1
+fi
+if ! command -v sha256sum >/dev/null 2>&1 || ! command -v cmp >/dev/null 2>&1; then
+    echo "restore requires sha256sum and cmp" >&2
+    exit 1
+fi
+if ! (
+    # Physical traversal matches opening the original path, even through link/..
+    # or an exported CDPATH. Never continue hashing if directory selection fails.
+    CDPATH= cd -P -- "$input_directory" || exit 1
+    checksum_record=$(sha256sum -- "$input_basename") || exit 1
+    # GNU sha256sum escapes embedded newlines/backslashes into one record. Match
+    # its exact canonical output, including the single final newline, so foreign
+    # filenames and extra records are never interpreted or accepted.
+    printf '%s\n' "$checksum_record" | cmp -s -- - "$input_basename.sha256"
+) 2>/dev/null; then
+    echo "checksum sidecar does not match the selected archive's canonical SHA-256 record" >&2
+    exit 1
 fi
 
 # The target must have a pristine public schema. Count relations, routines, and

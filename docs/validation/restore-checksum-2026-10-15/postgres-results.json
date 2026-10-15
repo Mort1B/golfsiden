@@ -1,0 +1,12 @@
+{
+  "backup_actual_custom_format_and_canonical_sidecar": true,
+  "relocated_spaced_pair_restored": true,
+  "rows_and_ordered_data_digest_match": true,
+  "populated_target_denied_before_stop": true,
+  "late_truncated_archive_has_complete_toc": true,
+  "actual_wrapper_failure_rolls_back_to_zero_public_objects": true,
+  "failed_restore_does_not_invoke_permissions": true,
+  "verbose_control_confirms_table_and_data_work_before_rollback": true,
+  "runtime_grants_and_service_stop": "shimmed; only invocation/order checked",
+  "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit"
+}

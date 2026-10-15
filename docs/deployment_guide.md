@@ -27,6 +27,7 @@ Do not skip intermediate migrations when upgrading an older installation.
 | Offline return to the last opened scorecard | Updated frontend against the schema-33 API; no further migration or configuration |
 | Recent score-read, session, pairing/start and navigation repairs | Deploy the current API/frontend builds; retain the vendored SQLx patch |
 | Rustls client TLS advisory repair | Rebuild/redeploy the API from the current lockfile; retain the vendored SQLx patch; no new migration |
+| Required restore checksum binding | Use the current host restore script, original dump/sidecar pair, `sha256sum` and `cmp`; no image or schema change |
 
 Fantasy includes four picks and a double-points captain, automatic eligible
 carry-forward, and round/overall manager and golfer leaderboards. Non-match
@@ -762,6 +763,10 @@ scripts/backup-production.sh .env.production /secure-staging/golfsiden-YYYYMMDD-
 
 Run checksum verification from the dump directory because the sidecar records
 only the dump basename. The subshell keeps your original working directory.
+The restore script additionally binds that single canonical record to the
+selected archive; a successful generic `sha256sum --check` on another filename
+is insufficient. Preserve the sidecar emitted by the backup script without
+adding records, blank lines or changing its format.
 
 Copy both files to encrypted off-host storage, then test restores on a schedule.
 Choose retention based on the tournament calendar; at minimum keep multiple
@@ -772,9 +777,30 @@ A dump left only on the application host is not disaster recovery.
 
 Restore only to a new, empty database volume. The restore script deliberately
 refuses a public schema containing any relation, routine, or standalone type and
-requires an explicit confirmation phrase. It verifies the checksum when the
-sidecar is present, restores in one transaction with `--exit-on-error`, and
-reapplies runtime grants.
+requires an explicit confirmation phrase. Both the archive and its `.sha256`
+sidecar must be readable, nonempty regular files. Before any Docker call, the
+script recomputes the archive's canonical GNU `sha256sum` basename record and
+requires an exact byte match with the complete sidecar. Missing, malformed,
+incorrectly targeted, tampered or extra-record sidecars are rejected. The host
+must have `sha256sum` and `cmp` available.
+
+The supported sidecar is the backup script's default text-mode GNU record with
+its single final newline; binary-marker, uppercase-digest and multi-entry
+alternatives are rejected. Correctly generated GNU filename escaping is accepted;
+the literal basename `-` is rejected. The backup script itself is unchanged, so
+its existing leading-dash/trailing-newline filename limitations are not expanded.
+Use ordinary timestamped backup names as shown above.
+
+Recover a missing sidecar from the original trusted backup source rather than
+creating one from an unverified archive to bypass the check. Keep staging
+operator-controlled and unchanged throughout restore. A checksum does not prove
+authenticity or protect against concurrent file replacement.
+
+After verification, restore retains the pristine-target guard, one transaction
+with `--exit-on-error`, service-stop ordering and runtime-grant recovery. The
+[local checksum report](validation/restore-checksum-2026-10-15/README.md) includes
+disposable PostgreSQL late-failure rollback evidence; it is not a hosted recovery
+rehearsal.
 
 For a replacement host with fresh Docker storage, use the release images matching
 that backup's schema and configure the owner/runtime roles in the private runtime

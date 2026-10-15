@@ -43,6 +43,11 @@ The historical dependency audit below remains pinned to the original review;
 current versions, feature conditions and remaining audit entries belong to that
 follow-up report.
 
+The [restore-checksum repair](../restore-checksum-2026-10-15/README.md) closes A5:
+it requires the exact archive's canonical sidecar before Docker, with reproduced
+binding bypasses and disposable PostgreSQL rollback acceptance. The historical
+A5 assessment below retains its original source/evidence snapshot.
+
 This is a documentation-only assessment of current application source, database
 contracts, browser state, production configuration and dependency advisories.
 No application, dependency, migration or hosted configuration was changed.

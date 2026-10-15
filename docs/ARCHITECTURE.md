@@ -135,8 +135,18 @@ process from a ready service.
 Backup and restore are part of this boundary rather than operator folklore. A
 custom-format, no-owner/no-privilege dump is written atomically with a
 basename-relative checksum so the dump/sidecar pair remains relocatable.
-Restore is allowed only into an empty public schema, executes in one transaction,
-and reapplies runtime grants before the API is started.
+Restore first requires readable regular nonempty archive and sidecar files.
+It recomputes the selected archive's canonical GNU SHA-256 basename record and
+compares the complete sidecar byte for byte before any Docker action. Directory
+selection clears `CDPATH` and uses physical traversal; exact shell path splitting
+preserves filename bytes. Foreign filenames and extra records never select files
+for verification. The canonical backup format is retained; alternative checksum
+formats and the standard-input basename `-` are rejected.
+Restore is then allowed only into an empty public schema, executes in one
+transaction and reapplies runtime grants before the API is started. Staging must
+remain operator-controlled and unchanged during recovery; checksum validation
+proves transfer integrity, not authenticity or concurrent-replacement safety.
+See the [checksum acceptance report](validation/restore-checksum-2026-10-15/README.md).
 
 ## Domain decisions
 

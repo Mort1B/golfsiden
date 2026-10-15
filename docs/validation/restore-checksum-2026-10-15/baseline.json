@@ -1,0 +1,89 @@
+{
+  "baseline": true,
+  "passed": 0,
+  "failed": 5,
+  "cases": [
+    {
+      "case": "missing_sidecar",
+      "passed": false,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": [
+        "exit contract",
+        "Docker action/order contract",
+        "false success message"
+      ]
+    },
+    {
+      "case": "valid_digest_for_foreign_file",
+      "passed": false,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": [
+        "exit contract",
+        "Docker action/order contract",
+        "false success message"
+      ]
+    },
+    {
+      "case": "trailing_newline_alias_binding",
+      "passed": false,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": [
+        "exit contract",
+        "Docker action/order contract",
+        "false success message"
+      ]
+    },
+    {
+      "case": "cdpath_cannot_select_decoy",
+      "passed": false,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": [
+        "exit contract",
+        "Docker action/order contract",
+        "false success message"
+      ]
+    },
+    {
+      "case": "physical_parent_cannot_select_decoy",
+      "passed": false,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": [
+        "exit contract",
+        "Docker action/order contract",
+        "false success message"
+      ]
+    }
+  ],
+  "real_docker_or_database_used": false,
+  "production_source_revision": "694f7360f51b41cbbeed3d07fd9ee841bdfa5cb7"
+}

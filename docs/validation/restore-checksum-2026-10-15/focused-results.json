@@ -1,0 +1,363 @@
+{
+  "baseline": false,
+  "passed": 41,
+  "failed": 0,
+  "cases": [
+    {
+      "case": "missing_sidecar",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "valid_digest_for_foreign_file",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "trailing_newline_alias_binding",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "cdpath_cannot_select_decoy",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "physical_parent_cannot_select_decoy",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "canonical_valid",
+      "passed": true,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": []
+    },
+    {
+      "case": "spaced_directory_and_basename",
+      "passed": true,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": []
+    },
+    {
+      "case": "leading_dash_basename",
+      "passed": true,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": []
+    },
+    {
+      "case": "leading_dash_directory",
+      "passed": true,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": []
+    },
+    {
+      "case": "escaped_backslash_basename",
+      "passed": true,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": []
+    },
+    {
+      "case": "escaped_middle_newline",
+      "passed": true,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": []
+    },
+    {
+      "case": "escaped_trailing_newline",
+      "passed": true,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": []
+    },
+    {
+      "case": "newline_directory",
+      "passed": true,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": []
+    },
+    {
+      "case": "shell_metacharacters_are_data",
+      "passed": true,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": []
+    },
+    {
+      "case": "unicode_filename",
+      "passed": true,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": []
+    },
+    {
+      "case": "literal_stdin_sentinel_rejected",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "empty_sidecar",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "malformed_record",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "wrong_digest",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "duplicate_records",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "extra_blank_line",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "appended_bytes",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "appended_nul",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "sidecar_directory",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "unreadable_sidecar",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "missing_final_newline",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "binary_marker_is_not_backup_format",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "uppercase_digest_is_not_backup_format",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "hash_utility_failure",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "comparison_utility_failure",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "missing_archive",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "tampered_archive",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "empty_archive",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "archive_directory",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "unreadable_archive",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "no_confirmation",
+      "passed": true,
+      "exit": 2,
+      "docker_actions": [],
+      "failures": []
+    },
+    {
+      "case": "nonempty_target",
+      "passed": true,
+      "exit": 1,
+      "docker_actions": [
+        "empty-target"
+      ],
+      "failures": []
+    },
+    {
+      "case": "target_query_failure",
+      "passed": true,
+      "exit": 17,
+      "docker_actions": [
+        "empty-target"
+      ],
+      "failures": []
+    },
+    {
+      "case": "restore_failure_blocks_permissions",
+      "passed": true,
+      "exit": 18,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore"
+      ],
+      "failures": []
+    },
+    {
+      "case": "permissions_failure_is_not_success",
+      "passed": true,
+      "exit": 20,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": []
+    },
+    {
+      "case": "existing_stop_failure_policy_retained",
+      "passed": true,
+      "exit": 0,
+      "docker_actions": [
+        "empty-target",
+        "stop",
+        "restore",
+        "permissions"
+      ],
+      "failures": []
+    }
+  ],
+  "real_docker_or_database_used": false
+}

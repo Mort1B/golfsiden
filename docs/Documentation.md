@@ -640,9 +640,17 @@ headers cannot choose a rate-limit identity.
 
 The deployment runbook uses explicit migration and permission actions, never a
 production seed. Its backup script creates an atomic custom-format PostgreSQL
-dump and relocatable SHA-256 sidecar. Restore requires an explicit confirmation, an empty
-public schema, a valid checksum, and a single-transaction restore before runtime
-grants are reapplied. See `deployment_guide.md` for deployment, rollback,
+dump and relocatable SHA-256 sidecar. Restore requires explicit confirmation
+and a readable, nonempty archive/sidecar pair. The sidecar must exactly match the
+one canonical GNU SHA-256 basename record for the selected archive; missing,
+foreign-file, malformed or extra records fail before Docker runs. The host needs
+`sha256sum` and `cmp`. Existing empty-public-schema and single-transaction guards
+remain, followed by runtime-grant reapplication only on restore success.
+Use an operator-controlled staging directory that remains unchanged during the
+operation. A matching digest is transfer-integrity evidence, not authenticity.
+The [acceptance report](validation/restore-checksum-2026-10-15/README.md) separates
+simulated Docker ordering from actual disposable PostgreSQL restore/rollback
+checks. See `deployment_guide.md` for deployment, rollback,
 monitoring, backup, credential rotation, and disaster recovery commands.
 
 ## Repository structure
