@@ -1,0 +1,57 @@
+Command: cargo test --locked -p golf-api --features database-tests --test round_configuration --test course_revisions --test course_read_sessions -- --test-threads=2
+Exit status: 0
+Totals: 36 passed, zero failures.
+
+Running tests/course_read_sessions.rs (target/debug/deps/course_read_sessions-09dfff402d7f3283)
+
+running 8 tests
+test course_read_sessions::authorization::credential_replacement_after_extraction_denies_all_three_gets ... ok
+test course_read_sessions::authorization::membership_demotion_retries_exact_admin_and_cancellation_releases_session ... ok
+test course_read_sessions::authorization::revocation_after_extraction_before_authority_denies_all_three_gets ... ok
+test course_read_sessions::contracts::exact_payloads_roles_query_errors_and_private_extractor_responses ... ok
+test course_read_sessions::expiry::preset_final_loading_expiry_denies_populated_and_empty_results ... ok
+test course_read_sessions::retry::serialization_failure_retries_once_then_private_503 ... ok
+test course_read_sessions::retry::unrelated_database_failure_is_not_retried ... ok
+test course_read_sessions::expiry::expiry_during_membership_wait_denies_all_three_gets ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 29.64s
+
+     Running tests/course_revisions.rs (target/debug/deps/course_revisions-0cae38d3f6168e3e)
+
+running 10 tests
+test database_rejects_incomplete_finalization_and_invalid_provenance ... ok
+test failed_child_write_leaves_no_partial_revision ... ok
+test finalized_course_tee_and_holes_reject_direct_mutation ... ok
+test hole_mutation_serializes_before_finalization_completeness_check ... ok
+test manual_revision_has_no_provider_id_and_allows_null_distances ... ok
+test seed_creates_one_complete_idempotent_manual_revision ... ok
+test transaction_persists_and_reads_exact_provider_facts ... ok
+test tee_mutation_waits_for_finalization_and_then_rejects ... ok
+test upgrade_preserves_existing_course_hierarchy_as_mutable_legacy ... ok
+test upgraded_deterministic_seed_is_backfilled_and_idempotently_finalized ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.97s
+
+     Running tests/round_configuration.rs (target/debug/deps/round_configuration-409f8de406df9162)
+
+running 18 tests
+test auth_csrf_scope_validation_and_preflight_fail_without_effects ... ok
+test concurrent_same_token_requests_create_one_revision_and_one_event ... ok
+test content_type_body_limit_and_provider_id_errors_are_private_and_write_nothing ... ok
+test configuration_first_commits_before_waiting_open_rechecks_readiness ... ok
+test expiry::expiry_after_hierarchy_and_attachment_rolls_back_configuration ... ok
+test expiry::expiry_during_final_membership_wait_rolls_back_configuration ... ok
+test failed_round_attachment_rolls_back_revision_and_event ... ok
+test final_repository_reauthorizes_after_membership_or_session_loss ... ok
+test format_layout::four_ball_manual_nine_holes_rejected_before_insert ... ok
+test format_layout::legacy_formats_still_accept_nine_and_eighteen_holes ... ok
+test format_layout::provider_tee_rejects_nine_and_accepts_eighteen_for_restricted_formats ... ok
+test format_layout::saved_nine_hole_preset_uses_same_format_specific_manual_boundary ... ok
+test format_layout::singles_manual_nine_holes_names_match_play ... ok
+test format_layout::stableford_manual_nine_holes_names_stableford ... ok
+test invalid_manual_and_incomplete_catalog_leave_no_write_or_event ... ok
+test manual_configuration_is_exact_atomic_private_and_emits_once ... ok
+test validated_provider_command_uses_final_repository_and_same_token_serializes ... ok
+test opening_first_forces_waiting_configuration_to_recheck_without_orphan_or_event ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 22.36s

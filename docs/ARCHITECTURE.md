@@ -218,16 +218,20 @@ See the [checksum acceptance report](validation/restore-checksum-2026-10-15/READ
   Successful replacements retain their model and one post-commit event, with
   no mutation retry. See
   [pairing-write acceptance](validation/pairing-write-session-2026-10-15/README.md).
-- Course attachment retains actual session/user and exact-admin membership locks
-  in its write transaction, but currently has no final wall-clock expiry check
-  after dependent SQL. Revocation and membership writers serialize on those
-  locks; natural expiry remains unchecked after the initial session query.
-  Draft/roster/course database guards enforce domain facts, not this missing
-  session boundary. Granular team writes are retired and their retained helpers
-  have no callers. See the source-only
+- Course attachment retains stored-round, actual session/user and exact-admin
+  membership locks, then rechecks the same session with database wall-clock time
+  after complete hierarchy insertion and round UPDATE/RETURNING, immediately
+  before commit. Natural expiry during membership or later transactional work
+  returns private 401 and rolls back the hierarchy, attachment and timestamp,
+  without an event. Valid requests retain one updated round and one post-commit
+  event. Provider work stays outside the transaction; no mutation retry is added.
+  COMMIT/deferred constraints and delivery remain outside the final check. See
+  [course-write acceptance](validation/course-write-session-2026-10-15/README.md).
+  Granular team writes are retired and their retained helpers have no callers.
+  The source-only
   [legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md)
-  for the original three P2 findings, W1/W2's linked repairs, exact route/caller
-  scope and the remaining course-attachment repair.
+  preserves the original three P2 findings and exact route/caller scope; linked
+  W1/W2/W3 repairs own their runtime reproduction and acceptance.
 - Tournament start is a separate exact-admin lifecycle boundary. Its transaction
   locks the stored round set deterministically before reauthorizing the session
   and exact tournament membership, locking the tournament, and share-locking
@@ -710,8 +714,9 @@ See the [checksum acceptance report](validation/restore-checksum-2026-10-15/READ
   non-18-hole selections for four-ball, Stableford and singles match before any
   revision insertion. Typed format errors map to distinct HTTP 409 codes. Legacy
   stroke play, scramble and foursomes retain nine-hole support. It then inserts
-  the immutable revision and attaches its UUIDs before commit. This round-first lock
-  order matches lifecycle mutations. Only a successful commit publishes one
+  the immutable revision and attaches its UUIDs, then rechecks the same session's
+  wall-clock expiry immediately before commit. This round-first lock order
+  matches lifecycle mutations. Only a successful commit publishes one
   identifier-free round invalidation; every conflict or failure rolls back the new
   hierarchy.
 - Round pairings use one aggregate read/write boundary. The member-readable GET

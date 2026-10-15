@@ -9,6 +9,7 @@ use crate::{
         models::{Round, RoundStatus, ScoringFormat},
     },
     repositories::{
+        auth,
         course_revisions::{self, CourseRevisionRepositoryError},
         tournament_authorization::{self, AuthorizationError},
     },
@@ -120,6 +121,9 @@ pub async fn configure(
     )
     .fetch_one(&mut *transaction)
     .await?;
+    auth::lock_active_session(&mut transaction, session_id)
+        .await?
+        .ok_or(AuthorizationError::Unauthenticated)?;
     transaction.commit().await?;
     Ok(updated)
 }

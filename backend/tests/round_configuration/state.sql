@@ -1,0 +1,20 @@
+SELECT jsonb_build_object(
+ 'round',(SELECT to_jsonb(r) FROM rounds r WHERE id=$1),
+ 'other_rounds',(SELECT coalesce(jsonb_agg(to_jsonb(r) ORDER BY id),'[]') FROM rounds r WHERE tournament_id=$2 AND id<>$1),
+ 'courses',(SELECT coalesce(jsonb_agg(to_jsonb(c) ORDER BY id),'[]') FROM courses c),
+ 'tees',(SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY id),'[]') FROM tees t),
+ 'holes',(SELECT coalesce(jsonb_agg(to_jsonb(h) ORDER BY id),'[]') FROM holes h),
+ 'presets',(SELECT coalesce(jsonb_agg(to_jsonb(p) ORDER BY course_id),'[]') FROM course_presets p),
+ 'tournament',(SELECT to_jsonb(t) FROM tournaments t WHERE id=$2),
+ 'memberships',(SELECT coalesce(jsonb_agg(to_jsonb(m) ORDER BY user_id),'[]') FROM tournament_memberships m WHERE tournament_id=$2),
+ 'entrants',(SELECT coalesce(jsonb_agg(to_jsonb(p) ORDER BY player_id),'[]') FROM tournament_players p WHERE tournament_id=$2),
+ 'players',(SELECT coalesce(jsonb_agg(to_jsonb(p) ORDER BY id),'[]') FROM players p),
+ 'teams',(SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY id),'[]') FROM teams t),
+ 'team_members',(SELECT coalesce(jsonb_agg(to_jsonb(m) ORDER BY team_id,player_id),'[]') FROM team_memberships m),
+ 'flights',(SELECT coalesce(jsonb_agg(to_jsonb(f) ORDER BY id),'[]') FROM flights f),
+ 'flight_members',(SELECT coalesce(jsonb_agg(to_jsonb(m) ORDER BY flight_id,player_id),'[]') FROM flight_memberships m),
+ 'snapshots',(SELECT coalesce(jsonb_agg(to_jsonb(s) ORDER BY round_id,player_id),'[]') FROM round_handicap_snapshots s),
+ 'team_snapshots',(SELECT coalesce(jsonb_agg(to_jsonb(s) ORDER BY round_id,team_id),'[]') FROM round_team_handicap_snapshots s),
+ 'scores',(SELECT coalesce(jsonb_agg(to_jsonb(s) ORDER BY id),'[]') FROM scores s),
+ 'confirmations',(SELECT coalesce(jsonb_agg(to_jsonb(c) ORDER BY round_id,player_id,team_id),'[]') FROM scorecard_confirmations c)
+)

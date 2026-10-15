@@ -1,0 +1,33 @@
+Base production: 69482bc566ac20f799dbd47162923c42c32172fe (unchanged during baseline run)
+
+Running tests/round_configuration.rs (target/debug/deps/round_configuration-409f8de406df9162)
+
+running 2 tests
+test expiry::expiry_after_hierarchy_and_attachment_rolls_back_configuration ... FAILED
+test expiry::expiry_during_final_membership_wait_rolls_back_configuration ... FAILED
+
+failures:
+
+---- expiry::expiry_after_hierarchy_and_attachment_rolls_back_configuration stdout ----
+
+thread 'expiry::expiry_after_hierarchy_and_attachment_rolls_back_configuration' (1008641) panicked at backend/tests/round_configuration/expiry.rs:199:9:
+assertion `left == right` failed: expiry=true, late=true
+  left: 200
+ right: 401
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- expiry::expiry_during_final_membership_wait_rolls_back_configuration stdout ----
+
+thread 'expiry::expiry_during_final_membership_wait_rolls_back_configuration' (1008642) panicked at backend/tests/round_configuration/expiry.rs:199:9:
+assertion `left == right` failed: expiry=true, late=false
+  left: 200
+ right: 401
+
+
+failures:
+    expiry::expiry_after_hierarchy_and_attachment_rolls_back_configuration
+    expiry::expiry_during_final_membership_wait_rolls_back_configuration
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 16 filtered out; finished in 9.19s
+
+error: test failed, to rerun pass `-p golf-api --test round_configuration`

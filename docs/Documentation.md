@@ -792,16 +792,18 @@ their model and one post-commit event. There is no mutation retry. The
 [pairing-write report](validation/pairing-write-session-2026-10-15/README.md)
 records both reproduced waits, rollback/control coverage and real editor checks.
 
-Course configuration retains a different current limit: its final write
-transaction checks the actual session and exact admin membership initially, but
-does not recheck natural expiry after subsequent waits and writes. Retained
-locks serialize later revocation and membership changes; they do not stop the
-clock. Draft, roster and course
-invariants still apply. The source-only
+Course configuration also rechecks the same session after complete course/tee/
+hole insertion and round UPDATE/RETURNING, immediately before commit. Expiry
+returns private/no-store `401 unauthenticated`, rolls back the new hierarchy,
+attachment and timestamp, and publishes no event. Valid saves retain the updated
+round and one post-commit event. There is no mutation retry or repeated provider
+fetch. The [course-write report](validation/course-write-session-2026-10-15/README.md)
+records both reproduced waits, rollback/control coverage and current editor
+acceptance. COMMIT/deferred constraints and delivery remain outside the check.
+The source-only
 [legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md)
-rates this remaining gap P2 and preserves the original assessment of all three
-writes. The assessment itself reproduced no runtime race or behavior change;
-round-creation and pairing reproduction/repairs belong to the separate reports.
+preserves the original three P2 write findings; all three now have linked repairs.
+The inventory itself reproduced no runtime race or behavior change.
 
 ## Live scorecards
 
@@ -2155,13 +2157,20 @@ is manual tournament-admin entry. The admin chooses or names one tee and must
 provide its category, course rating, slope, plus every ordered hole's par and
 complete unique stroke-index permutation. Hole distance in yards is optional.
 
+Known P3 mobile usability limit: below 700px, the manual hole grid hides its
+visible column headings and row-label text. Accessible input names remain, but
+sighted users lack persistent Par/Slagindeks/Avstand labels. The
+[screenshots and source evidence](validation/course-write-session-2026-10-15/README.md#separate-p3-mobile-manual-hole-labels)
+record a separate follow-up; A1r changes no frontend implementation.
+
 The backend persistence boundary for that flow is implemented. Both manual and
 provider-tagged commands pass through the same pure validation and caller-owned
 transaction into the existing course, tee, and hole tables. Source, nullable
 opaque provider course ID, database import time, selected tee category/name,
-rating, slope, and complete holes are stored together. PostgreSQL defers the
-completeness check until finalization so the hierarchy can be built atomically,
-then rejects inserts, updates, or deletes anywhere in the finalized revision.
+rating, slope, and complete holes are stored together. PostgreSQL defers
+completeness validation until transaction commit so the hierarchy can be built
+atomically. Once source metadata is finalized, triggers reject inserts, updates,
+or deletes anywhere in that revision.
 Concurrent child writes serialize on the ancestor course row. Rows predating the
 revision migration remain explicitly legacy with null provenance rather than
 being mislabeled.
@@ -2180,7 +2189,10 @@ optimistic timestamp before provider quota can be spent. It never holds a
 database transaction across provider I/O. Its final transaction locks and
 reauthorizes the round, repeats the draft/version checks, and checks the selected
 layout against the scoring format before inserting any immutable revision. It
-then attaches the revision's course/tee IDs, copied names, and hole count. It
+then attaches the revision's course/tee IDs, copied names, and hole count. After
+UPDATE/RETURNING it rechecks wall-clock expiry for the same session, immediately
+before commit. Expiry returns private/no-store `401 unauthenticated` and rolls
+back every hierarchy, attachment and timestamp change without notification. It
 returns the updated private/non-cacheable round and publishes one round
 invalidation only after commit. Concurrent saves use
 `round_configuration_stale`; opened rounds use `round_not_draft`; a disappeared

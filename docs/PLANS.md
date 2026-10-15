@@ -5,48 +5,38 @@ in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
 
 ## Active step
 
-None. A1q pairing-replacement expiry is complete; its reproduction, rollback,
-browser and validation evidence is in the
-[acceptance report](validation/pairing-write-session-2026-10-15/README.md).
+None. A1r course-configuration expiry is complete; reproduction, rollback,
+browser coverage and validation limits are in the
+[acceptance report](validation/course-write-session-2026-10-15/README.md).
 
 ## Next candidate — requires approval
 
-### A1r — P2 course-configuration final session expiry
+### A1s — P3 visible mobile manual-hole labels
 
-The [legacy-write inventory W3](validation/legacy-write-inventory-2026-10-15/README.md#w3--course-configuration-incomplete-p2)
-supports this separate candidate. It is not started by A1q.
+A1r's [browser evidence](validation/course-write-session-2026-10-15/README.md#separate-p3-mobile-manual-hole-labels)
+confirms this separate pre-existing usability issue. It is not started by A1r.
 
-- Goal: reject course attachment if its initially authorized session expires
-  during membership or course/revision/round-update work before commit.
-- Scope: only `PUT /api/rounds/{round_id}/course-configuration`, its final
-  `round_configuration::configure` transaction, focused PostgreSQL/API support
-  and affected docs. Exclude preflight redesign, course GETs, provider/cache/quota
-  behavior, retained helpers, frontend implementation, schema/dependencies,
-  sporting rules and hosted work.
-- Behavior: retain stored-round, session/user and exact-admin membership locks,
-  then recheck the same session with database wall-clock time after the complete
-  hierarchy insertion and round UPDATE/RETURNING, immediately before commit.
-  Expiry uses existing private/no-store 401, rolls back course/tee/hole rows and
-  attachment/timestamp changes, and emits no event. Preserve draft/version/format
-  guards, immutable revision facts, validation precedence, successful 200 model
-  and one post-commit event. Add no mutation retry or repeated provider fetch;
-  keep external I/O outside the final transaction. COMMIT/deferred-constraint/
-  delivery time remains outside the final-check guarantee.
-- Validation: first reproduce final membership-wait and late pending hierarchy/
-  attachment expiry against current source using deterministic PostgreSQL/API
-  gates, distinct from preflight. Assert private 401, complete rollback without
-  orphan revisions and no event, plus renewed-session controls creating one
-  hierarchy/attachment/event. Run focused configuration/authorization tests,
-  backend formatting/tests/strict Clippy, full PostgreSQL-feature/migrate/seed
-  validation and independent read-only review. Check the existing configuration
-  UI at mobile/desktop widths with relevant loading/error/empty/populated and
-  long-content states. Preserve the unusable-catalog/provider coverage limit;
-  do not claim a successful remote provider flow from helper fixtures. Check
-  documentation, source size and scoped diff.
-- Invariants: preserve stored-parent authority, draft-only attachment, historical
-  course/handicap data, immutable complete revisions and atomicity.
-- Stop: publish this single validated repair and a concise next candidate; do
-  not begin preflight/provider, helper, driver, test-maintenance or optimization
+- Goal: let sighted administrators identify Par, Slagindeks and Avstand fields
+  while manually configuring holes at mobile widths.
+- Scope: only manual-hole label presentation in `ManualCourseForm.tsx` and
+  `course-configuration.css` as needed, relevant frontend/browser acceptance and
+  affected documentation. Exclude course persistence, authorization, provider,
+  mutation state/retry behavior, sporting rules, schema/dependencies and hosted
+  work.
+- Behavior: retain compact visible column or row labels below 700px, preserving
+  accessible input names and hole identity. Keep existing values, validation,
+  fixed/variable hole-count behavior, optional distance units, save controls,
+  desktop layout and error feedback. Avoid horizontal overflow at 320px.
+- Validation: compare against captured mobile/desktop evidence; run the affected
+  frontend test/type/lint/build ladder and real-browser checks at 320, 390 and
+  1280px. Cover empty/filled rows, validation errors, long course/tee text,
+  18-hole fixed and variable layouts, saving/denial feedback and persisted real
+  save; inspect screenshots, keyboard focus, control reachability, console and
+  network. Use read-only review, documentation/link, file-size and scope checks.
+- Invariants: do not change course facts, numeric parsers, stroke-index
+  uniqueness, format guards, session isolation or explicit save semantics.
+- Stop: publish this single validated presentation repair and a concise next
+  candidate; do not begin adjacent form-state, provider, driver or performance
   work.
 
 ## Later queue
@@ -62,9 +52,11 @@ The selected private-read findings have linked acceptance. The separate
 preserves the original three source-supported P2 expiry gaps. The linked
 round-creation repair closes W1 with reproduced expiry and rollback evidence.
 The linked pairing-replacement repair closes W2 with the same expiry/rollback
-acceptance. W3 (course configuration) is the sole remaining P2 write-expiry
-candidate above and requires a separate approved step. The original assessment
-itself reproduced no runtime race.
+acceptance. The linked course-configuration repair closes W3 with complete
+hierarchy rollback/control coverage. All three selected P2 write gaps now have
+linked acceptance; the original assessment itself reproduced no runtime race.
+A1r browser checks separately identify the P3 mobile manual-hole labels candidate
+above. No frontend implementation began in A1r.
 Retired granular team writes receive no reachable-route finding. Provisional
 user-only preflight/provider-work observations remain separate and unrated.
 

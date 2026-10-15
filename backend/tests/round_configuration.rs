@@ -1,5 +1,7 @@
 #![cfg(feature = "database-tests")]
 
+#[path = "round_configuration/expiry.rs"]
+mod expiry;
 #[path = "round_configuration/format_layout.rs"]
 mod format_layout;
 

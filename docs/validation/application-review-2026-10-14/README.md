@@ -45,9 +45,12 @@ granular team writes are retired. The subsequent
 with reproduced membership-wait/late-insert expiry and rollback/control coverage.
 [pairing-write repair](../pairing-write-session-2026-10-15/README.md) subsequently
 closes W2 with reproduced expiry, rollback/valid controls and editor acceptance.
-Course configuration remains a separate P2 repair. The source inventory itself
-claims no runtime reproduction. The assessment below
-describes the originally reviewed revision.
+The [course-write repair](../course-write-session-2026-10-15/README.md) closes W3
+with reproduced membership/late-hierarchy expiry and complete rollback/control
+coverage. All three selected P2 write gaps now have linked acceptance. Its
+browser checks separately identify a P3 mobile manual-hole labeling issue for
+a later step. The source inventory itself claims no runtime reproduction. The
+assessment below describes the originally reviewed revision.
 
 The [Rustls dependency repair](../rustls-update-2026-10-15/README.md) follows A4,
 using fresh advisory evidence and preserving the SQLx cancellation override.

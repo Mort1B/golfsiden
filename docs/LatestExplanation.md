@@ -1,44 +1,54 @@
-# Latest iteration — pairing-replacement session expiry
+# Latest iteration — course-configuration session expiry
 
-A1q repairs W2, aggregate `PUT /api/rounds/{round_id}/pairings`, from the
+A1r repairs W3, `PUT /api/rounds/{round_id}/course-configuration`, from the
 [legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md).
-After all roster mutations, timestamp updates and complete response assembly,
-the repository rechecks the same active session with database wall-clock time
-immediately before commit. Existing round/session/admin locks, validation,
-response fields and error mapping remain intact. No mutation retry is added.
+After inserting the complete immutable revision and awaiting round
+UPDATE/RETURNING, the repository rechecks the same session with database
+wall-clock time immediately before commit. Stored-round/session/admin locks,
+CSRF, preflight/provider placement, validation and response contracts remain
+unchanged. No mutation retry or repeated provider fetch is added.
 
-Both new API/PostgreSQL cases reproduced `200` instead of `401` on unchanged
-production code. The membership test first observes the final transaction's
-round wait, then holds the unchanged membership after preflight. The late test
-verifies pending legacy-team/member and old-flight deletion, new flights/members
-and a changed timestamp inside its isolated trigger before waiting. It covers a
-late-write wait; a separate final-loader wait was not reproduced.
+Both new PostgreSQL/API cases reproduced `200` instead of `401` against unchanged
+production source. The first observes a final round wait before holding an
+unchanged membership, proving preflight completed. The second verifies complete
+pending course/tee/hole facts and changed attachment/timestamp inside a targeted
+AFTER UPDATE trigger before its advisory wait. Deferred constraints are not
+forced early.
 
-Both now return private/no-store `401 unauthenticated`, restore the complete
-stored roster/round snapshot and publish no event. Fresh valid-session controls
-reuse the original optimistic timestamp and identities, commit one replacement
-and publish one matching event. All 29 focused pairing/team cases pass.
-Independent read-only source/test review found no actionable findings.
+Both now return private/no-store `401 unauthenticated`, roll back all hierarchy
+and attachment changes and publish no event. Full snapshots catch orphan rows
+and preserve the other opened round, original courses and handicap/history
+facts. Fresh-session controls reuse the original optimistic timestamp and
+command, create exactly one hierarchy/attachment and publish one matching event. All 36 focused cases
+pass, and independent read-only implementation/test review found no findings.
 
-Real Chrome editor checks pass at 320, 390 and 1280px: loading, populated/empty,
-long-content layout, saving feedback, one real PUT and persisted reload, read
-error/retry and no unexpected browser/network errors. A deliberately injected
-PUT 401 leaves GET authority valid and checks existing access feedback, disabled
-editing, current-draft retention, explicit discard/read recovery and no mutation
-retry. This does not claim retained drafts across genuine auth-loss unmounts.
-Actual logout plus forced reload separately confirms private 401/login gating.
-An initial probe's same-fragment navigation assumption was corrected without
-application changes; the complete final probe and focused screenshots pass.
+Real Chrome checks pass at 320, 390 and 1280px: saved-picker loading/populated,
+injected long names/error/retry/empty, manual saving feedback, one real PUT,
+receipt/collapse/focus and persisted round names/hole count after reload. A
+clearly injected PUT 401 retains inputs in the same mounted form, shows existing
+access feedback and re-enables fields/save without an automatic retry. Server
+round data is unchanged. Retention across mode changes/reload/auth-loss unmounts
+is not claimed. Actual logout plus reload verifies private round GET 401 and
+login gating. The real unusable catalog shows its manual fallback; no provider
+detail request or remote provider success is claimed. An initial probe selector
+was corrected without application changes before the complete successful run.
+
+Browser inspection separately confirms a pre-existing **P3 mobile labeling
+issue**: below 700px, manual hole rows lack visible Par/Slagindeks/Avstand labels,
+although accessible input names remain. Desktop headings are visible. This is
+recorded with screenshots and proposed as A1s; no frontend implementation began.
+Independent browser-evidence review confirms that distinction.
 
 Backend formatting, 264 all-target tests, strict Clippy and API binaries pass.
-The complete PostgreSQL-feature ladder passes 950 tests with zero failures and
-five existing ignored measurement probes. Explicit migration/seed checks pass
-with all 39 migrations successful, eight players and five rounds. Independent
-source/test, browser-evidence and documentation/next-plan reviews found no
-actionable findings. Local links, source anchors, file scope/size and diff
-whitespace checks pass. Evidence and remaining limits are in the
-[acceptance report](validation/pairing-write-session-2026-10-15/README.md).
-Time during COMMIT, deferred constraints and network delivery remains outside
-the final-check guarantee. No frontend, schema, dependency, provider or hosted
-change is included. Course configuration remains the separate P2 follow-up;
-no adjacent implementation began.
+The complete PostgreSQL rerun passes 952 tests with zero failures and five
+existing ignored probes. The first full attempt ended with exit 143 after its
+unit target; no failing case was reported and its cause remains unconfirmed.
+That incomplete attempt is recorded separately. Explicit migration/seed checks
+pass with all 39 migrations successful, eight players and five rounds. The
+owned container and private environment files were removed. Independent
+source/test, browser-evidence and documentation/next-plan reviews are resolved;
+local links/source anchors, file scope/size and diff whitespace checks pass.
+The [acceptance report](validation/course-write-session-2026-10-15/README.md)
+retains exact results, the separate P3 finding and validation limits.
+Time during COMMIT, deferred constraints and delivery remains outside the final
+check. No schema, dependency, provider or hosted change is included.
