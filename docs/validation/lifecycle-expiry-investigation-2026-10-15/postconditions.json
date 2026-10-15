@@ -1,0 +1,10 @@
+{
+  "exact_counts_and_target": true,
+  "default_and_control_scheduling": true,
+  "failure_diagnostics_empty": true,
+  "source_hashes_match": true,
+  "runtime_tests_schema_dependencies_deployment_unchanged": true,
+  "owned_database_removed": true,
+  "private_files_removed": true,
+  "python_syntax": true
+}

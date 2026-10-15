@@ -512,6 +512,13 @@ for all four routes. Early rejection fails setup. The
 separates the reproduced fixture exposure from the unproven cause of an older
 default-concurrency timeout; no product authorization behavior changed.
 
+The subsequent [lifecycle investigation](validation/lifecycle-expiry-investigation-2026-10-15/README.md)
+did not reproduce the separate retained match-lifecycle test failure in two
+default module runs, the exact case or its two-thread control. No runtime or test
+repair was selected. That historical full-run failure remains unexplained;
+current production-image/proxy/recovery acceptance is tracked in the
+[deployment guide](deployment_guide.md#sunday-readiness-target).
+
 `GET /api/tournaments`, `GET /api/me/tournaments` and `GET
 /api/tournaments/{id}` also bind the entire read to the active session. Session,
 user and membership share locks remain held through one consistent snapshot and

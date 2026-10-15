@@ -1,0 +1,197 @@
+{
+  "phase": "baseline",
+  "base_commit": "351f63667bee48aeb8abdb9b970b5975863f94e0",
+  "source_sha256": {
+    "backend/tests/lifecycle_expiry/scenarios.rs": "05092d178b1adc81a2b29b260dfd135b1fb6d76ee9d4e5c3a83d12e38d9ec01a",
+    "backend/tests/lifecycle_expiry/support.rs": "bb64873e84398114c4cd0f55334a507b64cb965e5d43a8aace9139c275e8b4c5",
+    "backend/tests/lifecycle_expiry/state.sql": "a508d1b48f281f667ec97ec53eba11daf7e7867d95865c50008d9d2cc85c04c7"
+  },
+  "scheduling": {
+    "cpu_count": 8,
+    "affinity_count": 8,
+    "inherited_thread_setting_removed": false,
+    "default": "libtest default; RUST_TEST_THREADS unset"
+  },
+  "runs": [
+    {
+      "name": "default-module-1",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "lifecycle_expiry",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 16.561,
+      "load_before": [
+        0.81103515625,
+        0.63525390625,
+        0.3447265625
+      ],
+      "load_after": [
+        1.111328125,
+        0.70361328125,
+        0.37158203125
+      ],
+      "totals": {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [
+        "ok"
+      ],
+      "panic_locations": [],
+      "early_response_codes": [],
+      "controlled_wait_timeout": false,
+      "rollback_assertion_failed": false,
+      "late_snapshot_precondition_failed": false
+    },
+    {
+      "name": "default-module-2",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "lifecycle_expiry",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 16.409,
+      "load_before": [
+        1.111328125,
+        0.70361328125,
+        0.37158203125
+      ],
+      "load_after": [
+        1.37353515625,
+        0.7880859375,
+        0.40576171875
+      ],
+      "totals": {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [
+        "ok"
+      ],
+      "panic_locations": [],
+      "early_response_codes": [],
+      "controlled_wait_timeout": false,
+      "rollback_assertion_failed": false,
+      "late_snapshot_precondition_failed": false
+    },
+    {
+      "name": "default-exact-target",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "lifecycle_expiry",
+        "lifecycle_expiry::scenarios::match_late_expiry_rolls_back_all_actions",
+        "--",
+        "--exact",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 15.963,
+      "load_before": [
+        1.37353515625,
+        0.7880859375,
+        0.40576171875
+      ],
+      "load_after": [
+        1.068359375,
+        0.7490234375,
+        0.3984375
+      ],
+      "totals": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [
+        "ok"
+      ],
+      "panic_locations": [],
+      "early_response_codes": [],
+      "controlled_wait_timeout": false,
+      "rollback_assertion_failed": false,
+      "late_snapshot_precondition_failed": false
+    },
+    {
+      "name": "two-thread-module",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "golf-api",
+        "--features",
+        "database-tests",
+        "--test",
+        "lifecycle_expiry",
+        "--",
+        "--nocapture",
+        "--test-threads=2"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 47.954,
+      "load_before": [
+        1.068359375,
+        0.7490234375,
+        0.3984375
+      ],
+      "load_after": [
+        0.95654296875,
+        0.74609375,
+        0.41357421875
+      ],
+      "totals": {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0
+      },
+      "failed_tests": [],
+      "target_outcomes": [
+        "ok"
+      ],
+      "panic_locations": [],
+      "early_response_codes": [],
+      "controlled_wait_timeout": false,
+      "rollback_assertion_failed": false,
+      "late_snapshot_precondition_failed": false
+    }
+  ],
+  "database": {
+    "fixture": "lifecycle",
+    "image": "docker.io/library/postgres:17-alpine",
+    "removed": true,
+    "version": "PostgreSQL 17.10 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+    "image_id": "93aa428db0aeeb71d24dcad1491bef6e1396a4255697e4bfc4c725bfeb981b74"
+  },
+  "database_removed": true,
+  "private_fixture_files_removed": true
+}

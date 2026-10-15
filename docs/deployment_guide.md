@@ -10,6 +10,22 @@ Only ports 80 and 443 are public; PostgreSQL is attached only to the internal
 This baseline is intentionally single-host. Backups must leave the host if they
 are expected to survive loss of that host.
 
+## Sunday readiness target
+
+The current target is Sunday 18 October 2026 on this single-host Docker Compose
+baseline. The [bounded readiness path](PLANS.md) uses six iterations including
+the completed lifecycle investigation, with two contingency slots for evidenced
+launch blockers. The [current inventory](validation/lifecycle-expiry-investigation-2026-10-15/README.md#sunday-priorities-and-remaining-gates)
+prioritizes current production image builds, real production-mode proxy/runtime
+grants, essential organizer/player workflows and a current-schema restore.
+These gates remain unverified; this target is not deployment sign-off.
+
+Prepare the operator prerequisites early: new installation versus upgrade,
+domain/DNS and ports, private runtime secrets, persistent storage and an off-host
+backup destination. Actual host deployment, HTTPS/readiness and playing-phone
+acceptance remain operator actions. Optional features and speculative
+optimization are deferred while these gates are closed.
+
 ## Current release
 
 The current application requires **schema 39** through

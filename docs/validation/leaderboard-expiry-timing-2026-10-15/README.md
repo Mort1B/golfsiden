@@ -91,6 +91,10 @@ the owned fixture; this receipt retains the failure's name/counts, but no panic
 location or cause. No lifecycle source was changed, and no cause or severity is
 assigned from that limited evidence. It is a separate next investigation.
 
+The later [A1z investigation](../lifecycle-expiry-investigation-2026-10-15/README.md)
+bounds non-reproduction with unchanged default-module/exact-case and two-thread
+checks. It selects no repair and leaves this original full-run failure explicit.
+
 The [continuation](continuation.json) runs the full database suite with
 `--no-fail-fast -- --test-threads=2`, followed by migration and seed. Its final
 PostgreSQL count includes ordinary tests and must not be added to the ordinary

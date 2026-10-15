@@ -1,103 +1,103 @@
 # Plans
 
-`PLANS.md` owns unresolved work and bounded next steps. Current behavior belongs
-in `Documentation.md`; durable boundaries belong in `ARCHITECTURE.md`.
+`PLANS.md` owns current and queued work. Current behavior belongs in
+`Documentation.md`; deployment and recovery belong in `deployment_guide.md`.
 
 ## Active step
 
-None. The [A1y acceptance](validation/leaderboard-expiry-timing-2026-10-15/README.md)
-records the bounded P3 test setup repair, default-concurrency target acceptance,
-full two-thread ladder and separate unresolved lifecycle failure. The historical
-leaderboard timeout's exact cause remains unproven.
+None. [A1z](validation/lifecycle-expiry-investigation-2026-10-15/README.md) records
+bounded non-reproduction of the retained lifecycle failure and the Sunday
+readiness inventory. No repair was justified and no runtime/test source changed.
+The historical full default-concurrency failure remains an explicit limitation.
 
 ## Next candidate — requires approval
 
-### A1z — investigate separate match-lifecycle late-expiry failure
+### DEPLOY-2 — production image and deployment contract baseline
 
-The A1y full default-concurrency ladder passed its selected leaderboard case but
-stopped at the unchanged
-`lifecycle_expiry::scenarios::match_late_expiry_rolls_back_all_actions`.
-The retained receipt identifies the test/counts, not its panic location or cause;
-the case passes the full two-thread control. No product or fixture cause, or new
-severity, is established.
+Sunday 18 October 2026 targets one host using the supplied Docker Compose setup,
+as confirmed by the user. This is iteration 2 of a six-iteration target, with
+iterations 7–8 reserved for confirmed launch blockers.
 
-- Goal: capture and explain that separate failure before selecting a repair.
-- Scope: that case and narrowly needed diagnostic/setup support plus evidence
-  and docs. No production authorization, lifecycle, transaction, retry, scoring
-  or timeout-policy changes; no unrelated test repair.
-- Behavior/invariants: preserve the intended late-write gate, actual preceding
-  work, natural expiry, every denial/rollback assertion and valid-session
-  control. Early rejection must not substitute for the intended late-expiry race.
-- Validation: retain the actual failure details and database-clock/gate/response
-  ordering on owned PostgreSQL under relevant default concurrency with a
-  separately identified two-thread control. Repair only an evidenced fixture
-  defect, then run affected ladders and independent review; otherwise record
-  non-reproduction limits. A product defect requires a separate bounded step.
-- Stop: publish this one investigation/justified fixture repair and its limits;
-  do not begin optimization or another lifecycle case.
+- Goal: establish that current production artifacts can build and identify exact
+  installation/upgrade prerequisites before the integrated rehearsal.
+- Scope: the three production Dockerfiles, build contexts/lockfiles, Compose and
+  runtime configuration validation, plus narrowly necessary build compatibility
+  repairs and operator/evidence docs. No features, broad dependency/toolchain
+  upgrades, schema changes or hosted administration.
+- Behavior/invariants: one immutable source candidate and matching API/web builds;
+  retain both SQLx vendor patches, the production seed exclusion, private database,
+  separate owner/runtime authority, exact schema gate, secure cookies and trusted
+  proxy handling. Never weaken guards to make an image start.
+- Validation: build all three supplied production Dockerfiles with locked package
+  inputs; verify build context, installed binaries, Compose configuration and
+  migration/runtime-role requirements. Distinguish actual image acceptance from
+  host Rust/Node builds. Record exact tooling/network blockers; repair only a
+  demonstrated in-scope build defect and run every affected ladder/review.
+- Stop: publish reproducible image/configuration evidence and the concrete next
+  rehearsal step. Do not deploy to the user's host or start the next iteration.
 
-## Later queue
+## Sunday readiness path
 
-### Severity-ordered review follow-ups
+Iteration 1 is complete. Work one bounded step per iteration; each next candidate
+is defined before implementation. The six-iteration target is:
 
-All findings and individual acceptance criteria are in the
-[review report](validation/application-review-2026-10-14/README.md#findings-and-acceptance-criteria).
-Select one bounded step at a time; none is implemented by this plan.
+| Iteration | Required outcome |
+| --- | --- |
+| 2 | Current production images and deployment contract, above |
+| 3 | Local production rehearsal: matching API/web, real schema 39/grants, production startup, health/readiness, secure-cookie browser access and SSE through Caddy |
+| 4 | Critical organizer/player acceptance with distinct accounts: login/invitation, roster/round setup, score save/recovery, gross/net, lock/correction, final visibility and required Fantasy flow, at mobile/desktop widths |
+| 5 | Actual current-application backup/checksum/restore into a fresh isolated project, state parity, real grants, readiness/login and restart/reconnect; short operating handoff |
+| 6 | Release freeze: affected final gates, immutable tested candidate, READY / READY WITH KNOWN LIMITATIONS / NOT READY verdict, concise operator launch/rollback checklist |
 
-The selected private-read findings have linked acceptance. The separate
-[legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md)
-preserves the original three source-supported P2 expiry gaps. The linked
-round-creation repair closes W1 with reproduced expiry and rollback evidence.
-The linked pairing-replacement repair closes W2 with the same expiry/rollback
-acceptance. The linked course-configuration repair closes W3 with complete
-hierarchy rollback/control coverage. All three selected P2 write gaps now have
-linked acceptance; the original assessment itself reproduced no runtime race.
-A1r browser checks separately identified the P3 mobile manual-hole labeling
-issue; A1s now closes it with visible headings and frontend/browser acceptance.
-Fantasy A1u now has scoped-fact performance/parity acceptance without a new
-severity rating. A1v closes the retained P3 test-portability limitation with
-two-image acceptance. A1w closes the separate P3 driver compatibility limitation
-with retained strict/certificate controls. A1x restores retained browser acceptance
-without a product change. A1y has linked test-timing acceptance; its separate
-lifecycle failure is the next candidate.
-Retired granular team writes receive no reachable-route finding. Provisional
-user-only preflight/provider-work observations remain separate and unrated.
+Iterations 7–8 are contingency for confirmed correctness, security, essential-flow
+or recovery blockers. The target does not turn an unresolved serious defect into
+acceptance. Existing evidence is reused when relevant source/configuration has
+not changed; skipped checks and limits remain explicit.
 
-Empty-queue polling remains a separate unmeasured candidate. Fantasy refresh
-deduplication is not selected by A1t's overlapping completion/cancellation
-evidence. No speculative optimization or load claim is authorized.
+### Launch triage
 
-### Previously deferred work
+- Block sign-off for P0–P2 security, correctness or data-loss defects;
+  unusable required flows; failed image/startup/schema/grants; or failed recovery.
+- Classify test scheduling failures separately from application defects. A
+  bounded non-reproduction is a limitation, not proof of a repair or full default
+  success. Another test-maintenance iteration needs actionable evidence or an
+  essential release-validation blocker; it is not queued automatically.
+- Defer new features, speculative optimization, unmeasured empty-queue polling,
+  broad polish and the expanded device matrix. Do not reopen repaired findings
+  without new evidence. Keep existing sporting/session/replay/privacy invariants.
 
-- Optional offline preparation for browser closure/eviction: requires a separately
-  scoped app-shell and private scorecard-retention/reauthorization design before
-  implementation. Current in-memory return and durable queued edits remain distinct.
+### Operator prerequisites — prepare before the final iteration
 
-- Operator-owned security acceptance remains for the actual public proxy/TLS,
-  runtime database privileges, image advisories and backup/restore environment.
-  The local application assessment does not establish hosted readiness.
+Hosting remains operator-owned. Confirm new install versus upgrade, the chosen
+host/domain/DNS, reachable ports, private secrets, persistent storage and an
+off-host backup destination. Use the existing
+[deployment guide](deployment_guide.md); no hosted action is authorized here.
+Public HTTPS/readiness, the actual playing-phone workflow and off-host backup
+acceptance must be checked on the chosen environment. Local Podman or browser
+acceptance is not public Docker Engine/DNS/ACME acceptance.
 
-### Remaining deployment acceptance
+## Deferred work and retained limits
 
-Physical iPhone acceptance remains for Chrome and Safari separately: iPhone 15
-Pro and a newer/larger model, both orientations, browser toolbars, software
-keyboard, safe areas and native zoom. Local Chrome/WebKit coverage does not
-replace those checks; see [the evidence and device checklist](validation/iphone-layout-2026-10-14/README.md#outstanding-physical-device-acceptance).
-No further mobile implementation step is selected. Duo/foldables remain excluded.
+- The [application review](validation/application-review-2026-10-14/README.md)
+  links the selected finding repairs. The separate
+  [legacy-write inventory](validation/legacy-write-inventory-2026-10-15/README.md)
+  retains W1/W2/W3 acceptance. The
+  [A1z inventory](validation/lifecycle-expiry-investigation-2026-10-15/README.md)
+  owns current deployment evidence gaps; it establishes no new P0–P2 product bug.
+- Empty-queue polling remains unmeasured. A1t did not select Fantasy refresh
+  deduplication. Neither is a prerequisite for Sunday's release without new
+  measured user impact.
+- Cold offline launch, browser-closure preparation and background sync remain
+  outside the existing scorecard-return/durable-edit contract.
+- Full physical iPhone 15 Pro/newer-large-model, orientation/keyboard/zoom and
+  Android coverage remains unverified; retain the
+  [device checklist](validation/iphone-layout-2026-10-14/README.md#outstanding-physical-device-acceptance).
+  This is not replaced by local Chrome/WebKit or marked complete by deferral.
+- PERSIST-1 same-account/actual-login scenarios retain their
+  [specific limits](validation/match-note-retention-2026-09-23/README.md). Revisit
+  only if required-flow feedback supplies evidence.
 
-The remaining PERSIST-1 same-account/actual-login scenarios may be revisited if
-testing feedback warrants them; see the original
-[validation limits](validation/match-note-retention-2026-09-23/README.md). Local
-PostgreSQL validation is now available through rootless Podman. The functional
-checks cover real database-backed match recovery after locking, but do not claim
-every separate session-replacement scenario.
-
-Public-host acceptance still needs a Docker Engine environment and public DNS/TLS
-validation. Native 200% browser zoom and physical Android Chrome remain unverified.
-Hosting and deployment checks belong to the user. These historical acceptance
-limits do not expand the application-readiness step into server administration
-or another assessment. Broader device coverage and polish can follow feedback.
-
-No further sporting scoring rules are planned. No automatic opponents/byes/brackets, team match play,
-extra holes, public match sharing, cold offline launch or background sync is included.
-Fantasy remains separate from sporting scores and completion rules.
+No new sporting rules, automatic opponents/byes/brackets, team match play, extra
+holes, public match sharing or provider features are selected. Fantasy remains
+separate from sporting scores and completion rules. No hosted security/capacity
+claim is made from local acceptance.
