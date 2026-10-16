@@ -692,7 +692,7 @@ pool. Caddy overwrites the internal client-IP and proxy-secret headers; the API
 trusts the client address only when that secret matches, so public forwarding
 headers cannot choose a rate-limit identity.
 
-The current production Dockerfiles have
+The original production image baseline has
 [direct image/contract acceptance](validation/production-images-2026-10-15/README.md)
 on rootless Podman/amd64: all three builds, the API's actual Rust 1.88 toolchain,
 65 packaged web assets, 11 offline Compose cases and 23 artifact/startup-guard
@@ -731,8 +731,23 @@ corruption, late transactional rollback and nonempty-target controls pass, as do
 restricted runtime authority, restored organizer/member login, gross/net 73,
 Fantasy 88/94, carry-forward and exact saved-receipt replay. A native same-origin
 stream reopens across API/web restart; fresh authoritative reads pass afterward
-and after database outage/reconnect. No production source changed. Final release
-acceptance, native Docker/public-host checks and off-host recovery remain open.
+and after database outage/reconnect. No production source changed in that step.
+
+The [DEPLOY-6 frozen release](validation/release-freeze-2026-10-16/README.md)
+completes all six repository readiness iterations with **READY WITH KNOWN
+LIMITATIONS** for the locally accepted schema-39/Linux-amd64 candidate. Confirmed
+P1/P2 ingress and PostgreSQL advisory gaps required only three Dockerfile repairs:
+PG17.11, updated Debian runtime packages, and standard Caddy2.11.7 built with
+Go1.27.2/x/net0.60.0/quic-go0.63.0. All three Rust executables and65 web assets
+remain byte-identical. Fresh23 artifact guards,60 source/16 target checks,
+five critical browser phases, all 61 table/623 synthetic-row and sequence parity,
+restore/restart/reconnect and proxy-error log redaction pass on the new images.
+The exact archive bundle, manifest and protected loader prevent deployment-time
+rebuild drift. Use the [operator handoff](validation/release-freeze-2026-10-16/OPERATOR.md)
+with one common release tag and consistent explicitly bound Compose project.
+Remaining package matches are conditionally triaged, not a clean scanner result.
+Native Docker/public-host, physical playing-phone and protected off-host recovery
+checks remain operator gates before launch; no hosted deployment occurred.
 
 The deployment runbook uses explicit migration and permission actions, never a
 production seed. Its backup script creates an atomic custom-format PostgreSQL

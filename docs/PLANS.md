@@ -5,47 +5,20 @@
 
 ## Active step
 
-None. Current-application recovery acceptance is recorded in the
-[DEPLOY-5 report](validation/recovery-2026-10-15/README.md).
+None. DEPLOY-6 completes the six planned repository readiness iterations.
+The [frozen release](validation/release-freeze-2026-10-16/README.md) is
+**READY WITH KNOWN LIMITATIONS** for local acceptance. The
+[operator handoff](validation/release-freeze-2026-10-16/OPERATOR.md) owns remaining
+native-Docker/public-host, actual-phone and off-host recovery launch checks.
+No hosted deployment was performed or authorized here.
 
-## Next candidate — requires implementation approval
+## Next candidate
 
-### DEPLOY-6 — release freeze and operator handoff
+None selected. Iterations 7–8 remain contingency only for a newly confirmed
+P0–P2 correctness, security, data-loss, essential-flow or recovery blocker.
+Do not open another maintenance iteration or optional feature automatically.
 
-- Goal: provide an evidence-backed release verdict and concrete launch/rollback
-  checklist for Sunday's one-host Compose target.
-- Scope: freeze source and exact tested artifacts, triage current dependency/
-  image advisories and review the remaining essential launch/recovery gates.
-  Reuse unchanged accepted builds, integration, critical flows and recovery.
-  Repair only confirmed P0–P2 or unusable required-flow blockers; no features,
-  broad polish, speculative optimization or automatic reopening of P3 limits.
-- Behavior/invariants: keep schema-39 matching builds, private proxy logs,
-  restricted runtime grants, session/membership fencing, exact write replay,
-  score/handicap/lifecycle and final-round privacy contracts. Preserve immutable
-  artifact identities; any necessary repair invalidates its affected evidence.
-- Validation: current primary advisory evidence and compiled/runtime reachability,
-  exact source/artifact comparison, all affected gates for a selected blocking
-  repair, scoped read-only review and documentation/link/cleanup/publication
-  checks. Distinguish local engine/browser acceptance from unperformed operator
-  host, physical-phone and off-host checks; never claim them complete by deferral.
-- Stop: publish READY / READY WITH KNOWN LIMITATIONS / NOT READY with severity-
-  rated remaining issues, immutable candidate details and concise operator
-  launch/rollback actions. Clean owned fixtures, publish and stop. No deployed
-  host administration, deployment or irreversible release action is authorized.
-
-## Sunday readiness path
-
-Iterations 1–5 are complete. Work one bounded step per iteration; each next candidate
-is defined before implementation. The six-iteration target is:
-
-| Iteration | Required outcome |
-| --- | --- |
-| 6 | Release freeze: affected final gates and current dependency/image advisory triage, immutable tested candidate, READY / READY WITH KNOWN LIMITATIONS / NOT READY verdict, concise operator launch/rollback checklist |
-
-Iterations 7–8 are contingency for confirmed correctness, security, essential-flow
-or recovery blockers. The target does not turn an unresolved serious defect into
-acceptance. Existing evidence is reused when relevant source/configuration has
-not changed; skipped checks and limits remain explicit.
+## Sunday readiness policy
 
 ### Launch triage
 
@@ -59,7 +32,7 @@ not changed; skipped checks and limits remain explicit.
   broad polish and the expanded device matrix. Do not reopen repaired findings
   without new evidence. Keep existing sporting/session/replay/privacy invariants.
 
-### Operator prerequisites — prepare before the final iteration
+### Operator prerequisites — complete before launch
 
 Hosting remains operator-owned. Confirm new install versus upgrade, the chosen
 host/domain/DNS, reachable ports, private secrets, persistent storage and an
@@ -84,7 +57,8 @@ acceptance is not public Docker Engine/DNS/ACME acceptance.
   limitation. The [DEPLOY-5 report](validation/recovery-2026-10-15/README.md)
   records actual current-script/schema-39 restore, full table/sequence parity,
   restored logins/replay and restart/reconnect. Native Docker, public host,
-  physical phones, off-host recovery and final release acceptance remain open.
+  physical phones and off-host recovery remain operator gates. Local final
+  acceptance and the exact frozen delivery are recorded in DEPLOY-6.
   No further Fantasy diagnosis is selected without new serious or unusable
   required-flow evidence.
 - [A1z](validation/lifecycle-expiry-investigation-2026-10-15/README.md) retains the

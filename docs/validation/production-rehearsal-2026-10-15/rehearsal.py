@@ -24,6 +24,8 @@ class Rehearsal:
     def __init__(self, control):
         self.path = Path(control)
         self.state = json.loads(self.path.read_text())
+        if os.environ.get('GOLF_RELEASE_BUILD_REPORT'):
+            self.state.setdefault('candidate_build_report', os.environ['GOLF_RELEASE_BUILD_REPORT'])
         self.root = Path(self.state['directory'])
         assert self.root.parent == Path('/tmp') and self.root.name.startswith('golf-deploy3-')
         assert self.root.stat().st_mode & 0o077 == 0
@@ -94,10 +96,19 @@ class Rehearsal:
         raise RuntimeError('HTTP status wait failed: ' + path)
 
     def setup(self, migrate=True):
-        builds = json.loads((HERE.parent / 'production-images-2026-10-15/baseline-builds.json').read_text())
+        candidate = self.state.get('candidate_build_report')
+        builds = json.loads(Path(candidate).read_text()) if candidate else json.loads((HERE.parent / 'production-images-2026-10-15/baseline-builds.json').read_text())
         web_report = HERE / 'web-build.json'
-        web_build = json.loads(web_report.read_text()) if web_report.exists() else None
+        web_build = json.loads(web_report.read_text()) if web_report.exists() and not candidate else None
         exclusions = []
+        if candidate:
+            assert builds.get('temporary_context_removed') is True
+            assert len(builds['builds']) == 3 and {item['service'] for item in builds['builds']} == {'postgres', 'api', 'web'}
+            assert all(item['exit_code'] == 0 for item in builds['builds'])
+            assert set(builds['overlays']) == {'backend/Dockerfile.production', 'frontend/Dockerfile.production', 'deploy/postgres/Dockerfile.production'}
+            for name, digest in builds['overlays'].items():
+                assert hashlib.sha256((REPO / name).read_bytes()).hexdigest() == digest
+                exclusions.append(':!' + name)
         if web_build:
             assert hashlib.sha256((REPO / 'deploy/Caddyfile').read_bytes()).hexdigest() == web_build['overlays']['deploy/Caddyfile']
             exclusions = [':!deploy/Caddyfile']
@@ -141,6 +152,8 @@ class Rehearsal:
                           origin=values['RESET_PASSWORD_ORIGIN'], http_port=http_port,
                           https_port=https_port, images=images, source=builds['base_commit'],
                           context_sha256=builds['context_sha256'])
+        if candidate:
+            self.state['candidate_build_snapshot'] = builds
         self.save()
         self.env.update(values)
         config = json.loads(self.compose('--profile', 'tools', 'config', '--format', 'json').stdout)
@@ -186,6 +199,8 @@ class Rehearsal:
         self.receipt('production_api_web_healthy_https_through_caddy')
 
     def cleanup(self, receipt_path=None):
+        if self.state.get('candidate_build_report'):
+            assert receipt_path is not None, 'Candidate cleanup requires its own evidence destination'
         project = self.state.get('project')
         counts = {}
         if project:
@@ -208,6 +223,8 @@ class Rehearsal:
                 'owned_resource_counts_before_removal': counts,
                 'private_configuration_diagnostics_ca_profile_removed': True,
                 'three_deploy2_images_and_repaired_web_retained': True}
+        if self.state.get('candidate_build_report'):
+            safe['candidate_build'] = self.state.get('candidate_build_snapshot')
         pid = self.state['pid']
         # Verify process identity before signalling a PID from a saved control file.
         process = Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0')

@@ -1,0 +1,32 @@
+[
+  {
+    "configuration": "native",
+    "package": "quinn-proto",
+    "normal_path_present": false
+  },
+  {
+    "configuration": "native",
+    "package": "rsa",
+    "normal_path_present": false
+  },
+  {
+    "configuration": "native",
+    "package": "chacha20",
+    "normal_path_present": false
+  },
+  {
+    "configuration": "all-features-all-platforms",
+    "package": "quinn-proto",
+    "normal_path_present": false
+  },
+  {
+    "configuration": "all-features-all-platforms",
+    "package": "rsa",
+    "normal_path_present": false
+  },
+  {
+    "configuration": "all-features-all-platforms",
+    "package": "chacha20",
+    "normal_path_present": false
+  }
+]

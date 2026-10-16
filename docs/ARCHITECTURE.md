@@ -140,6 +140,26 @@ certificate state. The single-instance assumption deliberately permits bounded
 in-process request throttling and provider quota accounting; a multi-API
 deployment would require shared implementations for both.
 
+Runtime security components are release inputs. PostgreSQL17.11 and the Debian
+API/Caddy base indexes are digest-pinned. The web Dockerfile compiles standard
+Caddy2.11.7 with pinned Go1.27.2 and x/net0.60.0 because the stock module's
+x/net selection does not contain the required HTTP/2 fixes. CGO is disabled;
+compiled module metadata, rather than the custom binary's `unknown` CLI version,
+identifies that runtime. API package updates happen at build time, so digest
+pins alone do not promise reproducible complete images.
+
+A frozen delivery therefore transports accepted image archives and checks their
+config IDs, archive SHA-256 and runtime-file hashes before loading. The loader
+protects both archived source tags and final release aliases from replacement.
+One common tag binds all five Compose service images, including migration and
+permissions tools used by backup/restore scripts without the release override.
+An explicitly expected Compose project must match the inherited project identity
+for both services and scripts. A separate restore uses another explicitly bound
+project. No-pull/no-build startup preserves the accepted bytes; rebuilding creates
+a new candidate. Checksums assume trusted, protected staging and prove transfer
+integrity, not authenticity or concurrent-replacement safety. See the
+[frozen delivery acceptance](validation/release-freeze-2026-10-16/README.md).
+
 The default Caddy logger removes `request` and `resp_headers` objects from
 runtime and access records. This prevents reverse-proxy failures from recording
 the attached shared secret, cookies/CSRF headers or capability-bearing request

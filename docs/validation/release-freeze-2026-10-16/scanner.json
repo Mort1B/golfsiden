@@ -1,0 +1,8 @@
+{
+  "tool": "Trivy",
+  "version": "0.76.0",
+  "release_url": "https://github.com/aquasecurity/trivy/releases/tag/v0.76.0",
+  "archive_sha256": "e24b1c51293c1b15e4ba8d45bbc7891ba053f90278ec2698f3562c993e145fe7",
+  "release_checksum_verified": true,
+  "github_asset_digest": "sha256:e24b1c51293c1b15e4ba8d45bbc7891ba053f90278ec2698f3562c993e145fe7"
+}

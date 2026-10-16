@@ -1,0 +1,9 @@
+{
+  "three_rust_executables_byte_identical": true,
+  "web_assets_byte_identical": true,
+  "web_asset_count": 65,
+  "caddy_go": "1.27.2",
+  "caddy_x_net": "0.60.0",
+  "caddy_quic_go": "0.63.0",
+  "standard_http_modules_present": true
+}

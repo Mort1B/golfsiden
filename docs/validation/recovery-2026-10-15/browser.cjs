@@ -7,6 +7,7 @@ const control = JSON.parse(fs.readFileSync(process.argv[2]));
 const fixture = JSON.parse(fs.readFileSync(path.join(control.directory, 'critical-private.json')));
 const replay = JSON.parse(fs.readFileSync(path.join(control.directory, 'recovery-lineup-replay.json')));
 const postDatabase = process.argv[3] === 'post-database';
+const evidenceDirectory = process.env.GOLF_RECOVERY_EVIDENCE_DIRECTORY || __dirname;
 const livePath = `/api/tournaments/${fixture.tid}/live`;
 const base = `/api/tournaments/${fixture.tid}/fantasy`;
 const errors = [], pending = [], checks = {};
@@ -81,7 +82,7 @@ async function main() {
           const row=p.locator('.leaderboard-row-link').filter({hasText:fixture.names[0]});
           await expect(row.locator('.leaderboard-score span')).toHaveText('73 netto');
           assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-          await p.screenshot({path:path.join(__dirname,`restored-${role}-${width}.png`),fullPage:true});
+          await p.screenshot({path:path.join(evidenceDirectory,`restored-${role}-${width}.png`),fullPage:true});
         }
       }
       pass('restored_organizer_player_mobile_desktop_exact_results_and_no_horizontal_overflow');
@@ -103,7 +104,7 @@ async function main() {
     } else pass('fresh_restored_logins_and_authoritative_reads_after_database_restart');
     await Promise.all(pending);assert.deepEqual(errors,[]);
     pass('no_unexpected_console_network_or_http_body_failures');
-    fs.writeFileSync(path.join(__dirname,postDatabase?'browser-post-database.json':'browser.json'),JSON.stringify({browser:await browser.version(),checks,images:control.images,certificate_exception:'localhost disposable contexts only',native_stream:postDatabase?'not exercised in this fresh-login mode':'explicit same-origin EventSource on profile page; existing authenticated context across API/web restart'},null,2)+'\n');
+    fs.writeFileSync(path.join(evidenceDirectory,postDatabase?'browser-post-database.json':'browser.json'),JSON.stringify({browser:await browser.version(),checks,images:control.images,certificate_exception:'localhost disposable contexts only',native_stream:postDatabase?'not exercised in this fresh-login mode':'explicit same-origin EventSource on profile page; existing authenticated context across API/web restart'},null,2)+'\n');
   }finally{await Promise.all(contexts.map(context=>context.close()));await browser.close();}
 }
 main().catch(error=>{

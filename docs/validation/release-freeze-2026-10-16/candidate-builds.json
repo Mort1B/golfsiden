@@ -1,0 +1,60 @@
+{
+  "base_commit": "7cf94bb9b40ada7ebb9b24264048a5935fd85676",
+  "overlays": {
+    "deploy/postgres/Dockerfile.production": "1dc2291ce7ba705507265688f580258abbf91a5d25f6933d7804598c3b978d49",
+    "backend/Dockerfile.production": "216a61ce4d1af50d95bae7d788c22d61051aeb2a23d7bdb61a7e4d74cf6413a4",
+    "frontend/Dockerfile.production": "95ad116116850544a12d4e144df96e5331b4ba97afa174e7098b406fca92fdba"
+  },
+  "builds": [
+    {
+      "service": "postgres",
+      "dockerfile": "deploy/postgres/Dockerfile.production",
+      "tag": "localhost/golfsiden-postgres:deploy6-7cf94bb9b40a-ed3fe691022c",
+      "exit_code": 0,
+      "elapsed_seconds": 1.556,
+      "image": {
+        "Id": "6f5206f425ce432de2d4d057905caa25c107be89ca7fe9763d6b34f141f77a4c",
+        "Created": "2026-10-16T12:13:14.726168325Z",
+        "Architecture": "amd64",
+        "RepoDigests": [
+          "localhost/golfsiden-postgres@sha256:98ff996f4e9bd39c7d04bca837ba0ed43fc09d472c43b29caaa7276f7d95d805"
+        ]
+      }
+    },
+    {
+      "service": "api",
+      "dockerfile": "backend/Dockerfile.production",
+      "tag": "localhost/golfsiden-api:deploy6-7cf94bb9b40a-ed3fe691022c",
+      "exit_code": 0,
+      "elapsed_seconds": 128.709,
+      "image": {
+        "Id": "94bbd82bf4c7e7fb83a04b34102c7aa04e7e55aae44cbaf7dbd48410be1c1703",
+        "Created": "2026-10-16T12:15:23.133958477Z",
+        "Architecture": "amd64",
+        "RepoDigests": [
+          "localhost/golfsiden-api@sha256:dc8aacd38941b46cbd21e5af306b27476adecda71fb97b4a6bb455993a4d7533"
+        ]
+      }
+    },
+    {
+      "service": "web",
+      "dockerfile": "frontend/Dockerfile.production",
+      "tag": "localhost/golfsiden-web:deploy6-7cf94bb9b40a-ed3fe691022c",
+      "exit_code": 0,
+      "elapsed_seconds": 97.731,
+      "image": {
+        "Id": "83a94ebcf1b4f16aad05d4301661d2d9d12bc7adb0295f4cd4e3287dbc5be0ae",
+        "Created": "2026-10-16T12:17:00.443504125Z",
+        "Architecture": "amd64",
+        "RepoDigests": [
+          "localhost/golfsiden-web@sha256:6c8ebcd81d23b467357ce418dc5cdd1dd7cc8811d78431a8e48c9fd9587d6d63"
+        ]
+      }
+    }
+  ],
+  "builder": "rootless Podman",
+  "native_docker_acceptance": false,
+  "context_sha256": "ed3fe691022c05fec4a0ca814e2ef4fe4e1726b05437555be253ac42686389d7",
+  "tag": "deploy6-7cf94bb9b40a-ed3fe691022c",
+  "temporary_context_removed": true
+}

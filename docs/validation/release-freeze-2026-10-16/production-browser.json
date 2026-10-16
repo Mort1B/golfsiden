@@ -1,0 +1,25 @@
+{
+  "browser": "155.0.8059.79",
+  "images": {
+    "postgres": "localhost/golfsiden-postgres:deploy6-7cf94bb9b40a-ed3fe691022c",
+    "api": "localhost/golfsiden-api:deploy6-7cf94bb9b40a-ed3fe691022c",
+    "web": "localhost/golfsiden-web:deploy6-7cf94bb9b40a-ed3fe691022c"
+  },
+  "checks": {
+    "real_runtime_dml_onboarding_invitation_course_round": true,
+    "distinct_organizer_player_ui_login_secure_host_only_api_cookies": true,
+    "csrf_absent_rejected_without_score_write": true,
+    "native_sse_same_https_origin_distinct_player_observes_5_to_9_and_reload": true,
+    "security_headers_and_mobile_desktop_long_content_no_overflow": true,
+    "no_unexpected_browser_console_network_or_response_failures": true,
+    "forged_forwarding_and_internal_headers_do_not_evade_login_quota": true
+  },
+  "widths": [
+    320,
+    390,
+    1280
+  ],
+  "accounts": 2,
+  "certificate_exception": "disposable contexts for localhost only",
+  "unexpected_failures": 0
+}

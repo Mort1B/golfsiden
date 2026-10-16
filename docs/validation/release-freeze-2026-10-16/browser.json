@@ -1,0 +1,16 @@
+{
+  "browser": "155.0.8059.79",
+  "checks": {
+    "restored_distinct_ui_logins_gross_net73_locked_denial_fantasy88_94_carry_receipt_and_exact_replay": true,
+    "restored_organizer_player_mobile_desktop_exact_results_and_no_horizontal_overflow": true,
+    "same_authenticated_native_stream_reopens_after_api_web_restart_and_fresh_authoritative_reads_match": true,
+    "no_unexpected_console_network_or_http_body_failures": true
+  },
+  "images": {
+    "postgres": "localhost/golfsiden-postgres:deploy6-7cf94bb9b40a-ed3fe691022c",
+    "api": "localhost/golfsiden-api:deploy6-7cf94bb9b40a-ed3fe691022c",
+    "web": "localhost/golfsiden-web:deploy6-7cf94bb9b40a-ed3fe691022c"
+  },
+  "certificate_exception": "localhost disposable contexts only",
+  "native_stream": "explicit same-origin EventSource on profile page; existing authenticated context across API/web restart"
+}

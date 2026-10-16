@@ -12,62 +12,56 @@ are expected to survive loss of that host.
 
 ## Sunday readiness target
 
-The current target is Sunday 18 October 2026 on this single-host Docker Compose
-baseline. The [bounded readiness path](PLANS.md) uses six iterations including
-the completed lifecycle investigation, with two contingency slots for evidenced
-launch blockers. The [current inventory](validation/lifecycle-expiry-investigation-2026-10-15/README.md#sunday-priorities-and-remaining-gates)
-prioritizes current production image builds, real production-mode proxy/runtime
-grants, essential organizer/player workflows and a current-schema restore.
-The [DEPLOY-2 image/contract acceptance](validation/production-images-2026-10-15/README.md)
-builds all three actual Dockerfiles on rootless Podman/amd64 and passes 11
-Compose plus 23 packaged-artifact/guard probes. The API builds on Rust 1.88;
-the frontend builds on Node 22/npm 10. No source/toolchain repair was needed.
-The current local Docker socket denies access, and noninteractive sudo is
-unavailable. These results do not establish native Docker Engine runtime.
-Production-mode database/proxy/browser and current-schema recovery acceptance
-were the remaining gates after that image-build step.
+The target is Sunday 18 October 2026 on this single-host Docker Compose
+baseline. All six repository readiness iterations are complete. The
+[DEPLOY-6 release report](validation/release-freeze-2026-10-16/README.md) gives
+**READY WITH KNOWN LIMITATIONS** for the exact locally accepted Linux-amd64,
+schema-39 candidate. Confirmed ingress/PG advisories are repaired with PG17.11,
+current Debian packages and standard Caddy2.11.7 compiled using Go1.27.2,
+x/net0.60.0 and quic-go0.63.0. Application binaries and all 65 web assets are
+byte-identical to the previous accepted build. Runtime bases are digest-pinned;
+package repositories can still change subsequent rebuilds.
 
-[DEPLOY-3 integrated acceptance](validation/production-rehearsal-2026-10-15/README.md)
-now passes 39 named checks on the actual Compose assembly through a private
-rootless Podman API: fresh schema 39, actual runtime grants, production
-startup/readiness rejection, secure organizer/player browser sessions and native
-SSE. It also repairs a reproduced P2 shared-secret logging leak in Caddy. The
-rebuilt web image omits request/response-header metadata in runtime and access
-logs while preserving status/duration/error diagnostics. Include the current
-`deploy/Caddyfile` when building web; the old DEPLOY-2 web image lacks this fix.
-API/PostgreSQL inputs and frontend assets remain unchanged.
+Use the [frozen operator checklist](validation/release-freeze-2026-10-16/OPERATOR.md)
+for this release, and obtain its exact image bundle/checksum from the
+[staging receipt](validation/release-freeze-2026-10-16/bundle.json). Copy the
+package to durable trusted storage. Verify, load and inspect its exact image
+IDs; keep the bundled common image tag. Use both supplied Compose files and
+`--no-build --pull never` on startup. **Do not rebuild the frozen release.**
+The generic source-build examples later in this guide apply to preparing a new
+candidate, which needs affected acceptance again. The bundle contains runtime
+files, not an application build context or credentials. The custom Caddy CLI
+prints `unknown`; `caddy build-info` and manifest image IDs identify the build.
 
-[DEPLOY-4 critical-flow acceptance](validation/critical-flows-2026-10-15/README.md)
-passes one complete fresh sequence on the unchanged production images: 32 named
-checks, including 27 real-browser checks. Distinct organizer/player invitation,
-claim, setup, score recovery/conflict, gross/net, correction/reconfirmation,
-locked-write denial, final privacy and two-round Fantasy journeys pass at
-320/390/1280 widths. No production source/configuration changed. A P3 Fantasy
-entry read-reconciliation limitation remains: when the UI says the action is
-acknowledged but the view could not refresh, use **Oppdater Fantasy**. This
-performs a read retry; the tested fresh entry submits exactly one entry write.
-Do not treat that notice as an instruction to repeat the mutation.
+Fresh acceptance passes 23 packaged guards, 60 source and 16 target checks, five
+critical browser phases, actual proxy-error log redaction, full current-script
+backup/restore, all 61 public-table/623 synthetic-row and sequence parity, restored
+logins/replay, API/web native-stream restart and DB outage/reconnect. The
+[transfer checks](validation/release-freeze-2026-10-16/transfer.json) cover actual
+archive load, protected aliases, private script-only config, project binding
+and rejection controls. Historical [image](validation/production-images-2026-10-15/README.md),
+[integration](validation/production-rehearsal-2026-10-15/README.md),
+[critical-flow](validation/critical-flows-2026-10-15/README.md) and
+[recovery](validation/recovery-2026-10-15/README.md) reports remain dated evidence,
+not security approval of their superseded runtime images.
 
-[DEPLOY-5 recovery acceptance](validation/recovery-2026-10-15/README.md) runs the
-actual current backup/restore scripts into an independent empty project with no
-migration before restore. All 61 public tables (563 synthetic rows) and actual
-sequence state match before API startup/login. Real grants, restored distinct
-account logins, score/Fantasy facts, exact replay, API/web native-stream reopen
-and database outage/reconnect pass. Both owned projects, private archives and
-temporary aliases are removed. No production source/script change was needed.
+Compose CLI 5.6.0 used rootless Podman 5.8.7/amd64 and disposable real Chrome.
+The local native Docker socket denies access; sudo-n is unavailable. Public
+DNS/ACME/real ports 80/443, actual playing-phone acceptance and a protected
+**off-host** dump/restore remain operator gates before launch. Local certificate
+exceptions do not establish public trust. No hosted action occurred. Retained
+P3 Fantasy entry/read-retry limitation, the unclassified earlier lifecycle-test
+failure and residual package advisory dispositions are explicit in the release
+report. This is not a clean vulnerability scan or a production capacity claim.
 
-Five of six iterations are complete. Final freeze/advisory/launch handoff remains
-open; this is not deployment sign-off or an off-host recovery exercise.
-Local Caddy certificate exceptions prove encrypted proxy
-behavior, not public trust. The high-port rehearsal checks redirect scheme/host/
-path only; verify following HTTP→HTTPS on actual host ports 80/443. Native Docker
-Engine and the operator's chosen public host still need acceptance.
-
-Prepare the operator prerequisites early: new installation versus upgrade,
-domain/DNS and ports, private runtime secrets, persistent storage and an off-host
-backup destination. Actual host deployment, HTTPS/readiness and playing-phone
-acceptance remain operator actions. Optional features and speculative
-optimization are deferred while these gates are closed.
+Confirm new installation versus upgrade, domain/DNS/ports, private secrets,
+persistent storage and an off-host backup destination. Keep an existing
+installation's project identity and volumes. Export one `COMPOSE_PROJECT_NAME`
+for Compose **and** scripts, and pass that exact value to `verify-release.py
+--check-env PRIVATE.env --project EXPECTED_NAME`. A distinct restore target uses
+a separate shell, fresh project identity, distinct private env and unused ports.
+Do not rely on Compose `-p`, which backup/restore scripts do not inherit.
+Optional features and speculative optimization remain deferred.
 
 ## Current release
 
@@ -116,8 +110,9 @@ operator-managed; this guide does not assert its installed version or readiness.
   optional but enables HTTP/3. Do not expose PostgreSQL port 5432.
 - At least enough free space for two image generations, the PostgreSQL volume,
   Caddy data, and local backup staging.
-- A deployment checkout of this repository. Rust and Node are not required on
-  the host because the images build them.
+- The verified frozen bundle and Python3.11+ for its loader; or, for a new
+  source-build candidate, a full deployment checkout. Rust and Node are not
+  required on the host because new image builds contain their builders.
 
 Keep `vendor/sqlx-postgres` in the build context. Cargo and the production
 Dockerfile use this pinned SQLx 0.8.6 transaction-cancellation backport. Deploying
@@ -210,6 +205,10 @@ baseline does not set `CORS_ALLOWED_ORIGIN`.
 
 ## Initial deployment
 
+For the frozen Sunday candidate use the [exact-image commands](validation/release-freeze-2026-10-16/OPERATOR.md#new-installation).
+The following source-build sequence prepares a new candidate and requires fresh
+affected acceptance; it does not reproduce the frozen bundle.
+
 Run these commands from the repository root. Migration and permission actions
 target PostgreSQL inside the Compose network; no database port needs to be opened.
 
@@ -257,7 +256,8 @@ Do not repeat initial database setup or load the development seed.
    dump plus checksum off-host. Use the [backup procedure](#backup).
 3. Check out the intended release and set its immutable `GOLFSIDEN_IMAGE_TAG` in
    the existing private runtime file. Read the schema notes below for every
-   version crossed, then build the new images before the maintenance window.
+   version crossed, then load the verified frozen images (or build and accept a new candidate)
+   before the maintenance window.
 4. Stop API/web while applying migrations so old binaries do not serve the new
    schema. If writes continued after the backup, repeat the verified off-host
    backup now, before migration. Start PostgreSQL, migrate with owner authority,
@@ -268,6 +268,11 @@ Do not repeat initial database setup or load the development seed.
 
 After the backup, release selection and runtime-file update, run from the
 repository root:
+
+For the frozen candidate, use the bundled
+[upgrade procedure](validation/release-freeze-2026-10-16/OPERATOR.md#existing-installation-and-rollback)
+instead of the source-build example below. Keep its two Compose files and
+no-build/no-pull startup flags throughout maintenance.
 
 ```bash
 docker compose --env-file .env.production -f compose.production.yml --profile tools build

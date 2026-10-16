@@ -7,7 +7,18 @@ COPY frontend/ ./
 ENV VITE_API_URL=""
 RUN npm run build
 
-FROM caddy:2.10.2-alpine
+# Caddy 2.11.7 still pins x/net 0.59.0; keep the HTTP/2 security override
+# until an upstream release includes the 0.60.0 fixes.
+FROM golang:1.27.2-alpine@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS caddy-builder
+WORKDIR /build
+ENV GOTOOLCHAIN=local
+RUN go mod init golfsiden-caddy \
+    && go get github.com/caddyserver/caddy/v2/cmd/caddy@v2.11.7 \
+    && go get golang.org/x/net@v0.60.0 \
+    && CGO_ENABLED=0 go build -mod=readonly -trimpath -ldflags '-s -w' -o /out/caddy github.com/caddyserver/caddy/v2/cmd/caddy
+
+FROM caddy:2.11.7-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
+COPY --from=caddy-builder /out/caddy /usr/bin/caddy
 COPY deploy/Caddyfile /etc/caddy/Caddyfile
 COPY deploy/validate-and-run-caddy.sh /usr/local/bin/validate-and-run-caddy
 COPY --from=builder /source/dist /srv

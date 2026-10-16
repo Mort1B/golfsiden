@@ -15,10 +15,11 @@ import tempfile
 import time
 import traceback
 
-HERE = Path(__file__).resolve().parent
-REPO = HERE.parents[2]
+SCRIPT_DIR = Path(__file__).resolve().parent
+HERE = Path(os.environ.get('GOLF_RECOVERY_EVIDENCE_DIRECTORY', SCRIPT_DIR))
+REPO = SCRIPT_DIR.parents[2]
 sys.dont_write_bytecode = True
-sys.path.insert(0, str(HERE.parent / 'production-rehearsal-2026-10-15'))
+sys.path.insert(0, str(SCRIPT_DIR.parent / 'production-rehearsal-2026-10-15'))
 from rehearsal import Rehearsal
 
 POINTER = Path('/tmp/golf-deploy5-controls.json')
@@ -137,14 +138,15 @@ def check_roles(r):
 
 def cleanup():
     ownership = json.loads(POINTER.read_text())
+    destination = Path(ownership.get('evidence_directory', SCRIPT_DIR))
     for role, control in ownership['controls'].items():
         if Path(control).exists():
-            Rehearsal(control).cleanup(HERE / (role + '-cleanup.json'))
+            Rehearsal(control).cleanup(destination / (role + '-cleanup.json'))
     for alias in ownership['aliases']:
         subprocess.run(['podman', 'image', 'rm', alias], check=True, capture_output=True)
     for alias in ownership['aliases']:
         assert subprocess.run(['podman', 'image', 'exists', alias]).returncode == 1
-    (HERE / 'ownership.json').write_text(json.dumps({'private_roots': [str(Path(p).parent) for p in ownership['controls'].values()],
+    (destination / 'ownership.json').write_text(json.dumps({'private_roots': [str(Path(p).parent) for p in ownership['controls'].values()],
         'owned_aliases': ownership['aliases'], 'owned_aliases_removed': True, 'private_roots_removed': True}, indent=2) + '\n')
     POINTER.unlink()
 
@@ -153,7 +155,7 @@ def main():
     assert not POINTER.exists(), 'Refusing to replace an existing recovery fixture'
     tag = 'deploy5-' + secrets.token_hex(5)
     (HERE/'sequence.json').write_text(json.dumps({'complete':False,'run_id':tag})+'\n')
-    private_json(POINTER, {'controls': {}, 'aliases': []})
+    private_json(POINTER, {'controls': {}, 'aliases': [], 'evidence_directory': str(HERE.resolve())})
     source = new_fixture('source', tag)
     for service, candidate in source.state['images'].items():
         alias = 'localhost/golfsiden-' + service + ':' + tag
@@ -168,13 +170,43 @@ def main():
     env['GOLF_RETAIN_FANTASY_REPLAY'] = '1'
     phases = []
     for phase in ('setup', 'fantasy', 'entry', 'numeric', 'final'):
-        result = source.run(['node', str(HERE.parent / 'critical-flows-2026-10-15/browser.cjs'), phase, str(source.path)], env=env, timeout=300)
+        result = source.run(['node', str(SCRIPT_DIR.parent / 'critical-flows-2026-10-15/browser.cjs'), phase, str(source.path)], env=env, timeout=300)
         phases.append({'phase': phase, 'exit_code': result.returncode})
         source.state = json.loads(source.path.read_text()); source.checks = source.state['checks']
         print(json.dumps({'source_phase': phase, 'passed': True}), flush=True)
     last = json.loads((evidence / 'final.json').read_text())
     assert len(last['checks']) >= 25 and all(last['checks'].values())
     (HERE / 'source-flows.json').write_text(json.dumps({'phases': phases, 'browser': last['browser'], 'checks': last['checks'], 'images': last['images']}, indent=2) + '\n')
+    if source.state.get('candidate_build_report'):
+        # Recheck the changed runtime boundary without overwriting prior evidence.
+        from guards import main as runtime_guards
+        runtime_guards(source)
+        boundary = source.root / 'boundary-browser'; boundary.mkdir(mode=0o700)
+        boundary_env = source.env.copy(); boundary_env['GOLF_PRODUCTION_EVIDENCE_DIRECTORY'] = str(boundary)
+        source.run(['node', str(SCRIPT_DIR.parent / 'production-rehearsal-2026-10-15/browser.cjs'), str(source.path)], env=boundary_env, timeout=180)
+        source.state = json.loads(source.path.read_text()); source.checks = source.state['checks']
+        (HERE / 'production-browser.json').write_text((boundary / 'browser.json').read_text())
+        marker = 'release-private-' + secrets.token_hex(12)
+        source.compose('stop', '--timeout', '10', 'api')
+        try:
+            failed = source.run(['curl','--silent','--insecure','--max-time','8','--output','/dev/null','--write-out','%{http_code}',
+                '--header','Cookie: probe='+marker,'--header','X-CSRF-Token: '+marker,
+                source.state['origin']+'/api/health?probe='+marker])
+            assert failed.stdout == '502'
+        finally:
+            source.compose('up','-d','--no-build','--pull','never','--wait','--wait-timeout','90','api')
+            source.wait_status('/api/ready',200)
+        web_log = source.run(['docker','logs',source.state['services']['web']['id']])
+        records = []
+        for line in (web_log.stdout+web_log.stderr).splitlines():
+            try: records.append(json.loads(line))
+            except ValueError: pass
+        errors = [r for r in records if r.get('logger')=='http.handlers.reverse_proxy' and r.get('level') in ('error','warn')]
+        assert errors and any('error' in r and 'duration' in r for r in errors)
+        assert marker not in web_log.stdout+web_log.stderr
+        assert source.state['values']['PROXY_SHARED_SECRET'] not in web_log.stdout+web_log.stderr
+        assert all('request' not in r and 'resp_headers' not in r for r in errors)
+        source.receipt('candidate_actual_proxy502_error_logs_drop_request_canaries_and_proxy_secret')
     source.compose('stop', '--timeout', '10', 'api', 'web')
     source.receipt('source_writes_quiesced_before_snapshot_and_actual_backup')
     before = snapshot(source)
@@ -246,7 +278,7 @@ def main():
     shutil.copy2(source.root / 'recovery-lineup-replay.json', target.root / 'recovery-lineup-replay.json')
     target.start()
     with (target.root / 'browser.log').open('w') as log:
-        browser = subprocess.Popen(['node', str(HERE / 'browser.cjs'), str(target.path)], cwd=REPO, env=target.env, stdout=log, stderr=log)
+        browser = subprocess.Popen(['node', str(SCRIPT_DIR / 'browser.cjs'), str(target.path)], cwd=REPO, env=target.env, stdout=log, stderr=log)
     for _ in range(600):
         if (target.root / 'browser-ready.json').exists():
             break
@@ -264,7 +296,7 @@ def main():
     assert outage.stdout.endswith('\n503')
     target.compose('up','-d','--no-build','--pull','never','--wait','--wait-timeout','90','postgres')
     target.wait_status('/api/ready', 200)
-    target.run(['node', str(HERE / 'browser.cjs'), str(target.path), 'post-database'], timeout=90)
+    target.run(['node', str(SCRIPT_DIR / 'browser.cjs'), str(target.path), 'post-database'], timeout=90)
     target.receipt('restored_database_outage_health200_ready503_then_reconnect200')
     check_roles(target)
     for r in (source, target):

@@ -1,0 +1,58 @@
+[
+  {
+    "check": "caddy-current-release",
+    "url": "https://api.github.com/repos/caddyserver/caddy/releases/latest",
+    "status": 200,
+    "version": "v2.11.7",
+    "published_at": "2026-10-03T05:58:33Z"
+  },
+  {
+    "check": "caddy-2.11.5-release",
+    "url": "https://api.github.com/repos/caddyserver/caddy/releases/tags/v2.11.5",
+    "error": "HTTPError",
+    "status": 404
+  },
+  {
+    "check": "caddy-image-tags",
+    "url": "https://hub.docker.com/v2/repositories/library/caddy/tags?page_size=30",
+    "status": 200,
+    "tags": [
+      "latest",
+      "windowsservercore-ltsc2025",
+      "windowsservercore-ltsc2022",
+      "windowsservercore",
+      "nanoserver-ltsc2025",
+      "nanoserver-ltsc2022",
+      "nanoserver",
+      "builder-windowsservercore-ltsc2025",
+      "builder-windowsservercore-ltsc2022",
+      "builder",
+      "2.11.7-windowsservercore-ltsc2025",
+      "2.11.7-windowsservercore-ltsc2022",
+      "2.11.7-windowsservercore",
+      "2.11.7-nanoserver-ltsc2025",
+      "2.11.7-nanoserver-ltsc2022",
+      "2.11.7-nanoserver",
+      "2.11.7-builder-windowsservercore-ltsc2025",
+      "2.11.7-builder-windowsservercore-ltsc2022",
+      "2.11.7-builder",
+      "2.11.7",
+      "2.11-windowsservercore-ltsc2025",
+      "2.11-windowsservercore-ltsc2022",
+      "2.11-windowsservercore",
+      "2.11-nanoserver-ltsc2025",
+      "2.11-nanoserver-ltsc2022",
+      "2.11-nanoserver",
+      "2.11-builder-windowsservercore-ltsc2025",
+      "2.11-builder-windowsservercore-ltsc2022",
+      "2.11-builder",
+      "2.11"
+    ]
+  },
+  {
+    "check": "postgres-17.11-image",
+    "url": "https://hub.docker.com/v2/repositories/library/postgres/tags/17.11-alpine",
+    "status": 200,
+    "tag": "17.11-alpine"
+  }
+]

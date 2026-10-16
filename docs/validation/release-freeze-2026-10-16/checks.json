@@ -1,0 +1,25 @@
+{
+  "frontend": {
+    "npm run test": {
+      "exit_code": 0,
+      "files": 147,
+      "tests": 1133
+    },
+    "npm run typecheck": {
+      "exit_code": 0
+    },
+    "npm run lint": {
+      "exit_code": 0
+    },
+    "npm run build": {
+      "exit_code": 0
+    }
+  },
+  "fresh_affected_runtime_ladder": "candidate image builds; 23 guards; complete production/browser/PG migration/grants/restore/restart/reconnect; 10 transfer controls",
+  "reused_unchanged_checks": {
+    "backend_unit_fmt_clippy": "No Rust source, lock or executable changed; retained prior accepted evidence",
+    "database_domain_suite": "Unchanged domain/schema suite retained from previous PG17.10 evidence; not rerun as full suite on17.11"
+  },
+  "native_docker": "Not run: /var/run/docker.sock permission denied; noninteractive sudo unavailable",
+  "hosted_phone_offhost": "Not run: operator-owned host/domain, physical playing phone and protected off-host target not supplied or administered"
+}
