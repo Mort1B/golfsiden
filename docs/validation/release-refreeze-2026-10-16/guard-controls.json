@@ -1,0 +1,11 @@
+{
+  "checks": {
+    "build_rejects_optimized_python_before_mutation": true,
+    "preflight_rejects_optimized_python_before_mutation": true,
+    "acceptance_rejects_optimized_python_before_mutation": true,
+    "images_rejects_optimized_python_before_mutation": true,
+    "bundle_rejects_optimized_python_before_mutation": true,
+    "transfer_rejects_optimized_python_before_mutation": true,
+    "postconditions_rejects_optimized_python_before_mutation": true
+  }
+}

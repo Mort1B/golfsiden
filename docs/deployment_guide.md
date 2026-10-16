@@ -10,66 +10,62 @@ Only ports 80 and 443 are public; PostgreSQL is attached only to the internal
 This baseline is intentionally single-host. Backups must leave the host if they
 are expected to survive loss of that host.
 
-## Application hardening after the frozen bundle
-
-The [release recovery step](validation/release-recovery-2026-10-16/README.md)
-repairs award-denial exit and Fantasy four-ball lock readiness after the DEPLOY-6
-bundle was frozen. That bundle does **not** contain these application fixes.
-Prepare and accept matching updated API/web images before launch; do not assume
-the old bundle's application acceptance covers this source change. Building,
-image acceptance and refreezing are separate delivery work and did not run in
-this step. Existing bundle hashes remain historical and unchanged.
-
-Schema remains 39. No new migration, runtime grant, secret, service or setting is
-required. Already locked four-ball rounds are not reopened or rewritten. If an
-existing locked round has unresolved partner fields, this preventive guard cannot
-repair it; handle it through an explicitly authorized audited process. Local
-Chrome/PostgreSQL acceptance does not establish public-host or physical-phone
-acceptance.
-
-## Sunday readiness target
+## Current frozen application and Sunday target
 
 The target is Sunday 18 October 2026 on this single-host Docker Compose
-baseline. All six repository readiness iterations are complete. The
-[DEPLOY-6 release report](validation/release-freeze-2026-10-16/README.md) gives
-**READY WITH KNOWN LIMITATIONS** for the exact locally accepted Linux-amd64,
-schema-39 candidate. Confirmed ingress/PG advisories are repaired with PG17.11,
-current Debian packages and standard Caddy2.11.7 compiled using Go1.27.2,
-x/net0.60.0 and quic-go0.63.0. Application binaries and all 65 web assets are
-byte-identical to the previous accepted build. Runtime bases are digest-pinned;
-package repositories can still change subsequent rebuilds.
+baseline. The [replacement frozen release](validation/release-refreeze-2026-10-16/README.md)
+contains source `baeeda9`: award-denial recovery can be deliberately abandoned,
+and normal locking rejects unresolved Fantasy four-ball partner inputs. Its
+exact API/web images passed those regressions through real HTTPS/Caddy. The
+older DEPLOY-6 bundle remains historical and must not be selected for these fixes.
 
-Use the [frozen operator checklist](validation/release-freeze-2026-10-16/OPERATOR.md)
-for this release, and obtain its exact image bundle/checksum from the
-[staging receipt](validation/release-freeze-2026-10-16/bundle.json). Copy the
-package to durable trusted storage. Verify, load and inspect its exact image
-IDs; keep the bundled common image tag. Use both supplied Compose files and
-`--no-build --pull never` on startup. **Do not rebuild the frozen release.**
-The generic source-build examples later in this guide apply to preparing a new
-candidate, which needs affected acceptance again. The bundle contains runtime
-files, not an application build context or credentials. The custom Caddy CLI
-prints `unknown`; `caddy build-info` and manifest image IDs identify the build.
+Verdict: **READY WITH KNOWN LIMITATIONS** for the locally accepted Linux-amd64,
+schema-39 bundle. No new migration, runtime grant, secret, service or setting is
+required. Already locked unresolved rounds are not reopened or rewritten; they
+require an explicitly authorized audited process. The current
+[source validation report](validation/release-recovery-2026-10-16/README.md)
+retains an unrelated full-PostgreSQL collation-sensitive test failure and unreached
+later assertions. This image-delivery step did not repair or rerun that ladder.
 
-Fresh acceptance passes 23 packaged guards, 60 source and 16 target checks, five
-critical browser phases, actual proxy-error log redaction, full current-script
-backup/restore, all 61 public-table/623 synthetic-row and sequence parity, restored
-logins/replay, API/web native-stream restart and DB outage/reconnect. The
-[transfer checks](validation/release-freeze-2026-10-16/transfer.json) cover actual
-archive load, protected aliases, private script-only config, project binding
-and rejection controls. Historical [image](validation/production-images-2026-10-15/README.md),
+Use the [frozen operator checklist](validation/release-refreeze-2026-10-16/OPERATOR.md)
+and obtain the exact bundle/checksum from its
+[staging receipt](validation/release-refreeze-2026-10-16/bundle.json). Copy the
+package to durable trusted storage. Verify/load the archives and exact image
+IDs; keep the bundled common tag `release-20261016-35a7165802fc`. Use both
+supplied Compose files and `--no-build --pull never`. **Do not rebuild this
+frozen release.** The generic source-build examples later in this guide prepare
+a new candidate requiring affected acceptance. The bundle contains runtime
+files, not an application build context or credentials.
+
+Fresh acceptance passes 23 packaged guards, 56 source and 16 target checks, 7
+separate boundary-browser checks, five critical-flow phases and 3 new release
+regressions at Chrome 320/390/1280. Actual proxy-error log redaction, current-script
+backup/restore, all 61 public-table/1,122 synthetic-row and sequence parity,
+restored logins/replay, API/web stream restart and DB outage/reconnect pass.
+The [transfer checks](validation/release-refreeze-2026-10-16/transfer.json) cover
+real archive load, protected aliases, private script-only config, project
+binding and rejection controls. Historical
+[image](validation/production-images-2026-10-15/README.md),
 [integration](validation/production-rehearsal-2026-10-15/README.md),
-[critical-flow](validation/critical-flows-2026-10-15/README.md) and
-[recovery](validation/recovery-2026-10-15/README.md) reports remain dated evidence,
-not security approval of their superseded runtime images.
+[critical-flow](validation/critical-flows-2026-10-15/README.md),
+[recovery](validation/recovery-2026-10-15/README.md) and
+[previous freeze](validation/release-freeze-2026-10-16/README.md) reports retain
+their exact dated identities and limits.
 
-Compose CLI 5.6.0 used rootless Podman 5.8.7/amd64 and disposable real Chrome.
-The local native Docker socket denies access; sudo-n is unavailable. Public
-DNS/ACME/real ports 80/443, actual playing-phone acceptance and a protected
-**off-host** dump/restore remain operator gates before launch. Local certificate
-exceptions do not establish public trust. No hosted action occurred. Retained
-P3 Fantasy entry/read-retry limitation, the unclassified earlier lifecycle-test
-failure and residual package advisory dispositions are explicit in the release
-report. This is not a clean vulnerability scan or a production capacity claim.
+The replacement keeps PG17.11, Debian runtime packages and standard Caddy2.11.7
+compiled using Go1.27.2/x/net0.60.0/quic-go0.63.0. All three runtime package sets
+and the Caddy binary equal the previous frozen candidate; the API binary and
+web assets contain the new application. No new advisory scan or runtime update
+ran here. Runtime bases remain digest-pinned; package repositories can still
+change future rebuilds. The custom Caddy CLI prints `unknown`; use
+`caddy build-info` and manifest image IDs for identity.
+
+Compose 5.6.0 used rootless Podman 5.8.7/amd64 and disposable real Chrome. Native
+Docker Engine, public DNS/ACME/ports 80/443, actual playing phones and a protected
+**off-host** dump/restore remain operator gates. Local certificate exceptions do
+not establish public trust. No hosted action occurred. Retained P3 Fantasy
+entry/read-retry, earlier lifecycle-test and source-collation limits remain
+explicit. This is not a clean vulnerability scan or production capacity claim.
 
 Confirm new installation versus upgrade, domain/DNS/ports, private secrets,
 persistent storage and an off-host backup destination. Keep an existing
@@ -222,7 +218,7 @@ baseline does not set `CORS_ALLOWED_ORIGIN`.
 
 ## Initial deployment
 
-For the frozen Sunday candidate use the [exact-image commands](validation/release-freeze-2026-10-16/OPERATOR.md#new-installation).
+For the frozen Sunday candidate use the [exact-image commands](validation/release-refreeze-2026-10-16/OPERATOR.md#new-installation).
 The following source-build sequence prepares a new candidate and requires fresh
 affected acceptance; it does not reproduce the frozen bundle.
 
@@ -287,7 +283,7 @@ After the backup, release selection and runtime-file update, run from the
 repository root:
 
 For the frozen candidate, use the bundled
-[upgrade procedure](validation/release-freeze-2026-10-16/OPERATOR.md#existing-installation-and-rollback)
+[upgrade procedure](validation/release-refreeze-2026-10-16/OPERATOR.md#existing-installation-and-rollback)
 instead of the source-build example below. Keep its two Compose files and
 no-build/no-pull startup flags throughout maintenance.
 

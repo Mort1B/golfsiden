@@ -1,0 +1,26 @@
+{
+  "mode": "read-only repository reviewer",
+  "reviewer": "/root/release_review",
+  "scope": [
+    "plan/build",
+    "acceptance/preflight/committed-regression adapter",
+    "runtime image metadata",
+    "immutable bundle/loader/transfer",
+    "postconditions source",
+    "current documentation"
+  ],
+  "findings_resolved": [
+    {
+      "finding": "Optimized Python could bypass build assertions before mutation",
+      "resolution": "Explicit optimized-Python rejection added before pointer/tempdir/image mutations; primary executed -O rejection control."
+    },
+    {
+      "finding": "README overstated numeric final-data concealment for an authorized own-side scorer",
+      "resolution": "Clarified that global completion/results remain concealed while authorized own-side scoring data stays available; immutable bundle unaffected."
+    }
+  ],
+  "remaining_material_findings": [],
+  "reviewer_ran_mutations_or_test_commands": false,
+  "archive_review": "Exactly11 expected regular files plus directories; no symlinks/unexpected files; embedded manifest matches; packaged operator/loader/Compose/scripts hashes match; loader equals previous freeze.",
+  "final_postconditions": "Executed successfully by primary; see postconditions.json. Final read-only reviewer confirmed receipt, cleanup and no remaining findings."
+}

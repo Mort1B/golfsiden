@@ -1,0 +1,19 @@
+{
+  "checks": {
+    "optimized_python_rejected_before_docker_load": true,
+    "offline_archives_config_ids_and_runtime_checksums": true,
+    "changed_runtime_file_rejected": true,
+    "conflicting_existing_alias_rejected_before_load_without_replacement": true,
+    "real_archive_load_and_three_explicit_alias_ids": true,
+    "script_only_config_all_five_aliases_roles_and_local_db_bound": true,
+    "explicit_custom_project_bound_and_unexpected_project_rejected": true,
+    "wrong_env_tag_rejected_without_private_config_output": true,
+    "inconsistent_database_url_password_rejected": true,
+    "owned_aliases_api_socket_private_config_and_diagnostics_removed": true
+  },
+  "engine": "rootless Podman Docker-compatible API",
+  "native_docker_engine_acceptance": false,
+  "application_services_started": false,
+  "bundle_sha256": "ad571b549ee5f27d52a17adcdeb08cb12aa30f24652449dbca17a5593bcb4422",
+  "manifest_sha256": "0523ee7b0682753d25e024cb5a86fd39a3625cf7fe2522ea64ed264f460b08bd"
+}

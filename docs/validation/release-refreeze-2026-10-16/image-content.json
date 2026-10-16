@@ -1,0 +1,44 @@
+{
+  "source_commit": "baeeda9d51fd730bffb32892bbcbc25a79a24079",
+  "context_sha256": "35a7165802fc87164b4653cecc7fdfee0cca254930a5171d72d446db6db0124c",
+  "no_runtime_or_dependency_update_selected": true,
+  "fresh_advisory_scan_performed": false,
+  "images": {
+    "postgres": {
+      "id": "ed0f7dce2da1088d611609dfc5686efc64d1a7b249a9f04466c95b215c0ee8bd",
+      "previous_id": "6f5206f425ce432de2d4d057905caa25c107be89ca7fe9763d6b34f141f77a4c",
+      "source_labels_verified": true,
+      "runtime_packages_identical_to_previous": true,
+      "runtime_inventory_sha256": "f804a8fd635a8804902a01a412be56cc14940cacc50d7efc5804b83615444ac0"
+    },
+    "api": {
+      "id": "4049bdb0bb0d9435c764c5f4ae71c28a22f41a67ba3a21242f362e77459c7b40",
+      "previous_id": "94bbd82bf4c7e7fb83a04b34102c7aa04e7e55aae44cbaf7dbd48410be1c1703",
+      "source_labels_verified": true,
+      "runtime_packages_identical_to_previous": true,
+      "runtime_inventory_sha256": "cd38a58a3cf8f8318d18f7318b15b39016c7608b760abdf5201537dda63d3bcb",
+      "executables": {
+        "/usr/local/bin/golf-api": "6f0f2ce80cebe79a726cae8da28663e156d14d89654ede39502dca1ce56f0a2e",
+        "/usr/local/bin/migrate": "015fe34fdcaf7995d08b5ed2036bea3150296f8a5a5fffb1ea97822aa5c5b276",
+        "/usr/local/bin/password-recovery": "64e2d968907d92b81d82db0722d94c6beb8b25b4cf2dbece484047af07fa0094"
+      },
+      "previous_executables": {
+        "/usr/local/bin/golf-api": "ebc548274de32e9886f21ba0605a966422dabade9c7a2d83f828d6275f97e49c",
+        "/usr/local/bin/migrate": "015fe34fdcaf7995d08b5ed2036bea3150296f8a5a5fffb1ea97822aa5c5b276",
+        "/usr/local/bin/password-recovery": "6da34f4b63ab1ded2846e7eabdcdda8278153353f5f2ee5aa46c3d0dfcf474a4"
+      }
+    },
+    "web": {
+      "id": "6a8fdffd694d4b927b15f8607e3abaa2dfba53aae2b108f4445fc8330e5cb20d",
+      "previous_id": "83a94ebcf1b4f16aad05d4301661d2d9d12bc7adb0295f4cd4e3287dbc5be0ae",
+      "source_labels_verified": true,
+      "runtime_packages_identical_to_previous": true,
+      "runtime_inventory_sha256": "e80d211f529202c3395ce0d0cb6d59a26bd9d77231684689e84155a2a98799cb",
+      "caddy_sha256": "c987048457ab9a03ae2b6f3aed16e045612e5c56e9724afd1a51bc5892217123",
+      "caddy_binary_identical_to_previous": true,
+      "web_asset_count": 66,
+      "web_assets_changed": true,
+      "assets_listing_sha256": "79cf0ecb62068627faf36184e747170bdf0696145f3b0f88ff2f176de980433d"
+    }
+  }
+}

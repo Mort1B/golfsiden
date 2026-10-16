@@ -1,42 +1,39 @@
-# Latest iteration — award recovery exit and Fantasy four-ball lock safety
+# Latest iteration
 
-RELEASE-RECOVERY repairs two verified essential-flow blockers as one bounded
-step. The [acceptance report](validation/release-recovery-2026-10-16/README.md)
-records regression, full-ladder and browser evidence with limitations.
+RELEASE-REFREEZE replaces the outdated frozen handoff with exact accepted images
+from committed recovery source `baeeda9d51fd730bffb32892bbcbc25a79a24079`.
+Award-denial abandonment and Fantasy four-ball lock readiness now exist in both
+the accepted source and delivered API/web. No application, Dockerfile, schema,
+dependency, runtime-setting or backup-script change was made in this step.
 
-Award recovery remains mounted above the management page's access branches.
-When an initial request or exact replay is denied, the original outcome remains
-uncertain. A deliberate **Oppgi lokal gjenoppretting og forlat siden** explains
-that accepted server effects remain, abandons local recovery and releases the
-page's navigation/reload/logout guards. It is disabled during dispatch. The
-account remains signed in, and abandonment sends no mutation. Existing exact
-request identity, receipt validation and acknowledged-read retry remain intact.
+The common tag is `release-20261016-35a7165802fc`. The
+[release report](validation/release-refreeze-2026-10-16/README.md),
+[manifest](validation/release-refreeze-2026-10-16/manifest.json),
+[bundle receipt](validation/release-refreeze-2026-10-16/bundle.json) and
+[operator handoff](validation/release-refreeze-2026-10-16/OPERATOR.md) identify the
+replacement. The historical bundle and image identities are preserved. The
+protected loader checks archives/config IDs/runtime files, protects existing
+aliases, binds all five Compose services and validates private project/role
+configuration. Startup uses no build or pull.
 
-A four-ball side can be sportingly complete with one partner blank on every
-hole. Its confirmed sporting result previously allowed locking even though
-Fantasy still required both inputs. Readiness now uses canonical Fantasy facts
-and its existing hole evaluator to identify unresolved partners/holes. Scorers
-see side-scoped guidance before confirmation, including on hidden final rounds;
-organizers see guidance and a correction link before locking. The normal lock
-endpoint recomputes under the round lock and refuses unresolved inputs. Sporting
-confirmation is still allowed. Deliberate actual-score/pickup input clears the
-old confirmation; reconfirmation is required before lock succeeds. No score is
-fabricated, no blank is converted, and scoring formulas and locked protections
-are unchanged.
+Fresh acceptance used real Chrome through HTTPS/Caddy and the restricted runtime
+role: 23 packaged guards, 56 source/16 target checks, 7 separate boundary-browser
+checks, five critical phases and 3 committed regressions at 320/390/1280. One case
+removes admin access during an award request and safely leaves without another
+mutation; another denies replay after a committed original and preserves its
+history. Four-ball sporting confirmation accepts the blank partner, the lock
+workflow guards it, and deliberate inputs plus renewed confirmation allow lock.
+The actual backup/restore scripts preserve 61 tables, 1122 synthetic rows and
+sequence state. Restored receipt replay, stream restart, outage/reconnect and
+proxy-error redaction pass. Ten transfer controls pass. Owned local fixtures,
+private configuration, browser profiles and temporary aliases are removed.
 
-For example: one partner has 18 recorded scores and the other has 18 blank
-fields. The sporting card can be acknowledged and completed, while Fantasy
-remains pending and locking is guarded. After the organizer deliberately
-resolves those fields and reconfirms, Fantasy settles and locking succeeds.
-
-Schema remains 39. No migration, grant, secret, service or setting changes.
-The earlier DEPLOY-6 frozen images lack these repairs; matching updated API/web
-images require separate build acceptance and refreezing. This step performs no
-hosted deployment and cannot repair already locked incomplete Fantasy sources.
-
-Local validation passes 264 ordinary backend tests, 1,137 frontend tests and 11
-Chrome cases at mobile/desktop widths, plus strict formatting/types/lint/Clippy
-and build. PostgreSQL coverage records 953 passing tests, five manual performance
-ignores and one unchanged native-collation assertion failure; the full database
-command is not green. The report records the unreached assertions in that case
-and the separately passed remaining targets. No unrelated ordering repair ran.
+All three runtime package sets and the Caddy binary equal the earlier freeze.
+The API binary/web assets changed; schema remains 39, PG17.11 and
+Caddy2.11.7/Go1.27.2/x/net0.60.0/quic-go0.63.0 remain. No fresh advisory scan ran.
+Native Docker Engine, public host/DNS/ACME/ports, actual playing phones and
+protected off-host recovery remain operator gates; no hosted deployment occurred.
+The prior source full PostgreSQL run still has its unrelated native-collation
+assertion failure and unreached later assertions. That ladder was not rerun or
+repaired by this delivery step. Existing P3 Fantasy read-retry and earlier
+lifecycle-test limitations remain documented. No adjacent maintenance is selected.

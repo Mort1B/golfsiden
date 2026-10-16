@@ -5,13 +5,9 @@
 
 ## Active step
 
-None. RELEASE-RECOVERY is complete with the explicitly recorded
-[validation limitation](validation/release-recovery-2026-10-16/README.md).
-The two fixes pass targeted and mobile/desktop browser acceptance. The full
-Debian PostgreSQL command retains one unrelated native-collation assertion
-failure; subsequent targets were completed separately. No ordering repair is
-selected. Matching replacement API/web images still need acceptance/refreezing;
-the older DEPLOY-6 bundle does not contain these application fixes.
+None. The [replacement frozen release](validation/release-refreeze-2026-10-16/README.md)
+contains the accepted source recovery fixes. Operator host/phone/off-host gates
+remain open; no further implementation is selected.
 
 ## Next candidate
 
@@ -64,7 +60,9 @@ acceptance is not public Docker Engine/DNS/ACME acceptance.
   records actual current-script/schema-39 restore, full table/sequence parity,
   restored logins/replay and restart/reconnect. Native Docker, public host,
   physical phones and off-host recovery remain operator gates. Local final
-  acceptance and the exact frozen delivery are recorded in DEPLOY-6.
+  acceptance and the current exact frozen delivery are recorded in
+  [RELEASE-REFREEZE](validation/release-refreeze-2026-10-16/README.md); DEPLOY-6
+  remains historical.
   No further Fantasy diagnosis is selected without new serious or unusable
   required-flow evidence.
 - [A1z](validation/lifecycle-expiry-investigation-2026-10-15/README.md) retains the

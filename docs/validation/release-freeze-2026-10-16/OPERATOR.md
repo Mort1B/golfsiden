@@ -1,10 +1,10 @@
 # Frozen Sunday release — operator handoff
 
-> Application update: this immutable bundle predates the
-> [release recovery fixes](../release-recovery-2026-10-16/README.md).
-> It does not contain award-denial exit or the Fantasy four-ball lock guard.
-> Matching replacement API/web images need acceptance and a new frozen delivery
-> before launch. The identities and evidence below describe the older bundle.
+> Historical bundle: superseded by the accepted
+> [replacement frozen delivery](../release-refreeze-2026-10-16/README.md), which
+> contains the award-denial exit and Fantasy four-ball lock guard. Use that
+> handoff for the current release. The older identities/evidence below remain
+> unchanged and do not contain those application fixes.
 
 
 Verdict: **READY WITH KNOWN LIMITATIONS for the locally accepted candidate**.

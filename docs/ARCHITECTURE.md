@@ -158,7 +158,10 @@ for both services and scripts. A separate restore uses another explicitly bound
 project. No-pull/no-build startup preserves the accepted bytes; rebuilding creates
 a new candidate. Checksums assume trusted, protected staging and prove transfer
 integrity, not authenticity or concurrent-replacement safety. See the
-[frozen delivery acceptance](validation/release-freeze-2026-10-16/README.md).
+[current frozen delivery acceptance](validation/release-refreeze-2026-10-16/README.md).
+The delivery binds its complete committed application source and tracked context
+hash to every image; application fixes require replacement API/web acceptance
+and a new immutable manifest, even when runtime packages are unchanged.
 
 The default Caddy logger removes `request` and `resp_headers` objects from
 runtime and access records. This prevents reverse-proxy failures from recording

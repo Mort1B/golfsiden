@@ -1,0 +1,27 @@
+{
+  "complete": true,
+  "run_id": "deploy5-01edad6bf9",
+  "source_phases": [
+    {
+      "phase": "setup",
+      "exit_code": 0
+    },
+    {
+      "phase": "fantasy",
+      "exit_code": 0
+    },
+    {
+      "phase": "entry",
+      "exit_code": 0
+    },
+    {
+      "phase": "numeric",
+      "exit_code": 0
+    },
+    {
+      "phase": "final",
+      "exit_code": 0
+    }
+  ],
+  "production_scripts_unmodified": true
+}

@@ -1,0 +1,33 @@
+{
+  "Id": "6a8fdffd694d4b927b15f8607e3abaa2dfba53aae2b108f4445fc8330e5cb20d",
+  "Created": "2026-10-16T13:45:25.859660758Z",
+  "Architecture": "amd64",
+  "Os": "linux",
+  "Labels": {
+    "io.buildah.version": "1.43.4",
+    "io.golfsiden.context.sha256": "35a7165802fc87164b4653cecc7fdfee0cca254930a5171d72d446db6db0124c",
+    "io.golfsiden.source.commit": "baeeda9d51fd730bffb32892bbcbc25a79a24079",
+    "org.opencontainers.image.description": "a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go",
+    "org.opencontainers.image.documentation": "https://caddyserver.com/docs",
+    "org.opencontainers.image.licenses": "Apache-2.0",
+    "org.opencontainers.image.source": "https://github.com/caddyserver/caddy-docker",
+    "org.opencontainers.image.title": "Caddy",
+    "org.opencontainers.image.url": "https://caddyserver.com",
+    "org.opencontainers.image.vendor": "Light Code Labs",
+    "org.opencontainers.image.version": "v2.11.7"
+  },
+  "RootFS": {
+    "Type": "layers",
+    "Layers": [
+      "sha256:e63b02c2b5c761df2cb95e657d744f27d95da4e051235a13c80b88cd68eab188",
+      "sha256:970e6999c70edbe487d4c23fee90e2fc7821e762db787c410f7d3de14f570834",
+      "sha256:4bf68391865cc6b8cdd864103d9646e74230cdfd8c7b493ba10ab905433403f5",
+      "sha256:f65067307924adc02a360e9bdd9acbdcbf5270a4f9ec2f007f436fc58f5e6874",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:2b808313eabfa4573a4c103a055bfd5cfd0a1ae7682aa82bbb9b461e168e76fa",
+      "sha256:677bf881222400ce0e2e94ae32ee4c61b613d95ed0a5cb36dd54ed6f50cdaad4",
+      "sha256:622937a8fa31d125c694d330f2962ceeda6646b0e68de29319ba7b4825cd6d41",
+      "sha256:8668cefed80da65c6134c39cd4c00540fe61b1f93c46f35d8817ef855c862fbd"
+    ]
+  }
+}

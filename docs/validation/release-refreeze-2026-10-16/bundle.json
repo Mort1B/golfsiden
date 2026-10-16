@@ -1,0 +1,8 @@
+{
+  "directory": "/tmp/golfsiden-release-20261016-35a7165802fc-juwwdsq1",
+  "bundle": "/tmp/golfsiden-release-20261016-35a7165802fc-juwwdsq1.tar.gz",
+  "bundle_sha256": "ad571b549ee5f27d52a17adcdeb08cb12aa30f24652449dbca17a5593bcb4422",
+  "bundle_bytes": 218921131,
+  "manifest_sha256": "0523ee7b0682753d25e024cb5a86fd39a3625cf7fe2522ea64ed264f460b08bd",
+  "image_archive_config_ids_verified_offline": true
+}

@@ -1,0 +1,140 @@
+{
+  "engine": "rootless Podman 5.8.7 via private Docker-compatible API",
+  "compose_cli": "5.6.0",
+  "native_docker_engine_acceptance": false,
+  "source_candidate": "baeeda9d51fd730bffb32892bbcbc25a79a24079",
+  "context_sha256": "35a7165802fc87164b4653cecc7fdfee0cca254930a5171d72d446db6db0124c",
+  "web_build": null,
+  "images": {
+    "postgres": "localhost/golfsiden-postgres:refreeze-baeeda9d51fd-35a7165802fc",
+    "api": "localhost/golfsiden-api:refreeze-baeeda9d51fd-35a7165802fc",
+    "web": "localhost/golfsiden-web:refreeze-baeeda9d51fd-35a7165802fc"
+  },
+  "checks": {
+    "exact_images_unchanged_inputs_private_configuration": true,
+    "compose_postgres_fresh_cluster_healthy": true,
+    "owner_migrates_39_real_grants_no_seed": true,
+    "script_only_compose_config_bound_to_owned_project_and_exact_images": true,
+    "production_api_web_healthy_https_through_caddy": true,
+    "organizer_wizard_two_rounds_and_distinct_player_invitation_ui": true,
+    "organizer_adds_four_player_roster_in_ui_no_team_requirement": true,
+    "two_round_manual_courses_and_four_player_flights_saved_in_ui": true,
+    "anonymous_outsider_and_player_admin_actions_denied": true,
+    "player_management_route_denies_admin_controls_in_browser": true,
+    "setup_no_unexpected_console_network_or_http_body_failures": true,
+    "fantasy_rules2_two_round_presets_exact_lost_response_replay_same_receipt": true,
+    "two_manager_draft_privacy_including_organizer_and_member_round2_unsaved": true,
+    "fantasy_loading_read_failure_and_explicit_read_retry_recover_boards": true,
+    "fantasy_no_unexpected_console_network_or_http_body_failures": true,
+    "prepared_player_claim_first_fantasy_entry_and_selection_ui_one_entry_write": true,
+    "entry_no_unexpected_console_network_or_http_body_failures": true,
+    "organizer_starts_tournament_and_opens_prepared_round_in_ui": true,
+    "player_score_lost_response_retries_exact_request_and_acknowledgement": true,
+    "offline_durable_edit_conflicts_without_overwrite_and_explicit_server_choice": true,
+    "confirmed_par_cards_complete_and_fantasy_settles_exact_10_and_50": true,
+    "player_gross_and_net_result_views_use_authoritative_preserved_cards": true,
+    "completed_round_correction_reconfirms_then_locked_writes_deny_and_gross_net_preserved": true,
+    "corrected_fantasy_round_settles_exact_38_and_44": true,
+    "numeric_no_unexpected_console_network_or_http_body_failures": true,
+    "final_open_materializes_member_carry_forward_and_rejects_new_selection": true,
+    "player_final_privacy_withholds_numeric_and_fantasy_releases_and_rehides_on_return": true,
+    "two_round_fantasy_boards_settle_exact_88_and_94_with_captain_and_carry_forward": true,
+    "outsider_fantasy_denied_and_logout_clears_private_boards": true,
+    "final_no_unexpected_console_network_or_http_body_failures": true,
+    "actual_runtime_login_restricted_and_ddl_history_writes_denied": true,
+    "matching_migration_rerun_idempotent": true,
+    "startup_rejects_wrong_identity": true,
+    "startup_rejects_owner_authority": true,
+    "startup_rejects_schema_create": true,
+    "startup_rejects_history_write": true,
+    "startup_rejects_pending": true,
+    "live_schema_pending_ready503_health200_generic_error": true,
+    "startup_rejects_dirty": true,
+    "live_schema_dirty_ready503_health200_generic_error": true,
+    "startup_rejects_checksum": true,
+    "live_schema_checksum_ready503_health200_generic_error": true,
+    "startup_rejects_unknown": true,
+    "live_schema_unknown_ready503_health200_generic_error": true,
+    "startup_rejects_missing_history": true,
+    "live_schema_missing_history_ready503_health200_generic_error": true,
+    "database_unavailable_ready503_health200": true,
+    "database_reconnect_restores_readiness": true,
+    "schema_and_restricted_runtime_restored_after_controls": true,
+    "real_admin_demotion_initial403_abandon_no_extra_write": true,
+    "committed_original_denied_exact_replay_abandon_keeps_history": true,
+    "four_ball_confirm_pending_guard_resolve_reconfirm_lock_and_hidden_scorer": true,
+    "candidate_actual_proxy502_error_logs_drop_request_canaries_and_proxy_secret": true,
+    "source_writes_quiesced_before_snapshot_and_actual_backup": true,
+    "actual_backup_custom_archive_and_canonical_checksum": true,
+    "complete_container_logs_omit_generated_passwords_and_proxy_secret": true
+  },
+  "owned_containers_networks_volumes_removed": true,
+  "owned_resource_counts_before_removal": {
+    "containers": 3,
+    "volumes": 3,
+    "networks": 2
+  },
+  "private_configuration_diagnostics_ca_profile_removed": true,
+  "three_deploy2_images_and_repaired_web_retained": true,
+  "candidate_build": {
+    "base_commit": "baeeda9d51fd730bffb32892bbcbc25a79a24079",
+    "overlays": {
+      "deploy/postgres/Dockerfile.production": "1dc2291ce7ba705507265688f580258abbf91a5d25f6933d7804598c3b978d49",
+      "backend/Dockerfile.production": "216a61ce4d1af50d95bae7d788c22d61051aeb2a23d7bdb61a7e4d74cf6413a4",
+      "frontend/Dockerfile.production": "95ad116116850544a12d4e144df96e5331b4ba97afa174e7098b406fca92fdba"
+    },
+    "builds": [
+      {
+        "service": "postgres",
+        "dockerfile": "deploy/postgres/Dockerfile.production",
+        "tag": "localhost/golfsiden-postgres:refreeze-baeeda9d51fd-35a7165802fc",
+        "exit_code": 0,
+        "elapsed_seconds": 0.761,
+        "image": {
+          "Id": "ed0f7dce2da1088d611609dfc5686efc64d1a7b249a9f04466c95b215c0ee8bd",
+          "Created": "2026-10-16T13:42:58.180803937Z",
+          "Architecture": "amd64",
+          "RepoDigests": [
+            "localhost/golfsiden-postgres@sha256:3ec0da3376e8d711a3b038e0b4c51fc434f52e68e549a03e04a3b7c955a36581"
+          ]
+        }
+      },
+      {
+        "service": "api",
+        "dockerfile": "backend/Dockerfile.production",
+        "tag": "localhost/golfsiden-api:refreeze-baeeda9d51fd-35a7165802fc",
+        "exit_code": 0,
+        "elapsed_seconds": 119.759,
+        "image": {
+          "Id": "4049bdb0bb0d9435c764c5f4ae71c28a22f41a67ba3a21242f362e77459c7b40",
+          "Created": "2026-10-16T13:44:57.657802851Z",
+          "Architecture": "amd64",
+          "RepoDigests": [
+            "localhost/golfsiden-api@sha256:2e7a9118a2a618020084c2239b38df8e5ecc8dcb2300d72e7d7d74f096027402"
+          ]
+        }
+      },
+      {
+        "service": "web",
+        "dockerfile": "frontend/Dockerfile.production",
+        "tag": "localhost/golfsiden-web:refreeze-baeeda9d51fd-35a7165802fc",
+        "exit_code": 0,
+        "elapsed_seconds": 27.869,
+        "image": {
+          "Id": "6a8fdffd694d4b927b15f8607e3abaa2dfba53aae2b108f4445fc8330e5cb20d",
+          "Created": "2026-10-16T13:45:25.859660758Z",
+          "Architecture": "amd64",
+          "RepoDigests": [
+            "localhost/golfsiden-web@sha256:71a85454dcf8e02911c467022e1bac48484612d3a748f5f28ee20f117df4027d"
+          ]
+        }
+      }
+    ],
+    "builder": "rootless Podman",
+    "native_docker_acceptance": false,
+    "dockerfiles_unchanged_from_source": true,
+    "context_sha256": "35a7165802fc87164b4653cecc7fdfee0cca254930a5171d72d446db6db0124c",
+    "tag": "refreeze-baeeda9d51fd-35a7165802fc",
+    "temporary_context_removed": true
+  }
+}

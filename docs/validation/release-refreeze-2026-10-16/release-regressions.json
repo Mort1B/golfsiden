@@ -1,0 +1,31 @@
+{
+  "checks": {
+    "real_admin_demotion_initial403_abandon_no_extra_write": true,
+    "committed_original_denied_exact_replay_abandon_keeps_history": true,
+    "four_ball_confirm_pending_guard_resolve_reconfirm_lock_and_hidden_scorer": true
+  },
+  "images": {
+    "postgres": "localhost/golfsiden-postgres:refreeze-baeeda9d51fd-35a7165802fc",
+    "api": "localhost/golfsiden-api:refreeze-baeeda9d51fd-35a7165802fc",
+    "web": "localhost/golfsiden-web:refreeze-baeeda9d51fd-35a7165802fc"
+  },
+  "source_test": "frontend/e2e/releaseRecovery.browser.ts",
+  "source_test_sha256": "cd9faeafc689ae68cb766b6e96911879e0adfa361b56b377cff53635ce02073f",
+  "adapted_test_sha256": "4d2a2f4482fc8268ab14d3d03dd91880e95ae937906ace991b87d6c5850c43b2",
+  "assertions_unchanged": true,
+  "harness_adaptations": [
+    "absolute imports",
+    "HTTPS origin for both contexts",
+    "owned SQL container/role/database",
+    "private screenshot paths"
+  ],
+  "passed": 3,
+  "failed": 0,
+  "widths": [
+    320,
+    390,
+    1280
+  ],
+  "browser": "Playwright chromium, channel chrome",
+  "elapsed_seconds": 14.101
+}

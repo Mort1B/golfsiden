@@ -743,21 +743,25 @@ Fantasy 88/94, carry-forward and exact saved-receipt replay. A native same-origi
 stream reopens across API/web restart; fresh authoritative reads pass afterward
 and after database outage/reconnect. No production source changed in that step.
 
-The [DEPLOY-6 frozen release](validation/release-freeze-2026-10-16/README.md)
-completes all six repository readiness iterations with **READY WITH KNOWN
-LIMITATIONS** for the locally accepted schema-39/Linux-amd64 candidate. Confirmed
-P1/P2 ingress and PostgreSQL advisory gaps required only three Dockerfile repairs:
-PG17.11, updated Debian runtime packages, and standard Caddy2.11.7 built with
-Go1.27.2/x/net0.60.0/quic-go0.63.0. All three Rust executables and65 web assets
-remain byte-identical. Fresh23 artifact guards,60 source/16 target checks,
-five critical browser phases, all 61 table/623 synthetic-row and sequence parity,
-restore/restart/reconnect and proxy-error log redaction pass on the new images.
-The exact archive bundle, manifest and protected loader prevent deployment-time
-rebuild drift. Use the [operator handoff](validation/release-freeze-2026-10-16/OPERATOR.md)
-with one common release tag and consistent explicitly bound Compose project.
-Remaining package matches are conditionally triaged, not a clean scanner result.
-Native Docker/public-host, physical playing-phone and protected off-host recovery
-checks remain operator gates before launch; no hosted deployment occurred.
+The [replacement frozen release](validation/release-refreeze-2026-10-16/README.md)
+contains committed source `baeeda9`, including deliberate award-denial recovery
+abandonment and the Fantasy four-ball lock guard. Its Linux-amd64/schema-39
+bundle is **READY WITH KNOWN LIMITATIONS** after exact-image HTTPS/Caddy
+acceptance: 23 artifact guards, 56 source/16 target checks, 7 separate boundary
+checks, five critical browser phases and 3 new release regressions at 320/390/1280.
+Actual backup/restore preserves all 61 tables, 1122 synthetic rows and sequences;
+restored reads/replay, stream restart and database reconnect pass. The runtime
+package inventories and Caddy binary equal DEPLOY-6, while the API executable
+and 66 web assets reflect the accepted application. No new security scan ran.
+Use the [operator handoff](validation/release-refreeze-2026-10-16/OPERATOR.md)
+with common tag `release-20261016-35a7165802fc` and one explicitly bound Compose
+project. Verify/load the archives and start with no build or pull. The older
+[DEPLOY-6 freeze](validation/release-freeze-2026-10-16/README.md) remains historical.
+Native Docker/public host, physical playing-phone and protected off-host recovery
+checks remain operator gates. The earlier source full PostgreSQL run retains one
+unrelated collation-sensitive assertion failure; later assertions in that case
+were not reached, and this delivery step did not repair or rerun that ladder.
+No hosted deployment occurred.
 
 The deployment runbook uses explicit migration and permission actions, never a
 production seed. Its backup script creates an atomic custom-format PostgreSQL

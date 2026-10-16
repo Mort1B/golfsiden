@@ -1,0 +1,76 @@
+{
+  "tag": "release-20261016-35a7165802fc",
+  "platform": "linux/amd64",
+  "schema": 39,
+  "verdict": "READY WITH KNOWN LIMITATIONS",
+  "hosted_deployment_accepted": false,
+  "source_base": "baeeda9d51fd730bffb32892bbcbc25a79a24079",
+  "dockerfiles": {
+    "deploy/postgres/Dockerfile.production": "1dc2291ce7ba705507265688f580258abbf91a5d25f6933d7804598c3b978d49",
+    "backend/Dockerfile.production": "216a61ce4d1af50d95bae7d788c22d61051aeb2a23d7bdb61a7e4d74cf6413a4",
+    "frontend/Dockerfile.production": "95ad116116850544a12d4e144df96e5331b4ba97afa174e7098b406fca92fdba"
+  },
+  "source_overlays": [],
+  "context_sha256": "35a7165802fc87164b4653cecc7fdfee0cca254930a5171d72d446db6db0124c",
+  "images": [
+    {
+      "service": "postgres",
+      "id": "ed0f7dce2da1088d611609dfc5686efc64d1a7b249a9f04466c95b215c0ee8bd",
+      "source_tag": "localhost/golfsiden-postgres:refreeze-baeeda9d51fd-35a7165802fc",
+      "alias": "golfsiden-postgres:release-20261016-35a7165802fc",
+      "archive": "golfsiden-postgres.tar",
+      "archive_sha256": "e2efeb2a7e8e983be404c7fd0f2dfb60b60a641f036215a4420cba35290814f1"
+    },
+    {
+      "service": "api",
+      "id": "4049bdb0bb0d9435c764c5f4ae71c28a22f41a67ba3a21242f362e77459c7b40",
+      "source_tag": "localhost/golfsiden-api:refreeze-baeeda9d51fd-35a7165802fc",
+      "alias": "golfsiden-api:release-20261016-35a7165802fc",
+      "archive": "golfsiden-api.tar",
+      "archive_sha256": "c3507c01ffd59a684c0e5a5d259e747add659687348cb22b257912808ee499b0"
+    },
+    {
+      "service": "web",
+      "id": "6a8fdffd694d4b927b15f8607e3abaa2dfba53aae2b108f4445fc8330e5cb20d",
+      "source_tag": "localhost/golfsiden-web:refreeze-baeeda9d51fd-35a7165802fc",
+      "alias": "golfsiden-web:release-20261016-35a7165802fc",
+      "archive": "golfsiden-web.tar",
+      "archive_sha256": "8fe0e756a9b4227ea28b12fe957789c3ba3ce6e09543e2b6d1669bcbc1168b50"
+    }
+  ],
+  "files": {
+    ".env.production.example": "d97a0738f6cc4f639875b730bae97c65ee50dbfe3178431fd13cad530fac1e67",
+    "OPERATOR.md": "cc4960e47cc0592989cb58a863432e824531dd9ce6951087f28aae0e8acdfac4",
+    "compose.production.yml": "1a2f0f8891bcf5796e9271384df181dd9b3edf30e60cb5fc4b5d5f697af8bf1c",
+    "compose.release.json": "265e384c75423a0b0cd9b7b4025331fcc142c8088f019a490e268fe4956d4397",
+    "scripts/backup-production.sh": "5549bb4e337f20229004d2c7d604a2c9a5631e84ff6d09947a2993e7c8b04b5a",
+    "scripts/restore-production.sh": "6bb08f682768a6ee141694b48c0dcfe9ccb3c8d13b8aa62d5149508ca1dcbee4",
+    "verify-release.py": "b98acc087c568020cbca5e8ec7b5b6599b47e0edcbe3d499a80c4f4400a194e0"
+  },
+  "acceptance": {
+    "packaged_guards": 23,
+    "release_regressions": 3,
+    "source_checks": 56,
+    "target_checks": 16,
+    "boundary_browser_checks": 7,
+    "critical_phases": 5,
+    "table_count": 61,
+    "synthetic_row_count": 1122,
+    "sequences_exact": true,
+    "browser_widths": [
+      320,
+      390,
+      1280
+    ],
+    "engine": "rootless Podman Docker-compatible API"
+  },
+  "source_validation_limit": "Prior full PostgreSQL source run retains one unrelated tournament-list collation failure; not repaired or rerun here.",
+  "runtime_packages_unchanged": true,
+  "fresh_advisory_scan_performed": false,
+  "operator_gates": [
+    "native Docker/host architecture",
+    "public DNS/HTTPS/ports",
+    "actual playing phone",
+    "protected off-host backup/restore"
+  ]
+}
