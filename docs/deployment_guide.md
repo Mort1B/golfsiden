@@ -10,6 +10,23 @@ Only ports 80 and 443 are public; PostgreSQL is attached only to the internal
 This baseline is intentionally single-host. Backups must leave the host if they
 are expected to survive loss of that host.
 
+## Application hardening after the frozen bundle
+
+The [release recovery step](validation/release-recovery-2026-10-16/README.md)
+repairs award-denial exit and Fantasy four-ball lock readiness after the DEPLOY-6
+bundle was frozen. That bundle does **not** contain these application fixes.
+Prepare and accept matching updated API/web images before launch; do not assume
+the old bundle's application acceptance covers this source change. Building,
+image acceptance and refreezing are separate delivery work and did not run in
+this step. Existing bundle hashes remain historical and unchanged.
+
+Schema remains 39. No new migration, runtime grant, secret, service or setting is
+required. Already locked four-ball rounds are not reopened or rewritten. If an
+existing locked round has unresolved partner fields, this preventive guard cannot
+repair it; handle it through an explicitly authorized audited process. Local
+Chrome/PostgreSQL acceptance does not establish public-host or physical-phone
+acceptance.
+
 ## Sunday readiness target
 
 The target is Sunday 18 October 2026 on this single-host Docker Compose

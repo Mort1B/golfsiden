@@ -4,7 +4,7 @@ export const fourBallIds = { round: '00000000-0000-0000-0000-000000000001', team
   actor: '00000000-0000-0000-0000-000000000005' }
 export function fourBallFixture(complete = false): FourBallScoringCard {
   const ids = fourBallIds
-  return { format: 'four_ball_stroke_play', projection: 'scoring', round_id: ids.round, owner: { type: 'team', id: ids.team },
+  return { format: 'four_ball_stroke_play', projection: 'scoring', fantasy_issues: [], round_id: ids.round, owner: { type: 'team', id: ids.team },
     owner_name: 'Et langt lagnavn med to selvstendige partnere',
     partners: [{ player_id: ids.first, display_name: 'Andreas Med Et Svært Langt Spillernavn', playing_handicap: 0 },
       { player_id: ids.second, display_name: 'Bjørn Partner Med Ekstra Slag', playing_handicap: 18 }],

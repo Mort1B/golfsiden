@@ -149,6 +149,12 @@ pub async fn confirm(
     let (name, partners) = partners(&mut tx, round_id, team_id).await?;
     let actor = authorize_partners(&mut tx, session_id, &context, &partners).await?;
     let mut card = build(&mut tx, &context, team_id, name, partners, unrestricted()).await?;
+    card.fantasy_issues = super::super::fantasy::completion::issues(
+        &mut tx,
+        round_id,
+        &[ScoreOwner::Team { id: team_id }],
+    )
+    .await?;
     if card.complete != Some(true) {
         return Err(ScorecardError::Conflict(ScorecardConflict::Incomplete));
     }

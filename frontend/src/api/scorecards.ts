@@ -2,7 +2,7 @@ import { decodeArray, decodeBoolean, decodeInteger, decodeObject, decodeString, 
 import type { RoundStatus, ScoringFormat } from './types'
 import { ownerTypeForScoringFormat } from './scoringFormats'
 import { decodeScoreEntry, decodeScoreOwner } from './scorecards/cardDecoders'
-import type { CompletionIssue, OwnerCompletionProgress, RoundCompletionValidation, ScoreAccess, ScoreOwner, ScoreOwnerType } from './scorecards/contracts'
+import type { CompletionIssueCode, CompletionIssue, OwnerCompletionProgress, RoundCompletionValidation, ScoreAccess, ScoreOwner, ScoreOwnerType } from './scorecards/contracts'
 import { decodeScoreVisibility, type ScoreVisibility } from './visibility'
 
 export * from './scorecards/contracts'
@@ -35,9 +35,14 @@ function roundStatus(value: unknown, path: string): RoundStatus {
   return invalid(path)
 }
 
-function completionIssue(value: unknown, path: string): CompletionIssue {
+export function completionIssue(value: unknown, path: string): CompletionIssue {
   const data = decodeObject(value, path, 'scorekortdata')
   const code = data.code
+  if (code === 'fantasy_inputs_unresolved') {
+    const owner = decodeScoreOwner(data.owner, `${path}.owner`)
+    if (owner.type !== 'team') invalid(`${path}.owner.type`)
+    return { code, owner, message: decodeString(data.message, `${path}.message`, 'scorekortdata') }
+  }
   if (code !== 'no_required_owners' && code !== 'incomplete_scorecards' && code !== 'unconfirmed_scorecards'
     && code !== 'round_not_open' && code !== 'round_not_completed') invalid(`${path}.code`)
   return { code, message: decodeString(data.message, `${path}.message`, 'scorekortdata') }
@@ -91,10 +96,13 @@ function validateCompletionProjection(decoded: RoundCompletionValidation): void 
   const allComplete = hasOwners && decoded.owners.every((owner) => owner.complete === true)
   const allConfirmed = hasOwners && decoded.owners.every((owner) => owner.confirmed === true)
   if (decoded.ready_to_complete !== (decoded.status === 'open' && allComplete && allConfirmed)
-    || decoded.ready_to_lock !== (decoded.status === 'completed' && allComplete && allConfirmed)) invalid('completion.readiness')
-  const actualCodes = decoded.issues.map((issue) => issue.code)
+    || decoded.ready_to_lock !== (decoded.status === 'completed' && allComplete && allConfirmed && !decoded.issues.some(issue => issue.code === 'fantasy_inputs_unresolved'))) invalid('completion.readiness')
+  const fantasyIssues = decoded.issues.filter(issue => issue.code === 'fantasy_inputs_unresolved')
+  const fantasyOwners = fantasyIssues.map(issue => issue.owner.id)
+  if (new Set(fantasyOwners).size !== fantasyOwners.length || fantasyOwners.some(id => !decoded.owners.some(o => o.owner.type === 'team' && o.owner.id === id))) invalid('completion.fantasy_owner')
+  const actualCodes = decoded.issues.filter(issue => issue.code !== 'fantasy_inputs_unresolved').map((issue) => issue.code)
   if (new Set(actualCodes).size !== actualCodes.length) invalid('completion.issues')
-  const expectedCodes: CompletionIssue['code'][] = []
+  const expectedCodes: CompletionIssueCode[] = []
   if (!hasOwners) expectedCodes.push('no_required_owners')
   if (hasOwners && !allComplete) expectedCodes.push('incomplete_scorecards')
   if (hasOwners && !allConfirmed) expectedCodes.push('unconfirmed_scorecards')

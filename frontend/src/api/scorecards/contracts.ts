@@ -77,7 +77,8 @@ export interface ScoreAccess { round_id: string; writable_owners: ScoreOwner[] }
 export type CompletionIssueCode = 'no_required_owners' | 'incomplete_scorecards'
   | 'unconfirmed_scorecards' | 'round_not_open' | 'round_not_completed'
 
-export interface CompletionIssue { code: CompletionIssueCode; message: string }
+export type CompletionIssue = { code: CompletionIssueCode; message: string }
+  | { code: 'fantasy_inputs_unresolved'; message: string; owner: ScoreOwner }
 
 export interface RoundCompletionValidation {
   round_id: string

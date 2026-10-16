@@ -42,12 +42,15 @@ pub enum CompletionIssueCode {
     UnconfirmedScorecards,
     RoundNotOpen,
     RoundNotCompleted,
+    FantasyInputsUnresolved,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct CompletionIssue {
     pub code: CompletionIssueCode,
-    pub message: &'static str,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub owner: Option<ScoreOwner>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -130,6 +133,7 @@ pub enum TransitionBlocker {
     NoRequiredOwners,
     IncompleteScorecards,
     UnconfirmedScorecards,
+    FantasyInputsUnresolved,
 }
 
 pub fn validate(mut facts: CompletionFacts) -> RoundCompletionValidation {
@@ -215,6 +219,14 @@ pub fn transition_blocker(
     if validation.owners.iter().any(|owner| !owner.confirmed) {
         return Some(TransitionBlocker::UnconfirmedScorecards);
     }
+    if action == TransitionAction::Lock
+        && validation
+            .issues
+            .iter()
+            .any(|issue| issue.code == CompletionIssueCode::FantasyInputsUnresolved)
+    {
+        return Some(TransitionBlocker::FantasyInputsUnresolved);
+    }
     None
 }
 
@@ -231,7 +243,11 @@ fn push_issue(
     message: &'static str,
 ) {
     if condition {
-        issues.push(CompletionIssue { code, message });
+        issues.push(CompletionIssue {
+            code,
+            message: message.into(),
+            owner: None,
+        });
     }
 }
 

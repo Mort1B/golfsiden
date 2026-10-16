@@ -2522,7 +2522,8 @@ with persistence introduced at schema 37. Schema 39 adds immutable game-wide
 scoring versions. FANTASY-6 local release acceptance is complete; see the
 [format, field-size and lifecycle evidence](validation/fantasy-release-2026-10-08/README.md).
 [PLANS.md](PLANS.md) owns the next bounded step. Sporting scoring and completion
-rules remain unchanged.
+rules remain unchanged. Normal four-ball locking additionally guards unresolved
+Fantasy inputs; see [release readiness](#release-recovery-and-fantasy-lock-readiness).
 
 ### Implemented persistence and selection boundary
 
@@ -3231,3 +3232,27 @@ The authorized game controls rules text; independent overall/round/detail/admin
 queries must match it before rendering points or settlement. A mismatch offers
 the existing read-only, session-fenced refresh. Provider-owned draft/recovery
 state and query privacy clearing are unchanged.
+
+
+## Release recovery and Fantasy lock readiness
+
+`repositories::fantasy::completion` supplies owner-scoped readiness issues from
+canonical `source_facts.sql` and the existing Fantasy hole evaluator. It batches
+partner names and evaluates only supplied team owners. Round completion reads
+use the same repeatable-read snapshot; transitions recompute under the existing
+parent-round mutation lock. An unresolved issue blocks Lock, while sporting
+Complete retains its existing requirements. No scoring formula or stored input
+changes. Fantasy configuration already serializes through round locks.
+
+Authorized four-ball scoring GETs and confirmation replies attach only that
+side's `fantasy_issues`. Member/history projections always erase them; global
+hidden-final completion projections continue to erase all hidden issues. The
+frontend validates issue kind and exact team identity, renders authoritative
+messages and uses backend `ready_to_lock`. It never reconstructs Fantasy rules.
+
+Award recovery permits deliberate local abandonment after an uncertain outcome,
+including authorization denial, only while no dispatch is pending. It clears
+local draft/uncertain state, preserves acknowledged receipt handling and releases
+its own navigation/logout/reload guards before leaving. It never rolls back a
+server write, infers original noncommit from denied replay, or automatically
+resends. Account/CSRF/tournament scoping and exact replay identity remain intact.

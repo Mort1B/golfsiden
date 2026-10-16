@@ -1,5 +1,12 @@
 # DEPLOY-6 — frozen release and Sunday handoff
 
+> Application update: this immutable bundle predates the
+> [release recovery fixes](../release-recovery-2026-10-16/README.md).
+> It does not contain award-denial exit or the Fantasy four-ball lock guard.
+> Matching replacement API/web images need acceptance and a new frozen delivery
+> before launch. The identities and evidence below describe the older bundle.
+
+
 **READY WITH KNOWN LIMITATIONS** for the locally accepted single-host,
 Linux-amd64, schema-39 candidate, as of **16 October 2026**. All six planned
 repository readiness iterations are complete. No configured P0–P2 finding

@@ -77,7 +77,15 @@ async fn get_once(
             back_nine_hidden: context.final_round_back_nine_hidden,
         })
     };
-    let card = build(&mut tx, &context, team_id, name, partners, metadata).await?;
+    let mut card = build(&mut tx, &context, team_id, name, partners, metadata).await?;
+    if scoring {
+        card.fantasy_issues = super::fantasy::completion::issues(
+            &mut tx,
+            round_id,
+            &[ScoreOwner::Team { id: team_id }],
+        )
+        .await?;
+    }
     auth::lock_active_session(&mut tx, session_id)
         .await?
         .ok_or(ScorecardError::Unauthenticated)?;
@@ -194,6 +202,7 @@ async fn build(
             owner_name,
             partners,
             holes: Vec::new(),
+            fantasy_issues: Vec::new(),
             gross_total: None,
             net_total: None,
             par_played: 0,

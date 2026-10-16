@@ -46,8 +46,18 @@ describe('four-ball side decoding', () => {
       visibility: { mode: 'front_nine' }, visible_hole_count: 9, complete: null, confirmed: null, confirmed_at: null,
       gross_total: 36, net_total: 36, par_played: 36, holes_scored: 9 }
     expect(decodeFourBallRead(read, ids.round, ids.team).visible_hole_count).toBe(9)
+    expect(() => decodeFourBallRead({ ...read, fantasy_issues: [{ code: 'fantasy_inputs_unresolved', owner: card.owner, message: 'hidden holes' }] }, ids.round, ids.team)).toThrow()
     expect(() => decodeFourBallRead({ ...read, confirmed: false }, ids.round, ids.team)).toThrow()
     expect(() => decodeFourBallRead({ ...read, holes: [...read.holes, card.holes[9]] }, ids.round, ids.team)).toThrow()
     expect(() => decode(read)).toThrow()
   })
+})
+
+it('accepts only canonical own-side Fantasy issues on scoring cards', () => {
+  const card = fourBallFixture(true)
+  const issue = { code: 'fantasy_inputs_unresolved', owner: card.owner, message: 'Bjørn: hull 18' }
+  expect(decode({ ...card, fantasy_issues: [issue] }).fantasy_issues).toEqual([issue])
+  expect(() => decode({ ...card, fantasy_issues: [{ ...issue, owner: { type: 'team', id: ids.first } }] })).toThrow()
+  expect(() => decode({ ...card, fantasy_issues: [issue, issue] })).toThrow()
+  expect(() => decode({ ...card, fantasy_issues: [{ code: 'unconfirmed_scorecards', message: 'wrong issue' }] })).toThrow()
 })

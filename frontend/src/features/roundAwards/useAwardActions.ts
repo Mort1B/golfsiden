@@ -44,7 +44,7 @@ export function useAwardActions(tournament:string,records:MutableRefObject<Recor
     if(!current())return
     if(isPrivateResultDenial(error))denyPrivateResults(client,{userId:session.user_id,tournamentId:tournament,roundId:round},key,error)
     const definite=error instanceof ApiHttpError && (!replay && error.status===400 && error.code==='validation_error' || error.status===409 && ['round_award_revision_conflict','round_award_request_conflict','round_award_not_completed','round_award_unsupported_format','round_award_correction_required'].includes(error.code))
-    update(round,type,definite?{uncertain:undefined,rejected:true,message:'Innsendingen ble ikke godtatt. Oppdater og gjennomgå gjeldende utmerkelse før en ny innsending.'}:{message:'Bekreftelsen mangler. Avklar samme innsending før du gjør nye endringer.'})
+    update(round,type,definite?{uncertain:undefined,rejected:true,message:'Innsendingen ble ikke godtatt. Oppdater og gjennomgå gjeldende utmerkelse før en ny innsending.'}:{message:isPrivateResultDenial(error)?'Tilgangen er avvist. Utfallet av den opprinnelige innsendingen er fortsatt uavklart. Du kan oppgi lokal gjenoppretting og forlate siden.':'Bekreftelsen mangler. Avklar samme innsending før du gjør nye endringer.'})
     if(!isPrivateResultDenial(error))await read(round)
     return
    }

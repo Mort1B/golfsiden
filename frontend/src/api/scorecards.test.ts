@@ -166,3 +166,15 @@ describe('scorecard boundaries', () => {
     }, roundId)).toThrow('access.identity')
   })
 })
+
+it('accepts authoritative owner-scoped Fantasy blockers without changing sporting completion', () => {
+  const owner = { type: 'team', id: playerId }
+  const payload = { round_id: roundId, status: 'completed', visibility: { mode: 'full' },
+    owners: [{ owner, owner_name: 'Lag', holes_scored: 18, required_holes: 18, complete: true, confirmed: true }],
+    ready_to_complete: false, ready_to_lock: false,
+    issues: [{ code: 'round_not_open', message: 'state' }, { code: 'fantasy_inputs_unresolved', owner, message: 'Partner: hull 18' }] }
+  expect(decodeCompletionValidation(payload, roundId, 'team').ready_to_lock).toBe(false)
+  expect(() => decodeCompletionValidation({ ...payload, ready_to_lock: true }, roundId, 'team')).toThrow()
+  expect(() => decodeCompletionValidation({ ...payload, issues: [...payload.issues, payload.issues[1]] }, roundId, 'team')).toThrow()
+  expect(() => decodeCompletionValidation({ ...payload, issues: [{ code: 'round_not_open', message: 'state' }, { code: 'fantasy_inputs_unresolved', owner: { type: 'team', id: holeId }, message: 'wrong side' }] }, roundId, 'team')).toThrow()
+})

@@ -39,6 +39,16 @@ account, CSRF session and tournament, does not survive reload, and is never queu
 offline. Unsaved/uncertain work guards navigation. Optional award-read failure
 never becomes a round-completion or locking requirement.
 
+When confirmation is uncertain, **Oppgi lokal gjenoppretting og forlat siden**
+deliberately abandons the local drafts/request and returns to the tournament
+list. It is unavailable while a request is in flight. It releases navigation,
+reload and logout guards after abandonment. This does not undo an award already
+accepted by the server; a denied initial request or replay (`403`/`404`) does not
+prove the original request never committed. Have an authorized organizer inspect
+the current award/history later. There is no automatic resend. Own accepted
+receipts are acknowledged before reconciliation and never turned into uncertainty
+by a failed read.
+
 ### Round award API
 
 `GET /api/rounds/{round_id}/awards` returns `round_id`, `tournament_id`,
@@ -1035,6 +1045,17 @@ score on every hole. The scorer acknowledges that remaining blank partner fields
 provide no score; individual cards need not be complete. Any actual change to
 either input clears team confirmation, even if neither team total changes.
 No-op writes and replayed receipts preserve confirmation.
+
+With Fantasy enabled, the authorized scoring card also reports `fantasy_issues`
+when the canonical Fantasy evaluator finds unresolved partner/hole inputs. Each
+`fantasy_inputs_unresolved` issue carries this team `owner` and a display message
+identifying the partner and hole numbers. The field is omitted when empty and is
+never emitted by the member/history read projection. Authorized scorers receive
+the warning for their side even while the final back nine is hidden globally.
+Before confirmation the summary explains that sporting confirmation with blanks
+leaves Fantasy pending and prevents locking. Resolve each field with its actual
+score or a deliberate **Plukket opp**, then confirm again. Blank acknowledgment
+continues to certify the sporting card only; no input is invented or converted.
 
 On the device, pending edits or post-delivery verification for either partner
 block confirmation. Both player cards are reserved atomically across browser tabs
@@ -2589,7 +2610,13 @@ on the same round-row lock used by scoring, recompute per-owner readiness inside
 the transition transaction, and publish one round SSE invalidation after commit.
 Individual owners come from immutable opening snapshots; scramble owners come
 from the round's frozen teams. Empty, incomplete, or unconfirmed owner sets are
-rejected with stable conflict codes.
+rejected with stable conflict codes. With Fantasy enabled, four-ball readiness
+adds one owner-scoped `fantasy_inputs_unresolved` issue per affected team and
+sets `ready_to_lock=false`; sporting `ready_to_complete` is unchanged. Under the
+same round lock the normal lock endpoint checks canonical Fantasy input facts
+and returns `409 round_fantasy_inputs_unresolved` for unresolved partner fields.
+The organizer sees the affected partners/holes and a link to resolve that card
+and reconfirm. Ordinary locked-round correction remains unavailable.
 
 Corrections remain available while a round is completed. A correction removes
 that scorecard's current confirmation, so the round cannot be locked until it is

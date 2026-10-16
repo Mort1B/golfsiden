@@ -1,0 +1,140 @@
+{
+  "date": "2026-10-16",
+  "scope": "RELEASE-RECOVERY",
+  "schema": 39,
+  "postgres_version": "17.11 (Debian 17.11-1.pgdg13+2)",
+  "backend": {
+    "command": "cargo test --workspace --all-targets",
+    "passed": 264,
+    "failed": 0,
+    "ignored": 1,
+    "suites": 94
+  },
+  "database": {
+    "command": "cargo test --workspace --all-targets --features database-tests",
+    "status": "failed",
+    "suites": 87,
+    "passed": 934,
+    "failed": 1,
+    "ignored": 5,
+    "exit_code": 101,
+    "limitation": "Unchanged tournament_read_sessions::coherence::response_order_roles_player_links_empty_and_error_contracts_are_preserved assumes uppercase-first at coherence.rs:225; native en_US.utf8 PostgreSQL17.11 returns lowercase-first. Later assertions in this case were not reached."
+  },
+  "format": {
+    "command": "cargo fmt --all -- --check",
+    "result": "passed"
+  },
+  "clippy": {
+    "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+    "result": "passed",
+    "notes": "Existing vendored SQLx warnings remain dependency warnings; application Clippy is clean."
+  },
+  "migrate": {
+    "command": "cargo run -p golf-api --bin migrate",
+    "result": "passed; current schema 39"
+  },
+  "seed": {
+    "command": "cargo run -p golf-api --bin seed",
+    "result": "passed; eight players and five rounds"
+  },
+  "frontend": {
+    "command": "npm run test",
+    "passed": 1137,
+    "failed": 0,
+    "files": 148
+  },
+  "frontend_ladder": {
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed"
+  },
+  "e2e_strict_typecheck": {
+    "result": "passed",
+    "command": "npx tsc --noEmit --strict --noUncheckedIndexedAccess --noUnusedLocals --noUnusedParameters --target ES2022 --module ESNext --moduleResolution Bundler --esModuleInterop --skipLibCheck --types vite/client,node --lib ES2022,DOM e2e/releaseRecovery.browser.ts"
+  },
+  "browser_new": {
+    "command": "GOLF_RELEASE_RECOVERY_BROWSER=1 npx playwright test --config playwright.lifecycle.config.ts --output /tmp/golf-release-recovery-results releaseRecovery.browser.ts",
+    "passed": 3,
+    "failed": 0,
+    "seconds": 60,
+    "widths": [
+      320,
+      390,
+      1280
+    ],
+    "observers": "Admin and hidden-scorer pages; error JSON envelopes and precise route/code/status allowlists, expected post-lock scoring-read409 explicitly recorded."
+  },
+  "browser_award_controls": {
+    "command": "GOLF_AWARDS_BROWSER=1 npx playwright test --config playwright.lifecycle.config.ts roundAwards.browser.ts fourBall.browser.ts",
+    "passed": 4,
+    "failed": 0,
+    "skipped": 4,
+    "skip_reason": "four-ball requires separate GOLF_FOUR_BALL_BROWSER flag; all four rerun below"
+  },
+  "browser_fourball_controls": {
+    "command": "GOLF_FOUR_BALL_BROWSER=1 npx playwright test --config playwright.lifecycle.config.ts --output /tmp/golf-fourball-control-results fourBall.browser.ts",
+    "passed": 4,
+    "failed": 0,
+    "seconds": 58.1
+  },
+  "skipped_manual_benchmarks": [
+    "test repositories::fantasy::results::tests::projection_benchmark ... ignored, manual projection-only timing; run release with --ignored --nocapture",
+    "test hundred_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required",
+    "test twelve_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required",
+    "test twenty_four_matches ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required",
+    "test team_loading::measurement::counts_and_complete_local_read_cost ... ignored, exclusive disposable PostgreSQL with pg_stat_statements required"
+  ],
+  "limitations": [
+    "No physical phone or WebKit",
+    "No hosted/native-Docker deployment or production-role image rehearsal",
+    "No new build/refreeze; DEPLOY-6 bundle lacks these application fixes",
+    "Already locked unresolved rounds are not reopened or repaired",
+    "Full Debian PostgreSQL ladder has one unchanged collation-sensitive assertion failure; later assertions in that case were not reached. No test, collation or production list ordering repair was made."
+  ],
+  "review": {
+    "mode": "read-only specialist",
+    "implementation_findings_remaining": 0,
+    "documentation_review": "passed; final totals explicitly record full database failure and separately completed targets"
+  },
+  "baseline_commit": "8c9c68fbee67a8bd856e65da8871d2c489a4e7f6",
+  "frontend_focused_final": {
+    "passed": 30,
+    "files": 4,
+    "includes": "403/404 parent beforeunload and navigation guard release"
+  },
+  "legacy_upgrade_fixture": {
+    "targeted_tests_passed": 2,
+    "initial_full_ladder_failure": "schema28 confirmation fixture used current response construction requiring fantasy_games; fixed fixture uses original bound transaction protocol and triggers; no runtime fallback",
+    "full_rerun_case": "passed in final full database attempt"
+  },
+  "cleanup": {
+    "owned_api_and_frontend": "stopped; no listeners on 3000/5173",
+    "disposable_database": "owned container and anonymous storage removed after all checks"
+  },
+  "database_remaining": {
+    "command": "cargo test --workspace --features database-tests --test tournament_scope_isolation --test tournament_start --test tournament_start_migration --test transaction_cancellation --test username_migration --example tls_compatibility",
+    "suites": 6,
+    "passed": 19,
+    "failed": 0,
+    "ignored": 0,
+    "exit_code": 0
+  },
+  "database_coverage_summary": {
+    "passed_across_full_attempt_and_remaining_targets": 953,
+    "failed": 1,
+    "ignored": 5,
+    "full_ladder_green": false
+  },
+  "database_collation": {
+    "server": "PostgreSQL17.11 Debian",
+    "datcollate": "en_US.utf8",
+    "datctype": "en_US.utf8",
+    "probe": "SELECT name FROM (VALUES ('B-trip'),('b-trip')) names(name) ORDER BY name",
+    "observed": [
+      "b-trip",
+      "B-trip"
+    ],
+    "production_list_query": "ORDER BY t.start_date DESC,t.name,t.id",
+    "changed_query_or_test": false
+  }
+}

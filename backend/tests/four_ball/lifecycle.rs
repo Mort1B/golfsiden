@@ -265,3 +265,162 @@ async fn opening_rejects_missing_partner_and_split_flight(pool: PgPool) {
             .is_err()
     );
 }
+
+#[sqlx::test(migrations = "../migrations")]
+async fn fantasy_blank_partner_confirmation_does_not_allow_lock_until_resolved_and_reconfirmed(
+    pool: PgPool,
+) {
+    use golf_api::{
+        domain::round_completion::{CompletionIssueCode, TransitionBlocker},
+        repositories::fantasy,
+    };
+    let session = draft(&pool, "four_ball_stroke_play").await;
+    fantasy::configure(&pool, session, id(2), true)
+        .await
+        .unwrap();
+    round_lifecycle::open(&pool, id(5)).await.unwrap();
+    fill(&pool, session).await;
+    let scorer = super::support::session(&pool, 51, None, "scorer", "fantasy-hidden-scorer").await;
+    let hidden = round_completion::validation_for_session(&pool, scorer, id(5))
+        .await
+        .unwrap();
+    assert!(hidden.issues.is_empty());
+    let scoring = four_ball::get(&pool, scorer, id(5), id(21), true)
+        .await
+        .unwrap();
+    assert_eq!(scoring.fantasy_issues.len(), 1);
+    assert!(
+        scoring.fantasy_issues[0]
+            .message
+            .contains("Player 12: hull 1, 2, 3")
+    );
+    let read = read_projection(scoring);
+    assert!(read.fantasy_issues.is_empty());
+    for team in [21, 22] {
+        four_ball::confirm(&pool, session, id(5), id(team))
+            .await
+            .unwrap();
+    }
+    let pending = serde_json::to_value(
+        fantasy::results::round_results(&pool, session, id(2), id(5))
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(pending["round"]["points"]["state"], "pending");
+    let before = round_completion::validation_for_session(&pool, session, id(5))
+        .await
+        .unwrap();
+    assert_eq!(before.ready_to_complete, Some(true));
+    assert_eq!(
+        before
+            .issues
+            .iter()
+            .filter(|i| i.code == CompletionIssueCode::FantasyInputsUnresolved)
+            .count(),
+        2
+    );
+    assert!(
+        before
+            .issues
+            .iter()
+            .any(|i| i.message.contains("Player 12: hull 1, 2, 3"))
+    );
+    round_completion::complete_authorized(&pool, session, id(5))
+        .await
+        .unwrap();
+    let validation = round_completion::validation_for_session(&pool, session, id(5))
+        .await
+        .unwrap();
+    assert_eq!(validation.ready_to_lock, Some(false));
+    assert!(matches!(
+        round_completion::lock_authorized(&pool, session, id(5)).await,
+        Err(round_completion::RoundCompletionError::Blocked {
+            blocker: TransitionBlocker::FantasyInputsUnresolved,
+            ..
+        })
+    ));
+    // Resolve deliberately through the ordinary score API, retaining blank != no-score.
+    for player in [12, 14] {
+        for hole in 1..=18 {
+            four_ball::save_conditional(
+                &pool,
+                operation(
+                    session,
+                    player,
+                    hole,
+                    Input::NoScore {},
+                    ExpectedScore::Absent {},
+                ),
+            )
+            .await
+            .unwrap();
+        }
+    }
+    assert!(matches!(
+        round_completion::lock_authorized(&pool, session, id(5)).await,
+        Err(round_completion::RoundCompletionError::Blocked {
+            blocker: TransitionBlocker::UnconfirmedScorecards,
+            ..
+        })
+    ));
+    for team in [21, 22] {
+        four_ball::confirm(&pool, session, id(5), id(team))
+            .await
+            .unwrap();
+    }
+    assert_eq!(
+        round_completion::validation_for_session(&pool, session, id(5))
+            .await
+            .unwrap()
+            .ready_to_lock,
+        Some(true)
+    );
+    let settled = serde_json::to_value(
+        fantasy::results::round_results(&pool, session, id(2), id(5))
+            .await
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(settled["round"]["points"]["state"], "settled");
+    let before_lock = four_ball::get(&pool, session, id(5), id(21), true)
+        .await
+        .unwrap();
+    let entry = before_lock
+        .holes
+        .iter()
+        .find(|h| h.hole_number == 1)
+        .unwrap()
+        .players
+        .iter()
+        .find(|p| p.player_id == id(12))
+        .unwrap()
+        .score
+        .as_ref()
+        .unwrap();
+    let expected = ExpectedScore::Present {
+        score_id: entry.id,
+        revision: entry.revision,
+    };
+    round_completion::lock_authorized(&pool, session, id(5))
+        .await
+        .unwrap();
+    assert!(matches!(
+        four_ball::save_conditional(
+            &pool,
+            operation(
+                session,
+                12,
+                1,
+                Input::Numeric { gross_strokes: 3 },
+                expected
+            )
+        )
+        .await,
+        Err(
+            golf_api::repositories::scorecards::ScorecardError::Conflict(
+                golf_api::repositories::scorecards::ScorecardConflict::RoundNotEditable
+            )
+        )
+    ));
+}

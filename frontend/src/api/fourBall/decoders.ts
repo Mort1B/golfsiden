@@ -1,4 +1,5 @@
 import { decodeArray, decodeBoolean, decodeInteger, decodeObject, decodeString, decodeTimestamp, decodeUuid, invalidData } from '../decoder'
+import { completionIssue } from '../scorecards'
 import { decodeScoreRevision } from '../scorecards/revision'
 import { decodeScoreVisibility } from '../visibility'
 import type { FourBallEntry, FourBallInput, FourBallPartner, FourBallPlayer, FourBallReadEntry, FourBallReadCard, FourBallScoringCard, FourBallSelected } from './contracts'
@@ -109,10 +110,15 @@ function decodeCard<E extends FourBallReadEntry>(value: unknown, round: string, 
     holes_scored: scored.length, number_of_holes: 18, visible_hole_count: visible, complete, confirmed, confirmed_at, visibility }
 }
 export function decodeFourBallRead(value: unknown, round: string, team: string): FourBallReadCard {
+  const data = decodeObject(value, 'card')
+  if (data.fantasy_issues !== undefined && decodeArray(data.fantasy_issues, 'fantasy_issues', completionIssue).length > 0) fail('read.fantasy_issues')
   return { ...decodeCard(value, round, team, readEntry), projection: 'read' }
 }
 export function decodeFourBallScoring(value: unknown, round: string, team: string): FourBallScoringCard {
   const card = decodeCard(value, round, team, entry)
   if (card.visibility.mode !== 'full') fail('scoring.visibility')
-  return { ...card, projection: 'scoring' }
+  const data = decodeObject(value, 'card')
+  const issues = data.fantasy_issues === undefined ? [] : decodeArray(data.fantasy_issues, 'fantasy_issues', completionIssue)
+  if (issues.length > 1 || issues.some(issue => issue.code !== 'fantasy_inputs_unresolved' || issue.owner.id !== team)) fail('fantasy_issues')
+  return { ...card, projection: 'scoring', fantasy_issues: issues }
 }

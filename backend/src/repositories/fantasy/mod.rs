@@ -1,3 +1,4 @@
+pub(crate) mod completion;
 mod config;
 mod lifecycle;
 mod lineups;

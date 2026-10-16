@@ -1,0 +1,15 @@
+---- tournament_read_sessions::coherence::response_order_roles_player_links_empty_and_error_contracts_are_preserved stdout ----
+
+thread 'tournament_read_sessions::coherence::response_order_roles_player_links_empty_and_error_contracts_are_preserved' (1479226) panicked at backend/tests/tournament_read_sessions/coherence.rs:225:5:
+assertion `left == right` failed
+  left: ["88000000-0000-0000-0000-000000000001", "88000000-0000-0000-0000-000000000002", "00000000-0000-0000-0000-000000002001"]
+ right: ["88000000-0000-0000-0000-000000000002", "88000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000002001"]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tournament_read_sessions::coherence::response_order_roles_player_links_empty_and_error_contracts_are_preserved
+
+test result: FAILED. 12 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 33.28s
+
+error: test failed, to rerun pass `--test tournament_read_sessions`

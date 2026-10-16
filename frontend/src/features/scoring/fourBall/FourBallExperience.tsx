@@ -1,3 +1,4 @@
+import { FantasyInputWarning } from './FantasyInputWarning'
 import { CardReview } from '../CardReview'
 import { WritableCardSwitcher } from '../WritableCardSwitcher'
 import { writableOwnerProgress } from '../selection'
@@ -99,6 +100,7 @@ function SideInput(props: Props & { card: FourBallScoringCard; hole: FourBallSco
     {props.view==='hole'&&<FourBallTotals card={card}/>}
     {props.view === 'summary' && <>
       <FourBallSummary card={card} disabled={locked} onHole={props.onHole} />
+      <FantasyInputWarning issues={card.fantasy_issues} />
       <section className="four-ball-confirm" aria-label="Bekreft lagets scorekort">
         {!card.complete && <p>Minst én partner må ha en numerisk score på hvert av de 18 hullene før laget kan bekrefte.</p>}
         {card.complete && !card.confirmed && <>

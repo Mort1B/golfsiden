@@ -1,3 +1,4 @@
+import type { CompletionIssue } from '../scorecards/contracts'
 import type { ExpectedScore } from '../scorecards/conditional'
 import type { ScoreVisibility } from '../visibility'
 
@@ -55,7 +56,7 @@ interface FourBallBase<E> {
   visibility: ScoreVisibility
 }
 export interface FourBallReadCard extends FourBallBase<FourBallReadEntry> { projection: 'read' }
-export interface FourBallScoringCard extends FourBallBase<FourBallEntry> { projection: 'scoring' }
+export interface FourBallScoringCard extends FourBallBase<FourBallEntry> { projection: 'scoring'; fantasy_issues: CompletionIssue[] }
 export type FourBallCard = FourBallReadCard | FourBallScoringCard
 export function equalInput(left: FourBallInput | null, right: FourBallInput | null): boolean {
   return left === null || right === null ? left === right : left.type === right.type

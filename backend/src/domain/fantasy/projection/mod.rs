@@ -58,3 +58,31 @@ impl HoleDetail {
         }
     }
 }
+
+/// Identify missing partner inputs only on holes the canonical Fantasy evaluator
+/// still marks pending. Explicit no-score is resolved input, never an absent row.
+pub fn unresolved_four_ball_inputs(
+    facts: &Facts,
+) -> Result<Vec<(Uuid, Vec<i16>)>, super::FantasyError> {
+    if facts.round.scoring_format != crate::domain::models::ScoringFormat::FourBallStrokePlay {
+        return Ok(Vec::new());
+    }
+    let mut missing = std::collections::BTreeMap::<Uuid, Vec<i16>>::new();
+    for h in &facts.holes {
+        if matches!(
+            hole::evaluate(facts, h, 0, false)?.detail.points,
+            super::holes::HolePoints::Pending
+        ) {
+            for player in &facts.players {
+                if !facts
+                    .four_ball
+                    .iter()
+                    .any(|input| input.player_id == *player && input.hole_id == h.id)
+                {
+                    missing.entry(*player).or_default().push(h.hole_number);
+                }
+            }
+        }
+    }
+    Ok(missing.into_iter().collect())
+}

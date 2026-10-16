@@ -1,3 +1,4 @@
+import { FantasyInputWarning } from '../../scoring/fourBall/FantasyInputWarning'
 import { Link } from 'react-router-dom'
 import type { PairingValidation, ReadinessIssueCode } from '../../../api/roundLifecycle'
 import type { RoundCompletionValidation } from '../../../api/scorecards'
@@ -68,10 +69,12 @@ export function CompletionReadiness({ round, validation }: { round: Round; valid
     <h4>Scorekort før {round.status === 'completed' ? 'låsing' : 'fullføring'}</h4>
     <p>Alle nødvendige scorekort må være komplette og bekreftet. En korrigering krever ny bekreftelse.</p>
     {!validation.owners.length && <p>Runden har ingen nødvendige scorekort og kan ikke fullføres eller låses.</p>}
+    <FantasyInputWarning issues={validation.issues.filter(issue => issue.code === 'fantasy_inputs_unresolved')} />
     <ul className="round-completion-cards">
       {validation.owners.map((item) => <li key={`${item.owner.type}:${item.owner.id}`}>
         <div><strong>{item.owner_name}</strong><span>{item.holes_scored} av {item.required_holes} hull · {item.confirmed ? 'Bekreftet' : item.complete ? 'Mangler bekreftelse' : 'Ufullstendig · ikke bekreftet'}</span></div>
         <div className="round-card-links">
+          {validation.issues.some(issue => issue.code === 'fantasy_inputs_unresolved' && issue.owner.id === item.owner.id) && <Link to={`/score?${scoringSearch({ tournamentId: round.tournament_id, roundId: round.id, owner: item.owner, view: 'summary' })}`}>Avklar partnerfelt og bekreft på nytt for {item.owner_name}</Link>}
           {(!item.complete || !item.confirmed) && <Link aria-label={`${item.complete ? 'Bekreft scorekort' : 'Fyll ut scorekort'} for ${item.owner_name}`} to={`/score?${scoringSearch({ tournamentId: round.tournament_id, roundId: round.id, owner: item.owner, view: 'summary' })}`}>
             {item.complete ? 'Bekreft scorekort' : 'Fyll ut scorekort'}
           </Link>}

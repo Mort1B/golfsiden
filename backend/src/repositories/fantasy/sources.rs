@@ -119,14 +119,14 @@ pub(super) fn hash_facts(facts: &Value) -> Result<[u8; 32], Error> {
 pub(super) async fn bulk_facts(
     tx: &mut Transaction<'_, Postgres>,
     owners: &[(Uuid, String, Uuid)],
-) -> Result<Vec<SourceFacts>, Error> {
+) -> Result<Vec<SourceFacts>, sqlx::Error> {
     let rounds: Vec<_> = owners.iter().map(|o| o.0).collect();
     let kinds: Vec<_> = owners.iter().map(|o| o.1.as_str()).collect();
     let ids: Vec<_> = owners.iter().map(|o| o.2).collect();
-    Ok(sqlx::query_as(include_str!("source_facts.sql"))
+    sqlx::query_as(include_str!("source_facts.sql"))
         .bind(rounds)
         .bind(kinds)
         .bind(ids)
         .fetch_all(&mut **tx)
-        .await?)
+        .await
 }

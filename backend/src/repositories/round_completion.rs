@@ -83,7 +83,10 @@ pub async fn validation(
         .execute(&mut *transaction)
         .await?;
     let facts = load_facts(&mut transaction, round_id, false).await?;
-    let validation = facts.map(validate);
+    let mut validation = facts.map(validate);
+    if let Some(validation) = &mut validation {
+        super::fantasy::completion::add_readiness(&mut transaction, validation).await?;
+    }
     transaction.commit().await?;
     Ok(validation)
 }
@@ -128,10 +131,11 @@ async fn validation_once(
     if context.scoring_format == ScoringFormat::SinglesMatchPlay {
         return Err(AuthorizationError::NotFound.into());
     }
-    let validation = load_facts(&mut transaction, round_id, false)
+    let mut validation = load_facts(&mut transaction, round_id, false)
         .await?
         .map(validate)
         .ok_or(AuthorizationError::NotFound)?;
+    super::fantasy::completion::add_readiness(&mut transaction, &mut validation).await?;
     let metadata = completion_visibility(&context, role);
     let visible_holes = load_visible_holes(&mut transaction, round_id).await?;
     let projection = read_projection(validation, metadata, &visible_holes);
@@ -255,7 +259,8 @@ async fn transition_in_transaction(
     let facts = load_facts(transaction, round_id, true)
         .await?
         .ok_or(RoundCompletionError::NotFound)?;
-    let validation = validate(facts);
+    let mut validation = validate(facts);
+    super::fantasy::completion::add_readiness(transaction, &mut validation).await?;
     if let Some(blocker) = transition_blocker(&validation, action) {
         return Err(RoundCompletionError::Blocked { action, blocker });
     }

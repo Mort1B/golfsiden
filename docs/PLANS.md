@@ -5,12 +5,13 @@
 
 ## Active step
 
-None. DEPLOY-6 completes the six planned repository readiness iterations.
-The [frozen release](validation/release-freeze-2026-10-16/README.md) is
-**READY WITH KNOWN LIMITATIONS** for local acceptance. The
-[operator handoff](validation/release-freeze-2026-10-16/OPERATOR.md) owns remaining
-native-Docker/public-host, actual-phone and off-host recovery launch checks.
-No hosted deployment was performed or authorized here.
+None. RELEASE-RECOVERY is complete with the explicitly recorded
+[validation limitation](validation/release-recovery-2026-10-16/README.md).
+The two fixes pass targeted and mobile/desktop browser acceptance. The full
+Debian PostgreSQL command retains one unrelated native-collation assertion
+failure; subsequent targets were completed separately. No ordering repair is
+selected. Matching replacement API/web images still need acceptance/refreezing;
+the older DEPLOY-6 bundle does not contain these application fixes.
 
 ## Next candidate
 
@@ -43,6 +44,11 @@ acceptance must be checked on the chosen environment. Local Podman or browser
 acceptance is not public Docker Engine/DNS/ACME acceptance.
 
 ## Deferred work and retained limits
+
+- The [RELEASE-RECOVERY report](validation/release-recovery-2026-10-16/README.md)
+  records the unchanged tournament-list test's native-collation assumption and
+  unreached later assertions. It is an unselected validation follow-up, not a
+  repaired finding or a green full PostgreSQL run. No production sort changed.
 
 - The [application review](validation/application-review-2026-10-14/README.md)
   links the selected finding repairs. The separate
@@ -79,5 +85,6 @@ acceptance is not public Docker Engine/DNS/ACME acceptance.
 
 No new sporting rules, automatic opponents/byes/brackets, team match play, extra
 holes, public match sharing or provider features are selected. Fantasy remains
-separate from sporting scores and completion rules. No hosted security/capacity
+separate from sporting scores and confirmation; normal four-ball locking must
+reject unresolved Fantasy inputs. No hosted security/capacity
 claim is made from local acceptance.

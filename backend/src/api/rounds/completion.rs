@@ -91,6 +91,10 @@ fn conflict_details(
             TransitionAction::Complete => ("round_not_open", "round must be open to complete"),
             TransitionAction::Lock => ("round_not_completed", "round must be completed to lock"),
         },
+        TransitionBlocker::FantasyInputsUnresolved => (
+            "round_fantasy_inputs_unresolved",
+            "resolve missing Fantasy partner inputs and reconfirm scorecards before locking",
+        ),
         TransitionBlocker::NoRequiredOwners => (
             "round_has_no_scorecards",
             "round has no required scorecards",

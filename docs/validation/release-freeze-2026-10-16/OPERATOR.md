@@ -1,5 +1,12 @@
 # Frozen Sunday release — operator handoff
 
+> Application update: this immutable bundle predates the
+> [release recovery fixes](../release-recovery-2026-10-16/README.md).
+> It does not contain award-denial exit or the Fantasy four-ball lock guard.
+> Matching replacement API/web images need acceptance and a new frozen delivery
+> before launch. The identities and evidence below describe the older bundle.
+
+
 Verdict: **READY WITH KNOWN LIMITATIONS for the locally accepted candidate**.
 Public-host deployment is not accepted yet. This is a **Linux amd64** image
 bundle, schema **39**, with one common release tag recorded in `manifest.json`.

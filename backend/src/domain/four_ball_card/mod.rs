@@ -88,6 +88,8 @@ pub struct Card<E = Entry> {
     pub confirmed: Option<bool>,
     pub confirmed_at: Option<DateTime<Utc>>,
     pub visibility: VisibilityMetadata,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub fantasy_issues: Vec<super::round_completion::CompletionIssue>,
 }
 #[derive(sqlx::FromRow)]
 pub struct HoleSource {
@@ -208,6 +210,7 @@ pub struct ReadEntry {
 /// Member/history reads never expose revision, actor or delivery metadata.
 pub fn read_projection(card: Card) -> Card<ReadEntry> {
     Card {
+        fantasy_issues: Vec::new(),
         round_id: card.round_id,
         owner: card.owner,
         owner_name: card.owner_name,

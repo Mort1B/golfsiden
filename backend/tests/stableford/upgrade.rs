@@ -46,9 +46,19 @@ async fn populated_v28_four_ball_data_and_immutable_receipt_survive_upgrade_and_
     for hole in 2..=18 {
         numeric(&pool, session, 11, hole, 4).await;
     }
-    four_ball::confirm(&pool, session, id(5), id(21))
+    // Build the historical v28 confirmation through its persisted mutation
+    // protocol. Current scoring responses require the current Fantasy schema.
+    let mut confirmation = pool.begin().await.unwrap();
+    sqlx::query("SELECT id FROM rounds WHERE id=$1 FOR UPDATE")
+        .bind(id(5))
+        .execute(&mut *confirmation)
         .await
         .unwrap();
+    sqlx::query("SELECT set_config('app.score_mutation_round_id',$1::text,true),set_config('app.four_ball_session_id',$2::text,true),set_config('app.four_ball_actor_id',$3::text,true)")
+        .bind(id(5)).bind(session).bind(id(1)).execute(&mut *confirmation).await.unwrap();
+    sqlx::query("INSERT INTO scorecard_confirmations(id,round_id,tournament_id,team_id,confirmed_by) VALUES($1,$2,$3,$4,$5)")
+        .bind(Uuid::new_v4()).bind(id(5)).bind(id(2)).bind(id(21)).bind(id(1)).execute(&mut *confirmation).await.unwrap();
+    confirmation.commit().await.unwrap();
     let before = snapshot(&pool).await;
     upgrade(&pool).await;
     assert_eq!(before, snapshot(&pool).await);
